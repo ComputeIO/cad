@@ -695,15 +695,27 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
 
                 if( line->HitTest( label->GetTextPos(), 1 ) )
                 {
-                    label->SetFlags( TEMP_SELECTED );
-                    aList.push_back( label );
-
-                    if( oneEndFixed )
+                    if( ( !line->HasFlag( STARTPOINT )
+                          && label->GetPosition() == line->GetStartPoint() )
+                        || ( !line->HasFlag( ENDPOINT )
+                             && label->GetPosition() == line->GetEndPoint() ) )
                     {
-                        SPECIAL_CASE_LABEL_INFO info;
-                        info.attachedLine = line;
-                        info.originalLabelPos = label->GetPosition();
-                        m_specialCaseLabels[ label ] = info;
+                        //If we have a line selected at only one end, don't grab labels
+                        //connected directly to the unselected endpoint
+                        break;
+                    }
+                    else
+                    {
+                        label->SetFlags( TEMP_SELECTED );
+                        aList.push_back( label );
+
+                        if( oneEndFixed )
+                        {
+                            SPECIAL_CASE_LABEL_INFO info;
+                            info.attachedLine = line;
+                            info.originalLabelPos = label->GetPosition();
+                            m_specialCaseLabels[label] = info;
+                        }
                     }
                 }
             }
@@ -720,11 +732,12 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
             if( aOriginalItem->Type() == SCH_LINE_T && test->CanConnect( aOriginalItem ) )
             {
                 SCH_LINE* line = static_cast<SCH_LINE*>( aOriginalItem );
-                bool      oneEndFixed = !line->HasFlag( STARTPOINT ) || !line->HasFlag( ENDPOINT );
 
-                if( oneEndFixed )
+                if( ( !line->HasFlag( STARTPOINT ) && test->IsConnected( line->GetStartPoint() ) )
+                    || ( !line->HasFlag( ENDPOINT ) && test->IsConnected( line->GetEndPoint() ) ) )
                 {
-                    // This is only going to end in tears, so don't go there
+                    //If we have a line selected at only one end, don't grab bus entries
+                    //connected directly to the unselected endpoint
                     continue;
                 }
 
