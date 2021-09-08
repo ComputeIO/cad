@@ -22,6 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <trigo.h>
 #include <tool/tool_manager.h>
 #include <tools/ee_grid_helper.h>
 #include <tools/ee_selection_tool.h>
@@ -230,7 +231,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             //Also store the original angle of the line, is needed later to decide
                             //which segment to extend when they've become zero length
                             line->StoreAngle();
-                            for( wxPoint point : line->GetConnectionPoints() )
+                            for( VECTOR2I point : line->GetConnectionPoints() )
                                 getConnectedItems( line, point, m_lineConnectionCache[line] );
                         }
                     }
@@ -374,14 +375,197 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
             m_moveOffset += delta;
             prevPos = m_cursor;
 
-            for( EDA_ITEM* item : selection )
+            // Used for tracking how far off a drag end should have its 90 degree elbow added
+            int xBendCount = 1;
+            int yBendCount = 1;
+
+            // Split the move into X and Y moves so we can correctly drag orthogonal lines
+            for( VECTOR2I splitDelta : { VECTOR2I( delta.x, 0 ), VECTOR2I( 0, delta.y ) } )
             {
-                // Don't double move pins, fields, etc.
-                if( item->GetParent() && item->GetParent()->IsSelected() )
+                // Skip non-moves
+                if( splitDelta == VECTOR2I( 0, 0 ) )
                     continue;
 
-                moveItem( item, delta );
-                updateItem( item, false );
+                for( EDA_ITEM* item : selection.GetItemsSortedByTypeAndXY() )
+                {
+                    // Don't double move pins, fields, etc.
+                    if( item->GetParent() && item->GetParent()->IsSelected() )
+                        continue;
+
+                    SCH_LINE* line =
+                            item->Type() == SCH_LINE_T ? static_cast<SCH_LINE*>( item ) : nullptr;
+
+                    //Only partially selected drag lines in orthogonal line mode need special handling
+                    if( m_isDrag && cfg->m_Drawing.hv_lines_only && line
+                        && ( line->HasFlag( STARTPOINT ) != line->HasFlag( ENDPOINT ) ) )
+                    {
+                        if( AnglesAreEqual( splitDelta.Angle(), line->Angle() )
+                            && line->GetLength() != 0 )
+                        {
+                            // If the move is the same angle as this line, leave the unselected end alone,
+                            // we can drag orthogonally by moving the selected end along the same line
+                        }
+                        // OK, the line's unselected end has to move with the connected end to
+                        // maintain orthogonality, we need to either drag some connected line that is the same
+                        // angle as the move or add two lines to make a 90 degree connection
+                        else
+                        {
+                            VECTOR2I unselectedEnd = line->HasFlag( STARTPOINT )
+                                                             ? line->GetEndPoint()
+                                                             : line->GetStartPoint();
+                            VECTOR2I selectedEnd = line->HasFlag( STARTPOINT )
+                                                           ? line->GetStartPoint()
+                                                           : line->GetEndPoint();
+
+                            // Look for pre-existing lines we can drag with us instead of creating new ones
+                            bool      foundAttachment = false;
+                            SCH_LINE* foundLine = nullptr;
+                            for( auto cItem : m_lineConnectionCache[line] )
+                            {
+                                foundAttachment = true;
+
+                                // If the move is the same angle as a connected line,
+                                // we can shrink/extend that line endpoint
+                                if( cItem->Type() == SCH_LINE_T )
+                                {
+                                    SCH_LINE* cLine = static_cast<SCH_LINE*>( cItem );
+
+                                    // A matching angle on a non-zero-length line means lengthen/shorten will work
+                                    if( AnglesAreEqual( splitDelta.Angle(), cLine->Angle() )
+                                        && cLine->GetLength() != 0 )
+                                        foundLine = cLine;
+
+                                    // Zero length lines are lines that this algorithm has shortened to 0 so they
+                                    // also work but we should prefer using a segment with length and angle matching
+                                    // when we can (otherwise the zero length line will draw overlapping segments on them)
+                                    if( foundLine == nullptr && cLine->GetLength() == 0 )
+                                        foundLine = cLine;
+                                }
+                            }
+
+                            // Ok... what if our original line is length zero from moving in its direction,
+                            // and the last added segment of the 90 bend we are connected to is zero from moving
+                            // it its direction after it was added?
+                            //
+                            // If we are moving in original direction, we should lengthen the original
+                            // drag wire. Otherwise we should lengthen the new wire.
+                            bool preferOriginalLine = false;
+                            if( foundLine && ( foundLine->GetLength() == 0 )
+                                && ( line->GetLength() == 0 )
+                                && AnglesAreEqual( splitDelta.Angle(), line->GetStoredAngle() ) )
+                                preferOriginalLine = true;
+
+                            // We want to drag our found line if it's in the same angle as the move or zero length,
+                            // but if the original drag line is also zero and the same original angle we should extend
+                            // that one first
+                            if( foundLine && !preferOriginalLine )
+                            {
+                                //Ok move the unselected end of our item
+                                if( line->HasFlag( STARTPOINT ) )
+                                    line->MoveEnd( (wxPoint) splitDelta );
+                                else
+                                    line->MoveStart( (wxPoint) splitDelta );
+
+                                updateItem( line, true );
+
+                                // Move the connected line found oriented in the direction of our move.
+                                //
+                                // Make sure we grab the right endpoint, it's not always STARTPOINT since
+                                // the user can draw a box of lines. We need to only move one though,
+                                // and preferably the start point, in case we have a zero length line
+                                // that we are extending (we want the foundLine start point to be attached
+                                // to the unselected end of our drag line).
+                                //
+                                // Also, new lines are added already so they'll be in the undo list, skip
+                                // adding them.
+                                if( !foundLine->HasFlag( IS_CHANGED )
+                                    && !foundLine->HasFlag( IS_NEW ) )
+                                    saveCopyInUndoList( (SCH_ITEM*) foundLine, UNDO_REDO::CHANGED,
+                                                        true );
+
+                                if( foundLine->GetStartPoint() == unselectedEnd )
+                                    foundLine->MoveStart( (wxPoint) splitDelta );
+                                else if( foundLine->GetEndPoint() == unselectedEnd )
+                                    foundLine->MoveEnd( (wxPoint) splitDelta );
+
+                                updateItem( foundLine, true );
+                            }
+                            else if( line->GetLength() == 0 )
+                            {
+                                // We didn't find another line to shorten/lengthen, (or we did but it's also zero)
+                                // so now is a good time to use our existing zero-length original line
+                            }
+                            // Either no line was at the "right" angle, or this was a junction, pin, sheet, etc.
+                            // We need to add segments to keep the soon-to-move unselected end connected to these
+                            // items.
+                            //
+                            // To keep our drag selections all the same, we'll move our unselected end point and
+                            // then put wires between it and its original endpoint.
+                            else if( foundAttachment && line->IsOrthogonal() )
+                            {
+                                // The bend counter handles a group of wires all needing their offset one
+                                // grid movement further out from each other to not overlap.
+                                // The absolute value stuff finds the direction of the line and hence
+                                // the the bend increment on that axis
+                                unsigned int xMoveBit = splitDelta.x != 0;
+                                unsigned int yMoveBit = splitDelta.y != 0;
+                                int          xLength = abs( unselectedEnd.x - selectedEnd.x );
+                                int          yLength = abs( unselectedEnd.y - selectedEnd.y );
+                                int          xMove = ( xLength - ( xBendCount * grid.GetGrid().x ) )
+                                            * sign( selectedEnd.x - unselectedEnd.x );
+                                int yMove = ( yLength - ( yBendCount * grid.GetGrid().y ) )
+                                            * sign( selectedEnd.y - unselectedEnd.y );
+
+                                // Create a new wire ending at the unselected end, we'll
+                                // move the new wire's start point to the unselected end
+                                SCH_LINE* a = new SCH_LINE( unselectedEnd, line->GetLayer() );
+                                a->MoveStart( wxPoint( xMove, yMove ) );
+                                a->SetFlags( IS_NEW );
+                                m_frame->AddToScreen( a, m_frame->GetScreen() );
+                                saveCopyInUndoList( a, UNDO_REDO::NEWITEM, true );
+
+                                SCH_LINE* b = new SCH_LINE( a->GetStartPoint(), line->GetLayer() );
+                                b->MoveStart( wxPoint( splitDelta.x, splitDelta.y ) );
+                                b->SetFlags( IS_NEW | STARTPOINT );
+                                m_frame->AddToScreen( b, m_frame->GetScreen() );
+                                saveCopyInUndoList( b, UNDO_REDO::NEWITEM, true );
+
+                                xBendCount += yMoveBit;
+                                yBendCount += xMoveBit;
+
+                                // Ok move the unselected end of our item
+                                if( line->HasFlag( STARTPOINT ) )
+                                    line->MoveEnd( wxPoint( splitDelta.x ? splitDelta.x : xMove,
+                                                            splitDelta.y ? splitDelta.y : yMove ) );
+                                else
+                                    line->MoveStart(
+                                            wxPoint( splitDelta.x ? splitDelta.x : xMove,
+                                                     splitDelta.y ? splitDelta.y : yMove ) );
+
+                                updateItem( line, true );
+
+                                // Update our cache of the connected items.
+                                // We just broke off of the existing items, so replace all of them with our new
+                                // end connection.
+                                m_lineConnectionCache[line].clear();
+                                m_lineConnectionCache[line].emplace_back( b );
+                            }
+                            // Original line has no attachments, just move the unselected end
+                            else if( !foundAttachment )
+                            {
+                                if( line->HasFlag( STARTPOINT ) )
+                                    line->MoveEnd( (wxPoint) splitDelta );
+                                else
+                                    line->MoveStart( (wxPoint) splitDelta );
+                            }
+                        }
+                    }
+
+                    // Move all other items normally, including the selected end of
+                    // partially selected lines
+                    moveItem( item, splitDelta );
+                    updateItem( item, false );
+                }
             }
 
             if( selection.HasReferencePoint() )
