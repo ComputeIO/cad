@@ -579,8 +579,9 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                 case SCH_BUS_BUS_ENTRY_T:
                 case SCH_BUS_WIRE_ENTRY_T:
                 case SCH_LABEL_T:
-                case SCH_GLOBAL_LABEL_T:
                 case SCH_HIER_LABEL_T:
+                case SCH_GLOBAL_LABEL_T:
+                case SCH_DIRECTIVE_LABEL_T:
                     if( line->HitTest( aPoint, 1 ) )
                     {
                         // Add a new line so we have something to drag
@@ -606,9 +607,14 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
             // Since only one end is going to move, the movement vector of any labels attached
             // to it is scaled by the proportion of the line length the label is from the moving
             // end.
-            for( SCH_ITEM* item : itemsOverlapping )
+            for( SCH_ITEM* item : items.Overlapping( line->GetBoundingBox() ) )
             {
-                if( item->Type() == SCH_LABEL_T || item->Type() == SCH_DIRECTIVE_LABEL_T )
+                switch( item->Type() )
+                {
+                case SCH_LABEL_T:
+                case SCH_HIER_LABEL_T:
+                case SCH_GLOBAL_LABEL_T:
+                case SCH_DIRECTIVE_LABEL_T:
                 {
                     SCH_LABEL_BASE* label = static_cast<SCH_LABEL_BASE*>( item );
 
@@ -628,6 +634,10 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                         info.originalLabelPos = label->GetPosition();
                         m_specialCaseLabels[label] = info;
                     }
+
+                    break;
+                }
+                default: break;
                 }
             }
 
@@ -799,6 +809,8 @@ void SCH_MOVE_TOOL::moveItem( EDA_ITEM* aItem, const VECTOR2I& aDelta )
     }
     case SCH_LABEL_T:
     case SCH_DIRECTIVE_LABEL_T:
+    case SCH_GLOBAL_LABEL_T:
+    case SCH_HIER_LABEL_T:
     {
         SCH_LABEL_BASE* label = static_cast<SCH_LABEL_BASE*>( aItem );
 
