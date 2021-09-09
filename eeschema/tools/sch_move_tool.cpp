@@ -606,6 +606,24 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                 updateItem( line, true );
 
                                 // Update our cache of the connected items.
+                                // First, attach our drag labels to the line left behind.
+                                for( auto possibleLabel : m_lineConnectionCache[line] )
+                                {
+                                    switch( possibleLabel->Type() )
+                                    {
+                                    case SCH_LABEL_T:
+                                    case SCH_GLOBAL_LABEL_T:
+                                    case SCH_HIER_LABEL_T:
+                                    {
+                                        SCH_LABEL* label = static_cast<SCH_LABEL*>( possibleLabel );
+                                        if( m_specialCaseLabels.count( label ) )
+                                            m_specialCaseLabels[label].attachedLine = a;
+                                        break;
+                                    }
+                                    default: break;
+                                    }
+                                }
+
                                 // We just broke off of the existing items, so replace all of them with our new
                                 // end connection.
                                 m_lineConnectionCache[a] = m_lineConnectionCache[line];
