@@ -74,6 +74,12 @@ private:
     ///< Set up handlers for various events.
     void setTransitions() override;
 
+    ///< Saves the new drag lines to the undo list
+    void commitNewDragLines();
+
+    ///< Clears the new drag lines and removes them from the screen
+    void clearNewDragLines();
+
 private:
     ///< Flag determining if anything is being dragged right now
     bool                  m_moveInProgress;
@@ -81,8 +87,10 @@ private:
 
     ///< Items (such as wires) which were added to the selection for a drag
     std::vector<KIID>     m_dragAdditions;
-    ///< Items (such as wires) which were added to the selection for a drag
+    ///< Cache of the line's original connections before dragging started
     std::map<SCH_LINE*, EDA_ITEMS> m_lineConnectionCache;
+    ///< Lines added at bend points dynamically during the move
+    std::unordered_set<SCH_LINE*> m_newDragLines;
 
     ///< Used for chaining commands
     VECTOR2I              m_moveOffset;

@@ -184,6 +184,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                 m_dragAdditions.clear();
                 m_specialCaseLabels.clear();
                 internalPoints.clear();
+                clearNewDragLines();
 
                 for( SCH_ITEM* it : m_frame->GetScreen()->Items() )
                 {
@@ -460,14 +461,6 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             // that one first
                             if( foundLine && !preferOriginalLine )
                             {
-                                //Ok move the unselected end of our item
-                                if( line->HasFlag( STARTPOINT ) )
-                                    line->MoveEnd( (wxPoint) splitDelta );
-                                else
-                                    line->MoveStart( (wxPoint) splitDelta );
-
-                                updateItem( line, true );
-
                                 // Move the connected line found oriented in the direction of our move.
                                 //
                                 // Make sure we grab the right endpoint, it's not always STARTPOINT since
@@ -489,6 +482,70 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                     foundLine->MoveEnd( (wxPoint) splitDelta );
 
                                 updateItem( foundLine, true );
+
+                                // Remerge segments we've created if this is a segment that we've added
+                                // whose only other connection is also an added segment
+                                if( foundLine->HasFlag( IS_NEW ) && foundLine->GetLength() == 0
+                                    && m_lineConnectionCache.count( foundLine ) == 1
+                                    && m_lineConnectionCache[foundLine][0]->HasFlag( IS_NEW )
+                                    && m_lineConnectionCache[foundLine][0]->Type() == SCH_LINE_T )
+                                {
+                                    //bendLine is first added segment at the original attachment point,
+                                    //foundLine is the orthogonal line between bendLine and this line
+                                    SCH_LINE* bendLine = static_cast<SCH_LINE*>(
+                                            m_lineConnectionCache[foundLine][0] );
+
+                                    fflush( stdout );
+                                    if( line->HasFlag( STARTPOINT ) )
+                                        line->SetEndPoint( (wxPoint) bendLine->GetEndPoint() );
+                                    else
+                                        line->SetStartPoint( (wxPoint) bendLine->GetEndPoint() );
+
+                                    // Update our cache of the connected items.
+
+                                    // First, re-attach our drag labels to the original line being re-merged.
+                                    for( auto possibleLabel : m_lineConnectionCache[bendLine] )
+                                    {
+                                        switch( possibleLabel->Type() )
+                                        {
+                                        case SCH_LABEL_T:
+                                        case SCH_GLOBAL_LABEL_T:
+                                        case SCH_HIER_LABEL_T:
+                                        {
+                                            SCH_LABEL* label =
+                                                    static_cast<SCH_LABEL*>( possibleLabel );
+                                            if( m_specialCaseLabels.count( label ) )
+                                                m_specialCaseLabels[label].attachedLine = line;
+                                            break;
+                                        }
+                                        default: break;
+                                        }
+                                    }
+
+                                    m_lineConnectionCache[line] = m_lineConnectionCache[bendLine];
+                                    m_lineConnectionCache[bendLine].clear();
+                                    m_lineConnectionCache[foundLine].clear();
+
+
+                                    m_frame->RemoveFromScreen( bendLine, m_frame->GetScreen() );
+                                    m_frame->RemoveFromScreen( foundLine, m_frame->GetScreen() );
+
+                                    m_newDragLines.erase( bendLine );
+                                    m_newDragLines.erase( foundLine );
+
+                                    delete bendLine;
+                                    delete foundLine;
+                                }
+                                //Ok, move the unselected end of our item
+                                else
+                                {
+                                    if( line->HasFlag( STARTPOINT ) )
+                                        line->MoveEnd( (wxPoint) splitDelta );
+                                    else
+                                        line->MoveStart( (wxPoint) splitDelta );
+                                }
+
+                                updateItem( line, true );
                             }
                             else if( line->GetLength() == 0 )
                             {
@@ -522,13 +579,13 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                 a->MoveStart( wxPoint( xMove, yMove ) );
                                 a->SetFlags( IS_NEW );
                                 m_frame->AddToScreen( a, m_frame->GetScreen() );
-                                saveCopyInUndoList( a, UNDO_REDO::NEWITEM, true );
+                                m_newDragLines.insert( a );
 
                                 SCH_LINE* b = new SCH_LINE( a->GetStartPoint(), line->GetLayer() );
                                 b->MoveStart( wxPoint( splitDelta.x, splitDelta.y ) );
                                 b->SetFlags( IS_NEW | STARTPOINT );
                                 m_frame->AddToScreen( b, m_frame->GetScreen() );
-                                saveCopyInUndoList( b, UNDO_REDO::NEWITEM, true );
+                                m_newDragLines.insert( b );
 
                                 xBendCount += yMoveBit;
                                 yBendCount += xMoveBit;
@@ -547,6 +604,8 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                 // Update our cache of the connected items.
                                 // We just broke off of the existing items, so replace all of them with our new
                                 // end connection.
+                                m_lineConnectionCache[a] = m_lineConnectionCache[line];
+                                m_lineConnectionCache[b].emplace_back( a );
                                 m_lineConnectionCache[line].clear();
                                 m_lineConnectionCache[line].emplace_back( b );
                             }
@@ -573,6 +632,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
             m_toolMgr->PostEvent( EVENTS::SelectedItemsMoved );
         }
+
         //------------------------------------------------------------------------
         // Handle cancel
         //
@@ -597,6 +657,8 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                 evt->SetPassEvent( false );
                 restore_state = true;
             }
+
+            clearNewDragLines();
 
             break;
         }
@@ -668,6 +730,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
         controls->SetAutoPan( m_moveInProgress );
 
     } while( ( evt = Wait() ) ); //Should be assignment not equality test
+
+    // Save whatever new bend lines survived the drag
+    commitNewDragLines();
 
     controls->ForceCursorPosition( false );
     controls->ShowCursor( false );
@@ -1281,4 +1346,26 @@ void SCH_MOVE_TOOL::setTransitions()
     Go( &SCH_MOVE_TOOL::Main,               EE_ACTIONS::move.MakeEvent() );
     Go( &SCH_MOVE_TOOL::Main,               EE_ACTIONS::drag.MakeEvent() );
     Go( &SCH_MOVE_TOOL::AlignElements,      EE_ACTIONS::alignToGrid.MakeEvent() );
+}
+
+
+void SCH_MOVE_TOOL::commitNewDragLines()
+{
+    for( auto newLine : m_newDragLines )
+        saveCopyInUndoList( newLine, UNDO_REDO::NEWITEM, true );
+
+    m_newDragLines.clear();
+}
+
+
+void SCH_MOVE_TOOL::clearNewDragLines()
+{
+    // Remove new bend lines added during the drag
+    for( auto newLine : m_newDragLines )
+    {
+        m_frame->RemoveFromScreen( newLine, m_frame->GetScreen() );
+        delete newLine;
+    }
+
+    m_newDragLines.clear();
 }
