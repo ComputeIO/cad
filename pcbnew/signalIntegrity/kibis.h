@@ -64,7 +64,7 @@ public:
 
     bool writeSpiceDriver( wxString* aDest );
 
-private:
+    //private:
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
 };
 
@@ -90,6 +90,7 @@ public:
     std::vector<KIBIS_MODEL*> m_models;
 
     bool writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel );
+    wxString getKuKd( KIBIS_MODEL* aModel );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY

@@ -67,84 +67,11 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
     result += "CCPOMP DIE GND ";
     result << m_C_comp.typ;
     result += "\n";
-    if( m_GNDClamp.m_entries.size() > 0 )
-    {
-        result += "a1 %vd(GND DIE) %id(GND DIE) GNDClampDiode\n";
-        result += "\n";
-        result += ".model GNDClampDiode pwl(\n+ x_array=[";
-        for( auto entry : m_GNDClamp.m_entries )
-        {
-            result << entry.V;
-            result += " ";
-        }
-        result += "]\n+ y_array=[";
-        for( auto entry : m_GNDClamp.m_entries )
-        {
-            result << entry.I.typ;
-            result += " ";
-        }
-        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
-    }
 
-    result += "\n";
-    if( m_POWERClamp.m_entries.size() > 0 )
-    {
-        result += "a2 %vd(POWER DIE) %id(POWER DIE) POWERClampDiode\n";
-        result += "\n";
-        result += ".model POWERClampDiode pwl(\n+ x_array=[";
-        for( auto entry : m_POWERClamp.m_entries )
-        {
-            result << entry.V;
-            result += " ";
-        }
-        result += "]\n+ y_array=[";
-        for( auto entry : m_POWERClamp.m_entries )
-        {
-            result << entry.I.typ;
-            result += " ";
-        }
-        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
-    }
-
-    result += "\n";
-    if( m_pulldown.m_entries.size() > 0 )
-    {
-        result += "a3 %vd(GND DIE) %id(GND DIE) pulldown\n";
-        result += "\n";
-        result += ".model pulldown pwl(\n+ x_array=[";
-        for( auto entry : m_pulldown.m_entries )
-        {
-            result << entry.V;
-            result += " ";
-        }
-        result += "]\n+ y_array=[";
-        for( auto entry : m_pulldown.m_entries )
-        {
-            result << entry.I.typ;
-            result += " ";
-        }
-        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
-    }
-
-    result += "\n";
-    if( m_pulldown.m_entries.size() > 0 )
-    {
-        result += "a3 %vd(POWER DIE) %id(POWER DIE) pullup\n";
-        result += "\n";
-        result += ".model pullup pwl(\n+ x_array=[";
-        for( auto entry : m_pulldown.m_entries )
-        {
-            result << entry.V;
-            result += " ";
-        }
-        result += "]\n+ y_array=[";
-        for( auto entry : m_pulldown.m_entries )
-        {
-            result << entry.I.typ;
-            result += " ";
-        }
-        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
-    }
+    result += m_GNDClamp.Spice( 1, "GND", "DIE", "GNDClampDiode" );
+    result += m_POWERClamp.Spice( 2, "POWER", "DIE", "POWERClampDiode" );
+    result += m_pulldown.Spice( 3, "GND", "DIE", "Pulldown" );
+    result += m_pullup.Spice( 4, "POWER", "DIE", "Pullup" );
 
 
     result += "vin DIE GND pwl ( ";
@@ -204,6 +131,120 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
 
     return status;
 }
+
+wxString KIBIS_PIN::getKuKd( KIBIS_MODEL* aModel )
+{
+    double ton = 20e-9;
+    double toff = 60e-9;
+
+    wxString simul = "";
+    simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
+    simul += "*This part is intended to be executed by Kibis internally.\n";
+    simul += "*You should not be able to read this.\n\n";
+    simul += ".SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
+
+    simul += "RPIN 1 OUT ";
+    simul << R_pin.typ;
+    simul += "\n";
+    simul += "LPIN 2 1 ";
+    simul << L_pin.typ;
+    simul += "\n";
+    simul += "CPIN OUT GND ";
+    simul << C_pin.typ;
+    simul += "\n";
+
+    simul += "\n";
+    simul += "CCPOMP 2 GND ";
+    simul << aModel->m_C_comp.typ;
+    simul += "\n";
+    simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode" );
+    simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode" );
+    simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown" );
+    simul += aModel->m_pullup.Spice( 4, "DIE", "POWER2", "Pullup" );
+
+
+    simul += "vin DIE GND pwl ( ";
+
+    std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
+
+    if( wfPairs.size() < 1 )
+    {
+        std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy" << std::endl;
+    }
+    else if( wfPairs.size() == 1 )
+    {
+    }
+    else
+    {
+        if( wfPairs.size() > 2 )
+        {
+            std::cout << "Model has more than 2 waveform pairs, using the first two." << std::endl;
+        }
+    }
+
+    double lastT;
+    for( auto entry : aModel->m_risingWaveforms.at( 0 )->m_table.m_entries )
+    {
+        lastT = entry.t;
+        if( ton > entry.t )
+        {
+            simul << entry.t;
+            simul += " ";
+            simul << entry.V.typ;
+            simul += " ";
+        }
+        else
+        {
+            std::cout << "WARNING: t_on is smaller than rising waveform. " << std::endl;
+            break;
+        }
+    }
+    for( auto entry : aModel->m_fallingWaveforms.at( 1 )->m_table.m_entries )
+    {
+        if( toff > entry.t )
+        {
+            simul << entry.t + ton;
+            simul += " ";
+            simul << entry.V.typ;
+            simul += " ";
+        }
+        else
+        {
+            std::cout << "WARNING: t_off is smaller than falling waveform. " << std::endl;
+            break;
+        }
+    }
+    simul += ") \n";
+    simul += "\n.ENDS DRIVER\n\n";
+    simul += "\n x1 3 0 1 DRIVER \n";
+    // In IBIS Currents are positive when entering the component
+    // In SPICE, currents are positive when flowing from the first terminal to the second terminal
+    // => The first terminal is outside, the second inside
+    simul += "VCC 3 0 1.8\n";
+    //simul += "Vpin x1.DIE 0 1 \n";
+    simul += "VmeasIout x1.2 x1.DIE 0\n";
+    simul += "VmeasPD 0 x1.GND2 0\n";
+    simul += "VmeasPU x1.POWER2 3 0\n";
+    simul += "VmeasPC x1.POWER1 3 0\n";
+    simul += "VmeasGC 0 x1.GND1 0\n";
+    simul += "Bku KU 0 v=(i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD)/(i(VmeasPD)-i(VmeasPU)))\n";
+    simul += "Bkd KD 0 v=(1-v(KU))\n";
+    simul += ".tran 0.1n 40n \n";
+    simul += ".option xmu=0.49  \n";
+    //simul += ".dc Vpin -5 5 0.1\n";
+    simul += ".control run \n";
+    simul += "run \n";
+    simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
+             "v(x1.POWER2)\n";
+    simul += "plot v(KU) v(KD)\n";
+    simul += ".endc \n";
+    simul += ".end \n";
+
+
+    return simul;
+}
+
+
 bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
 {
     wxString result;

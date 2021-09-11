@@ -35,7 +35,7 @@ int main( void )
     {
         file.Create();
     }
-    file.AddLine( *tmp );
+    file.AddLine( pin->getKuKd( pin->m_models.at( 0 ) ) );
 
     wxString simul = "";
     simul += "\n x1 3 0 1 DRIVER \n";
@@ -47,7 +47,7 @@ int main( void )
     simul += ".endc \n";
     simul += ".end \n";
 
-    file.AddLine( simul );
+    //file.AddLine( pin->getKuKd( pin->m_models.at( 0 ) ) );
     file.Write();
 
 

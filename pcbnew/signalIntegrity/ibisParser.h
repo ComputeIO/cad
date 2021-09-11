@@ -201,6 +201,7 @@ public:
 
     bool Check();
     double InterpolatedI( double aV );
+    wxString Spice( int aN, wxString aPort1, wxString aPort2, wxString aModelName );
 
 private:
 };

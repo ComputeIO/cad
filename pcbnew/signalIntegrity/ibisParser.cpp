@@ -235,6 +235,45 @@ bool IbisModelSelector::Check()
     return true;
 }
 
+wxString IVtable::Spice( int aN, wxString aPort1, wxString aPort2, wxString aModelName )
+{
+    wxString result = "";
+
+    if( m_entries.size() > 0 )
+    {
+        result += "a";
+        result << aN;
+        result += " %vd(";
+        result += aPort1;
+        result += " ";
+        result += aPort2;
+        result += ") %id(";
+        result += aPort1;
+        result += " ";
+        result += aPort2;
+        result += ") ";
+        result += aModelName;
+        result += "\n";
+        result += "\n";
+        result += ".model ";
+        result += aModelName;
+        result += " pwl(\n+ x_array=[";
+        for( auto entry : m_entries )
+        {
+            result << entry.V;
+            result += " ";
+        }
+        result += "]\n+ y_array=[";
+        for( auto entry : m_entries )
+        {
+            result << entry.I.typ;
+            result += " ";
+        }
+        result += "]\n+ input_domain=0.05 fraction=TRUE)\n\n";
+    }
+    return result;
+}
+
 double IVtable::InterpolatedI( double aV )
 {
     double result;
