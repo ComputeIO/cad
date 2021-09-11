@@ -9691,7 +9691,7 @@
                                                             <property name="vgap">0</property>
                                                             <object class="sizeritem" expanded="0">
                                                                 <property name="border">5</property>
-                                                                <property name="flag">wxALL</property>
+                                                                <property name="flag">wxALIGN_CENTER_HORIZONTAL|wxALL</property>
                                                                 <property name="proportion">0</property>
                                                                 <object class="wxStaticText" expanded="0">
                                                                     <property name="BottomDockable">1</property>
@@ -12299,7 +12299,7 @@
                                                             </object>
                                                             <object class="sizeritem" expanded="1">
                                                                 <property name="border">5</property>
-                                                                <property name="flag">wxEXPAND|wxLEFT|wxRIGHT</property>
+                                                                <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxRIGHT</property>
                                                                 <property name="proportion">0</property>
                                                                 <object class="wxStaticText" expanded="1">
                                                                     <property name="BottomDockable">1</property>
