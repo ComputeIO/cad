@@ -240,6 +240,7 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_Message7;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		wxStaticText* m_left_message8;
 		wxStaticText* m_Message8;
 =======
@@ -248,6 +249,10 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_left_message8;
 		wxStaticText* m_Message8;
 >>>>>>> 98654fc1d4 (Replace pcb_calculator_frame_base.h - missing message declaration)
+=======
+		wxStaticText* m_left_message8;
+		wxStaticText* m_Message8;
+>>>>>>> 3b5b2714f8b9606400189af52566f34c55e6a188
 		wxButton* m_buttonTransLineReset;
 		wxPanel* m_panelViaSize;
 		wxStaticText* m_staticTextHoleDia;

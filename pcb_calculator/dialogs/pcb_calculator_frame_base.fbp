@@ -9693,6 +9693,7 @@
                                                                 <property name="border">5</property>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                                 <property name="flag">wxALIGN_CENTER_HORIZONTAL|wxALL</property>
 =======
                                                                 <property name="flag">wxALL</property>
@@ -9762,6 +9763,9 @@
                                                                 <property name="border">5</property>
                                                                 <property name="flag">wxALL</property>
 >>>>>>> 1fb2c31ec5 (Revert "Empty text for now in form")
+=======
+                                                                <property name="flag">wxALIGN_CENTER_HORIZONTAL|wxALL</property>
+>>>>>>> 3b5b2714f8b9606400189af52566f34c55e6a188
                                                                 <property name="proportion">0</property>
                                                                 <object class="wxStaticText" expanded="0">
                                                                     <property name="BottomDockable">1</property>
@@ -12373,6 +12377,7 @@
                                                                 <property name="border">5</property>
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                                                                 <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxRIGHT</property>
 =======
                                                                 <property name="flag">wxEXPAND|wxLEFT|wxRIGHT</property>
@@ -12380,6 +12385,9 @@
 =======
                                                                 <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxRIGHT</property>
 >>>>>>> c13049c4d9 (Replace pcb_calculator_frame_base.fbp  - update alignment)
+=======
+                                                                <property name="flag">wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxRIGHT</property>
+>>>>>>> 3b5b2714f8b9606400189af52566f34c55e6a188
                                                                 <property name="proportion">0</property>
                                                                 <object class="wxStaticText" expanded="1">
                                                                     <property name="BottomDockable">1</property>
