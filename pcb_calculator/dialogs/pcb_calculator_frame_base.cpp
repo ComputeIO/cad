@@ -896,7 +896,7 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 	m_staticTextZcommon->Wrap( -1 );
 	m_staticTextZcommon->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
-	m_fgSizerZcomment->Add( m_staticTextZcommon, 0, wxALL, 5 );
+	m_fgSizerZcomment->Add( m_staticTextZcommon, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
 
 
 	bSizerHelpBitmaps->Add( m_fgSizerZcomment, 0, wxEXPAND, 5 );
@@ -1112,7 +1112,7 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 
 	m_left_message8 = new wxStaticText( sbMessagesSizer->GetStaticBox(), wxID_ANY, _("dummy"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_left_message8->Wrap( -1 );
-	fgSizerTranslResults->Add( m_left_message8, 0, wxEXPAND|wxLEFT|wxRIGHT, 5 );
+	fgSizerTranslResults->Add( m_left_message8, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxRIGHT, 5 );
 
 	m_Message8 = new wxStaticText( sbMessagesSizer->GetStaticBox(), wxID_ANY, _("dummy"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_Message8->Wrap( -1 );
