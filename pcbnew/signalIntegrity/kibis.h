@@ -87,10 +87,12 @@ public:
     /** @brief Capacitance from pin to GND */
     TypMinMaxValue C_pin;
 
+    std::vector<double> m_t, m_Ku, m_Kd;
+
     std::vector<KIBIS_MODEL*> m_models;
 
     bool writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel );
-    wxString getKuKd( KIBIS_MODEL* aModel );
+    wxString getKuKdOneWaveform( KIBIS_MODEL* aModel );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY

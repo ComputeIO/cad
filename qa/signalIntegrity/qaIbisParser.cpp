@@ -35,7 +35,7 @@ int main( void )
     {
         file.Create();
     }
-    file.AddLine( pin->getKuKd( pin->m_models.at( 0 ) ) );
+    file.AddLine( *tmp );
 
     wxString simul = "";
     simul += "\n x1 3 0 1 DRIVER \n";
@@ -43,11 +43,13 @@ int main( void )
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
-    simul += "plot v(1) \n";
+    simul += "plot v(x1.KU) v(x1.KD) v(1)\n";
     simul += ".endc \n";
     simul += ".end \n";
 
-    //file.AddLine( pin->getKuKd( pin->m_models.at( 0 ) ) );
+
+    file.AddLine( simul );
+
     file.Write();
 
 

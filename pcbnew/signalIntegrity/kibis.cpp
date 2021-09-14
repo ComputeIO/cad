@@ -1,5 +1,6 @@
 #include "kibis.h"
 #include "ibis2kibis.h"
+#include <wx/textfile.h>
 
 bool KibisFromFile( wxString aFileName, std::vector<KIBIS_COMPONENT*>* aDest )
 {
@@ -68,71 +69,51 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
     result << m_C_comp.typ;
     result += "\n";
 
+    result += "BDIEBUFF DIEBUFF 0 v=v(DIE)\n";
     result += m_GNDClamp.Spice( 1, "GND", "DIE", "GNDClampDiode" );
     result += m_POWERClamp.Spice( 2, "POWER", "DIE", "POWERClampDiode" );
     result += m_pulldown.Spice( 3, "GND", "DIE", "Pulldown" );
     result += m_pullup.Spice( 4, "POWER", "DIE", "Pullup" );
-
-
-    result += "vin DIE GND pwl ( ";
-
-    std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = waveformPairs();
-
-    if( wfPairs.size() < 1 )
-    {
-        std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy" << std::endl;
-    }
-    else if( wfPairs.size() == 1 )
-    {
-    }
-    else
-    {
-        if( wfPairs.size() > 2 )
-        {
-            std::cout << "Model has more than 2 waveform pairs, using the first two." << std::endl;
-        }
-    }
-
-    double lastT;
-    for( auto entry : m_risingWaveforms.at( 0 )->m_table.m_entries )
-    {
-        lastT = entry.t;
-        if( ton > entry.t )
-        {
-            result << entry.t;
-            result += " ";
-            result << entry.V.typ;
-            result += " ";
-        }
-        else
-        {
-            std::cout << "WARNING: t_on is smaller than rising waveform. " << std::endl;
-            break;
-        }
-    }
-    for( auto entry : m_fallingWaveforms.at( 1 )->m_table.m_entries )
-    {
-        if( toff > entry.t )
-        {
-            result << entry.t + ton;
-            result += " ";
-            result << entry.V.typ;
-            result += " ";
-        }
-        else
-        {
-            std::cout << "WARNING: t_off is smaller than falling waveform. " << std::endl;
-            break;
-        }
-    }
-    result += ") \n";
 
     *aDest = result;
 
     return status;
 }
 
-wxString KIBIS_PIN::getKuKd( KIBIS_MODEL* aModel )
+
+// As defined per IBIS, the final value using the ramp is dv_dt / 0.6 + pulldownReference
+// That's because the dv_dt value of the ramp is only the 20%-80% edge
+// If we have Zu and Zd being the impedance of the pullup and pulldown transistors.
+// We add Zu and Zd are knwon and time independent.
+// But we add modifiers Ku and Kd, which are time dependent.
+// Equation at the beginning of the rising edge is :
+// { K_{d"|"{t=0}}  Z_d } over { K_{u"|"{t=0}} Z_u + K_{d"|"{t=0}} Z_d } . ( V_pullupREF - V_PUREF ) + V_PDREF = V_OL
+// We have two unknowns, in order to get a second equation, we suppose that both transistor switch synchronously
+// Kd = 1 - Ku
+//
+/*
+
+std::vector< std::pair< double, double > >  KIBIS_PIN::getKuKdRamp( KIBIS_MODEL* aModel, IBIS_WAVEFORM_TYPE aType )
+{
+    std::vector< std::pair< double, double > > Ku;
+    
+    std::pair< double, double > point;
+
+    point.first = 0;
+    point.second = 0;
+    Ku.push_back( point );
+    point.first = aModel->m_ramp.m_rising.m_typ.m_dt / 0.6 ; // The ramp is only 20%-80%
+    point.second = aModel->m_ramp.m_rising.m_typ.m_dv / 0.6 ; // The ramp is only 20%-80%
+    Ku.push_back( point );
+
+    point.second = aModel->m_pulldownReference.typ;
+    Ku.push_back( point );
+
+    return Ku;
+}*/
+
+
+wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
 {
     double ton = 20e-9;
     double toff = 60e-9;
@@ -164,23 +145,6 @@ wxString KIBIS_PIN::getKuKd( KIBIS_MODEL* aModel )
 
 
     simul += "vin DIE GND pwl ( ";
-
-    std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
-
-    if( wfPairs.size() < 1 )
-    {
-        std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy" << std::endl;
-    }
-    else if( wfPairs.size() == 1 )
-    {
-    }
-    else
-    {
-        if( wfPairs.size() > 2 )
-        {
-            std::cout << "Model has more than 2 waveform pairs, using the first two." << std::endl;
-        }
-    }
 
     double lastT;
     for( auto entry : aModel->m_risingWaveforms.at( 0 )->m_table.m_entries )
@@ -233,20 +197,101 @@ wxString KIBIS_PIN::getKuKd( KIBIS_MODEL* aModel )
     simul += ".option xmu=0.49  \n";
     //simul += ".dc Vpin -5 5 0.1\n";
     simul += ".control run \n";
+    simul += "set filetype=ascii\n";
     simul += "run \n";
     simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
              "v(x1.POWER2)\n";
     simul += "plot v(KU) v(KD)\n";
+    simul += "write temp_output.spice v(KU) v(KD)\n";
+    simul += "quit\n"; // @TODO we might want to remove this...
     simul += ".endc \n";
     simul += ".end \n";
 
+    // @TODO
+    // Seriously, that's not the best way to do, but ¯\_(ツ)_/¯
+    wxTextFile file( "temp_input.spice" );
+    if( file.Exists() )
+    {
+        file.Clear();
+    }
+    else
+    {
+        file.Create();
+    }
+    file.AddLine( simul );
+    file.Write();
 
+    wxTextFile file2( "temp_output.spice" );
+    if( file2.Exists() )
+    {
+        file2.Clear();
+    }
+    system( "ngspice temp_input.spice" );
+
+
+    std::ifstream KuKdfile;
+    KuKdfile.open( "temp_output.spice" );
+
+    std::vector<double> ku, kd, t;
+    if( KuKdfile )
+    {
+        std::string line;
+        for( int i = 0; i < 11; i++ ) // number of line in the ngspice output header
+        {
+            std::getline( KuKdfile, line );
+        }
+        int    i = 0;
+        double t_v, ku_v, kd_v;
+        while( KuKdfile )
+        {
+            std::getline( KuKdfile, line );
+
+            if( line.empty() )
+            {
+                continue;
+            }
+            switch( i )
+            {
+            case 0:
+                line = line.substr( line.find_first_of( "\t" ) + 1 );
+                t_v = std::stod( line );
+                break;
+            case 1: ku_v = std::stod( line ); break;
+            case 2:
+                kd_v = std::stod( line );
+                ku.push_back( ku_v );
+                kd.push_back( kd_v );
+                t.push_back( t_v );
+                break;
+            default: std::cerr << "ERROR : i should be between 0 and 2." << std::endl;
+            }
+            i = ( i + 1 ) % 3;
+        }
+        std::getline( KuKdfile, line );
+        std::cout << line << std::endl;
+    }
+    else
+    {
+        std::cerr << "ERROR : I asked for file creation, but I cannot find it" << std::endl;
+    }
+    // @TODO : this is the end of the dirty code
+
+    m_Ku = ku;
+    m_Kd = kd;
+    m_t = t;
+
+    for( auto kkd : m_t )
+    {
+        std::cout << kkd << std::endl;
+    }
     return simul;
 }
 
 
 bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
 {
+    double   ton = 20e-9;
+    double   toff = 60e-9;
     wxString result;
     wxString tmp;
 
@@ -266,6 +311,50 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
     result += "\n";
 
     aModel->writeSpiceDriver( &tmp );
+
+
+    std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
+
+    if( wfPairs.size() < 1 )
+    {
+        std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy" << std::endl;
+    }
+    else if( wfPairs.size() == 1 || true )
+    {
+        std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
+        getKuKdOneWaveform( aModel );
+    }
+    else
+    {
+        if( wfPairs.size() > 2 )
+        {
+            std::cout << "Model has more than 2 waveform pairs, using the first two." << std::endl;
+        }
+    }
+
+    result += "Vku KU GND pwl ( ";
+    for( int i = 0; i < m_t.size(); i++ )
+    {
+        result << m_t.at( i );
+        result += " ";
+        result << m_Ku.at( i );
+        result += " ";
+    }
+    result += ") \n";
+
+
+    result += "Vkd KD GND pwl ( ";
+    for( int i = 0; i < m_t.size(); i++ )
+    {
+        result << m_t.at( i );
+        result += " ";
+        result << m_Kd.at( i );
+        result += " ";
+    }
+
+
+    result += ") \n";
+
 
     result += tmp;
     result += "\n.ENDS DRIVER\n\n";
