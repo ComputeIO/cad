@@ -69,11 +69,17 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
     result << m_C_comp.typ;
     result += "\n";
 
-    result += "BDIEBUFF DIEBUFF 0 v=v(DIE)\n";
-    result += m_GNDClamp.Spice( 1, "GND", "DIE", "GNDClampDiode" );
-    result += m_POWERClamp.Spice( 2, "POWER", "DIE", "POWERClampDiode" );
-    result += m_pulldown.Spice( 3, "GND", "DIE", "Pulldown" );
-    result += m_pullup.Spice( 4, "POWER", "DIE", "Pullup" );
+    result += "BDIEBUFF DIEBUFF GND v=v(DIE)\n";
+
+    result += "VmeasPD GND GND2 0\n";
+    result += "VmeasPU POWER POWER2 0\n";
+    result += "BKU POWER DIE i=( i(VmeasPD) * v(KD) )\n";
+    result += "BKD GND DIE i=( -i(VmeasPU) * v(KU) )\n";
+
+    result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode" );
+    result += m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode" );
+    result += m_pulldown.Spice( 3, "DIEBUFF", "GND2", "Pulldown" );
+    result += m_pullup.Spice( 4, "DIEBUFF", "POWER2", "Pullup" );
 
     *aDest = result;
 

@@ -39,11 +39,14 @@ int main( void )
 
     wxString simul = "";
     simul += "\n x1 3 0 1 DRIVER \n";
+    simul += "Cload 1 0 100p\n";
+    simul += "VPOWER 3 0 1.8\n";
     simul += ".tran 0.1n 40n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
-    simul += "plot v(x1.KU) v(x1.KD) v(1)\n";
+    simul += "plot v(1) \n";
+    //simul += "plot v(x1.KU) v(x1.KD) v(1) v(x1.DIEBUFF) \n";
     simul += ".endc \n";
     simul += ".end \n";
 
