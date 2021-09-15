@@ -39,9 +39,9 @@ int main( void )
 
     wxString simul = "";
     simul += "\n x1 3 0 1 DRIVER \n";
-    simul += "Cload 1 0 100p\n";
+    //simul += "Cload 1 0 100p\n";
     simul += "VPOWER 3 0 1.8\n";
-    simul += ".tran 0.1n 40n \n";
+    simul += ".tran 0.1n 7n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
@@ -58,7 +58,5 @@ int main( void )
 
     std::cout << "Done" << std::endl;
 
-    std::cout << comp->getPin( "11" )->m_models.at( 0 )->m_pulldown.InterpolatedI( 2 ) << std::endl;
-    std::cout << comp->getPin( "11" )->m_models.at( 0 )->m_pullup.InterpolatedI( 2 ) << std::endl;
     return 1;
 }

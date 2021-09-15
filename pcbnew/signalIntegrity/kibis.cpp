@@ -131,13 +131,13 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += ".SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
 
     simul += "RPIN 1 OUT ";
-    simul << R_pin.typ;
+    simul << aModel->m_risingWaveforms.at( 0 )->m_R_dut;
     simul += "\n";
     simul += "LPIN 2 1 ";
-    simul << L_pin.typ;
+    simul << aModel->m_risingWaveforms.at( 0 )->m_L_dut;
     simul += "\n";
     simul += "CPIN OUT GND ";
-    simul << C_pin.typ;
+    simul << aModel->m_risingWaveforms.at( 0 )->m_C_dut;
     simul += "\n";
 
     simul += "\n";
@@ -191,7 +191,19 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     // In SPICE, currents are positive when flowing from the first terminal to the second terminal
     // => The first terminal is outside, the second inside
     simul += "VCC 3 0 1.8\n";
-    //simul += "Vpin x1.DIE 0 1 \n";
+    //simul += "Vpin x1.DIE 0 1 \n"
+    simul += "Lfixture 1 4 ";
+    simul << aModel->m_risingWaveforms.at( 0 )->m_L_fixture;
+    simul += "\n";
+    simul += "Rfixture 4 5 ";
+    simul << aModel->m_risingWaveforms.at( 0 )->m_R_fixture;
+    simul += "\n";
+    simul += "Cfixture 5 0 ";
+    simul << aModel->m_risingWaveforms.at( 0 )->m_C_fixture;
+    simul += "\n";
+    simul += "Vfixture 5 0 ";
+    simul << aModel->m_risingWaveforms.at( 0 )->m_V_fixture;
+    simul += "\n";
     simul += "VmeasIout x1.2 x1.DIE 0\n";
     simul += "VmeasPD 0 x1.GND2 0\n";
     simul += "VmeasPU x1.POWER2 3 0\n";
@@ -219,6 +231,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     if( file.Exists() )
     {
         file.Clear();
+        file.Write();
     }
     else
     {
@@ -231,6 +244,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     if( file2.Exists() )
     {
         file2.Clear();
+        file2.Write();
     }
     system( "ngspice temp_input.spice" );
 
@@ -274,7 +288,6 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
             i = ( i + 1 ) % 3;
         }
         std::getline( KuKdfile, line );
-        std::cout << line << std::endl;
     }
     else
     {
@@ -286,10 +299,6 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     m_Kd = kd;
     m_t = t;
 
-    for( auto kkd : m_t )
-    {
-        std::cout << kkd << std::endl;
-    }
     return simul;
 }
 
