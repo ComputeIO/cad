@@ -117,7 +117,7 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	bSizer9->Add( m_netClassFilter, 1, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 
-	sbFilters->Add( bSizer9, 0, wxEXPAND, 5 );
+	sbFilters->Add( bSizer9, 0, wxALL|wxEXPAND, 5 );
 
 	wxBoxSizer* bSizer101;
 	bSizer101 = new wxBoxSizer( wxHORIZONTAL );
@@ -132,7 +132,7 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	bSizer101->Add( m_netNameFilter, 1, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 
-	sbFilters->Add( bSizer101, 0, wxEXPAND, 5 );
+	sbFilters->Add( bSizer101, 0, wxALL|wxEXPAND, 5 );
 
 	wxBoxSizer* bSizer131;
 	bSizer131 = new wxBoxSizer( wxHORIZONTAL );
@@ -147,10 +147,10 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	bSizer131->Add( m_filterNetsButton, 1, wxRIGHT|wxTOP, 5 );
 
 
-	sbFilters->Add( bSizer131, 1, wxEXPAND|wxTOP|wxBOTTOM, 6 );
+	sbFilters->Add( bSizer131, 1, wxALL|wxBOTTOM|wxEXPAND|wxTOP, 6 );
 
 
-	bLeft->Add( sbFilters, 0, wxEXPAND|wxBOTTOM, 5 );
+	bLeft->Add( sbFilters, 0, wxBOTTOM|wxEXPAND, 5 );
 
 
 	bLeft->Add( 0, 0, 1, wxEXPAND, 5 );
@@ -173,7 +173,7 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	bSizer11->Add( m_assignNetClass, 1, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
 
-	sbEdit->Add( bSizer11, 0, wxEXPAND, 5 );
+	sbEdit->Add( bSizer11, 0, wxALL|wxEXPAND, 5 );
 
 	wxBoxSizer* bSizer12;
 	bSizer12 = new wxBoxSizer( wxHORIZONTAL );
@@ -188,7 +188,7 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	bSizer12->Add( m_assignSelectedButton, 1, wxBOTTOM|wxRIGHT|wxTOP, 5 );
 
 
-	sbEdit->Add( bSizer12, 0, wxEXPAND|wxTOP, 6 );
+	sbEdit->Add( bSizer12, 0, wxALL|wxEXPAND|wxTOP, 6 );
 
 
 	bLeft->Add( sbEdit, 0, wxEXPAND|wxTOP, 8 );

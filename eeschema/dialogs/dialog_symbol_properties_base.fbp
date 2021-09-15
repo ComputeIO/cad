@@ -602,6 +602,16 @@
                                                     </object>
                                                 </object>
                                             </object>
+                                            <object class="sizeritem" expanded="1">
+                                                <property name="border">5</property>
+                                                <property name="flag">wxBOTTOM|wxEXPAND</property>
+                                                <property name="proportion">0</property>
+                                                <object class="spacer" expanded="1">
+                                                    <property name="height">0</property>
+                                                    <property name="permission">protected</property>
+                                                    <property name="width">0</property>
+                                                </object>
+                                            </object>
                                         </object>
                                     </object>
                                     <object class="sizeritem" expanded="1">
@@ -627,7 +637,7 @@
                                                     <property name="permission">none</property>
                                                     <object class="sizeritem" expanded="1">
                                                         <property name="border">5</property>
-                                                        <property name="flag">wxEXPAND</property>
+                                                        <property name="flag">wxALL|wxEXPAND</property>
                                                         <property name="proportion">1</property>
                                                         <object class="wxGridBagSizer" expanded="1">
                                                             <property name="empty_cell_size">-1,10</property>
@@ -1253,6 +1263,16 @@
                                                                     <property name="window_style"></property>
                                                                 </object>
                                                             </object>
+                                                            <object class="sizeritem" expanded="1">
+                                                                <property name="border">5</property>
+                                                                <property name="flag">wxBOTTOM|wxEXPAND</property>
+                                                                <property name="proportion">0</property>
+                                                                <object class="spacer" expanded="1">
+                                                                    <property name="height">0</property>
+                                                                    <property name="permission">protected</property>
+                                                                    <property name="width">0</property>
+                                                                </object>
+                                                            </object>
                                                         </object>
                                                     </object>
                                                     <object class="sizeritem" expanded="1">
@@ -1393,6 +1413,16 @@
                                                                     <property name="window_extra_style"></property>
                                                                     <property name="window_name"></property>
                                                                     <property name="window_style"></property>
+                                                                </object>
+                                                            </object>
+                                                            <object class="sizeritem" expanded="1">
+                                                                <property name="border">5</property>
+                                                                <property name="flag">wxBOTTOM|wxEXPAND</property>
+                                                                <property name="proportion">0</property>
+                                                                <object class="spacer" expanded="1">
+                                                                    <property name="height">0</property>
+                                                                    <property name="permission">protected</property>
+                                                                    <property name="width">0</property>
                                                                 </object>
                                                             </object>
                                                         </object>
@@ -1963,7 +1993,7 @@
                                 </object>
                                 <object class="sizeritem" expanded="1">
                                     <property name="border">5</property>
-                                    <property name="flag">wxALIGN_CENTER_VERTICAL</property>
+                                    <property name="flag">wxALIGN_CENTER_VERTICAL|wxALL</property>
                                     <property name="proportion">1</property>
                                     <object class="wxTextCtrl" expanded="1">
                                         <property name="BottomDockable">1</property>
@@ -2022,7 +2052,7 @@
                                         <property name="value"></property>
                                         <property name="window_extra_style"></property>
                                         <property name="window_name"></property>
-                                        <property name="window_style">wxBORDER_NONE</property>
+                                        <property name="window_style">wxBORDER_DEFAULT</property>
                                     </object>
                                 </object>
                             </object>

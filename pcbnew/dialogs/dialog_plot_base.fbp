@@ -515,7 +515,7 @@
                                         <property name="permission">none</property>
                                         <object class="sizeritem" expanded="0">
                                             <property name="border">5</property>
-                                            <property name="flag">wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT</property>
+                                            <property name="flag">wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT</property>
                                             <property name="proportion">1</property>
                                             <object class="wxGridBagSizer" expanded="0">
                                                 <property name="empty_cell_size"></property>
@@ -1132,7 +1132,7 @@
                                                     <property name="border">5</property>
                                                     <property name="colspan">1</property>
                                                     <property name="column">2</property>
-                                                    <property name="flag">wxEXPAND|wxLEFT</property>
+                                                    <property name="flag">wxEXPAND|wxLEFT|wxRIGHT</property>
                                                     <property name="row">0</property>
                                                     <property name="rowspan">1</property>
                                                     <object class="wxChoice" expanded="0">
@@ -1263,7 +1263,7 @@
                                                     <property name="border">5</property>
                                                     <property name="colspan">1</property>
                                                     <property name="column">2</property>
-                                                    <property name="flag">wxEXPAND|wxLEFT</property>
+                                                    <property name="flag">wxEXPAND|wxLEFT|wxRIGHT</property>
                                                     <property name="row">1</property>
                                                     <property name="rowspan">1</property>
                                                     <object class="wxChoice" expanded="0">
@@ -1395,7 +1395,7 @@
                                                     <property name="border">5</property>
                                                     <property name="colspan">1</property>
                                                     <property name="column">2</property>
-                                                    <property name="flag">wxEXPAND|wxLEFT</property>
+                                                    <property name="flag">wxEXPAND|wxLEFT|wxRIGHT</property>
                                                     <property name="row">2</property>
                                                     <property name="rowspan">1</property>
                                                     <object class="wxChoice" expanded="0">
@@ -3864,7 +3864,7 @@
                         <property name="permission">none</property>
                         <object class="sizeritem" expanded="0">
                             <property name="border">10</property>
-                            <property name="flag">wxEXPAND|wxRIGHT|wxLEFT</property>
+                            <property name="flag">wxEXPAND|wxLEFT|wxRIGHT</property>
                             <property name="proportion">1</property>
                             <object class="wxPanel" expanded="0">
                                 <property name="BottomDockable">1</property>

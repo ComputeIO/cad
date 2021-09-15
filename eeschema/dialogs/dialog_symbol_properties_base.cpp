@@ -109,6 +109,9 @@ DIALOG_SYMBOL_PROPERTIES_BASE::DIALOG_SYMBOL_PROPERTIES_BASE( wxWindow* parent, 
 	sbFields->Add( bButtonSize, 0, wxALL|wxEXPAND, 5 );
 
 
+	sbFields->Add( 0, 0, 0, wxBOTTOM|wxEXPAND, 5 );
+
+
 	generalPageSizer->Add( sbFields, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
 	wxBoxSizer* bLowerSizer;
@@ -162,7 +165,7 @@ DIALOG_SYMBOL_PROPERTIES_BASE::DIALOG_SYMBOL_PROPERTIES_BASE( wxWindow* parent, 
 
 	gbSizer1->AddGrowableCol( 1 );
 
-	sbGeneralProps->Add( gbSizer1, 1, wxEXPAND, 5 );
+	sbGeneralProps->Add( gbSizer1, 1, wxALL|wxEXPAND, 5 );
 
 
 	bLowerSizer->Add( sbGeneralProps, 1, wxEXPAND|wxRIGHT|wxLEFT, 5 );
@@ -186,6 +189,9 @@ DIALOG_SYMBOL_PROPERTIES_BASE::DIALOG_SYMBOL_PROPERTIES_BASE( wxWindow* parent, 
 	sbSizerPinTextOpts->Add( m_ShowPinNameButt, 0, wxALL, 4 );
 
 
+	sbSizerPinTextOpts->Add( 0, 0, 0, wxBOTTOM|wxEXPAND, 5 );
+
+
 	bMiddleCol->Add( sbSizerPinTextOpts, 1, wxEXPAND|wxRIGHT|wxLEFT, 5 );
 
 	wxStaticBoxSizer* sbAttributes;
@@ -200,6 +206,9 @@ DIALOG_SYMBOL_PROPERTIES_BASE::DIALOG_SYMBOL_PROPERTIES_BASE( wxWindow* parent, 
 	m_cbExcludeFromBoard->SetToolTip( _("This is useful for adding symbols that only get exported to the bill of materials but\nnot required to layout the board such as mechanical fasteners and enclosures") );
 
 	sbAttributes->Add( m_cbExcludeFromBoard, 0, wxBOTTOM|wxRIGHT|wxLEFT, 4 );
+
+
+	sbAttributes->Add( 0, 0, 0, wxBOTTOM|wxEXPAND, 5 );
 
 
 	bMiddleCol->Add( sbAttributes, 0, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
@@ -302,8 +311,8 @@ DIALOG_SYMBOL_PROPERTIES_BASE::DIALOG_SYMBOL_PROPERTIES_BASE( wxWindow* parent, 
 	m_libraryIDLabel->Wrap( -1 );
 	bLibLink->Add( m_libraryIDLabel, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
-	m_tcLibraryID = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY|wxBORDER_NONE );
-	bLibLink->Add( m_tcLibraryID, 1, wxALIGN_CENTER_VERTICAL, 5 );
+	m_tcLibraryID = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY|wxBORDER_DEFAULT );
+	bLibLink->Add( m_tcLibraryID, 1, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 
 	bSizerBottom->Add( bLibLink, 1, wxLEFT|wxEXPAND, 10 );
