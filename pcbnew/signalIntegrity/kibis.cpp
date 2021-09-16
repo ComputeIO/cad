@@ -118,11 +118,140 @@ std::vector< std::pair< double, double > >  KIBIS_PIN::getKuKdRamp( KIBIS_MODEL*
     return Ku;
 }*/
 
+//@TODO that function is far from being perfect. Improve it.
+wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, double aTon,
+                                          double aToff, int aCycles )
+{
+    wxString simul;
+    simul += "vin ";
+    simul += aNode1;
+    simul += " ";
+    simul += aNode2;
+    simul += " pwl ( ";
+
+    double lastT, lastV;
+    double offset = 0;
+    double offset2 = 0;
+    bool   joined = false;
+    lastV = -500;
+
+    double rising_start;
+    double falling_start;
+    double rising_threshold;
+    ;
+    double falling_threshold;
+
+    rising_threshold = m_risingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ
+                       - m_fallingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ;
+    rising_threshold = -rising_threshold * 0.05
+                       + m_risingWaveforms.at( 0 )
+                                 ->m_table.m_entries.at( 0 )
+                                 .V.typ; // 5 percent of the transition
+
+    falling_threshold = m_risingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ
+                        - m_fallingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ;
+    falling_threshold = -falling_threshold * 0.95
+                        + m_risingWaveforms.at( 0 )
+                                  ->m_table.m_entries.at( 0 )
+                                  .V.typ; // 5 percent of the transition
+
+
+    for( auto entry : m_risingWaveforms.at( 0 )->m_table.m_entries )
+    {
+        if( entry.V.typ >= rising_threshold )
+        {
+            rising_start = entry.t;
+            break;
+        }
+    }
+
+    for( auto entry : m_fallingWaveforms.at( 0 )->m_table.m_entries )
+    {
+        if( entry.V.typ <= falling_threshold )
+        {
+            falling_start = entry.t;
+            break;
+        }
+    }
+    std::cout << "risingT: " << rising_threshold << std::endl;
+    std::cout << "fallingT: " << falling_threshold << std::endl;
+    std::cout << "rising: " << rising_start << std::endl;
+    std::cout << "falling: " << falling_start << std::endl;
+
+    for( int i = 0; i < aCycles; i++ )
+    {
+        offset = lastT;
+        offset2 = 0;
+        joined = false;
+
+        for( auto entry : m_risingWaveforms.at( 0 )->m_table.m_entries )
+        {
+            if( lastV > entry.V.typ && !joined )
+            {
+                offset2 = entry.t;
+                continue;
+            }
+
+            joined = true;
+
+            if( ( aTon + rising_start - falling_start ) > entry.t )
+            {
+                lastT = entry.t + offset - offset2;
+                std::cout << "rising:" << lastT << std::endl;
+                simul << entry.t + offset - offset2;
+                simul += " ";
+                lastV = entry.V.typ;
+                simul << entry.V.typ;
+                simul += " ";
+            }
+            else
+            {
+                std::cout << "WARNING: t_on is smaller than rising waveform. " << std::endl;
+                break;
+            }
+        }
+
+        offset = lastT;
+        offset2 = 0;
+        joined = false;
+
+        for( auto entry : m_fallingWaveforms.at( 1 )->m_table.m_entries )
+        {
+            if( lastV < entry.V.typ && !joined )
+            {
+                offset2 = entry.t;
+                continue;
+            }
+
+            joined = true;
+
+            if( ( aToff + falling_start - rising_start ) > entry.t || i >= aCycles - 1 )
+            {
+                lastT = entry.t + offset - offset2;
+                std::cout << "falling:" << lastT << std::endl;
+                simul << entry.t + offset - offset2;
+                simul += " ";
+                lastV = entry.V.typ;
+                simul << entry.V.typ;
+                simul += " ";
+            }
+            else
+            {
+                std::cout << "WARNING: t_off is smaller than falling waveform. " << std::endl;
+                break;
+            }
+        }
+    }
+
+    simul += " )\n";
+
+    return simul;
+}
 
 wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
 {
     double ton = 20e-9;
-    double toff = 60e-9;
+    double toff = 20e-9;
 
     wxString simul = "";
     simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
@@ -144,46 +273,13 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += "CCPOMP 2 GND ";
     simul << aModel->m_C_comp.typ;
     simul += "\n";
+    simul += aModel->generateSquareWave( "DIE", "GND", ton, toff, 3 );
     simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode" );
     simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode" );
     simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown" );
     simul += aModel->m_pullup.Spice( 4, "DIE", "POWER2", "Pullup" );
 
 
-    simul += "vin DIE GND pwl ( ";
-
-    double lastT;
-    for( auto entry : aModel->m_risingWaveforms.at( 0 )->m_table.m_entries )
-    {
-        lastT = entry.t;
-        if( ton > entry.t )
-        {
-            simul << entry.t;
-            simul += " ";
-            simul << entry.V.typ;
-            simul += " ";
-        }
-        else
-        {
-            std::cout << "WARNING: t_on is smaller than rising waveform. " << std::endl;
-            break;
-        }
-    }
-    for( auto entry : aModel->m_fallingWaveforms.at( 1 )->m_table.m_entries )
-    {
-        if( toff > entry.t )
-        {
-            simul << entry.t + ton;
-            simul += " ";
-            simul << entry.V.typ;
-            simul += " ";
-        }
-        else
-        {
-            std::cout << "WARNING: t_off is smaller than falling waveform. " << std::endl;
-            break;
-        }
-    }
     simul += ") \n";
     simul += "\n.ENDS DRIVER\n\n";
     simul += "\n x1 3 0 1 DRIVER \n";
@@ -305,8 +401,6 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
 
 bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
 {
-    double   ton = 20e-9;
-    double   toff = 60e-9;
     wxString result;
     wxString tmp;
 

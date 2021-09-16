@@ -66,6 +66,8 @@ public:
 
     //private:
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
+    wxString generateSquareWave( wxString aNode1, wxString aNode2, double aTon, double aToff,
+                                 int aCycles );
 };
 
 class KIBIS_PIN : public KIBIS_ANY
