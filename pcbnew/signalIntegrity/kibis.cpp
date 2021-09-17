@@ -119,139 +119,128 @@ std::vector< std::pair< double, double > >  KIBIS_PIN::getKuKdRamp( KIBIS_MODEL*
 }*/
 
 //@TODO that function is far from being perfect. Improve it.
+
+IbisWaveform TrimWaveform( IbisWaveform* aIn )
+{
+    IbisWaveform out;
+
+    out = *aIn; //@TODO : deepcopy ?
+    int nbPoints = out.m_table.m_entries.size();
+
+    if( nbPoints < 2 )
+    {
+        std::cerr << "ERROR : waveform has less than two points" << std::endl;
+        return out;
+    }
+
+    double DCtyp = aIn->m_table.m_entries[0].V.typ;
+    double DCmin = aIn->m_table.m_entries[0].V.min;
+    double DCmax = aIn->m_table.m_entries[0].V.max;
+
+    if( nbPoints == 2 )
+    {
+        return out;
+    }
+
+    out.m_table.m_entries.clear();
+    bool kept = false;
+
+    for( int i = 0; i < nbPoints; i++ )
+    {
+        out.m_table.m_entries.push_back( aIn->m_table.m_entries.at( i ) );
+        out.m_table.m_entries.at( i ).V.typ -= DCtyp;
+        out.m_table.m_entries.at( i ).V.min -= DCmin;
+        out.m_table.m_entries.at( i ).V.max -= DCmax;
+    }
+
+    return out;
+}
+
 wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, double aTon,
                                           double aToff, int aCycles )
 {
     wxString simul;
-    simul += "vin ";
-    simul += aNode1;
-    simul += " ";
-    simul += aNode2;
-    simul += " pwl ( ";
 
-    double lastT, lastV;
-    double offset = 0;
-    double offset2 = 0;
-    bool   joined = false;
-    lastV = -500;
+    IbisWaveform risingWF = TrimWaveform( m_risingWaveforms.at( 0 ) );
+    IbisWaveform fallingWF = TrimWaveform( m_fallingWaveforms.at( 0 ) );
 
-    double rising_start;
-    double falling_start;
-    double rising_threshold;
-    ;
-    double falling_threshold;
-
-    rising_threshold = m_risingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ
-                       - m_fallingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ;
-    rising_threshold = -rising_threshold * 0.05
-                       + m_risingWaveforms.at( 0 )
-                                 ->m_table.m_entries.at( 0 )
-                                 .V.typ; // 5 percent of the transition
-
-    falling_threshold = m_risingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ
-                        - m_fallingWaveforms.at( 0 )->m_table.m_entries.at( 0 ).V.typ;
-    falling_threshold = -falling_threshold * 0.95
-                        + m_risingWaveforms.at( 0 )
-                                  ->m_table.m_entries.at( 0 )
-                                  .V.typ; // 5 percent of the transition
-
-
-    for( auto entry : m_risingWaveforms.at( 0 )->m_table.m_entries )
+    if( aTon < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
     {
-        if( entry.V.typ >= rising_threshold )
-        {
-            rising_start = entry.t;
-            break;
-        }
+        std::cerr << "WARNING: rising edge is longer than on time." << std::endl;
     }
 
-    for( auto entry : m_fallingWaveforms.at( 0 )->m_table.m_entries )
+    if( aToff < fallingWF.m_table.m_entries.at( fallingWF.m_table.m_entries.size() - 1 ).t )
     {
-        if( entry.V.typ <= falling_threshold )
-        {
-            falling_start = entry.t;
-            break;
-        }
+        std::cerr << "WARNING: falling edge is longer than on time." << std::endl;
     }
-    std::cout << "risingT: " << rising_threshold << std::endl;
-    std::cout << "fallingT: " << falling_threshold << std::endl;
-    std::cout << "rising: " << rising_start << std::endl;
-    std::cout << "falling: " << falling_start << std::endl;
 
     for( int i = 0; i < aCycles; i++ )
     {
-        offset = lastT;
-        offset2 = 0;
-        joined = false;
+        simul += "Vrise";
+        simul << i;
+        simul << " rise";
+        simul << i;
+        simul << " ";
+        simul << aNode2;
+        simul += " pwl ( ";
 
-        for( auto entry : m_risingWaveforms.at( 0 )->m_table.m_entries )
+        for( auto entry : risingWF.m_table.m_entries )
         {
-            if( lastV > entry.V.typ && !joined )
-            {
-                offset2 = entry.t;
-                continue;
-            }
-
-            joined = true;
-
-            if( ( aTon + rising_start - falling_start ) > entry.t )
-            {
-                lastT = entry.t + offset - offset2;
-                std::cout << "rising:" << lastT << std::endl;
-                simul << entry.t + offset - offset2;
-                simul += " ";
-                lastV = entry.V.typ;
-                simul << entry.V.typ;
-                simul += " ";
-            }
-            else
-            {
-                std::cout << "WARNING: t_on is smaller than rising waveform. " << std::endl;
-                break;
-            }
+            simul << entry.t + i * ( aTon + aToff );
+            simul += " ";
+            simul << entry.V.typ;
+            simul += " ";
         }
+        simul += ")\n";
+    }
 
-        offset = lastT;
-        offset2 = 0;
-        joined = false;
+    for( int i = 0; i < aCycles; i++ )
+    {
+        simul += "Vfall";
+        simul << i;
+        simul << " fall";
+        simul << i;
+        simul << " ";
+        simul << aNode2;
+        simul += " pwl ( ";
 
-        for( auto entry : m_fallingWaveforms.at( 1 )->m_table.m_entries )
+        for( auto entry : fallingWF.m_table.m_entries )
         {
-            if( lastV < entry.V.typ && !joined )
-            {
-                offset2 = entry.t;
-                continue;
-            }
+            simul << entry.t + i * ( aTon + aToff ) + aTon;
+            simul += " ";
+            simul << entry.V.typ;
+            simul += " ";
+        }
+        simul += ")\n";
+    }
 
-            joined = true;
+    simul += "bin ";
+    simul += aNode1;
+    simul += " ";
+    simul += aNode2;
+    simul += " v=(";
 
-            if( ( aToff + falling_start - rising_start ) > entry.t || i >= aCycles - 1 )
-            {
-                lastT = entry.t + offset - offset2;
-                std::cout << "falling:" << lastT << std::endl;
-                simul << entry.t + offset - offset2;
-                simul += " ";
-                lastV = entry.V.typ;
-                simul << entry.V.typ;
-                simul += " ";
-            }
-            else
-            {
-                std::cout << "WARNING: t_off is smaller than falling waveform. " << std::endl;
-                break;
-            }
+    for( int i = 0; i < aCycles; i++ )
+    {
+        simul += " v( rise";
+        simul << i;
+        simul += " ) + v( fall";
+        simul << i;
+        simul += ") ";
+        if( i < aCycles - 1 )
+        {
+            simul += "+";
         }
     }
 
-    simul += " )\n";
-
+    simul += ")\n";
     return simul;
 }
 
 wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
 {
-    double ton = 20e-9;
-    double toff = 20e-9;
+    double ton = 5e-9;
+    double toff = 5e-9;
 
     wxString simul = "";
     simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
@@ -316,8 +305,9 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
              "v(x1.POWER2)\n";
     simul += "plot v(KU) v(KD)\n";
-    simul += "write temp_output.spice v(KU) v(KD)\n";
-    simul += "quit\n"; // @TODO we might want to remove this...
+    simul += "plot v(x1.rise0) v(x1.fall0) v(x1.rise1) v(x1.fall1) v(x1.rise2) v(x1.fall2) \n";
+    simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
+    simul += "quit\n";
     simul += ".endc \n";
     simul += ".end \n";
 
