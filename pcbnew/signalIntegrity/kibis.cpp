@@ -58,8 +58,6 @@ std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs(
 
 bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
 {
-    double   ton = 20e-9;
-    double   toff = 60e-9;
     bool     status = true;
 
 
@@ -259,10 +257,9 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
 }
 
 wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                        std::pair<IbisWaveform*, IbisWaveform*> aPair )
+                                        std::pair<IbisWaveform*, IbisWaveform*> aPair, double aTon,
+                                        double aToff )
 {
-    double ton = 8e-9;
-    double toff = 8e-9;
 
     wxString simul = "";
     simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
@@ -284,7 +281,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     simul += "CCPOMP 2 GND ";
     simul << aModel->m_C_comp.typ;
     simul += "\n";
-    simul += aModel->generateSquareWave( "DIE", "GND", ton, toff, 10, aPair );
+    simul += aModel->generateSquareWave( "DIE", "GND", aTon, aToff, 10, aPair );
     simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode" );
     simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode" );
 
@@ -359,7 +356,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     simul += "plot v(KU) v(KD)\n";
     simul += "plot v(x1.rise0) v(x1.fall0) v(x1.rise1) v(x1.fall1) v(x1.rise2) v(x1.fall2) \n";
     simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-    //simul += "quit\n";
+    simul += "quit\n";
     simul += ".endc \n";
     simul += ".end \n";
 
@@ -443,6 +440,9 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
 
 bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
 {
+    double ton = 8e-9;
+    double toff = 8e-9;
+
     bool status = true;
 
     switch( aModel->m_type )
@@ -492,7 +492,7 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
         }
         else if( wfPairs.size() == 1 || true )
         {
-            getKuKdOneWaveform( aModel, wfPairs.at( 0 ) );
+            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), ton, toff );
         }
         else
         {

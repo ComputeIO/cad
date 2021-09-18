@@ -96,8 +96,8 @@ public:
     std::vector<KIBIS_MODEL*> m_models;
 
     bool writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel );
-    wxString getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                 std::pair<IbisWaveform*, IbisWaveform*> aPair );
+    wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                 double aTon, double aTof );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY
