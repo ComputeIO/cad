@@ -167,13 +167,22 @@ IbisWaveform TrimWaveform( IbisWaveform* aIn )
     return out;
 }
 
+bool KIBIS_MODEL::HasPulldown()
+{
+    return true;
+}
+bool KIBIS_MODEL::HasPullup()
+{
+    return true;
+}
+
 wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, double aTon,
                                           double aToff, int aCycles )
 {
     wxString simul;
 
     IbisWaveform risingWF = TrimWaveform( m_risingWaveforms.at( 0 ) );
-    IbisWaveform fallingWF = TrimWaveform( m_fallingWaveforms.at( 0 ) );
+    IbisWaveform fallingWF = TrimWaveform( m_fallingWaveforms.at( 1 ) );
 
     if( aTon < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
     {
@@ -273,14 +282,20 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += "CCPOMP 2 GND ";
     simul << aModel->m_C_comp.typ;
     simul += "\n";
-    simul += aModel->generateSquareWave( "DIE", "GND", ton, toff, 3 );
+    simul += aModel->generateSquareWave( "DIE", "GND", ton, toff, 10 );
     simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode" );
     simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode" );
-    simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown" );
-    simul += aModel->m_pullup.Spice( 4, "DIE", "POWER2", "Pullup" );
+
+    if( aModel->HasPulldown() )
+    {
+        simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown" );
+    }
+    if( aModel->HasPullup() )
+    {
+        simul += aModel->m_pullup.Spice( 4, "DIE", "POWER2", "Pullup" );
+    }
 
 
-    simul += ") \n";
     simul += "\n.ENDS DRIVER\n\n";
     simul += "\n x1 3 0 1 DRIVER \n";
     // In IBIS Currents are positive when entering the component
@@ -305,9 +320,33 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += "VmeasPU x1.POWER2 3 0\n";
     simul += "VmeasPC x1.POWER1 3 0\n";
     simul += "VmeasGC 0 x1.GND1 0\n";
-    simul += "Bku KU 0 v=(i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD)/(i(VmeasPD)-i(VmeasPU)))\n";
-    simul += "Bkd KD 0 v=(1-v(KU))\n";
-    simul += ".tran 0.1n 40n \n";
+
+    if( aModel->HasPullup() && aModel->HasPulldown() )
+    {
+        std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
+        simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
+                 ")/(i(VmeasPD)-i(VmeasPU)))\n";
+        simul += "Bkd KD 0 v=(1-v(KU))\n";
+    }
+
+    else if( !aModel->HasPullup() && aModel->HasPulldown() )
+    {
+        simul += "Bku KD 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPD)))\n";
+        simul += "Bkd KU 0 v=0\n";
+    }
+
+    else if( aModel->HasPullup() && !aModel->HasPulldown() )
+    {
+        simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
+        simul += "Bkd KD 0 v=0\n";
+    }
+    else
+    {
+        std::cout << "ERROR: Driver needs at least a pullup or a pulldown"
+    }
+
+
+    simul += ".tran 0.1n 100n \n";
     simul += ".option xmu=0.49  \n";
     //simul += ".dc Vpin -5 5 0.1\n";
     simul += ".control run \n";
@@ -318,7 +357,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += "plot v(KU) v(KD)\n";
     simul += "plot v(x1.rise0) v(x1.fall0) v(x1.rise1) v(x1.fall1) v(x1.rise2) v(x1.fall2) \n";
     simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-    simul += "quit\n";
+    //simul += "quit\n";
     simul += ".endc \n";
     simul += ".end \n";
 
@@ -449,7 +488,6 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
         }
         else if( wfPairs.size() == 1 || true )
         {
-            std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
             getKuKdOneWaveform( aModel );
         }
         else

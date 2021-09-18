@@ -61,6 +61,8 @@ public:
     std::vector<IbisWaveform*> m_fallingWaveforms;
     IbisRamp       m_ramp;
 
+    bool HasPulldown();
+    bool HasPullup();
 
     bool writeSpiceDriver( wxString* aDest );
 
