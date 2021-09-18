@@ -294,7 +294,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     simul += "Rfixture 4 5 ";
     simul << aPair.first->m_R_fixture;
     simul += "\n";
-    simul += "Cfixture 5 0 ";
+    simul += "Cfixture 4 0 ";
     simul << aPair.first->m_C_fixture;
     simul += "\n";
     simul += "Vfixture 5 0 ";
