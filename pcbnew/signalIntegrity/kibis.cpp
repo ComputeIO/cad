@@ -56,7 +56,7 @@ std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs(
     return pairs;
 }
 
-bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
+bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest, IBIS_CORNER aCorner )
 {
     bool     status = true;
 
@@ -65,7 +65,7 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
 
     result = "\n";
     result += "CCPOMP DIE GND ";
-    result << m_C_comp.typ;
+    result << m_C_comp.value[IBIS_CORNER::TYP];
     result += "\n";
 
     switch( m_type )
@@ -79,10 +79,10 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
         result += "BKU POWER DIE i=( i(VmeasPD) * v(KD) )\n";
         result += "BKD GND DIE i=( -i(VmeasPU) * v(KU) )\n";
 
-        result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode" );
-        result += m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode" );
-        result += m_pulldown.Spice( 3, "DIEBUFF", "GND2", "Pulldown" );
-        result += m_pullup.Spice( 4, "DIEBUFF", "POWER2", "Pullup" );
+        result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode", aCorner );
+        result += m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode", aCorner );
+        result += m_pulldown.Spice( 3, "DIEBUFF", "GND2", "Pulldown", aCorner );
+        result += m_pullup.Spice( 4, "DIEBUFF", "POWER2", "Pullup", aCorner );
 
         *aDest = result;
         break;
@@ -94,40 +94,6 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
 
     return status;
 }
-
-
-// As defined per IBIS, the final value using the ramp is dv_dt / 0.6 + pulldownReference
-// That's because the dv_dt value of the ramp is only the 20%-80% edge
-// If we have Zu and Zd being the impedance of the pullup and pulldown transistors.
-// We add Zu and Zd are knwon and time independent.
-// But we add modifiers Ku and Kd, which are time dependent.
-// Equation at the beginning of the rising edge is :
-// { K_{d"|"{t=0}}  Z_d } over { K_{u"|"{t=0}} Z_u + K_{d"|"{t=0}} Z_d } . ( V_pullupREF - V_PUREF ) + V_PDREF = V_OL
-// We have two unknowns, in order to get a second equation, we suppose that both transistor switch synchronously
-// Kd = 1 - Ku
-//
-/*
-
-std::vector< std::pair< double, double > >  KIBIS_PIN::getKuKdRamp( KIBIS_MODEL* aModel, IBIS_WAVEFORM_TYPE aType )
-{
-    std::vector< std::pair< double, double > > Ku;
-    
-    std::pair< double, double > point;
-
-    point.first = 0;
-    point.second = 0;
-    Ku.push_back( point );
-    point.first = aModel->m_ramp.m_rising.m_typ.m_dt / 0.6 ; // The ramp is only 20%-80%
-    point.second = aModel->m_ramp.m_rising.m_typ.m_dv / 0.6 ; // The ramp is only 20%-80%
-    Ku.push_back( point );
-
-    point.second = aModel->m_pulldownReference.typ;
-    Ku.push_back( point );
-
-    return Ku;
-}*/
-
-//@TODO that function is far from being perfect. Improve it.
 
 IbisWaveform TrimWaveform( IbisWaveform* aIn )
 {
@@ -142,9 +108,9 @@ IbisWaveform TrimWaveform( IbisWaveform* aIn )
         return out;
     }
 
-    double DCtyp = aIn->m_table.m_entries[0].V.typ;
-    double DCmin = aIn->m_table.m_entries[0].V.min;
-    double DCmax = aIn->m_table.m_entries[0].V.max;
+    double DCtyp = aIn->m_table.m_entries[0].V.value[IBIS_CORNER::TYP];
+    double DCmin = aIn->m_table.m_entries[0].V.value[IBIS_CORNER::MIN];
+    double DCmax = aIn->m_table.m_entries[0].V.value[IBIS_CORNER::MAX];
 
     if( nbPoints == 2 )
     {
@@ -157,9 +123,9 @@ IbisWaveform TrimWaveform( IbisWaveform* aIn )
     for( int i = 0; i < nbPoints; i++ )
     {
         out.m_table.m_entries.push_back( aIn->m_table.m_entries.at( i ) );
-        out.m_table.m_entries.at( i ).V.typ -= DCtyp;
-        out.m_table.m_entries.at( i ).V.min -= DCmin;
-        out.m_table.m_entries.at( i ).V.max -= DCmax;
+        out.m_table.m_entries.at( i ).V.value[IBIS_CORNER::TYP] -= DCtyp;
+        out.m_table.m_entries.at( i ).V.value[IBIS_CORNER::MIN] -= DCmin;
+        out.m_table.m_entries.at( i ).V.value[IBIS_CORNER::MAX] -= DCmax;
     }
 
     return out;
@@ -176,12 +142,14 @@ bool KIBIS_MODEL::HasPullup()
 
 wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, double aTon,
                                           double aToff, int aCycles,
-                                          std::pair<IbisWaveform*, IbisWaveform*> aPair )
+                                          std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                          IBIS_CORNER                             aCorner )
 {
     wxString simul;
 
     IbisWaveform risingWF = TrimWaveform( aPair.first );
     IbisWaveform fallingWF = TrimWaveform( aPair.second );
+    std::cout << "Times : " << aTon << "  " << aToff << std::endl;
 
     if( aTon < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
     {
@@ -207,7 +175,7 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
         {
             simul << entry.t + i * ( aTon + aToff );
             simul += " ";
-            simul << entry.V.typ;
+            simul << entry.V.value[aCorner];
             simul += " ";
         }
         simul += ")\n";
@@ -227,7 +195,7 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
         {
             simul << entry.t + i * ( aTon + aToff ) + aTon;
             simul += " ";
-            simul << entry.V.typ;
+            simul << entry.V.value[aCorner];
             simul += " ";
         }
         simul += ")\n";
@@ -258,7 +226,7 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
 
 wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
                                         std::pair<IbisWaveform*, IbisWaveform*> aPair, double aTon,
-                                        double aToff )
+                                        double aToff, IBIS_CORNER aCorner )
 {
 
     wxString simul = "";
@@ -279,19 +247,19 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
 
     simul += "\n";
     simul += "CCPOMP 2 GND ";
-    simul << aModel->m_C_comp.typ;
+    simul << aModel->m_C_comp.value[IBIS_CORNER::TYP];
     simul += "\n";
-    simul += aModel->generateSquareWave( "DIE", "GND", aTon, aToff, 10, aPair );
-    simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode" );
-    simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode" );
+    simul += aModel->generateSquareWave( "DIE", "GND", aTon, aToff, 10, aPair, aCorner );
+    simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode", aCorner );
+    simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode", aCorner );
 
     if( aModel->HasPulldown() )
     {
-        simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown" );
+        simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown", aCorner );
     }
     if( aModel->HasPullup() )
     {
-        simul += aModel->m_pullup.Spice( 4, "DIE", "POWER2", "Pullup" );
+        simul += aModel->m_pullup.Spice( 4, "DIE", "POWER2", "Pullup", aCorner );
     }
 
 
@@ -438,10 +406,11 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
 }
 
 
-bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
+bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
+                                  IBIS_CORNER aCorner )
 {
-    double ton = 8e-9;
-    double toff = 8e-9;
+    double ton = 12e-9;
+    double toff = 12e-9;
 
     bool status = true;
 
@@ -465,17 +434,19 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
 
         result += "\n";
         result = "*Driver model generated by Kicad using Ibis data. ";
-        result += "\n.SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
+        result += "\n.SUBCKT ";
+        result += aName;
+        result += " POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
         result += "\n";
 
         result += "RPIN 1 OUT ";
-        result << R_pin.typ;
+        result << R_pin.value[IBIS_CORNER::TYP];
         result += "\n";
         result += "LPIN DIE 1 ";
-        result << L_pin.typ;
+        result << L_pin.value[IBIS_CORNER::TYP];
         result += "\n";
         result += "CPIN OUT GND ";
-        result << C_pin.typ;
+        result << C_pin.value[IBIS_CORNER::TYP];
         result += "\n";
 
 
@@ -483,7 +454,7 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
         std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
 
 
-        aModel->writeSpiceDriver( &tmp );
+        aModel->writeSpiceDriver( &tmp, aCorner );
 
         if( wfPairs.size() < 1 )
         {
@@ -492,7 +463,7 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
         }
         else if( wfPairs.size() == 1 || true )
         {
-            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), ton, toff );
+            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), ton, toff, aCorner );
         }
         else
         {

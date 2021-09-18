@@ -23,8 +23,12 @@ int main( void )
 
 
     KIBIS_PIN* pin = comp->getPin( "11" );
-    wxString*  tmp = new wxString();
-    pin->writeSpiceDriver( tmp, pin->m_models.at( 0 ) );
+    wxString*  tmp1 = new wxString();
+    wxString*  tmp2 = new wxString();
+    wxString*  tmp3 = new wxString();
+    pin->writeSpiceDriver( tmp1, "driver_typ", pin->m_models.at( 0 ), IBIS_CORNER::TYP );
+    pin->writeSpiceDriver( tmp2, "driver_min", pin->m_models.at( 0 ), IBIS_CORNER::MIN );
+    pin->writeSpiceDriver( tmp3, "driver_max", pin->m_models.at( 0 ), IBIS_CORNER::MAX );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )
@@ -35,18 +39,24 @@ int main( void )
     {
         file.Create();
     }
-    file.AddLine( *tmp );
+    file.AddLine( *tmp1 );
+    file.AddLine( *tmp2 );
+    file.AddLine( *tmp3 );
 
     wxString simul = "";
-    simul += "\n x1 3 0 1 DRIVER \n";
+    simul += "\n x1 3 0 1 driver_typ \n";
+    simul += "\n x2 3 0 4 driver_min \n";
+    simul += "\n x3 3 0 5 driver_max \n";
     //simul += "Cload 1 0 100p\n";
     simul += "VPOWER 3 0 1.8\n";
     simul += "R0 1 0 1000\n";
+    simul += "R1 4 0 1000\n";
+    simul += "R2 5 0 1000\n";
     simul += ".tran 0.1n 40n \n";
-    //simul += ".option xmu=0.49  \n";
+    simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
-    simul += "plot v(1) \n";
+    simul += "plot v(1) v(4) v(5) \n";
     //simul += "plot v(x1.KU) v(x1.KD) v(1) v(x1.DIEBUFF) \n";
     simul += ".endc \n";
     simul += ".end \n";

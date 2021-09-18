@@ -117,11 +117,11 @@ bool TypMinMaxValue::Check()
 {
     bool status = true;
 
-    if( std::isnan( typ ) )
+    if( std::isnan( value[IBIS_CORNER::TYP] ) )
         status = false;
-    if( std::isnan( min ) && !isNumberNA( min ) )
+    if( std::isnan( value[IBIS_CORNER::MIN] ) && !isNumberNA( value[IBIS_CORNER::MIN] ) )
         status = false;
-    if( std::isnan( max ) && !isNumberNA( max ) )
+    if( std::isnan( value[IBIS_CORNER::MAX] ) && !isNumberNA( value[IBIS_CORNER::MAX] ) )
         status = false;
 
     return status;
@@ -235,7 +235,8 @@ bool IbisModelSelector::Check()
     return true;
 }
 
-wxString IVtable::Spice( int aN, wxString aPort1, wxString aPort2, wxString aModelName )
+wxString IVtable::Spice( int aN, wxString aPort1, wxString aPort2, wxString aModelName,
+                         IBIS_CORNER aCorner )
 {
     wxString result = "";
 
@@ -266,7 +267,7 @@ wxString IVtable::Spice( int aN, wxString aPort1, wxString aPort2, wxString aMod
         result += "]\n+ y_array=[";
         for( auto entry : m_entries )
         {
-            result << entry.I.typ;
+            result << entry.I.value[aCorner];
             result += " ";
         }
         result += "]\n+ input_domain=0.05 fraction=TRUE)\n\n";
@@ -274,7 +275,7 @@ wxString IVtable::Spice( int aN, wxString aPort1, wxString aPort2, wxString aMod
     return result;
 }
 
-double IVtable::InterpolatedI( double aV )
+double IVtable::InterpolatedI( double aV, IBIS_CORNER aCorner )
 {
     double result;
     // @TODO change this algorithm
@@ -283,20 +284,21 @@ double IVtable::InterpolatedI( double aV )
     {
         if( aV >= m_entries.at( m_entries.size() - 1 ).V )
         {
-            return m_entries.at( m_entries.size() - 1 ).I.typ;
+            return m_entries.at( m_entries.size() - 1 ).I.value[aCorner];
         }
 
         if( aV <= m_entries.at( 0 ).V )
         {
-            return m_entries.at( 0 ).I.typ;
+            return m_entries.at( 0 ).I.value[aCorner];
         }
 
         for( int i = 1; i < m_entries.size(); i++ )
         {
             if( m_entries.at( i ).V > aV )
             {
-                return m_entries.at( i - 1 ).I.typ
-                       + ( m_entries.at( i ).I.typ - m_entries.at( i - 1 ).I.typ )
+                return m_entries.at( i - 1 ).I.value[aCorner]
+                       + ( m_entries.at( i ).I.value[aCorner]
+                           - m_entries.at( i - 1 ).I.value[aCorner] )
                                  / ( m_entries.at( i ).V - m_entries.at( i - 1 ).V )
                                  * ( aV - m_entries.at( i - 1 ).V );
             }
@@ -1236,9 +1238,9 @@ bool IbisParser::changeContext( wxString aKeyword )
         else if( aKeyword == "Model" )
         {
             IbisModel model;
-            model.m_temperatureRange.min = 0;
-            model.m_temperatureRange.typ = 50;
-            model.m_temperatureRange.max = 100;
+            model.m_temperatureRange.value[IBIS_CORNER::MIN] = 0;
+            model.m_temperatureRange.value[IBIS_CORNER::TYP] = 50;
+            model.m_temperatureRange.value[IBIS_CORNER::MAX] = 100;
             StoreString( &( model.m_name ), false );
             m_ibisFile->m_models.push_back( model );
             m_currentModel = &( m_ibisFile->m_models.back() );
@@ -1907,14 +1909,14 @@ bool IbisParser::readTypMinMaxValue( TypMinMaxValue* aDest )
     }
     else
     {
-        if( parseDouble( &( ( *aDest ).typ ), strValue, true ) )
+        if( parseDouble( &( ( *aDest ).value[IBIS_CORNER::TYP] ), strValue, true ) )
         {
             if( readWord( &strValue ) )
             {
-                parseDouble( &( ( *aDest ).min ), strValue, true );
+                parseDouble( &( ( *aDest ).value[IBIS_CORNER::MIN] ), strValue, true );
                 if( readWord( &strValue ) )
                 {
-                    parseDouble( &( ( *aDest ).max ), strValue, true );
+                    parseDouble( &( ( *aDest ).value[IBIS_CORNER::MAX] ), strValue, true );
                 }
             }
         }
@@ -2231,33 +2233,42 @@ bool IbisParser::readPackage()
     {
         if( fields.at( 0 ) == "R_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package.m_Rpkg.typ ), fields.at( 1 ), true ) )
+            if( parseDouble( &( m_currentComponent->m_package.m_Rpkg.value[IBIS_CORNER::TYP] ),
+                             fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package.m_Rpkg.min ), fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package.m_Rpkg.max ), fields.at( 3 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Rpkg.value[IBIS_CORNER::MIN] ),
+                         fields.at( 2 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Rpkg.value[IBIS_CORNER::MAX] ),
+                         fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "L_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package.m_Lpkg.typ ), fields.at( 1 ), true ) )
+            if( parseDouble( &( m_currentComponent->m_package.m_Lpkg.value[IBIS_CORNER::TYP] ),
+                             fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package.m_Lpkg.min ), fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package.m_Lpkg.max ), fields.at( 3 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Lpkg.value[IBIS_CORNER::MIN] ),
+                         fields.at( 2 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Lpkg.value[IBIS_CORNER::MAX] ),
+                         fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "C_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package.m_Cpkg.typ ), fields.at( 1 ), true ) )
+            if( parseDouble( &( m_currentComponent->m_package.m_Cpkg.value[IBIS_CORNER::TYP] ),
+                             fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package.m_Cpkg.min ), fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package.m_Cpkg.max ), fields.at( 3 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Cpkg.value[IBIS_CORNER::MIN] ),
+                         fields.at( 2 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Cpkg.value[IBIS_CORNER::MAX] ),
+                         fields.at( 3 ), true );
         }
     }
     else

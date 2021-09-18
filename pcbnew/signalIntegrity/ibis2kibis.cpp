@@ -116,21 +116,21 @@ bool convertKibisComponent( IbisParser* aParser, std::vector<KIBIS_MODEL*> aMode
 
         if( !std::isnan( iPin.m_Rpin ) )
         {
-            kPin->R_pin.typ = iPin.m_Rpin;
-            kPin->R_pin.min = iPin.m_Rpin;
-            kPin->R_pin.max = iPin.m_Rpin;
+            kPin->R_pin.value[IBIS_CORNER::TYP] = iPin.m_Rpin;
+            kPin->R_pin.value[IBIS_CORNER::MIN] = iPin.m_Rpin;
+            kPin->R_pin.value[IBIS_CORNER::MAX] = iPin.m_Rpin;
         }
         if( !std::isnan( iPin.m_Lpin ) )
         {
-            kPin->L_pin.typ = iPin.m_Lpin;
-            kPin->L_pin.min = iPin.m_Lpin;
-            kPin->L_pin.max = iPin.m_Lpin;
+            kPin->L_pin.value[IBIS_CORNER::TYP] = iPin.m_Lpin;
+            kPin->L_pin.value[IBIS_CORNER::MIN] = iPin.m_Lpin;
+            kPin->L_pin.value[IBIS_CORNER::MAX] = iPin.m_Lpin;
         }
         if( !std::isnan( iPin.m_Cpin ) )
         {
-            kPin->C_pin.typ = iPin.m_Cpin;
-            kPin->C_pin.min = iPin.m_Cpin;
-            kPin->C_pin.max = iPin.m_Cpin;
+            kPin->C_pin.value[IBIS_CORNER::TYP] = iPin.m_Cpin;
+            kPin->C_pin.value[IBIS_CORNER::MIN] = iPin.m_Cpin;
+            kPin->C_pin.value[IBIS_CORNER::MAX] = iPin.m_Cpin;
         }
 
         bool                  modelSelected = false;

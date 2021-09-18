@@ -18,6 +18,12 @@
 #include <math.h>
 #include <cstring>
 
+enum IBIS_CORNER
+{
+    TYP = 0,
+    MIN,
+    MAX
+};
 
 enum class IBIS_MATRIX_TYPE
 {
@@ -87,9 +93,7 @@ public:
 class TypMinMaxValue
 {
 public:
-    double min = std::nan( NAN_INVALID );
-    double typ = std::nan( NAN_INVALID );
-    double max = std::nan( NAN_INVALID );
+    double value[3];
 
     bool Check();
 };
@@ -200,8 +204,9 @@ public:
     std::vector<IVtableEntry> m_entries;
 
     bool Check();
-    double InterpolatedI( double aV );
-    wxString Spice( int aN, wxString aPort1, wxString aPort2, wxString aModelName );
+    double   InterpolatedI( double aV, IBIS_CORNER aCorner );
+    wxString Spice( int aN, wxString aPort1, wxString aPort2, wxString aModelName,
+                    IBIS_CORNER aCorner );
 
 private:
 };
