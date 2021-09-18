@@ -371,16 +371,19 @@ void KIBIS_PIN::getKuKdFromFile( wxString* aSimul )
     m_t = t;
 }
 
-wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                        std::pair<IbisWaveform*, IbisWaveform*> aPair, double aTon,
-                                        double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                double aTon, double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
+                                int index )
 {
-
     wxString simul = "";
+
     simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
     simul += "*This part is intended to be executed by Kibis internally.\n";
     simul += "*You should not be able to read this.\n\n";
-    simul += ".SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
+
+    simul += ".SUBCKT DRIVER";
+    simul << index;
+    simul += " POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
 
     if( aPair.first->m_R_dut == 0 && aPair.first->m_L_dut == 0 && aPair.first->m_C_dut == 0 )
     {
@@ -411,7 +414,18 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     simul += addDie( aModel, aSupply, 0 );
 
     simul += "\n.ENDS DRIVER\n\n";
-    simul += "\n x1 3 0 1 DRIVER \n";
+    return simul;
+}
+
+wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
+                                        std::pair<IbisWaveform*, IbisWaveform*> aPair, double aTon,
+                                        double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+{
+    wxString simul = "";
+
+    simul += KuKdDriver( aModel, aPair, aTon, aToff, aSupply, aSpeed, 0 );
+    simul += KuKdDriver( aModel, aPair, aTon, aToff, aSupply, aSpeed, 1 );
+    simul += "\n x1 3 0 1 DRIVER0 \n";
 
     simul += "VCC 3 0 ";
     simul << aModel->m_voltageRange.value[aSupply];
