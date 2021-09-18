@@ -250,15 +250,26 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     simul += "*You should not be able to read this.\n\n";
     simul += ".SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
 
-    simul += "RPIN 1 OUT ";
-    simul << aPair.first->m_R_dut;
-    simul += "\n";
-    simul += "LPIN 2 1 ";
-    simul << aPair.first->m_L_dut;
-    simul += "\n";
-    simul += "CPIN OUT GND ";
-    simul << aPair.first->m_C_dut;
-    simul += "\n";
+    if( aPair.first->m_R_dut == 0 && aPair.first->m_L_dut == 0 && aPair.first->m_C_dut == 0 )
+    {
+        simul += "Vdummy 2 OUT 0\n";
+    }
+    {
+        /*
+        simul += "RPIN 1 OUT ";
+        simul << aPair.first->m_R_dut;
+        simul += "\n";
+        simul += "LPIN 2 1 ";
+        simul << aPair.first->m_L_dut;
+        simul += "\n";
+        simul += "CPIN OUT GND ";
+        simul << aPair.first->m_C_dut;
+        simul += "\n";
+        */
+        std::cerr
+                << "WARNING : I can't yet use DUT values. https://ibis.org/summits/nov16a/chen.pdf"
+                << std::endl;
+    }
 
     simul += "\n";
     simul += "CCPOMP 2 GND ";
