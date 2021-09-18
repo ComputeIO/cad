@@ -154,6 +154,14 @@ bool KIBIS_MODEL::HasPullup()
 {
     return true;
 }
+bool KIBIS_MODEL::HasGNDClamp()
+{
+    return true;
+}
+bool KIBIS_MODEL::HasPOWERClamp()
+{
+    return true;
+}
 
 wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, double aTon,
                                           double aToff, int aCycles,
@@ -239,124 +247,55 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
     return simul;
 }
 
-wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                        std::pair<IbisWaveform*, IbisWaveform*> aPair, double aTon,
-                                        double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+wxString KIBIS_PIN::addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex )
 {
+    wxString simul;
 
-    wxString simul = "";
-    simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
-    simul += "*This part is intended to be executed by Kibis internally.\n";
-    simul += "*You should not be able to read this.\n\n";
-    simul += ".SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
+    wxString GC_GND = "GC_GND";
+    wxString PC_PWR = "PC_PWR";
+    wxString PU_PWR = "PU_PWR";
+    wxString PD_GND = "PD_GND";
+    wxString DIE = "DIE";
 
-    if( aPair.first->m_R_dut == 0 && aPair.first->m_L_dut == 0 && aPair.first->m_C_dut == 0 )
+    GC_GND << aIndex;
+    PC_PWR << aIndex;
+    PU_PWR << aIndex;
+    PD_GND << aIndex;
+    DIE << aIndex;
+
+
+    wxString GC = "GC";
+    wxString PC = "PC";
+    wxString PU = "PU";
+    wxString PD = "PD";
+
+    GC << aIndex;
+    PC << aIndex;
+    PU << aIndex;
+    PD << aIndex;
+
+    if( aModel->HasGNDClamp() )
     {
-        simul += "Vdummy 2 OUT 0\n";
+        simul += aModel->m_GNDClamp.Spice( aIndex * 4 + 1, DIE, GC_GND, GC, aSupply );
     }
+    if( aModel->HasPOWERClamp() )
     {
-        /*
-        simul += "RPIN 1 OUT ";
-        simul << aPair.first->m_R_dut;
-        simul += "\n";
-        simul += "LPIN 2 1 ";
-        simul << aPair.first->m_L_dut;
-        simul += "\n";
-        simul += "CPIN OUT GND ";
-        simul << aPair.first->m_C_dut;
-        simul += "\n";
-        */
-        std::cerr
-                << "WARNING : I can't yet use DUT values. https://ibis.org/summits/nov16a/chen.pdf"
-                << std::endl;
+        simul += aModel->m_POWERClamp.Spice( aIndex * 4 + 2, DIE, PC_PWR, PC, aSupply );
     }
-
-    simul += "\n";
-    simul += "CCPOMP 2 GND ";
-    simul << aModel->m_C_comp.value[aSpeed]; //@TODO: Check the corner ?
-    simul += "\n";
-    simul += aModel->generateSquareWave( "DIE", "GND", aTon, aToff, 10, aPair, aSupply );
-    simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode", aSupply );
-    simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode",
-                                         aSupply );
-
     if( aModel->HasPulldown() )
     {
-        simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown", aSupply );
+        simul += aModel->m_pulldown.Spice( aIndex * 4 + 3, DIE, PD_GND, PD, aSupply );
     }
     if( aModel->HasPullup() )
     {
-        simul += aModel->m_pullup.Spice( 4, "POWER2", "DIE", "Pullup", aSupply );
+        simul += aModel->m_pullup.Spice( aIndex * 4 + 4, PU_PWR, DIE, PU, aSupply );
     }
 
+    return simul;
+}
 
-    simul += "\n.ENDS DRIVER\n\n";
-    simul += "\n x1 3 0 1 DRIVER \n";
-    // In IBIS Currents are positive when entering the component
-    // In SPICE, currents are positive when flowing from the first terminal to the second terminal
-    // => The first terminal is outside, the second inside
-    simul += "VCC 3 0 ";
-    simul << aModel->m_voltageRange.value[aSupply];
-    simul += "\n";
-    //simul += "Vpin x1.DIE 0 1 \n"
-    simul += "Lfixture 1 4 ";
-    simul << aPair.first->m_L_fixture;
-    simul += "\n";
-    simul += "Rfixture 4 5 ";
-    simul << aPair.first->m_R_fixture;
-    simul += "\n";
-    simul += "Cfixture 4 0 ";
-    simul << aPair.first->m_C_fixture;
-    simul += "\n";
-    simul += "Vfixture 5 0 ";
-    simul << aPair.first->m_V_fixture;
-    simul += "\n";
-    simul += "VmeasIout x1.2 x1.DIE 0\n";
-    simul += "VmeasPD 0 x1.GND2 0\n";
-    simul += "VmeasPU x1.POWER2 3 0\n";
-    simul += "VmeasPC x1.POWER1 3 0\n";
-    simul += "VmeasGC 0 x1.GND1 0\n";
-
-    if( aModel->HasPullup() && aModel->HasPulldown() )
-    {
-        std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
-        simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
-                 ")/(i(VmeasPD)-i(VmeasPU)))\n";
-        simul += "Bkd KD 0 v=(1-v(KU))\n";
-    }
-
-    else if( !aModel->HasPullup() && aModel->HasPulldown() )
-    {
-        simul += "Bku KD 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPD)))\n";
-        simul += "Bkd KU 0 v=0\n";
-    }
-
-    else if( aModel->HasPullup() && !aModel->HasPulldown() )
-    {
-        simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
-        simul += "Bkd KD 0 v=0\n";
-    }
-    else
-    {
-        std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
-    }
-
-
-    simul += ".tran 0.1n 100n \n";
-    simul += ".option xmu=0.49  \n";
-    //simul += ".dc Vpin -5 5 0.1\n";
-    simul += ".control run \n";
-    simul += "set filetype=ascii\n";
-    simul += "run \n";
-    simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
-             "v(x1.POWER2)\n";
-    simul += "plot v(KU) v(KD)\n";
-    simul += "plot v(x1.rise0) v(x1.fall0) v(x1.rise1) v(x1.fall1) v(x1.rise2) v(x1.fall2) \n";
-    simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-    //simul += "quit\n";
-    simul += ".endc \n";
-    simul += ".end \n";
-
+void KIBIS_PIN::getKuKdFromFile( wxString* aSimul )
+{
     // @TODO
     // Seriously, that's not the best way to do, but ¯\_(ツ)_/¯
     wxTextFile file( "temp_input.spice" );
@@ -369,7 +308,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     {
         file.Create();
     }
-    file.AddLine( simul );
+    file.AddLine( *aSimul );
     file.Write();
 
     wxTextFile file2( "temp_output.spice" );
@@ -430,7 +369,112 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     m_Ku = ku;
     m_Kd = kd;
     m_t = t;
+}
 
+wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
+                                        std::pair<IbisWaveform*, IbisWaveform*> aPair, double aTon,
+                                        double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+{
+
+    wxString simul = "";
+    simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
+    simul += "*This part is intended to be executed by Kibis internally.\n";
+    simul += "*You should not be able to read this.\n\n";
+    simul += ".SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
+
+    if( aPair.first->m_R_dut == 0 && aPair.first->m_L_dut == 0 && aPair.first->m_C_dut == 0 )
+    {
+        simul += "Vdummy 2 OUT 0\n";
+    }
+    {
+        /*
+        simul += "RPIN 1 OUT ";
+        simul << aPair.first->m_R_dut;
+        simul += "\n";
+        simul += "LPIN 2 1 ";
+        simul << aPair.first->m_L_dut;
+        simul += "\n";
+        simul += "CPIN OUT GND ";
+        simul << aPair.first->m_C_dut;
+        simul += "\n";
+        */
+        std::cerr
+                << "WARNING : I can't yet use DUT values. https://ibis.org/summits/nov16a/chen.pdf"
+                << std::endl;
+    }
+
+    simul += "\n";
+    simul += "CCPOMP 2 GND ";
+    simul << aModel->m_C_comp.value[aSpeed]; //@TODO: Check the corner ?
+    simul += "\n";
+    simul += aModel->generateSquareWave( "DIE0", "GND", aTon, aToff, 10, aPair, aSupply );
+    simul += addDie( aModel, aSupply, 0 );
+
+    simul += "\n.ENDS DRIVER\n\n";
+    simul += "\n x1 3 0 1 DRIVER \n";
+
+    simul += "VCC 3 0 ";
+    simul << aModel->m_voltageRange.value[aSupply];
+    simul += "\n";
+    //simul += "Vpin x1.DIE 0 1 \n"
+    simul += "Lfixture 1 4 ";
+    simul << aPair.first->m_L_fixture;
+    simul += "\n";
+    simul += "Rfixture 4 5 ";
+    simul << aPair.first->m_R_fixture;
+    simul += "\n";
+    simul += "Cfixture 4 0 ";
+    simul << aPair.first->m_C_fixture;
+    simul += "\n";
+    simul += "Vfixture 5 0 ";
+    simul << aPair.first->m_V_fixture;
+    simul += "\n";
+    simul += "VmeasIout x1.2 x1.DIE0 0\n";
+    simul += "VmeasPD 0 x1.PD_GND0 0\n";
+    simul += "VmeasPU x1.PU_PWR0 3 0\n";
+    simul += "VmeasPC x1.PC_PWR0 3 0\n";
+    simul += "VmeasGC 0 x1.GC_PWR0 0\n";
+
+    if( aModel->HasPullup() && aModel->HasPulldown() )
+    {
+        std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
+        simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
+                 ")/(i(VmeasPD)-i(VmeasPU)))\n";
+        simul += "Bkd KD 0 v=(1-v(KU))\n";
+    }
+
+    else if( !aModel->HasPullup() && aModel->HasPulldown() )
+    {
+        simul += "Bku KD 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPD)))\n";
+        simul += "Bkd KU 0 v=0\n";
+    }
+
+    else if( aModel->HasPullup() && !aModel->HasPulldown() )
+    {
+        simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
+        simul += "Bkd KD 0 v=0\n";
+    }
+    else
+    {
+        std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
+    }
+
+
+    simul += ".tran 0.1n 100n \n";
+    simul += ".option xmu=0.49  \n";
+    //simul += ".dc Vpin -5 5 0.1\n";
+    simul += ".control run \n";
+    simul += "set filetype=ascii\n";
+    simul += "run \n";
+    simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
+             "v(x1.POWER2)\n";
+    simul += "plot v(KU) v(KD)\n";
+    simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
+    //simul += "quit\n";
+    simul += ".endc \n";
+    simul += ".end \n";
+
+    getKuKdFromFile( &simul );
     return simul;
 }
 

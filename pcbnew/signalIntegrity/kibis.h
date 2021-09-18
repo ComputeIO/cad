@@ -63,6 +63,8 @@ public:
 
     bool HasPulldown();
     bool HasPullup();
+    bool HasGNDClamp();
+    bool HasPOWERClamp();
 
     bool writeSpiceDriver( wxString* aDest, IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
@@ -101,6 +103,8 @@ public:
     wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                  double aTon, double aToff, IBIS_CORNER aSupply,
                                  IBIS_CORNER aSpeed );
+    wxString addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex );
+    void     getKuKdFromFile( wxString* aSimul );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY
