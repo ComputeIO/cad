@@ -97,7 +97,7 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest, IBIS_CORNER aSpeed )
         result +=
                 m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode", ReverseLogic( aSpeed ) );
         result += m_pulldown.Spice( 3, "DIEBUFF", "GND2", "Pulldown", aSpeed );
-        result += m_pullup.Spice( 4, "DIEBUFF", "POWER2", "Pullup", aSpeed );
+        result += m_pullup.Spice( 4, "POWER2", "DIEBUFF", "Pullup", aSpeed );
 
         *aDest = result;
         break;
@@ -275,7 +275,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     }
     if( aModel->HasPullup() )
     {
-        simul += aModel->m_pullup.Spice( 4, "DIE", "POWER2", "Pullup", aSpeed );
+        simul += aModel->m_pullup.Spice( 4, "POWER2", "DIE", "Pullup", aSpeed );
     }
 
 
@@ -284,7 +284,9 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     // In IBIS Currents are positive when entering the component
     // In SPICE, currents are positive when flowing from the first terminal to the second terminal
     // => The first terminal is outside, the second inside
-    simul += "VCC 3 0 1.8\n";
+    simul += "VCC 3 0 ";
+    simul << aModel->m_voltageRange.value[aSupply];
+    simul += "\n";
     //simul += "Vpin x1.DIE 0 1 \n"
     simul += "Lfixture 1 4 ";
     simul << aPair.first->m_L_fixture;
@@ -325,7 +327,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     }
     else
     {
-        std::cout << "ERROR: Driver needs at least a pullup or a pulldown";
+        std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
     }
 
 
@@ -340,7 +342,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     simul += "plot v(KU) v(KD)\n";
     simul += "plot v(x1.rise0) v(x1.fall0) v(x1.rise1) v(x1.fall1) v(x1.rise2) v(x1.fall2) \n";
     simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-    simul += "quit\n";
+    //simul += "quit\n";
     simul += ".endc \n";
     simul += ".end \n";
 
