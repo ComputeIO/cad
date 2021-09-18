@@ -70,7 +70,7 @@ std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs(
     return pairs;
 }
 
-bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest, IBIS_CORNER aSpeed )
+bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
     bool     status = true;
 
@@ -93,11 +93,11 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest, IBIS_CORNER aSpeed )
         result += "BKU POWER DIE i=( i(VmeasPD) * v(KD) )\n";
         result += "BKD GND DIE i=( -i(VmeasPU) * v(KU) )\n";
 
-        result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode", ReverseLogic( aSpeed ) );
+        result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
         result +=
-                m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode", ReverseLogic( aSpeed ) );
-        result += m_pulldown.Spice( 3, "DIEBUFF", "GND2", "Pulldown", aSpeed );
-        result += m_pullup.Spice( 4, "POWER2", "DIEBUFF", "Pullup", aSpeed );
+                m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode", aSupply );
+        result += m_pulldown.Spice( 3, "DIEBUFF", "GND2", "Pulldown", aSupply );
+        result += m_pullup.Spice( 4, "POWER2", "DIEBUFF", "Pullup", aSupply );
 
         *aDest = result;
         break;
@@ -262,20 +262,20 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
 
     simul += "\n";
     simul += "CCPOMP 2 GND ";
-    simul << aModel->m_C_comp.value[IBIS_CORNER::TYP]; //@TODO: Check that ?
+    simul << aModel->m_C_comp.value[aSpeed]; //@TODO: Check the corner ?
     simul += "\n";
     simul += aModel->generateSquareWave( "DIE", "GND", aTon, aToff, 10, aPair, aSupply );
-    simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode", ReverseLogic( aSpeed ) );
+    simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode", aSupply );
     simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode",
-                                         ReverseLogic( aSpeed ) );
+                                         aSupply );
 
     if( aModel->HasPulldown() )
     {
-        simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown", aSpeed );
+        simul += aModel->m_pulldown.Spice( 3, "DIE", "GND2", "Pulldown", aSupply );
     }
     if( aModel->HasPullup() )
     {
-        simul += aModel->m_pullup.Spice( 4, "POWER2", "DIE", "Pullup", aSpeed );
+        simul += aModel->m_pullup.Spice( 4, "POWER2", "DIE", "Pullup", aSupply );
     }
 
 
@@ -472,7 +472,7 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
         std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
 
 
-        aModel->writeSpiceDriver( &tmp, aSpeed );
+        aModel->writeSpiceDriver( &tmp, aSupply, aSpeed );
 
         if( wfPairs.size() < 1 )
         {

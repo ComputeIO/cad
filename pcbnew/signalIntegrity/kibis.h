@@ -64,7 +64,7 @@ public:
     bool HasPulldown();
     bool HasPullup();
 
-    bool writeSpiceDriver( wxString* aDest, IBIS_CORNER aSpeed );
+    bool writeSpiceDriver( wxString* aDest, IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
     //private:
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
