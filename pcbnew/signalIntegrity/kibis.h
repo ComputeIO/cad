@@ -64,7 +64,7 @@ public:
     bool HasPulldown();
     bool HasPullup();
 
-    bool writeSpiceDriver( wxString* aDest, IBIS_CORNER aCorner );
+    bool writeSpiceDriver( wxString* aDest, IBIS_CORNER aSpeed );
 
     //private:
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
@@ -97,9 +97,10 @@ public:
     std::vector<KIBIS_MODEL*> m_models;
 
     bool     writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
-                               IBIS_CORNER aCorner );
+                               IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
     wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                 double aTon, double aTof, IBIS_CORNER aCorner );
+                                 double aTon, double aToff, IBIS_CORNER aSupply,
+                                 IBIS_CORNER aSpeed );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY

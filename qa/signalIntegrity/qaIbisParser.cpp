@@ -26,9 +26,12 @@ int main( void )
     wxString*  tmp1 = new wxString();
     wxString*  tmp2 = new wxString();
     wxString*  tmp3 = new wxString();
-    pin->writeSpiceDriver( tmp1, "driver_typ", pin->m_models.at( 0 ), IBIS_CORNER::TYP );
-    pin->writeSpiceDriver( tmp2, "driver_min", pin->m_models.at( 0 ), IBIS_CORNER::MIN );
-    pin->writeSpiceDriver( tmp3, "driver_max", pin->m_models.at( 0 ), IBIS_CORNER::MAX );
+    pin->writeSpiceDriver( tmp1, "driver_typ", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
+                           IBIS_CORNER::TYP );
+    pin->writeSpiceDriver( tmp2, "driver_min", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
+                           IBIS_CORNER::MIN );
+    pin->writeSpiceDriver( tmp3, "driver_max", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
+                           IBIS_CORNER::MAX );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )
