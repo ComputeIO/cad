@@ -177,12 +177,13 @@ bool KIBIS_MODEL::HasPullup()
 }
 
 wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, double aTon,
-                                          double aToff, int aCycles )
+                                          double aToff, int aCycles,
+                                          std::pair<IbisWaveform*, IbisWaveform*> aPair )
 {
     wxString simul;
 
-    IbisWaveform risingWF = TrimWaveform( m_risingWaveforms.at( 0 ) );
-    IbisWaveform fallingWF = TrimWaveform( m_fallingWaveforms.at( 1 ) );
+    IbisWaveform risingWF = TrimWaveform( aPair.first );
+    IbisWaveform fallingWF = TrimWaveform( aPair.second );
 
     if( aTon < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
     {
@@ -257,7 +258,8 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
     return simul;
 }
 
-wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
+wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
+                                        std::pair<IbisWaveform*, IbisWaveform*> aPair )
 {
     double ton = 8e-9;
     double toff = 8e-9;
@@ -269,20 +271,20 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += ".SUBCKT DRIVER POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
 
     simul += "RPIN 1 OUT ";
-    simul << aModel->m_risingWaveforms.at( 0 )->m_R_dut;
+    simul << aPair.first->m_R_dut;
     simul += "\n";
     simul += "LPIN 2 1 ";
-    simul << aModel->m_risingWaveforms.at( 0 )->m_L_dut;
+    simul << aPair.first->m_L_dut;
     simul += "\n";
     simul += "CPIN OUT GND ";
-    simul << aModel->m_risingWaveforms.at( 0 )->m_C_dut;
+    simul << aPair.first->m_C_dut;
     simul += "\n";
 
     simul += "\n";
     simul += "CCPOMP 2 GND ";
     simul << aModel->m_C_comp.typ;
     simul += "\n";
-    simul += aModel->generateSquareWave( "DIE", "GND", ton, toff, 10 );
+    simul += aModel->generateSquareWave( "DIE", "GND", ton, toff, 10, aPair );
     simul += aModel->m_GNDClamp.Spice( 1, "DIE", "GND1", "GNDClampDiode" );
     simul += aModel->m_POWERClamp.Spice( 2, "DIE", "POWER1", "POWERClampDiode" );
 
@@ -304,16 +306,16 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     simul += "VCC 3 0 1.8\n";
     //simul += "Vpin x1.DIE 0 1 \n"
     simul += "Lfixture 1 4 ";
-    simul << aModel->m_risingWaveforms.at( 0 )->m_L_fixture;
+    simul << aPair.first->m_L_fixture;
     simul += "\n";
     simul += "Rfixture 4 5 ";
-    simul << aModel->m_risingWaveforms.at( 0 )->m_R_fixture;
+    simul << aPair.first->m_R_fixture;
     simul += "\n";
     simul += "Cfixture 5 0 ";
-    simul << aModel->m_risingWaveforms.at( 0 )->m_C_fixture;
+    simul << aPair.first->m_C_fixture;
     simul += "\n";
     simul += "Vfixture 5 0 ";
-    simul << aModel->m_risingWaveforms.at( 0 )->m_V_fixture;
+    simul << aPair.first->m_V_fixture;
     simul += "\n";
     simul += "VmeasIout x1.2 x1.DIE 0\n";
     simul += "VmeasPD 0 x1.GND2 0\n";
@@ -342,7 +344,7 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL* aModel )
     }
     else
     {
-        std::cout << "ERROR: Driver needs at least a pullup or a pulldown"
+        std::cout << "ERROR: Driver needs at least a pullup or a pulldown";
     }
 
 
@@ -476,10 +478,12 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
         result << C_pin.typ;
         result += "\n";
 
-        aModel->writeSpiceDriver( &tmp );
 
 
         std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
+
+
+        aModel->writeSpiceDriver( &tmp );
 
         if( wfPairs.size() < 1 )
         {
@@ -488,7 +492,7 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
         }
         else if( wfPairs.size() == 1 || true )
         {
-            getKuKdOneWaveform( aModel );
+            getKuKdOneWaveform( aModel, wfPairs.at( 0 ) );
         }
         else
         {

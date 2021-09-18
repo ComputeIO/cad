@@ -69,7 +69,7 @@ public:
     //private:
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
     wxString generateSquareWave( wxString aNode1, wxString aNode2, double aTon, double aToff,
-                                 int aCycles );
+                                 int aCycles, std::pair<IbisWaveform*, IbisWaveform*> aPair );
 };
 
 class KIBIS_PIN : public KIBIS_ANY
@@ -96,7 +96,8 @@ public:
     std::vector<KIBIS_MODEL*> m_models;
 
     bool writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel );
-    wxString getKuKdOneWaveform( KIBIS_MODEL* aModel );
+    wxString getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
+                                 std::pair<IbisWaveform*, IbisWaveform*> aPair );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY
