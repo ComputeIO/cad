@@ -632,7 +632,8 @@ wxString KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                           
 }
 
 bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
-                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
+                                  KIBIS_ACCURACY aAccuracy )
 {
     double ton = 12e-9;
     double toff = 12e-9;
@@ -681,19 +682,22 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
 
         aModel->writeSpiceDriver( &tmp, aSupply, aSpeed );
 
-        if( wfPairs.size() < 1 || 1 )
+        if( wfPairs.size() < 1 || aAccuracy <= KIBIS_ACCURACY::LEVEL_0 )
         {
-            std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy"
-                      << std::endl;
+            if( aAccuracy > KIBIS_ACCURACY::LEVEL_0 )
+            {
+                std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy"
+                          << std::endl;
+            }
             getKuKdNoWaveform( aModel, ton, toff, aSupply );
         }
-        else if( wfPairs.size() == 1 )
+        else if( wfPairs.size() == 1 || aAccuracy <= KIBIS_ACCURACY::LEVEL_1 )
         {
             getKuKdOneWaveform( aModel, wfPairs.at( 0 ), ton, toff, aSupply, aSpeed );
         }
         else
         {
-            if( wfPairs.size() > 2 )
+            if( wfPairs.size() > 2 || aAccuracy <= KIBIS_ACCURACY::LEVEL_2 )
             {
                 std::cout << "Model has more than 2 waveform pairs, using the first two."
                           << std::endl;

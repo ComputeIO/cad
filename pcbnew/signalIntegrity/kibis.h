@@ -3,6 +3,34 @@
 
 #include "ibisParser.h"
 
+
+/** Accuracy level.
+ * 
+ * Level 0 is faster, but not as accurate
+ * 
+ * Level 0 :
+ *      - Driver: Don't use waveform
+ *      - Driver: Don't use _DUT info
+ * Level 1 :
+ *      _ Driver: Use up to one waveform
+ *      _ Driver: Don't use _DUT info 
+ * Level 2 :
+ *      _ Driver: Use up to two waveforms
+ *      _ Driver: Don't use _DUT info
+ *      
+ * Level 3 : ( not implemented, fallback to level 2 )
+ *      _ Driver: Use up to two waveforms 
+ *      _ Driver: Use _DUT info if at least one waveform
+*/
+enum class KIBIS_ACCURACY
+{
+    LEVEL_0,
+    LEVEL_1,
+    LEVEL_2,
+    LEVEL_3,
+};
+
+
 class KIBIS_FILE
 {
 public:
@@ -99,7 +127,7 @@ public:
     std::vector<KIBIS_MODEL*> m_models;
 
     bool     writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
-                               IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+                               IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy );
     void getKuKdNoWaveform( KIBIS_MODEL* aModel, double aTon, double aToff, IBIS_CORNER aSupply );
     wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                  double aTon, double aToff, IBIS_CORNER aSupply,
