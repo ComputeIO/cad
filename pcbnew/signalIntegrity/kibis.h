@@ -103,6 +103,10 @@ public:
     wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                  double aTon, double aToff, IBIS_CORNER aSupply,
                                  IBIS_CORNER aSpeed );
+    wxString getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
+                                  std::pair<IbisWaveform*, IbisWaveform*> aPair1,
+                                  std::pair<IbisWaveform*, IbisWaveform*> aPair2, double aTon,
+                                  double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
     wxString KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                          double aTon, double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,

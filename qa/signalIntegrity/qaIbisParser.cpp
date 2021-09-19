@@ -28,10 +28,10 @@ int main( void )
     wxString*  tmp3 = new wxString();
     pin->writeSpiceDriver( tmp1, "driver_typ", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
                            IBIS_CORNER::TYP );
-    pin->writeSpiceDriver( tmp2, "driver_min", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::MIN );
-    pin->writeSpiceDriver( tmp3, "driver_max", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::MAX );
+    //pin->writeSpiceDriver( tmp2, "driver_min", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
+    //                       IBIS_CORNER::MIN );
+    //pin->writeSpiceDriver( tmp3, "driver_max", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
+    //                       IBIS_CORNER::MAX );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )
@@ -48,8 +48,8 @@ int main( void )
 
     wxString simul = "";
     simul += "\n x1 3 0 1 driver_typ \n";
-    simul += "\n x2 3 0 4 driver_min \n";
-    simul += "\n x3 3 0 5 driver_max \n";
+    //simul += "\n x2 3 0 4 driver_min \n";
+    //simul += "\n x3 3 0 5 driver_max \n";
     //simul += "Cload 1 0 100p\n";
     simul += "VPOWER 3 0 1.8\n";
     simul += "R0 1 0 1000\n";

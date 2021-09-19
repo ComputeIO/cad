@@ -2602,8 +2602,6 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
         {
             wf = aDest;
         }
-        m_reporter->Report( "Internal Error: waveform is nullptr, but should not.",
-                            RPT_SEVERITY_ERROR );
     }
 
 
@@ -2634,7 +2632,6 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
         else
         {
             VTtableEntry entry;
-            std::cout << "TOTO " << std::endl;
 
             if( readVTtableEntry( &m_currentWaveform->m_table ) )
             {
