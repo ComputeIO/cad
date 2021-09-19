@@ -100,6 +100,7 @@ public:
 
     bool     writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+    void getKuKdNoWaveform( KIBIS_MODEL* aModel, double aTon, double aToff, IBIS_CORNER aSupply );
     wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                  double aTon, double aToff, IBIS_CORNER aSupply,
                                  IBIS_CORNER aSpeed );

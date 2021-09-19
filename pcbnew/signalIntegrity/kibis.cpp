@@ -301,7 +301,7 @@ wxString KIBIS_PIN::addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex
 void KIBIS_PIN::getKuKdFromFile( wxString* aSimul )
 {
     // @TODO
-    // Seriously, that's not the best way to do, but ¯\_(ツ)_/¯
+    // that's not the best way to do, but ¯\_(ツ)_/¯
     wxTextFile file( "temp_input.spice" );
     if( file.Exists() )
     {
@@ -499,6 +499,34 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
     return simul;
 }
 
+void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, double aTon, double aToff,
+                                   IBIS_CORNER aSupply )
+{
+    std::vector<double> ku, kd, t;
+
+    for( int i = 0; i < 10; i++ )
+    {
+        ku.push_back( 0 );
+        kd.push_back( 1 );
+        t.push_back( ( aTon + aToff ) * i );
+        ku.push_back( 1 );
+        kd.push_back( 0 );
+        t.push_back( ( aTon + aToff ) * i
+                     + aModel->m_ramp.m_rising.value[aSupply].m_dt
+                               / 0.6 ); // 0.6 because ibis only gives 20%-80% time
+        ku.push_back( 1 );
+        kd.push_back( 0 );
+        t.push_back( ( aTon + aToff ) * i + aToff );
+        ku.push_back( 0 );
+        kd.push_back( 1 );
+        t.push_back( ( aTon + aToff ) * i + aToff
+                     + aModel->m_ramp.m_falling.value[aSupply].m_dt / 0.6 );
+    }
+    m_Ku = ku;
+    m_Kd = kd;
+    m_t = t;
+}
+
 
 wxString KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
                                          std::pair<IbisWaveform*, IbisWaveform*> aPair1,
@@ -653,10 +681,11 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
 
         aModel->writeSpiceDriver( &tmp, aSupply, aSpeed );
 
-        if( wfPairs.size() < 1 )
+        if( wfPairs.size() < 1 || 1 )
         {
             std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy"
                       << std::endl;
+            getKuKdNoWaveform( aModel, ton, toff, aSupply );
         }
         else if( wfPairs.size() == 1 )
         {

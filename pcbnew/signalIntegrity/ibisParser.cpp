@@ -346,20 +346,20 @@ bool dvdtTypMinMax::Check()
 {
     bool status = true;
 
-    if ( std::isnan( m_typ.m_dv) )
+    if( std::isnan( value[IBIS_CORNER::TYP].m_dv ) )
         status = false;
-    if ( std::isnan( m_typ.m_dt) )
-        status = false; 
-
-
-    if ( std::isnan( m_min.m_dv) && !isNumberNA( m_min.m_dv) )
-        status = false;
-    if ( std::isnan( m_min.m_dt) && !isNumberNA( m_min.m_dt) )
+    if( std::isnan( value[IBIS_CORNER::TYP].m_dt ) )
         status = false;
 
-    if ( std::isnan( m_max.m_dv) && !isNumberNA( m_max.m_dv) )
+
+    if( std::isnan( value[IBIS_CORNER::MIN].m_dv ) && !isNumberNA( value[IBIS_CORNER::MIN].m_dv ) )
         status = false;
-    if ( std::isnan( m_max.m_dt) && !isNumberNA( m_max.m_dt) )
+    if( std::isnan( value[IBIS_CORNER::MIN].m_dt ) && !isNumberNA( value[IBIS_CORNER::MIN].m_dt ) )
+        status = false;
+
+    if( std::isnan( value[IBIS_CORNER::MIN].m_dv ) && !isNumberNA( value[IBIS_CORNER::MIN].m_dv ) )
+        status = false;
+    if( std::isnan( value[IBIS_CORNER::MIN].m_dt ) && !isNumberNA( value[IBIS_CORNER::MIN].m_dt ) )
         status = false;
 
     if ( !status )
@@ -1334,11 +1334,11 @@ bool IbisParser::readRampdvdt( dvdtTypMinMax* aDest )
     {
         dvdtTypMinMax ramp;
 
-        if( readDvdt( str, &( ramp.m_typ ) ) )
+        if( readDvdt( str, &( ramp.value[IBIS_CORNER::TYP] ) ) )
         {
-            if( readDvdt( str, &( ramp.m_min ) ) )
+            if( readDvdt( str, &( ramp.value[IBIS_CORNER::MIN] ) ) )
             {
-                if( readDvdt( str, &( ramp.m_max ) ) )
+                if( readDvdt( str, &( ramp.value[IBIS_CORNER::MAX] ) ) )
                 {
                     *aDest = ramp;
                 }

@@ -270,9 +270,7 @@ public:
 class dvdtTypMinMax
 {
 public:
-    dvdt m_typ;
-    dvdt m_min;
-    dvdt m_max;
+    dvdt value[3];
 
     bool Check();
 };
