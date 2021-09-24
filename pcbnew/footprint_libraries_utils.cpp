@@ -1149,6 +1149,9 @@ FOOTPRINT* PCB_BASE_FRAME::CreateNewFootprint( const wxString& aFootprintName )
     // Update its name in lib
     footprint->SetFPID( LIB_ID( wxEmptyString, footprintName ) );
 
+    // Default to SMD instead of through hole
+    footprint->SetAttributes( FP_SMD );
+
     PCB_LAYER_ID txt_layer;
     wxPoint default_pos;
     BOARD_DESIGN_SETTINGS& settings = GetDesignSettings();
