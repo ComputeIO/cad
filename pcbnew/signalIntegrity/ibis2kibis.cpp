@@ -100,6 +100,10 @@ bool convertKibisComponent( IbisParser* aParser, std::vector<KIBIS_MODEL*> aMode
     std::vector<KIBIS_PIN*> m_pins;
     for( IbisComponentPin iPin : aSource->m_pins )
     {
+        if( iPin.m_dummy )
+        {
+            continue;
+        }
         KIBIS_PIN* kPin = new KIBIS_PIN();
         kPin->m_signalName = iPin.m_signalName;
         kPin->m_pinNumber = iPin.m_pinName;

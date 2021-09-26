@@ -2335,7 +2335,6 @@ bool IbisParser::readPin()
                     {
                         if ( parseDouble( &( pin.m_Cpin ), fields.at( pin.m_Ccol ), true ) )
                         {
-                                m_currentComponent->m_pins.push_back( pin );
                         }
                         else
                         {
