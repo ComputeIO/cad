@@ -169,8 +169,8 @@ bool KIBIS_MODEL::HasPOWERClamp()
     return true;
 }
 
-wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, double aTon,
-                                          double aToff, int aCycles,
+wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2,
+                                          KIBIS_WAVEFORM_RECTANGULAR*             aWave,
                                           std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                           IBIS_CORNER                             aSupply )
 {
@@ -178,19 +178,19 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
 
     IbisWaveform risingWF = TrimWaveform( aPair.first );
     IbisWaveform fallingWF = TrimWaveform( aPair.second );
-    std::cout << "Times : " << aTon << "  " << aToff << std::endl;
+    std::cout << "Times : " << aWave->m_ton << "  " << aWave->m_toff << std::endl;
 
-    if( aTon < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
+    if( aWave->m_ton < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
     {
         std::cerr << "WARNING: rising edge is longer than on time." << std::endl;
     }
 
-    if( aToff < fallingWF.m_table.m_entries.at( fallingWF.m_table.m_entries.size() - 1 ).t )
+    if( aWave->m_toff < fallingWF.m_table.m_entries.at( fallingWF.m_table.m_entries.size() - 1 ).t )
     {
         std::cerr << "WARNING: falling edge is longer than on time." << std::endl;
     }
 
-    for( int i = 0; i < aCycles; i++ )
+    for( int i = 0; i < aWave->m_cycles; i++ )
     {
         simul += "Vrise";
         simul << i;
@@ -202,7 +202,7 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
 
         for( auto entry : risingWF.m_table.m_entries )
         {
-            simul << entry.t + i * ( aTon + aToff );
+            simul << entry.t + i * ( aWave->m_ton + aWave->m_toff );
             simul += " ";
             simul << entry.V.value[aSupply];
             simul += " ";
@@ -210,7 +210,7 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
         simul += ")\n";
     }
 
-    for( int i = 0; i < aCycles; i++ )
+    for( int i = 0; i < aWave->m_cycles; i++ )
     {
         simul += "Vfall";
         simul << i;
@@ -222,7 +222,7 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
 
         for( auto entry : fallingWF.m_table.m_entries )
         {
-            simul << entry.t + i * ( aTon + aToff ) + aTon;
+            simul << entry.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton;
             simul += " ";
             simul << entry.V.value[aSupply];
             simul += " ";
@@ -236,7 +236,7 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2, doub
     simul += aNode2;
     simul += " v=(";
 
-    for( int i = 0; i < aCycles; i++ )
+    for( int i = 0; i < aWave->m_cycles; i++ )
     {
         simul += " v( rise";
         simul << i;
@@ -376,8 +376,8 @@ void KIBIS_PIN::getKuKdFromFile( wxString* aSimul )
 }
 
 wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                double aTon, double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
-                                int index )
+                                KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
+                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int index )
 {
     wxString simul = "";
 
@@ -390,7 +390,8 @@ wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, Ib
     simul += " POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
 
     if( ( aPair.first->m_R_dut == 0 ) && ( aPair.first->m_L_dut == 0 )
-        && ( aPair.first->m_C_dut == 0 ) )
+                && ( aPair.first->m_C_dut == 0 )
+        || true )
     {
         simul += "Vdummy 2 OUT 0\n";
     }
@@ -418,7 +419,15 @@ wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, Ib
     simul += "CCPOMP 2 GND ";
     simul << aModel->m_C_comp.value[aSpeed]; //@TODO: Check the corner ?
     simul += "\n";
-    simul += aModel->generateSquareWave( "DIE0", "GND", aTon, aToff, 10, aPair, aSupply );
+    switch( aWaveType )
+    {
+    case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
+        simul += aModel->generateSquareWave(
+                "DIE0", "GND", static_cast<KIBIS_WAVEFORM_RECTANGULAR*>( aWave ), aPair, aSupply );
+        break;
+    case KIBIS_WAVEFORM_TYPE::NONE:
+    default: std::cout << "NO WAVEFORM" << std::endl; break;
+    }
     simul += addDie( aModel, aSupply, 0 );
 
     simul += "\n.ENDS DRIVER\n\n";
@@ -426,101 +435,129 @@ wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, Ib
 }
 
 wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                        std::pair<IbisWaveform*, IbisWaveform*> aPair, double aTon,
-                                        double aToff, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+                                        std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                        KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
+                                        IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
     wxString simul = "";
 
-    simul += KuKdDriver( aModel, aPair, aTon, aToff, aSupply, aSpeed, 0 );
-    simul += "\n x1 3 0 1 DRIVER0 \n";
-
-    simul += "VCC 3 0 ";
-    simul << aModel->m_voltageRange.value[aSupply];
-    simul += "\n";
-    //simul += "Vpin x1.DIE 0 1 \n"
-    simul += "Lfixture 1 4 ";
-    simul << aPair.first->m_L_fixture;
-    simul += "\n";
-    simul += "Rfixture 4 5 ";
-    simul << aPair.first->m_R_fixture;
-    simul += "\n";
-    simul += "Cfixture 4 0 ";
-    simul << aPair.first->m_C_fixture;
-    simul += "\n";
-    simul += "Vfixture 5 0 ";
-    simul << aPair.first->m_V_fixture;
-    simul += "\n";
-    simul += "VmeasIout x1.2 x1.DIE0 0\n";
-    simul += "VmeasPD 0 x1.PD_GND0 0\n";
-    simul += "VmeasPU x1.PU_PWR0 3 0\n";
-    simul += "VmeasPC x1.PC_PWR0 3 0\n";
-    simul += "VmeasGC 0 x1.GC_PWR0 0\n";
-
-    if( aModel->HasPullup() && aModel->HasPulldown() )
+    if( aWaveType == KIBIS_WAVEFORM_TYPE::NONE )
     {
-        std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
-        simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
-                 ")/(i(VmeasPD)-i(VmeasPU)))\n";
-        simul += "Bkd KD 0 v=(1-v(KU))\n";
-    }
-
-    else if( !aModel->HasPullup() && aModel->HasPulldown() )
-    {
-        simul += "Bku KD 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPD)))\n";
-        simul += "Bkd KU 0 v=0\n";
-    }
-
-    else if( aModel->HasPullup() && !aModel->HasPulldown() )
-    {
-        simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
-        simul += "Bkd KD 0 v=0\n";
+        //@TODO , there could be some current flowing through pullup / pulldown transistors, even when off
+        std::vector<double> ku, kd, t;
+        ku.push_back( 0 );
+        kd.push_back( 0 );
+        t.push_back( 0 );
+        m_Ku = ku;
+        m_Kd = kd;
+        m_t = t;
     }
     else
     {
-        std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
+        simul += KuKdDriver( aModel, aPair, aWave, aWaveType, aSupply, aSpeed, 0 );
+        simul += "\n x1 3 0 1 DRIVER0 \n";
+
+        simul += "VCC 3 0 ";
+        simul << aModel->m_voltageRange.value[aSupply];
+        simul += "\n";
+        //simul += "Vpin x1.DIE 0 1 \n"
+        simul += "Lfixture 1 4 ";
+        simul << aPair.first->m_L_fixture;
+        simul += "\n";
+        simul += "Rfixture 4 5 ";
+        simul << aPair.first->m_R_fixture;
+        simul += "\n";
+        simul += "Cfixture 4 0 ";
+        simul << aPair.first->m_C_fixture;
+        simul += "\n";
+        simul += "Vfixture 5 0 ";
+        simul << aPair.first->m_V_fixture;
+        simul += "\n";
+        simul += "VmeasIout x1.2 x1.DIE0 0\n";
+        simul += "VmeasPD 0 x1.PD_GND0 0\n";
+        simul += "VmeasPU x1.PU_PWR0 3 0\n";
+        simul += "VmeasPC x1.PC_PWR0 3 0\n";
+        simul += "VmeasGC 0 x1.GC_PWR0 0\n";
+
+        if( aModel->HasPullup() && aModel->HasPulldown() )
+        {
+            std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
+            simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
+                     ")/(i(VmeasPD)-i(VmeasPU)))\n";
+            simul += "Bkd KD 0 v=(1-v(KU))\n";
+        }
+
+        else if( !aModel->HasPullup() && aModel->HasPulldown() )
+        {
+            simul += "Bku KD 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPD)))\n";
+            simul += "Bkd KU 0 v=0\n";
+        }
+
+        else if( aModel->HasPullup() && !aModel->HasPulldown() )
+        {
+            simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
+            simul += "Bkd KD 0 v=0\n";
+        }
+        else
+        {
+            std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
+        }
+
+
+        simul += ".tran 0.1n 100n \n";
+        simul += ".option xmu=0.49  \n";
+        //simul += ".dc Vpin -5 5 0.1\n";
+        simul += ".control run \n";
+        simul += "set filetype=ascii\n";
+        simul += "run \n";
+        simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
+                 "v(x1.POWER2)\n";
+        simul += "plot v(KU) v(KD)\n";
+        simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
+        //simul += "quit\n";
+        simul += ".endc \n";
+        simul += ".end \n";
+
+        getKuKdFromFile( &simul );
     }
-
-
-    simul += ".tran 0.1n 100n \n";
-    simul += ".option xmu=0.49  \n";
-    //simul += ".dc Vpin -5 5 0.1\n";
-    simul += ".control run \n";
-    simul += "set filetype=ascii\n";
-    simul += "run \n";
-    simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
-             "v(x1.POWER2)\n";
-    simul += "plot v(KU) v(KD)\n";
-    simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-    //simul += "quit\n";
-    simul += ".endc \n";
-    simul += ".end \n";
-
-    getKuKdFromFile( &simul );
     return simul;
 }
 
-void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, double aTon, double aToff,
-                                   IBIS_CORNER aSupply )
+void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
+                                   KIBIS_WAVEFORM_TYPE aWaveType, IBIS_CORNER aSupply )
 {
     std::vector<double> ku, kd, t;
 
-    for( int i = 0; i < 10; i++ )
+    switch( aWaveType )
     {
+    case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
+    {
+        KIBIS_WAVEFORM_RECTANGULAR* rectWave = static_cast<KIBIS_WAVEFORM_RECTANGULAR*>( aWave );
+        for( int i = 0; i < 10; i++ )
+        {
+            ku.push_back( 0 );
+            kd.push_back( 1 );
+            t.push_back( ( rectWave->m_ton + rectWave->m_toff ) * i );
+            ku.push_back( 1 );
+            kd.push_back( 0 );
+            t.push_back( ( rectWave->m_ton + rectWave->m_toff ) * i
+                         + aModel->m_ramp.m_rising.value[aSupply].m_dt
+                                   / 0.6 ); // 0.6 because ibis only gives 20%-80% time
+            ku.push_back( 1 );
+            kd.push_back( 0 );
+            t.push_back( ( rectWave->m_ton + rectWave->m_toff ) * i + rectWave->m_toff );
+            ku.push_back( 0 );
+            kd.push_back( 1 );
+            t.push_back( ( rectWave->m_ton + rectWave->m_toff ) * i + rectWave->m_toff
+                         + aModel->m_ramp.m_falling.value[aSupply].m_dt / 0.6 );
+        }
+        break;
+    }
+    case KIBIS_WAVEFORM_TYPE::NONE:
+    default:
         ku.push_back( 0 );
-        kd.push_back( 1 );
-        t.push_back( ( aTon + aToff ) * i );
-        ku.push_back( 1 );
         kd.push_back( 0 );
-        t.push_back( ( aTon + aToff ) * i
-                     + aModel->m_ramp.m_rising.value[aSupply].m_dt
-                               / 0.6 ); // 0.6 because ibis only gives 20%-80% time
-        ku.push_back( 1 );
-        kd.push_back( 0 );
-        t.push_back( ( aTon + aToff ) * i + aToff );
-        ku.push_back( 0 );
-        kd.push_back( 1 );
-        t.push_back( ( aTon + aToff ) * i + aToff
-                     + aModel->m_ramp.m_falling.value[aSupply].m_dt / 0.6 );
+        t.push_back( 0 );
     }
     m_Ku = ku;
     m_Kd = kd;
@@ -531,113 +568,130 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, double aTon, double aTof
 wxString KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
                                          std::pair<IbisWaveform*, IbisWaveform*> aPair1,
                                          std::pair<IbisWaveform*, IbisWaveform*> aPair2,
-                                         double aTon, double aToff, IBIS_CORNER aSupply,
-                                         IBIS_CORNER aSpeed )
+                                         KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
+                                         IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
     wxString simul = "";
 
-    simul += KuKdDriver( aModel, aPair1, aTon, aToff, aSupply, aSpeed, 0 );
-    simul += KuKdDriver( aModel, aPair2, aTon, aToff, aSupply, aSpeed, 1 );
-    simul += "\n x1 3 0 1 DRIVER0 \n";
-
-    simul += "VCC 3 0 ";
-    simul << aModel->m_voltageRange.value[aSupply];
-    simul += "\n";
-    //simul += "Vpin x1.DIE 0 1 \n"
-    simul += "Lfixture0 1 4 ";
-    simul << aPair1.first->m_L_fixture;
-    simul += "\n";
-    simul += "Rfixture0 4 5 ";
-    simul << aPair1.first->m_R_fixture;
-    simul += "\n";
-    simul += "Cfixture0 4 0 ";
-    simul << aPair1.first->m_C_fixture;
-    simul += "\n";
-    simul += "Vfixture0 5 0 ";
-    simul << aPair1.first->m_V_fixture;
-    simul += "\n";
-    simul += "VmeasIout0 x1.2 x1.DIE0 0\n";
-    simul += "VmeasPD0 0 x1.PD_GND0 0\n";
-    simul += "VmeasPU0 x1.PU_PWR0 3 0\n";
-    simul += "VmeasPC0 x1.PC_PWR0 3 0\n";
-    simul += "VmeasGC0 0 x1.GC_PWR0 0\n";
-
-
-    simul += "\n x2 3 0 7 DRIVER1 \n";
-    //simul += "Vpin x1.DIE 0 1 \n"
-    simul += "Lfixture1 7 8 ";
-    simul << aPair2.first->m_L_fixture;
-    simul += "\n";
-    simul += "Rfixture1 8 9 ";
-    simul << aPair2.first->m_R_fixture;
-    simul += "\n";
-    simul += "Cfixture1 8 0 ";
-    simul << aPair2.first->m_C_fixture;
-    simul += "\n";
-    simul += "Vfixture1 9 0 ";
-    simul << aPair2.first->m_V_fixture;
-    simul += "\n";
-    simul += "VmeasIout1 x2.2 x2.DIE0 0\n";
-    simul += "VmeasPD1 0 x2.PD_GND0 0\n";
-    simul += "VmeasPU1 x2.PU_PWR0 3 0\n";
-    simul += "VmeasPC1 x2.PC_PWR0 3 0\n";
-    simul += "VmeasGC1 0 x2.GC_PWR0 0\n";
-
-    if( aModel->HasPullup() && aModel->HasPulldown() )
+    if( aWaveType == KIBIS_WAVEFORM_TYPE::NONE )
     {
-        simul += "Bku KU 0 v=(  ( i(VmeasPD1) * ( i(VmeasIout0) + i(VmeasPC0) + i(VmeasGC0) ) - "
-                 "i(VmeasPD0) * ( i(VmeasIout1) + i(VmeasPC1) + i(VmeasGC1) )  )/ ( i(VmeasPU1) * "
-                 "i(VmeasPD0) - i(VmeasPU0) * i(VmeasPD1)  ) )\n";
-        simul += "Bkd KD 0 v=(  ( i(VmeasPU1) * ( i(VmeasIout0) + i(VmeasPC0) + i(VmeasGC0) ) - "
-                 "i(VmeasPU0) * ( i(VmeasIout1) + i(VmeasPC1) + i(VmeasGC1) )  )/ ( i(VmeasPD1) * "
-                 "i(VmeasPU0) - i(VmeasPD0) * i(VmeasPU1)  ) )\n";
-        //simul += "Bkd KD 0 v=(1-v(KU))\n";
-    }
-
-    else if( !aModel->HasPullup() && aModel->HasPulldown() )
-    {
-        std::cout << " I have two waveforms, but only one transistor. More equations than unknowns."
-                  << std::endl;
-        simul += "Bku KD 0 v=( ( i(VmeasIout0)+i(VmeasPC0)+i(VmeasGC0) )/(i(VmeasPD0)))\n";
-        simul += "Bkd KU 0 v=0\n";
-    }
-
-    else if( aModel->HasPullup() && !aModel->HasPulldown() )
-    {
-        std::cout << " I have two waveforms, but only one transistor. More equations than unknowns."
-                  << std::endl;
-        simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
-        simul += "Bkd KD 0 v=0\n";
+        //@TODO , there could be some current flowing through pullup / pulldown transistors, even when off
+        std::vector<double> ku, kd, t;
+        ku.push_back( 0 );
+        kd.push_back( 0 );
+        t.push_back( 0 );
+        m_Ku = ku;
+        m_Kd = kd;
+        m_t = t;
     }
     else
     {
-        std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
+        simul += KuKdDriver( aModel, aPair1, aWave, aWaveType, aSupply, aSpeed, 0 );
+        simul += KuKdDriver( aModel, aPair2, aWave, aWaveType, aSupply, aSpeed, 1 );
+        simul += "\n x1 3 0 1 DRIVER0 \n";
+
+        simul += "VCC 3 0 ";
+        simul << aModel->m_voltageRange.value[aSupply];
+        simul += "\n";
+        //simul += "Vpin x1.DIE 0 1 \n"
+        simul += "Lfixture0 1 4 ";
+        simul << aPair1.first->m_L_fixture;
+        simul += "\n";
+        simul += "Rfixture0 4 5 ";
+        simul << aPair1.first->m_R_fixture;
+        simul += "\n";
+        simul += "Cfixture0 4 0 ";
+        simul << aPair1.first->m_C_fixture;
+        simul += "\n";
+        simul += "Vfixture0 5 0 ";
+        simul << aPair1.first->m_V_fixture;
+        simul += "\n";
+        simul += "VmeasIout0 x1.2 x1.DIE0 0\n";
+        simul += "VmeasPD0 0 x1.PD_GND0 0\n";
+        simul += "VmeasPU0 x1.PU_PWR0 3 0\n";
+        simul += "VmeasPC0 x1.PC_PWR0 3 0\n";
+        simul += "VmeasGC0 0 x1.GC_PWR0 0\n";
+
+
+        simul += "\n x2 3 0 7 DRIVER1 \n";
+        //simul += "Vpin x1.DIE 0 1 \n"
+        simul += "Lfixture1 7 8 ";
+        simul << aPair2.first->m_L_fixture;
+        simul += "\n";
+        simul += "Rfixture1 8 9 ";
+        simul << aPair2.first->m_R_fixture;
+        simul += "\n";
+        simul += "Cfixture1 8 0 ";
+        simul << aPair2.first->m_C_fixture;
+        simul += "\n";
+        simul += "Vfixture1 9 0 ";
+        simul << aPair2.first->m_V_fixture;
+        simul += "\n";
+        simul += "VmeasIout1 x2.2 x2.DIE0 0\n";
+        simul += "VmeasPD1 0 x2.PD_GND0 0\n";
+        simul += "VmeasPU1 x2.PU_PWR0 3 0\n";
+        simul += "VmeasPC1 x2.PC_PWR0 3 0\n";
+        simul += "VmeasGC1 0 x2.GC_PWR0 0\n";
+
+        if( aModel->HasPullup() && aModel->HasPulldown() )
+        {
+            simul +=
+                    "Bku KU 0 v=(  ( i(VmeasPD1) * ( i(VmeasIout0) + i(VmeasPC0) + i(VmeasGC0) ) - "
+                    "i(VmeasPD0) * ( i(VmeasIout1) + i(VmeasPC1) + i(VmeasGC1) )  )/ ( i(VmeasPU1) "
+                    "* "
+                    "i(VmeasPD0) - i(VmeasPU0) * i(VmeasPD1)  ) )\n";
+            simul +=
+                    "Bkd KD 0 v=(  ( i(VmeasPU1) * ( i(VmeasIout0) + i(VmeasPC0) + i(VmeasGC0) ) - "
+                    "i(VmeasPU0) * ( i(VmeasIout1) + i(VmeasPC1) + i(VmeasGC1) )  )/ ( i(VmeasPD1) "
+                    "* "
+                    "i(VmeasPU0) - i(VmeasPD0) * i(VmeasPU1)  ) )\n";
+            //simul += "Bkd KD 0 v=(1-v(KU))\n";
+        }
+
+        else if( !aModel->HasPullup() && aModel->HasPulldown() )
+        {
+            std::cout << " I have two waveforms, but only one transistor. More equations than "
+                         "unknowns."
+                      << std::endl;
+            simul += "Bku KD 0 v=( ( i(VmeasIout0)+i(VmeasPC0)+i(VmeasGC0) )/(i(VmeasPD0)))\n";
+            simul += "Bkd KU 0 v=0\n";
+        }
+
+        else if( aModel->HasPullup() && !aModel->HasPulldown() )
+        {
+            std::cout << " I have two waveforms, but only one transistor. More equations than "
+                         "unknowns."
+                      << std::endl;
+            simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
+            simul += "Bkd KD 0 v=0\n";
+        }
+        else
+        {
+            std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
+        }
+
+
+        simul += ".tran 0.1n 100n \n";
+        simul += ".option xmu=0.49  \n";
+        //simul += ".dc Vpin -5 5 0.1\n";
+        simul += ".control run \n";
+        simul += "set filetype=ascii\n";
+        simul += "run \n";
+        simul += "plot v(KU) v(KD)\n";
+        simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
+        //simul += "quit\n";
+        simul += ".endc \n";
+        simul += ".end \n";
+
+        getKuKdFromFile( &simul );
     }
-
-
-    simul += ".tran 0.1n 100n \n";
-    simul += ".option xmu=0.49  \n";
-    //simul += ".dc Vpin -5 5 0.1\n";
-    simul += ".control run \n";
-    simul += "set filetype=ascii\n";
-    simul += "run \n";
-    simul += "plot v(KU) v(KD)\n";
-    simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-    //simul += "quit\n";
-    simul += ".endc \n";
-    simul += ".end \n";
-
-    getKuKdFromFile( &simul );
     return simul;
 }
 
 bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
-                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
-                                  KIBIS_ACCURACY aAccuracy )
+                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
+                                  KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType )
 {
-    double ton = 12e-9;
-    double toff = 12e-9;
-
     bool status = true;
 
     switch( aModel->m_type )
@@ -689,11 +743,11 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
                 std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy"
                           << std::endl;
             }
-            getKuKdNoWaveform( aModel, ton, toff, aSupply );
+            getKuKdNoWaveform( aModel, aWave, aWaveType, aSupply );
         }
         else if( wfPairs.size() == 1 || aAccuracy <= KIBIS_ACCURACY::LEVEL_1 )
         {
-            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), ton, toff, aSupply, aSpeed );
+            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), aWave, aWaveType, aSupply, aSpeed );
         }
         else
         {
@@ -702,8 +756,8 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
                 std::cout << "Model has more than 2 waveform pairs, using the first two."
                           << std::endl;
             }
-            getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), ton, toff, aSupply,
-                                 aSpeed );
+            getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), aWave, aWaveType,
+                                 aSupply, aSpeed );
         }
 
         result += "Vku KU GND pwl ( ";

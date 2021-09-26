@@ -26,12 +26,21 @@ int main( void )
     wxString*  tmp1 = new wxString();
     wxString*  tmp2 = new wxString();
     wxString*  tmp3 = new wxString();
+
+    KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
+    wave->m_ton = 12e-9;
+    wave->m_toff = 12e-9;
+    wave->m_cycles = 5;
+
+    std::cout << "WAVEFORM TYPE IN QA: " << wave->GetType() << std::endl;
     pin->writeSpiceDriver( tmp1, "driver_typ", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_0 );
+                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_0, wave, wave->GetType() );
     pin->writeSpiceDriver( tmp2, "driver_min", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1 );
+                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave,
+                           KIBIS_WAVEFORM_TYPE::NONE );
     pin->writeSpiceDriver( tmp3, "driver_max", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_2 );
+                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_2, wave,
+                           KIBIS_WAVEFORM_TYPE::NONE );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )
@@ -52,9 +61,10 @@ int main( void )
     simul += "\n x3 3 0 5 driver_max \n";
     //simul += "Cload 1 0 100p\n";
     simul += "VPOWER 3 0 1.8\n";
-    simul += "R0 1 0 1000\n";
-    simul += "R1 4 0 1000\n";
-    simul += "R2 5 0 1000\n";
+    //simul += "R0 1 0 1000\n";
+    //simul += "R1 4 0 1000\n";
+    //simul += "R2 5 0 1000\n";
+    simul += "R3 1 4 1000\n";
     simul += ".tran 0.1n 40n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
