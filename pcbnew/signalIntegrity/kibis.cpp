@@ -154,19 +154,19 @@ IbisWaveform TrimWaveform( IbisWaveform* aIn )
 
 bool KIBIS_MODEL::HasPulldown()
 {
-    return true;
+    return m_pulldown.m_entries.size() > 0;
 }
 bool KIBIS_MODEL::HasPullup()
 {
-    return true;
+    return m_pullup.m_entries.size() > 0;
 }
 bool KIBIS_MODEL::HasGNDClamp()
 {
-    return true;
+    return m_GNDClamp.m_entries.size() > 0;
 }
 bool KIBIS_MODEL::HasPOWERClamp()
 {
-    return true;
+    return m_POWERClamp.m_entries.size() > 0;
 }
 
 wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2,
