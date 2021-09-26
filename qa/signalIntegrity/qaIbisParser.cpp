@@ -22,10 +22,12 @@ int main( void )
     }
 
 
-    KIBIS_PIN* pin = comp->getPin( "11" );
+    KIBIS_PIN* pin1 = comp->getPin( "11" );
+    KIBIS_PIN* pin2 = comp->getPin( "2" );
     wxString*  tmp1 = new wxString();
     wxString*  tmp2 = new wxString();
     wxString*  tmp3 = new wxString();
+    wxString*  tmp4 = new wxString();
 
     KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
     wave->m_ton = 12e-9;
@@ -33,14 +35,16 @@ int main( void )
     wave->m_cycles = 5;
 
     std::cout << "WAVEFORM TYPE IN QA: " << wave->GetType() << std::endl;
-    pin->writeSpiceDriver( tmp1, "driver_typ", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_0, wave, wave->GetType() );
-    pin->writeSpiceDriver( tmp2, "driver_min", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave,
-                           KIBIS_WAVEFORM_TYPE::NONE );
-    pin->writeSpiceDriver( tmp3, "driver_max", pin->m_models.at( 0 ), IBIS_CORNER::MAX,
-                           IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_2, wave,
-                           KIBIS_WAVEFORM_TYPE::NONE );
+    pin2->writeSpiceDevice( tmp4, "device_typ", pin2->m_models.at( 0 ), IBIS_CORNER::TYP,
+                            IBIS_CORNER::TYP );
+    pin1->writeSpiceDriver( tmp1, "driver_typ", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
+                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave, wave->GetType() );
+    pin1->writeSpiceDriver( tmp2, "driver_min", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
+                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave,
+                            KIBIS_WAVEFORM_TYPE::NONE );
+    pin1->writeSpiceDriver( tmp3, "driver_max", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
+                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_2, wave,
+                            KIBIS_WAVEFORM_TYPE::NONE );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )
@@ -54,22 +58,28 @@ int main( void )
     file.AddLine( *tmp1 );
     file.AddLine( *tmp2 );
     file.AddLine( *tmp3 );
+    file.AddLine( *tmp4 );
 
     wxString simul = "";
     simul += "\n x1 3 0 1 driver_typ \n";
     simul += "\n x2 3 0 4 driver_min \n";
     simul += "\n x3 3 0 5 driver_max \n";
+    simul += "\n x4 3 0 6 device_typ \n";
+    simul += "\n x5 3 0 6 device_typ \n";
+    simul += "\n x6 3 0 6 device_typ \n";
+    simul += "\n x7 3 0 6 device_typ \n";
     //simul += "Cload 1 0 100p\n";
     simul += "VPOWER 3 0 1.8\n";
     //simul += "R0 1 0 1000\n";
     //simul += "R1 4 0 1000\n";
     //simul += "R2 5 0 1000\n";
-    simul += "R3 1 4 1000\n";
+    simul += "R3 1 4 10\n";
+    simul += "R4 1 6 10\n";
     simul += ".tran 0.1n 40n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
-    simul += "plot v(1) v(4) v(5) \n";
+    simul += "plot v(1) v(4) v(6) \n";
     //simul += "plot v(x1.KU) v(x1.KD) v(1) v(x1.DIEBUFF) \n";
     simul += ".endc \n";
     simul += ".end \n";

@@ -124,7 +124,7 @@ public:
     bool HasGNDClamp();
     bool HasPOWERClamp();
 
-    bool writeSpiceDriver( wxString* aDest, IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+    wxString SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
     //private:
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
@@ -160,6 +160,8 @@ public:
     bool     writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
                                KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType );
+    bool     writeSpiceDevice( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
+                               IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
     void     getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
                                 KIBIS_WAVEFORM_TYPE aWaveType, IBIS_CORNER aSupply );
     wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
