@@ -948,7 +948,7 @@ bool EDA_3D_CANVAS::SetView3D( int aKeycode )
         return false;
 
     const float delta_move = m_delta_move_step_factor * m_camera.ZoomGet();
-    const float arrow_moving_time_speed = 8.0f;
+    constexpr float arrow_moving_time_speed = 8.0f;
     bool handled = false;
 
     switch( aKeycode )

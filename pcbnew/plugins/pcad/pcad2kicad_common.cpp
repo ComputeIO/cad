@@ -40,18 +40,18 @@
 namespace PCAD2KICAD {
 
 // PCAD stroke font average ratio of width to size
-const double TEXT_WIDTH_TO_SIZE_AVERAGE = 0.5;
+constexpr double TEXT_WIDTH_TO_SIZE_AVERAGE = 0.5;
 
 // PCAD proportions of stroke font
-const double STROKE_HEIGHT_TO_SIZE = 0.656;
-const double STROKE_WIDTH_TO_SIZE = 0.69;
+constexpr double STROKE_HEIGHT_TO_SIZE = 0.656;
+constexpr double STROKE_WIDTH_TO_SIZE = 0.69;
 
 // TrueType font
-const double TRUETYPE_HEIGHT_TO_SIZE = 0.585;
-const double TRUETYPE_WIDTH_TO_SIZE = 0.585;
-const double TRUETYPE_THICK_PER_HEIGHT = 0.073;
-const double TRUETYPE_BOLD_THICK_MUL = 1.6;
-const long TRUETYPE_BOLD_MIN_WEIGHT = 700;
+constexpr double TRUETYPE_HEIGHT_TO_SIZE = 0.585;
+constexpr double TRUETYPE_WIDTH_TO_SIZE = 0.585;
+constexpr double TRUETYPE_THICK_PER_HEIGHT = 0.073;
+constexpr double TRUETYPE_BOLD_THICK_MUL = 1.6;
+constexpr long   TRUETYPE_BOLD_MIN_WEIGHT = 700;
 
 
 wxString GetWord( wxString* aStr )

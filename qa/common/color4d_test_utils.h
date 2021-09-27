@@ -52,7 +52,7 @@ inline bool IsColorNear( const KIGFX::COLOR4D& aCol, const KIGFX::COLOR4D aOther
 inline bool IsColorNearHex( const KIGFX::COLOR4D& aCol, unsigned char r, unsigned char g,
         unsigned char b, unsigned char a )
 {
-    const double tol = 0.5 / 255.0; // One bit of quantised error
+    constexpr double tol = 0.5 / 255.0; // One bit of quantised error
 
     return KI_TEST::IsWithin<double>( aCol.r, r / 255.0, tol )
            && KI_TEST::IsWithin<double>( aCol.g, g / 255.0, tol )

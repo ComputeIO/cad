@@ -311,7 +311,7 @@ const wxString EAGLE_PLUGIN::GetFileExtension() const
 
 void EAGLE_PLUGIN::checkpoint()
 {
-    const unsigned PROGRESS_DELTA = 50;
+    constexpr unsigned PROGRESS_DELTA = 50;
 
     if( m_progressReporter )
     {

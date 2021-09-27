@@ -48,7 +48,7 @@
 #include <math/util.h>      // for KiROUND
 #include "zone_filler.h"
 
-static const double s_RoundPadThermalSpokeAngle = 450;      // in deci-degrees
+static constexpr double s_RoundPadThermalSpokeAngle = 450; // in deci-degrees
 
 
 ZONE_FILLER::ZONE_FILLER(  BOARD* aBoard, COMMIT* aCommit ) :

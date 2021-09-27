@@ -732,7 +732,7 @@ int CONVERT_TOOL::SegmentToArc( const TOOL_EVENT& aEvent )
     VECTOR2I start, end, mid;
 
     // Offset the midpoint along the normal a little bit so that it's more obviously an arc
-    const double offsetRatio = 0.1;
+    constexpr double offsetRatio = 0.1;
 
     if( OPT<SEG> seg = getStartEndPoints( source, nullptr ) )
     {

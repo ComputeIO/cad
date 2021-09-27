@@ -946,7 +946,7 @@ void NODE::followLine( LINKED_ITEM* aCurrent, bool aScanDirection, int& aPos, in
 const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
                                bool aStopAtLockedJoints )
 {
-    const int MaxVerts = 1024 * 16;
+    constexpr int MaxVerts = 1024 * 16;
 
     std::array<VECTOR2I, MaxVerts + 1> corners;
     std::array<LINKED_ITEM*, MaxVerts + 1> segs;

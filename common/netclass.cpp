@@ -44,7 +44,7 @@ const int DEFAULT_DIFF_PAIR_VIAGAP = PcbMm2iu( 0.25 );
 const int DEFAULT_WIRE_WIDTH       = SchMils2iu( 6 );
 const int DEFAULT_BUS_WIDTH        = SchMils2iu( 12 );
 
-const int DEFAULT_LINE_STYLE = 0; // solid
+constexpr int DEFAULT_LINE_STYLE = 0; // solid
 
 
 NETCLASS::NETCLASS( const wxString& aName ) :

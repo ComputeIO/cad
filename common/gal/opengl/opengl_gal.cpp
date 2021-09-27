@@ -503,7 +503,7 @@ void OPENGL_GAL::beginDrawing()
     if( !m_isBitmapFontInitialized )
     {
         // Keep bitmap font texture always bound to the second texturing unit
-        const GLint FONT_TEXTURE_UNIT = 2;
+        constexpr GLint FONT_TEXTURE_UNIT = 2;
 
         // Either load the font atlas to video memory, or simply bind it to a texture unit
         if( !m_isBitmapFontLoaded )
@@ -2013,7 +2013,7 @@ int OPENGL_GAL::drawBitmapChar( unsigned long aChar )
     const float YOFF = round_adjust + top_adjust;
     const float W = glyph->atlas_w - font_information.smooth_pixels * 2;
     const float H = glyph->atlas_h - font_information.smooth_pixels * 2;
-    const float B = 0;
+    constexpr float B = 0;
 
     m_currentManager->Reserve( 6 );
     Translate( VECTOR2D( XOFF, YOFF ) );

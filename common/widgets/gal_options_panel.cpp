@@ -38,13 +38,13 @@
 /*
  * Spin control parameters
  */
-static const double gridThicknessMin = 1.0;
-static const double gridThicknessMax = 10.0;
-static const double gridThicknessStep = 0.5;
+static constexpr double gridThicknessMin = 1.0;
+static constexpr double gridThicknessMax = 10.0;
+static constexpr double gridThicknessStep = 0.5;
 
-static const double gridMinSpacingMin = 5;
-static const double gridMinSpacingMax = 200;
-static const double gridMinSpacingStep = 5;
+static constexpr double gridMinSpacingMin = 5;
+static constexpr double gridMinSpacingMax = 200;
+static constexpr double gridMinSpacingStep = 5;
 
 
 ///TODO: These are duplicated in gal_display_options - Unify!

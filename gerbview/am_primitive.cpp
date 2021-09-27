@@ -91,7 +91,7 @@ bool AM_PRIMITIVE::IsAMPrimitiveExposureOn( const GERBER_DRAW_ITEM* aParent ) co
 
 
 // TODO(snh): Remove hard coded count
-const int seg_per_circle = 64;   // Number of segments to approximate a circle
+constexpr int seg_per_circle = 64; // Number of segments to approximate a circle
 
 
 void AM_PRIMITIVE::DrawBasicShape( const GERBER_DRAW_ITEM* aParent, SHAPE_POLY_SET& aShapeBuffer,
@@ -481,7 +481,7 @@ void AM_PRIMITIVE::ConvertShapeToPolygon( const GERBER_DRAW_ITEM* aParent,
         wxPoint center = mapPt( params[2].GetValue( tool ), params[3].GetValue( tool ),
                                 m_GerbMetric );
         wxPoint corner;
-        const int delta = 3600 / seg_per_circle;    // rot angle in 0.1 degree
+        constexpr int delta = 3600 / seg_per_circle; // rot angle in 0.1 degree
 
         for( int angle = 0; angle < 3600; angle += delta )
         {

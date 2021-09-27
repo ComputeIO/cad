@@ -27,7 +27,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int cvpcbSchemaVersion = 0;
+constexpr int cvpcbSchemaVersion = 0;
 
 CVPCB_SETTINGS::CVPCB_SETTINGS() :
         APP_SETTINGS_BASE( "cvpcb", cvpcbSchemaVersion ),

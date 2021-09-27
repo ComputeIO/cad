@@ -56,7 +56,7 @@ static wxString formatFloat( double x, int nDigits )
 
 static void getSISuffix( double x, const wxString& unit, int& power, wxString& suffix )
 {
-    const int n_powers = 11;
+    constexpr int n_powers = 11;
 
     const struct
     {

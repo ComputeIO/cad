@@ -57,7 +57,7 @@ void TRACK_BALL::Drag( const wxPoint& aNewMousePosition )
 
     // "Pass the x and y coordinates of the last and current positions of
     //  the mouse, scaled so they are from (-1.0 ... 1.0)."
-    const float zoom = 1.0f;
+    constexpr float zoom = 1.0f;
 
     trackball( spin_quat, zoom * ( 2.0 * m_lastPosition.x - m_windowSize.x ) / m_windowSize.x,
                zoom * ( m_windowSize.y - 2.0 * m_lastPosition.y ) / m_windowSize.y,

@@ -78,15 +78,15 @@ public:
 
 private:
     ///< Number of mouse buttons that is handled in events.
-    static const int MouseButtonCount = 3;
+    static constexpr int MouseButtonCount = 3;
 
     ///< The time threshold for a mouse button press that distinguishes between a single mouse
     ///< click and a beginning of drag event (expressed in milliseconds).
-    static const int DragTimeThreshold = 300;
+    static constexpr int DragTimeThreshold = 300;
 
     ///< The distance threshold for mouse cursor that distinguishes between a single mouse click
     ///< and a beginning of drag event (expressed in screen pixels).
-    static const int DragDistanceThreshold = 8;
+    static constexpr int DragDistanceThreshold = 8;
 
     ///< Handles mouse related events (click, motion, dragging).
     bool handleMouseButton( wxEvent& aEvent, int aIndex, bool aMotion );

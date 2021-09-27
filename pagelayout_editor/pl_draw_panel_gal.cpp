@@ -115,7 +115,7 @@ void PL_DRAW_PANEL_GAL::DisplayDrawingSheet()
     // Build and add a DS_DRAW_ITEM_PAGE to show the page limits and the corner position
     // of the selected corner for coord origin of new items
     // Not also this item has no peer in DS_DATA_MODEL list.
-    const int penWidth = 0;     // This value is to use the default thickness line
+    constexpr int    penWidth = 0; // This value is to use the default thickness line
     constexpr double markerSize = Millimeter2iu( 5 );
     m_pageDrawItem = std::make_unique<DS_DRAW_ITEM_PAGE>( penWidth, markerSize );
     m_view->Add( m_pageDrawItem.get() );

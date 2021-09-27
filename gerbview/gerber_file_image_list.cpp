@@ -142,7 +142,7 @@ const wxString GERBER_FILE_IMAGE_LIST::GetDisplayName( int aIdx, bool aNameOnly,
         wxString filename = fn.GetFullName();
 
         // If the filename is too long, display a shortened name if requested
-        const int maxlen = 30;
+        constexpr int maxlen = 30;
 
         if( !aFullName && filename.Length() > maxlen )
         {

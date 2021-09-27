@@ -119,7 +119,7 @@ public:
     /**
      * This is the minimum precision for all the points in a shape.
      */
-    static const int MIN_PRECISION_IU = 4;
+    static constexpr int MIN_PRECISION_IU = 4;
 
     /**
      * Create an empty shape of type \a aType.

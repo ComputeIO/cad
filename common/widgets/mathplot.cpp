@@ -1078,7 +1078,7 @@ void mpScaleY::recalculateTicks( wxDC& dc, mpWindow& w )
 
     double zeroOffset = 100000000.0;
 
-    const int iterLimit = 1000;
+    constexpr int iterLimit = 1000;
     int i = 0;
 
     while( v < maxVvis && i < iterLimit )

@@ -48,8 +48,8 @@ float POST_SHADER_SSAO::aoFF( const SFVEC2I& aShaderPos, const SFVEC3F& ddiff,
                               const SFVEC3F& cnorm, const float aShadowAtSamplePos,
                               const float aShadowAtCenterPos, int c1, int c2 ) const
 {
-    const float shadowGain = 0.60f;
-    const float aoGain = 1.0f;
+    constexpr float shadowGain = 0.60f;
+    constexpr float aoGain = 1.0f;
 
     const float shadow_factor_at_sample = ( 1.0f - aShadowAtSamplePos ) * shadowGain;
     const float shadow_factor_at_center = ( 1.0f - aShadowAtCenterPos ) * shadowGain;
@@ -90,7 +90,7 @@ float POST_SHADER_SSAO::aoFF( const SFVEC2I& aShaderPos, const SFVEC3F& ddiff,
             // This is a dot product threshold factor.
             // it defines after which angle we consider that the point starts to occlude.
             // if the value is high, it will discard low angles point
-            const float aDotThreshold = 0.15f;
+            constexpr float aDotThreshold = 0.15f;
 
             // This is the dot product between the center pixel normal (the one that is being
             // shaded) and the vector from the center to the sampled point

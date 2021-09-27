@@ -75,7 +75,7 @@ bool GBR_TO_PCB_EXPORTER::ExportPcb( const LAYER_NUM* aLayerLookUpTable, int aCo
     writePcbHeader( aLayerLookUpTable );
 
     // create an image of gerber data
-    const int pcbCopperLayerMax = 31;
+    constexpr int           pcbCopperLayerMax = 31;
     GERBER_FILE_IMAGE_LIST* images = m_gerbview_frame->GetGerberLayout()->GetImagesList();
 
     // First collect all the holes.  We'll use these to generate pads, vias, etc.

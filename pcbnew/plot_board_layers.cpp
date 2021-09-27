@@ -1091,7 +1091,7 @@ static void initializePlotter( PLOTTER* aPlotter, const BOARD* aBoard,
  */
 static void FillNegativeKnockout( PLOTTER *aPlotter, const EDA_RECT &aBbbox )
 {
-    const int margin = 5 * IU_PER_MM;   // Add a 5 mm margin around the board
+    constexpr int margin = 5 * IU_PER_MM; // Add a 5 mm margin around the board
     aPlotter->SetNegative( true );
     aPlotter->SetColor( WHITE );        // Which will be plotted as black
     EDA_RECT area = aBbbox;

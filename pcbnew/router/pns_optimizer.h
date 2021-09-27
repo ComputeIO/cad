@@ -157,7 +157,7 @@ public:
     void AddConstraint ( OPT_CONSTRAINT *aConstraint );
 
 private:
-    static const int MaxCachedItems = 256;
+    static constexpr int MaxCachedItems = 256;
 
     typedef std::vector<SHAPE_LINE_CHAIN> BREAKOUT_LIST;
 

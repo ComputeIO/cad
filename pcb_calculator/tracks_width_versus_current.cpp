@@ -40,7 +40,7 @@ wxString tracks_width_versus_current_formula =
 extern double DoubleFromString( const wxString& TextValue );
 
 // The IPC2221 formula used to calculate track width is valid only for copper material
-const double copper_resistivity = 1.72e-8;
+constexpr double copper_resistivity = 1.72e-8;
 
 void PCB_CALCULATOR_FRAME::writeTrackWidthConfig()
 {

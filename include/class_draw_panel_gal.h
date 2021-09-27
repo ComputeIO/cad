@@ -241,7 +241,7 @@ protected:
     void onRefreshTimer( wxTimerEvent& aEvent );
     void onShowTimer( wxTimerEvent& aEvent );
 
-    static const int MinRefreshPeriod = 17;      ///< 60 FPS.
+    static constexpr int MinRefreshPeriod = 17; ///< 60 FPS.
 
     wxWindow*                m_parent;           ///< Pointer to the parent window
     EDA_DRAW_FRAME*          m_edaFrame;         ///< Parent EDA_DRAW_FRAME (if available)

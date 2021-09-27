@@ -27,7 +27,7 @@
 #include "pl_editor_settings.h"
 
 ///! Update the schema version whenever a migration is required
-const int plEditorSchemaVersion = 0;
+constexpr int plEditorSchemaVersion = 0;
 
 
 PL_EDITOR_SETTINGS::PL_EDITOR_SETTINGS() :

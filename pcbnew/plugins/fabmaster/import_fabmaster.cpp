@@ -60,7 +60,7 @@
 
 void FABMASTER::checkpoint()
 {
-    const unsigned PROGRESS_DELTA = 250;
+    constexpr unsigned PROGRESS_DELTA = 250;
 
     if( m_progressReporter )
     {

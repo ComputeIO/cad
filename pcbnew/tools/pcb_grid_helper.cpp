@@ -81,7 +81,7 @@ VECTOR2I PCB_GRID_HELPER::AlignToSegment( const VECTOR2I& aPoint, const SEG& aSe
 {
     OPT_VECTOR2I pts[6];
 
-    const int c_gridSnapEpsilon = 2;
+    constexpr int c_gridSnapEpsilon = 2;
 
     if( !m_enableSnap )
         return aPoint;
@@ -220,7 +220,7 @@ VECTOR2I PCB_GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, const LSET& a
                                           const std::vector<BOARD_ITEM*>& aSkip )
 {
     // Tuning constant: snap radius in screen space
-    const int snapSize = 25;
+    constexpr int snapSize = 25;
 
     // Snapping distance is in screen space, clamped to the current grid to ensure that the grid
     // points that are visible can always be snapped to.

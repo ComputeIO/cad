@@ -490,7 +490,7 @@ void SCH_EDIT_FRAME::DrawCurrentSheetToClipboard()
     int maxdim = std::max( dcsize.x, dcsize.y );
 
     // the max size in pixels of the bitmap used to build the sheet copy
-    const int maxbitmapsize = 5600;
+    constexpr int maxbitmapsize = 5600;
 
     while( int( maxdim * scale ) > maxbitmapsize )
     {

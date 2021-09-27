@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_SUITE( Coroutine )
  */
 BOOST_AUTO_TEST_CASE( Increment )
 {
-    const int count = 2;
+    constexpr int count = 2;
 
     const std::vector<COROUTINE_TEST_EVENT> exp_events = {
         { COROUTINE_TEST_EVENT::TYPE::CALL, count },

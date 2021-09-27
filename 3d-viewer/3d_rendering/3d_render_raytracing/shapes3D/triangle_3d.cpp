@@ -196,7 +196,7 @@ void TRIANGLE::SetUV( const SFVEC2F& aUV1, const SFVEC2F& aUV2, const SFVEC2F& a
 }
 
 
-static const unsigned int s_modulo[] = { 0, 1, 2, 0, 1 };
+static constexpr unsigned int s_modulo[] = { 0, 1, 2, 0, 1 };
 
 
 bool TRIANGLE::Intersect( const RAY& aRay, HITINFO& aHitInfo ) const

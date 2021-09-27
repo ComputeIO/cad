@@ -30,7 +30,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int pcbCalculatorSchemaVersion = 0;
+constexpr int pcbCalculatorSchemaVersion = 0;
 
 
 PCB_CALCULATOR_SETTINGS::PCB_CALCULATOR_SETTINGS() :

@@ -778,7 +778,7 @@ struct EPOLYGON
     //  - KiCad high priority drawn first
     // So since Eagle has an upper limit we define this, used for the cases
     // where no rank is specified.
-    static const int    max_priority = 6;
+    static constexpr int max_priority = 6;
 
     enum {      // for pour
         SOLID,

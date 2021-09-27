@@ -30,7 +30,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int colorsSchemaVersion = 3;
+constexpr int colorsSchemaVersion = 3;
 
 
 COLOR_SETTINGS::COLOR_SETTINGS( const wxString& aFilename ) :

@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE( ToWx )
  */
 BOOST_AUTO_TEST_CASE( FromWx )
 {
-    const double tol = 0.5 / 255.0; // One bit of quantised error
+    constexpr double tol = 0.5 / 255.0; // One bit of quantised error
 
     for( const auto& c : wx_conv_cases )
     {

@@ -48,7 +48,7 @@
 
 // default trailing digits in Gerber coordinates, when units are mm
 // This is also the max usable precision (i.e. internal Pcbnew Units)
-static const int gbrDefaultPrecision = 6;
+static constexpr int gbrDefaultPrecision = 6;
 
 
 using namespace PCBPLOTPARAMS_T;

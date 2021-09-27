@@ -41,7 +41,7 @@ void SYMBOL_EDIT_FRAME::SVGPlotSymbol( const wxString& aFullFileName )
     plotter->SetColorMode( true );
 
     wxPoint plot_offset;
-    const double scale = 1.0;
+    constexpr double scale = 1.0;
 
     // Currently, plot units are in decimil
     plotter->SetViewport( plot_offset, IU_PER_MILS/10, scale, false );

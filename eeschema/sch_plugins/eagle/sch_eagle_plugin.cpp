@@ -398,7 +398,7 @@ int SCH_EAGLE_PLUGIN::GetModifyHash() const
 
 void SCH_EAGLE_PLUGIN::checkpoint()
 {
-    const unsigned PROGRESS_DELTA = 5;
+    constexpr unsigned PROGRESS_DELTA = 5;
 
     if( m_progressReporter )
     {

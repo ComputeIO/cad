@@ -195,14 +195,14 @@ void EDA_3D_MODEL_VIEWER::ogl_initialize()
 
     // Setup light
     // https://www.opengl.org/sdk/docs/man2/xhtml/glLight.xml
-    const GLfloat ambient[]  = { 0.01f, 0.01f, 0.01f, 1.0f };
-    const GLfloat diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
-    const GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    constexpr GLfloat ambient[] = { 0.01f, 0.01f, 0.01f, 1.0f };
+    constexpr GLfloat diffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    constexpr GLfloat specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     // defines a directional light that points along the negative z-axis
-    const GLfloat position[] = { 0.0f, 0.0f, 2.0f * RANGE_SCALE_3D, 0.0f };
+    constexpr GLfloat position[] = { 0.0f, 0.0f, 2.0f * RANGE_SCALE_3D, 0.0f };
 
-    const GLfloat lmodel_ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    constexpr GLfloat lmodel_ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     glLightfv( GL_LIGHT0, GL_AMBIENT,  ambient );
     glLightfv( GL_LIGHT0, GL_DIFFUSE,  diffuse );

@@ -83,7 +83,7 @@ public:
     virtual void Present() override;
 
     // Constant used by glBindFramebuffer to turn off rendering to framebuffers
-    static const unsigned int DIRECT_RENDERING = 0;
+    static constexpr unsigned int DIRECT_RENDERING = 0;
 
     VECTOR2U GetScreenSize() const;
     GLenum   GetBufferTexture( unsigned int aBufferHandle );

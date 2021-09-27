@@ -27,7 +27,7 @@
 #include <settings/parameters.h>
 
 
-const int spiceSettingsSchemaVersion = 0;
+constexpr int spiceSettingsSchemaVersion = 0;
 
 
 SPICE_SIMULATOR_SETTINGS::SPICE_SIMULATOR_SETTINGS( JSON_SETTINGS* aParent,

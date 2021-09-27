@@ -110,7 +110,7 @@ void PCB_PARSER::init()
 
 void PCB_PARSER::checkpoint()
 {
-    const unsigned PROGRESS_DELTA = 250;
+    constexpr unsigned PROGRESS_DELTA = 250;
 
     if( m_progressReporter )
     {
@@ -509,7 +509,7 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
     // 60mils is 1.524mm
     if( !foundTextSize )
     {
-        const double defaultTextSize = 1.524 * IU_PER_MM;
+        constexpr double defaultTextSize = 1.524 * IU_PER_MM;
 
         aText->SetTextSize( wxSize( defaultTextSize, defaultTextSize ) );
     }

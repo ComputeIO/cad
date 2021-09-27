@@ -192,7 +192,7 @@ bool EDA_RECT::Intersects( const EDA_RECT& aRect, double aRot ) const
      */
 
     // Prevent floating point comparison errors
-    static const double ROT_EPS = 0.000000001;
+    static constexpr double ROT_EPS = 0.000000001;
 
     static const double ROT_PARALLEL[]      = { -3600, -1800, 0, 1800, 3600 };
     static const double ROT_PERPENDICULAR[] = { -2700, -900, 0, 900, 2700 };

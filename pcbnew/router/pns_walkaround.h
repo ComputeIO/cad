@@ -34,7 +34,7 @@ namespace PNS {
 
 class WALKAROUND : public ALGO_BASE
 {
-    static const int DefaultIterationLimit = 50;
+    static constexpr int DefaultIterationLimit = 50;
 
 public:
     WALKAROUND( NODE* aWorld, ROUTER* aRouter ) :

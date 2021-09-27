@@ -1749,7 +1749,7 @@ void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
             wxString      outLine, signal;
             SIM_PLOT_TYPE type = m_exporter->VectorToSignal( vec, signal );
 
-            const size_t tab     = 25; //characters
+            constexpr size_t tab = 25; //characters
             size_t padding = ( signal.length() < tab ) ? ( tab - signal.length() ) : 1;
 
             outLine.Printf( wxT( "%s%s" ),

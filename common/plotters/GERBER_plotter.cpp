@@ -75,7 +75,7 @@ static bool polyCompare( const std::vector<wxPoint>& aPolygon,
     if( aTestPolygon.size() != aPolygon.size() )
         return false;
 
-    const int margin = 2;
+    constexpr int margin = 2;
 
     for( size_t jj = 0; jj < aPolygon.size(); jj++ )
     {
@@ -1962,7 +1962,7 @@ void APER_MACRO_FREEPOLY::Format( FILE * aOutput, double aIu2GbrMacroUnit )
 
     // Insert a newline after curr_line_count_max coordinates.
     int curr_line_corner_count = 0;
-    const int curr_line_count_max = 20;     // <= 0 to disable newlines
+    constexpr int curr_line_count_max = 20; // <= 0 to disable newlines
 
     for( size_t ii = 0; ii <= m_Corners.size(); ii++ )
     {

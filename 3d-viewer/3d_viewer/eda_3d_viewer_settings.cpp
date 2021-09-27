@@ -29,7 +29,7 @@
 using KIGFX::COLOR4D;
 
 ///! Update the schema version whenever a migration is required
-const int viewer3dSchemaVersion = 1;
+constexpr int viewer3dSchemaVersion = 1;
 
 
 EDA_3D_VIEWER_SETTINGS::EDA_3D_VIEWER_SETTINGS()

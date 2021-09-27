@@ -315,7 +315,7 @@ void WX_VIEW_CONTROLS::onWheel( wxMouseEvent& aEvent )
     m_lastTimestamp = aEvent.GetTimestamp();
 #endif
 
-    const double wheelPanSpeed = 0.001;
+    constexpr double wheelPanSpeed = 0.001;
     const int    axis = aEvent.GetWheelAxis();
 
     if( axis == wxMOUSE_WHEEL_HORIZONTAL && !m_settings.m_horizontalPan )
@@ -541,8 +541,8 @@ void WX_VIEW_CONTROLS::onTimer( wxTimerEvent& aEvent )
 
 void WX_VIEW_CONTROLS::onScroll( wxScrollWinEvent& aEvent )
 {
-    const double linePanDelta = 0.05;
-    const double pagePanDelta = 0.5;
+    constexpr double linePanDelta = 0.05;
+    constexpr double pagePanDelta = 0.5;
 
     int type = aEvent.GetEventType();
     int dir = aEvent.GetOrientation();

@@ -367,7 +367,7 @@ static void fillArcPOLY( GERBER_DRAW_ITEM* aGbrItem, const wxPoint& aStart, cons
     double arc_angle = start_angle - end_angle;
 
     // Approximate arc by 36 segments per 360 degree
-    const int increment_angle = 3600 / 36;
+    constexpr int increment_angle = 3600 / 36;
     int count = std::abs( arc_angle / increment_angle );
 
     if( aGbrItem->m_Polygon.OutlineCount() == 0 )

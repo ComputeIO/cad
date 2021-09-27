@@ -36,7 +36,7 @@
 #include <board_design_settings.h>
 #include <pcbnew.h>
 
-const int bdsSchemaVersion = 2;
+constexpr int bdsSchemaVersion = 2;
 
 
 BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :

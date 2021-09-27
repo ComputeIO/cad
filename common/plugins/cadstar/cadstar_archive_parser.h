@@ -318,8 +318,8 @@ public:
     };
 
 
-    static const long FONT_NORMAL = 400;
-    static const long FONT_BOLD   = 700;
+    static constexpr long FONT_NORMAL = 400;
+    static constexpr long FONT_BOLD = 700;
 
 
     struct FONT : PARSER

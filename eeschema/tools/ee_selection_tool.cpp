@@ -1849,7 +1849,7 @@ void EE_SELECTION_TOOL::unhighlight( EDA_ITEM* aItem, int aMode, EE_SELECTION* a
 
 bool EE_SELECTION_TOOL::selectionContains( const VECTOR2I& aPoint ) const
 {
-    const unsigned GRIP_MARGIN = 20;
+    constexpr unsigned GRIP_MARGIN = 20;
     VECTOR2I margin = getView()->ToWorld( VECTOR2I( GRIP_MARGIN, GRIP_MARGIN ), false );
 
     // Check if the point is located within any of the currently selected items bounding boxes

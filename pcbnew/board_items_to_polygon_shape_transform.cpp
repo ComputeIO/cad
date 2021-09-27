@@ -592,7 +592,7 @@ void PAD::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
     // minimal segment count to approximate a circle to create the polygonal pad shape
     // This minimal value is mainly for very small pads, like SM0402.
     // Most of time pads are using the segment count given by aError value.
-    const int pad_min_seg_per_circle_count = 16;
+    constexpr int pad_min_seg_per_circle_count = 16;
     double  angle = m_orient;
     int     dx = m_size.x / 2;
     int     dy = m_size.y / 2;

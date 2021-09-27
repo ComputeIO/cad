@@ -32,7 +32,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int projectFileSchemaVersion = 1;
+constexpr int projectFileSchemaVersion = 1;
 
 
 PROJECT_FILE::PROJECT_FILE( const wxString& aFullPath ) :

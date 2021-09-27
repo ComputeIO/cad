@@ -571,7 +571,7 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
 
         // If it isn't attached, use the first display
         // Warning wxDisplay has 2 ctor variants. the parameter needs a type:
-        const unsigned int index = 0;
+        constexpr unsigned int index = 0;
         wxDisplay display( index );
         wxRect    clientSize = display.GetGeometry();
 

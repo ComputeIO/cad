@@ -85,7 +85,7 @@ private:
 bool DRC_TEST_PROVIDER_SILK_CLEARANCE::Run()
 {
     // This is the number of tests between 2 calls to the progress bar
-    const int delta = 500;
+    constexpr int delta = 500;
 
     if( m_drcEngine->IsErrorLimitExceeded( DRCE_OVERLAPPING_SILK ) )
     {

@@ -619,7 +619,7 @@ void EXPORTER_PCB_VRML::ExportVrmlBoard()
 }
 
 
-static const double err_approx_max = 0.005;
+static constexpr double err_approx_max = 0.005;
 
 
 void EXPORTER_PCB_VRML::ExportVrmlViaHoles()

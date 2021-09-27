@@ -243,8 +243,8 @@ bool PAD::GetBestAnchorPosition( VECTOR2I& aPos )
     if( poly.OutlineCount() > 1 )
         return false;
 
-    const int minSteps = 10;
-    const int maxSteps = 50;
+    constexpr int minSteps = 10;
+    constexpr int maxSteps = 50;
 
     int stepsX, stepsY;
 
