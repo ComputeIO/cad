@@ -613,7 +613,7 @@ public:
 
         const char* quote = out->GetQuoteChar( layer_id.c_str() );
 
-        const int RIGHTMARGIN = 70;
+        constexpr int RIGHTMARGIN = 70;
         int perLine = out->Print( nestLevel, "(%s %s%s%s %.6g",
                                   Name(),
                                   quote, layer_id.c_str(), quote,
@@ -1051,7 +1051,7 @@ public:
 
     void Format( OUTPUTFORMATTER* out, int nestLevel ) override
     {
-        const int RIGHTMARGIN = 80;
+        constexpr int RIGHTMARGIN = 80;
         int perLine = out->Print( nestLevel, "(%s", Name() );
 
         for( STRINGS::iterator i = padstacks.begin(); i != padstacks.end(); ++i )
@@ -2650,7 +2650,7 @@ public:
 
         if( pins.size() )
         {
-            const int RIGHTMARGIN = 80;
+            constexpr int RIGHTMARGIN = 80;
             int perLine = out->Print( nestLevel+1, "(%s", GetTokenText( pins_type ) );
 
             for( PIN_REFS::iterator i = pins.begin(); i != pins.end(); ++i )
@@ -2772,7 +2772,7 @@ public:
 
         int perLine = out->Print( nestLevel, "(%s %s%s%s", Name(), quote, class_id.c_str(), quote );
 
-        const int RIGHTMARGIN = 72;
+        constexpr int RIGHTMARGIN = 72;
 
         for( STRINGS::iterator i=net_ids.begin();  i!=net_ids.end();  ++i )
         {
@@ -3007,7 +3007,7 @@ public:
     {
         const char* quote = out->GetQuoteChar( padstack_id.c_str() );
 
-        const int RIGHTMARGIN = 80;
+        constexpr int RIGHTMARGIN = 80;
         int perLine = out->Print( nestLevel, "(%s %s%s%s", Name(), quote, padstack_id.c_str(),
                                   quote );
 

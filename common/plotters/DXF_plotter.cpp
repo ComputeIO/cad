@@ -35,7 +35,7 @@
  * Oblique angle for DXF native text
  * (I don't remember if 15 degrees is the ISO value... it looks nice anyway)
  */
-static const double DXF_OBLIQUE_ANGLE = 15;
+static constexpr double DXF_OBLIQUE_ANGLE = 15;
 
 /* The layer/colors palette. The acad/DXF palette is divided in 3 zones:
 

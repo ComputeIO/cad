@@ -74,7 +74,7 @@ void SYMBOL_LIBRARY_MANAGER::Sync( const wxString& aForceRefresh,
 
 void SYMBOL_LIBRARY_MANAGER::Preload( PROGRESS_REPORTER& aReporter )
 {
-    const int progressIntervalMillis = 60;
+    constexpr int progressIntervalMillis = 60;
 
     SYMBOL_ASYNC_LOADER loader( symTable()->GetLogicalLibs(), symTable(), false, nullptr,
                                 &aReporter );

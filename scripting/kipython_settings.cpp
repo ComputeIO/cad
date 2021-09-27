@@ -23,7 +23,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int kipythonSchemaVersion = 0;
+constexpr int kipythonSchemaVersion = 0;
 
 
 KIPYTHON_SETTINGS::KIPYTHON_SETTINGS() :

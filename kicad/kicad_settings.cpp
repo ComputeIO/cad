@@ -24,7 +24,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int kicadSchemaVersion = 0;
+constexpr int kicadSchemaVersion = 0;
 
 
 KICAD_SETTINGS::KICAD_SETTINGS() :

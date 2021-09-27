@@ -32,7 +32,7 @@
 
 // const int netSettingsSchemaVersion = 0;
 // const int netSettingsSchemaVersion = 1;     // new overbar syntax
-const int netSettingsSchemaVersion = 2;        // exclude buses from netclass members
+constexpr int netSettingsSchemaVersion = 2; // exclude buses from netclass members
 
 
 static OPT<int> getInPcbUnits( const nlohmann::json& aObj, const std::string& aKey,

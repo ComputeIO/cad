@@ -43,7 +43,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int pcbnewSchemaVersion = 1;
+constexpr int pcbnewSchemaVersion = 1;
 
 
 PCBNEW_SETTINGS::PCBNEW_SETTINGS()

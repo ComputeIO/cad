@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_SUITE( Circle )
 BOOST_AUTO_TEST_CASE( ParameterCtorMod )
 {
     const VECTOR2I center( 10, 20 );
-    const int      radius = 10;
+    constexpr int  radius = 10;
 
     // Build a circle referencing the previous values
     CIRCLE circle( center, radius );

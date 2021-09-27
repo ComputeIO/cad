@@ -433,7 +433,7 @@ public:
     /**
      * Draw a marker (used for the drill map).
      */
-    static const unsigned MARKER_COUNT = 58;
+    static constexpr unsigned MARKER_COUNT = 58;
 
     /**
      * Draw a pattern shape number aShapeId, to coord position.

@@ -29,7 +29,7 @@
 #include <base_units.h>
 
 ///! Update the schema version whenever a migration is required
-const int appSettingsSchemaVersion = 0;
+constexpr int appSettingsSchemaVersion = 0;
 
 
 APP_SETTINGS_BASE::APP_SETTINGS_BASE( const std::string& aFilename, int aSchemaVersion ) :
@@ -208,7 +208,7 @@ bool APP_SETTINGS_BASE::MigrateFromLegacy( wxConfigBase* aCfg )
 
 void APP_SETTINGS_BASE::migrateFindReplace( wxConfigBase* aCfg )
 {
-    const int find_replace_history_size = 10;
+    constexpr int  find_replace_history_size = 10;
     nlohmann::json find_history         = nlohmann::json::array();
     nlohmann::json replace_history      = nlohmann::json::array();
     wxString tmp, find_key, replace_key;

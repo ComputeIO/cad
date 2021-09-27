@@ -76,7 +76,7 @@ bool DRC_TEST_PROVIDER_ANNULAR_WIDTH::Run()
         return true;    // continue with other tests
     }
 
-    const int delta = 250;  // This is the number of tests between 2 calls to the progress bar
+    constexpr int delta = 250; // This is the number of tests between 2 calls to the progress bar
 
     if( !m_drcEngine->HasRulesForConstraintType( ANNULAR_WIDTH_CONSTRAINT ) )
     {

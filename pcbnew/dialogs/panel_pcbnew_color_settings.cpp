@@ -477,7 +477,7 @@ void PANEL_PCBNEW_COLOR_SETTINGS::createSwatches()
     // Give a minimal width to m_colorsListWindow, in order to always having
     // a full row shown
     int min_width = m_colorsGridSizer->GetMinSize().x;
-    const int margin = 20;  // A margin around the sizer
+    constexpr int margin = 20; // A margin around the sizer
     m_colorsListWindow->SetMinSize( wxSize( min_width + margin, -1 ) );
 }
 

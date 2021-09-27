@@ -101,7 +101,7 @@ ITEM* TOOL_BASE::pickSingleItem( const VECTOR2I& aWhere, int aNet, int aLayer, b
 {
     int tl = aLayer > 0 ? aLayer : getView()->GetTopLayer();
 
-    static const int candidateCount = 5;
+    static constexpr int candidateCount = 5;
     ITEM* prioritized[candidateCount];
     SEG::ecoord dist[candidateCount];
 

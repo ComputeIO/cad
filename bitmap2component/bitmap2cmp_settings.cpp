@@ -27,7 +27,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int bitmap2cmpSchemaVersion = 0;
+constexpr int bitmap2cmpSchemaVersion = 0;
 
 
 BITMAP2CMP_SETTINGS::BITMAP2CMP_SETTINGS() :

@@ -1728,7 +1728,7 @@ void DIALOG_NET_INSPECTOR::adjustListColumns()
     // For wxRenderGeneric it is 5px.
     // Also account for the sorting arrow in the column header.
     // Column 0 also needs space for any potential expander icons.
-    const int extra_width = 30;
+    constexpr int extra_width = 30;
 
     w0        = std::max( w0, minw_col0 ) + extra_width;
     minw_col1 = minw_col1 + extra_width;

@@ -319,7 +319,7 @@ bool DIALOG_PIN_PROPERTIES::TransferDataFromWindow()
 
     wxPoint newPos( m_posX.GetValue(), -m_posY.GetValue() );
 
-    const int acceptable_mingrid = 50;
+    constexpr int acceptable_mingrid = 50;
 
     // Only show the warning if the position has been changed
     if( ( m_origPos != newPos )

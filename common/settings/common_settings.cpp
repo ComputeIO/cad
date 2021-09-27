@@ -42,7 +42,7 @@ const std::set<wxString> envVarBlacklist =
 
 
 ///! Update the schema version whenever a migration is required
-const int commonSchemaVersion = 2;
+constexpr int commonSchemaVersion = 2;
 
 COMMON_SETTINGS::COMMON_SETTINGS() :
         JSON_SETTINGS( "kicad_common", SETTINGS_LOC::USER, commonSchemaVersion ),

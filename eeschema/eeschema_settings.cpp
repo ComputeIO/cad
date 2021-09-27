@@ -40,7 +40,7 @@
 using namespace T_BOMCFG_T;     // for the BOM_CFG_PARSER parser and its keywords
 
 ///! Update the schema version whenever a migration is required
-const int eeschemaSchemaVersion = 1;
+constexpr int eeschemaSchemaVersion = 1;
 
 /// Default value for bom.plugins
 const nlohmann::json defaultBomPlugins = {

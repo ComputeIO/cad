@@ -484,7 +484,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacl
 
     SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, obstacleLine, shovedLine );
 
-    const double extensionWalkThreshold = 1.0;
+    constexpr double extensionWalkThreshold = 1.0;
 
     double obsLen = obstacleLine.CLine().Length();
     double shovedLen = shovedLine.CLine().Length();
@@ -554,7 +554,7 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc )
 
     SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, obstacleLine, shovedLine );
 
-    const double extensionWalkThreshold = 1.0;
+    constexpr double extensionWalkThreshold = 1.0;
 
     double obsLen = obstacleLine.CLine().Length();
     double shovedLen = shovedLine.CLine().Length();

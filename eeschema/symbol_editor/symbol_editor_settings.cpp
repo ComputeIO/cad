@@ -29,7 +29,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int libeditSchemaVersion = 0;
+constexpr int libeditSchemaVersion = 0;
 
 
 SYMBOL_EDITOR_SETTINGS::SYMBOL_EDITOR_SETTINGS() :

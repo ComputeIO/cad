@@ -290,7 +290,7 @@ protected:
     typedef GAL super;
 
     /// Maximum number of arguments for one command
-    static const int MAX_CAIRO_ARGUMENTS = 4;
+    static constexpr int MAX_CAIRO_ARGUMENTS = 4;
 
     /// Definitions for the command recorder
     enum GRAPHICS_COMMAND

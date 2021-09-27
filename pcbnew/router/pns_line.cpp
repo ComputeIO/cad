@@ -565,7 +565,7 @@ bool LINE::Is45Degree() const
 
 const LINE LINE::ClipToNearestObstacle( NODE* aNode ) const
 {
-    const int IterationLimit = 5;
+    constexpr int IterationLimit = 5;
     int i;
     LINE l( *this );
 

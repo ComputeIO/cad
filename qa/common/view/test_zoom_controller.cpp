@@ -61,7 +61,7 @@ static const std::vector<CONST_ZOOM_CASE> const_zoom_cases = {
 BOOST_AUTO_TEST_CASE( ConstController )
 {
     // How close we need to be (not very, this is a subjective thing anyway)
-    const double tol_percent = 10;
+    constexpr double tol_percent = 10;
 
     double scale_for_step;
 
@@ -127,7 +127,7 @@ static const std::vector<ACCEL_ZOOM_CASE> accel_cases = {
  */
 BOOST_AUTO_TEST_CASE( AccelController )
 {
-    const double tol_percent = 10.0;
+    constexpr double tol_percent = 10.0;
 
     for( const auto& c : accel_cases )
     {

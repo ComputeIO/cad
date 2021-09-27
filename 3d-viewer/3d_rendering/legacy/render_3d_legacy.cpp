@@ -264,8 +264,8 @@ void RENDER_3D_LEGACY::setupMaterials()
     else    // Technical Mode
     {
         const SFVEC3F matAmbientColor  = SFVEC3F( 0.10f );
-        const SFVEC3F matSpecularColor = SFVEC3F( 0.10f );
-        const float matShininess = 0.1f * 128.0f;
+        constexpr SFVEC3F matSpecularColor = SFVEC3F( 0.10f );
+        constexpr float   matShininess = 0.1f * 128.0f;
 
         // Copper material
         m_materials.m_Copper.m_Ambient   = matAmbientColor;
@@ -451,16 +451,16 @@ void init_lights( void )
 {
     // Setup light
     // https://www.opengl.org/sdk/docs/man2/xhtml/glLight.xml
-    const GLfloat ambient[]   = { 0.084f, 0.084f, 0.084f, 1.0f };
-    const GLfloat diffuse0[]  = { 0.3f, 0.3f, 0.3f, 1.0f };
-    const GLfloat specular0[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+    constexpr GLfloat ambient[] = { 0.084f, 0.084f, 0.084f, 1.0f };
+    constexpr GLfloat diffuse0[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+    constexpr GLfloat specular0[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 
     glLightfv( GL_LIGHT0, GL_AMBIENT,  ambient );
     glLightfv( GL_LIGHT0, GL_DIFFUSE,  diffuse0 );
     glLightfv( GL_LIGHT0, GL_SPECULAR, specular0 );
 
-    const GLfloat diffuse12[]  = { 0.7f, 0.7f, 0.7f, 1.0f };
-    const GLfloat specular12[] = { 0.7f, 0.7f, 0.7f, 1.0f };
+    constexpr GLfloat diffuse12[] = { 0.7f, 0.7f, 0.7f, 1.0f };
+    constexpr GLfloat specular12[] = { 0.7f, 0.7f, 0.7f, 1.0f };
 
     // defines a directional light that points along the negative z-axis
     GLfloat position[4]  = { 0.0f, 0.0f, 1.0f, 0.0f };
@@ -486,7 +486,7 @@ void init_lights( void )
     glLightfv( GL_LIGHT2, GL_SPECULAR, specular12 );
     glLightfv( GL_LIGHT2, GL_POSITION, position );
 
-    const GLfloat lmodel_ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    constexpr GLfloat lmodel_ambient[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     glLightModelfv( GL_LIGHT_MODEL_AMBIENT, lmodel_ambient );
 
@@ -677,7 +677,7 @@ bool RENDER_3D_LEGACY::Redraw( bool aIsMoving, REPORTER* aStatusReporter,
         // Do not show inner layers when it is displaying the board and board body is opaque
         // enough: the time to create inner layers can be *really significant*.
         // So avoid creating them is they are not very visible
-        const double opacity_min = 0.8;
+        constexpr double opacity_min = 0.8;
 
         if( m_boardAdapter.GetFlag( FL_SHOW_BOARD_BODY ) &&
             ( m_boardAdapter.m_BoardBodyColor.a > opacity_min ) )
@@ -1365,7 +1365,7 @@ void RENDER_3D_LEGACY::generate3dGrid( GRID3D_TYPE aGridType )
     glEnable( GL_BLEND );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-    const double zpos = 0.0;
+    constexpr double zpos = 0.0;
 
     // Color of grid lines
     const SFVEC3F gridColor = m_boardAdapter.GetColor( DARKGRAY );
@@ -1373,7 +1373,7 @@ void RENDER_3D_LEGACY::generate3dGrid( GRID3D_TYPE aGridType )
     // Color of grid lines every 5 lines
     const SFVEC3F gridColor_marker = m_boardAdapter.GetColor( LIGHTBLUE );
     const double  scale            = m_boardAdapter.BiuTo3dUnits();
-    const GLfloat transparency     = 0.35f;
+    constexpr GLfloat transparency = 0.35f;
 
     double griSizeMM = 0.0;
 

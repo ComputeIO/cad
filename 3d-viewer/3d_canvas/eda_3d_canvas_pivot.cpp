@@ -38,7 +38,7 @@ static void pivot_render_triangles( float t )
 
     SFVEC3F vertexPointer[12];
 
-    const float u = 1.0f / 6.0f;
+    constexpr float u = 1.0f / 6.0f;
 
     vertexPointer[0] = SFVEC3F( ( -3.0f + t ) * u, -2.0f * u, 0.0f );
     vertexPointer[1] = SFVEC3F( ( -3.0f + t ) * u, 2.0f * u, 0.0f );

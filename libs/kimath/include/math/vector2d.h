@@ -29,7 +29,7 @@
 #define VECTOR2D_H_
 
 #include <limits>
-#include <iostream>
+//#include <iostream>
 #include <sstream>
 #include <type_traits>
 

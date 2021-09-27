@@ -526,11 +526,11 @@ APPEARANCE_CONTROLS::APPEARANCE_CONTROLS( PCB_BASE_FRAME* aParent, wxWindow* aFo
     m_netsGrid->SetSelectionForeground( m_netsGrid->GetDefaultCellTextColour() );
     m_netsGrid->SetSelectionBackground( m_panelNets->GetBackgroundColour() );
 
-    const int cellPadding      = 6;
+    constexpr int cellPadding = 6;
 #ifdef __WXMAC__
-    const int rowHeightPadding = 5;
+    constexpr int rowHeightPadding = 5;
 #else
-    const int rowHeightPadding = 3;
+    constexpr int rowHeightPadding = 3;
 #endif
 
     wxSize size = ConvertDialogToPixels( SWATCH_SIZE_SMALL_DU );

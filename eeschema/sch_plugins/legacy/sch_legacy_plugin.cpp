@@ -602,7 +602,7 @@ void SCH_LEGACY_PLUGIN::init( SCHEMATIC* aSchematic, const PROPERTIES* aProperti
 
 void SCH_LEGACY_PLUGIN::checkpoint()
 {
-    const unsigned PROGRESS_DELTA = 250;
+    constexpr unsigned PROGRESS_DELTA = 250;
 
     if( m_progressReporter )
     {

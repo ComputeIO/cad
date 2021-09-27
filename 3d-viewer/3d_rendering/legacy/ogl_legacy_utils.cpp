@@ -149,7 +149,7 @@ void DrawHalfOpenCylinder( unsigned int aNrSidesPerCircle )
 {
     if( aNrSidesPerCircle > 1 )
     {
-        const float radius = 0.5f;
+        constexpr float radius = 0.5f;
         const int delta = 3600 / aNrSidesPerCircle;
 
         // Generate bottom

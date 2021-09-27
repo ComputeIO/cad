@@ -135,7 +135,7 @@ const WALKAROUND::RESULT WALKAROUND::Route( const LINE& aInitialPath )
     // iteration limit causes lag, so we can exit out early if the walkaround path gets very long
     // compared with the initial path.  If the length exceeds the initial length times this factor,
     // fail out.
-    const int maxWalkDistFactor = 10;
+    constexpr int maxWalkDistFactor = 10;
     long long lengthLimit       = aInitialPath.CLine().Length() * maxWalkDistFactor;
 
     while( m_iteration < m_iterationLimit )

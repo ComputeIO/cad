@@ -216,7 +216,7 @@ static const char hpgl_end_polygon_cmd[] = "PM 2; FP; EP;\n";
 
 // HPGL scale factor (1 Plotter Logical Unit = 1/40mm = 25 micrometers)
 // PLUsPERDECIMIL = (25.4 / 10000) / 0.025
-static const double PLUsPERDECIMIL = 0.1016;
+static constexpr double PLUsPERDECIMIL = 0.1016;
 
 
 HPGL_PLOTTER::HPGL_PLOTTER()

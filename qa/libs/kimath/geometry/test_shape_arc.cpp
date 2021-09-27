@@ -60,10 +60,10 @@ static void CheckArcGeom( const SHAPE_ARC& aArc, const ARC_PROPERTIES& aProps, c
 {
     // Angular error - note this can get quite large for very small arcs,
     // as the integral position rounding has a relatively greater effect
-    const double angle_tol_deg = 1.0;
+    constexpr double angle_tol_deg = 1.0;
 
     // Position error - rounding to nearest integer
-    const int pos_tol = 1;
+    constexpr int pos_tol = 1;
 
     BOOST_CHECK_PREDICATE( KI_TEST::IsVecWithinTol<VECTOR2I>,
             ( aProps.m_start_point )( aProps.m_start_point )( pos_tol ) );
@@ -892,13 +892,13 @@ BOOST_AUTO_TEST_CASE( ArcToPolyline )
         },
     };
 
-    const int width = 0;
+    constexpr int width = 0;
 
     // Note: do not expect accuracies around 1 to work.  We use integers internally so we're
     // liable to rounding errors.  In PCBNew accuracy defaults to 5000 and we don't recommend
     // anything lower than 1000 (for performance reasons).
-    const int accuracy = 100;
-    const int epsilon  = 1;
+    constexpr int accuracy = 100;
+    constexpr int epsilon = 1;
 
     for( const auto& c : cases )
     {

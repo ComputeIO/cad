@@ -183,13 +183,13 @@ public:
     }
 
     ///< Single point size in pixels
-    static const int POINT_SIZE = 8;
+    static constexpr int POINT_SIZE = 8;
 
     ///< Border size when not hovering
-    static const int BORDER_SIZE = 2;
+    static constexpr int BORDER_SIZE = 2;
 
     ///< Border size when hovering
-    static const int HOVER_SIZE = 5;
+    static constexpr int HOVER_SIZE = 5;
 
 private:
     VECTOR2I             m_position;        ///< Position of EDIT_POINT.

@@ -198,7 +198,7 @@ static bool inline isSpace( int c ) { return strchr( delims, c ) != nullptr; }
 
 void LEGACY_PLUGIN::checkpoint()
 {
-    const unsigned PROGRESS_DELTA = 250;
+    constexpr unsigned PROGRESS_DELTA = 250;
 
     if( m_progressReporter )
     {

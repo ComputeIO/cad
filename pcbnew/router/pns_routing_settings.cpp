@@ -25,8 +25,7 @@
 #include "pns_routing_settings.h"
 
 namespace PNS {
-
-const int pnsSchemaVersion = 0;
+constexpr int pnsSchemaVersion = 0;
 
 
 ROUTING_SETTINGS::ROUTING_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :

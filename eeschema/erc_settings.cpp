@@ -27,8 +27,7 @@
 #include <settings/parameters.h>
 
 
-const int ercSettingsSchemaVersion = 0;
-
+constexpr int ercSettingsSchemaVersion = 0;
 
 
 #define OK PIN_ERROR::OK

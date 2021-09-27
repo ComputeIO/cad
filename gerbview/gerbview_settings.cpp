@@ -32,7 +32,7 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int gerbviewSchemaVersion = 0;
+constexpr int gerbviewSchemaVersion = 0;
 
 
 GERBVIEW_SETTINGS::GERBVIEW_SETTINGS() :

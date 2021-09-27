@@ -165,7 +165,7 @@ void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int r
                    FILL_TYPE fill, int width )
 {
     wxPoint   start, end;
-    const int delta = 50;   // increment (in 0.1 degrees) to draw circles
+    constexpr int delta = 50; // increment (in 0.1 degrees) to draw circles
 
     if( StAngle > EndAngle )
         std::swap( StAngle, EndAngle );

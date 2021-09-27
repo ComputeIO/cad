@@ -507,7 +507,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testItemAgainstZones( BOARD_ITEM* aItem
 void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackClearances()
 {
     // This is the number of tests between 2 calls to the progress bar
-    const int delta = 100;
+    constexpr int delta = 100;
     int       ii = 0;
 
     reportAux( "Testing %d tracks & vias...", m_board->Tracks().size() );
@@ -764,7 +764,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
 
 void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadClearances( )
 {
-    const int delta = 50;  // This is the number of tests between 2 calls to the progress bar
+    constexpr int delta = 50; // This is the number of tests between 2 calls to the progress bar
 
     size_t count = 0;
 
@@ -825,7 +825,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadClearances( )
 
 void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testZonesToZones()
 {
-    const int delta = 50;  // This is the number of tests between 2 calls to the progress bar
+    constexpr int delta = 50; // This is the number of tests between 2 calls to the progress bar
 
     SHAPE_POLY_SET  buffer;
     SHAPE_POLY_SET* boardOutline = nullptr;

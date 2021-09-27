@@ -33,7 +33,7 @@
 // an empty search string will result in all components being displayed as they
 // have the minimum score. However, in that case, we avoid expanding all the
 // nodes asd the result is very unspecific.
-static const unsigned kLowestDefaultScore = 1;
+static constexpr unsigned kLowestDefaultScore = 1;
 
 
 // Creates a score depending on the position of a string match. If the position

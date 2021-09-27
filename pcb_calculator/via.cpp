@@ -209,7 +209,7 @@ void PCB_CALCULATOR_FRAME::OnViaCalculate( wxCommandEvent& event )
 
     // Using thermal resistivity value 2.49e-3 meter-Kelvin/Watt, equivalent to
     // thermal conductivity of 401 Watt/(meter-Kelvin) [5][6]
-    const double thermalResistivity = 2.49e-3; // m K/W
+    constexpr double thermalResistivity = 2.49e-3;                              // m K/W
     double thermalResistance = thermalResistivity * viaLength / area; // deg C/W
 
     double voltageDrop = appliedCurrent * viaResistance;
@@ -220,9 +220,9 @@ void PCB_CALCULATOR_FRAME::OnViaCalculate( wxCommandEvent& event )
     // See comment #17 in [1] for a brief discussion on the formula
     // This formula from IPC-2221 [4] is also used in the Track Width calculator
     area /= pow( UNIT_MIL, 2 ); // m^2 to mil^2
-    const double k = 0.048;
-    const double b = 0.44;
-    const double c = 0.725;
+    constexpr double k = 0.048;
+    constexpr double b = 0.44;
+    constexpr double c = 0.725;
     double estimatedAmpacity = k * pow( temperatureDiff, b ) * pow( area, c );
 
     // Equation 7.6 in [7]

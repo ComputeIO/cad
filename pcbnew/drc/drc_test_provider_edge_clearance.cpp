@@ -225,7 +225,7 @@ bool DRC_TEST_PROVIDER_EDGE_CLEARANCE::Run()
              (int) edges.size(), (int) boardItems.size() );
 
     // This is the number of tests between 2 calls to the progress bar
-    const int delta = 50;
+    constexpr int delta = 50;
     int       ii = 0;
 
     for( BOARD_ITEM* item : boardItems )

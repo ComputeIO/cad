@@ -1316,4 +1316,4 @@ FONT_GLYPH_TYPE font_codepoint_infos[] = {
 { 632, 895, 25, 36, 1.3440f, 23.5680f, -0.4320f, 33.2640f, 24.0000f },
 { 939, 154, 26, 26, 0.1920f, 23.8080f, -0.6240f, 22.9440f, 24.0000f },
 };
-static const int bitmap_chars_count = 65535;
+static constexpr int bitmap_chars_count = 65535;

@@ -34,7 +34,7 @@
 
 #define PINNED_ITEMS_KEY      wxT( "PinnedItems" )
 
-static const int kDataViewIndent = 20;
+static constexpr int kDataViewIndent = 20;
 
 
 wxDataViewItem LIB_TREE_MODEL_ADAPTER::ToItem( const LIB_TREE_NODE* aNode )

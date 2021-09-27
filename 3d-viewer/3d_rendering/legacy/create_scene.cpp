@@ -392,8 +392,8 @@ OPENGL_RENDER_LIST* RENDER_3D_LEGACY::createBoard( const SHAPE_POLY_SET& aBoardP
         // We will set a unitary Z so it will in future used with transformations
         // since the board poly will be used not only to draw itself but also the
         // solder mask layers.
-        const float layer_z_top = 1.0f;
-        const float layer_z_bot = 0.0f;
+        constexpr float layer_z_top = 1.0f;
+        constexpr float layer_z_bot = 0.0f;
 
         TRIANGLE_DISPLAY_LIST* layerTriangles =
                 new TRIANGLE_DISPLAY_LIST( listBoardObject2d.size() );

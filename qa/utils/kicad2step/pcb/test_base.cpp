@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE( SexprTo2DPosAndRot )
             if( !ret )
                 continue;
 
-            const double tolPercent = 0.00001;  // seems small enough
+            constexpr double tolPercent = 0.00001; // seems small enough
 
             BOOST_CHECK_CLOSE( gotPos.x, c.m_exp_pos.x, tolPercent );
             BOOST_CHECK_CLOSE( gotPos.y, c.m_exp_pos.y, tolPercent );

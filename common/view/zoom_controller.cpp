@@ -73,7 +73,7 @@ ACCELERATING_ZOOM_CONTROLLER::ACCELERATING_ZOOM_CONTROLLER(
 double ACCELERATING_ZOOM_CONTROLLER::GetScaleForRotation( int aRotation )
 {
     // The minimal step value when changing the current zoom level
-    const double minStep = 1.05;
+    constexpr double minStep = 1.05;
 
     const auto timestamp = m_timestampProv->GetTimestamp();
     auto       timeDiff = std::chrono::duration_cast<TIMEOUT>( timestamp - m_lastTimestamp );

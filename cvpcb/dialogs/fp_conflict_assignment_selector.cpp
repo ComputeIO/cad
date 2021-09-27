@@ -155,7 +155,7 @@ void DIALOG_FP_CONFLICT_ASSIGNMENT_SELECTOR::OnSize( wxSizeEvent& aEvent )
 
 void DIALOG_FP_CONFLICT_ASSIGNMENT_SELECTOR::recalculateColumns()
 {
-    const int margin       = 16;
+    constexpr int margin = 16;
     int       totalLength  = 0;
     int       sel_length   = KIUI::GetTextSize( wxT( "XX" ), m_listFp ).x;
     int       maxRefLength = KIUI::GetTextSize( wxT( "XXX" ), m_listFp ).x;

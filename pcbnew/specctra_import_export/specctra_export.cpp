@@ -80,7 +80,7 @@ using namespace DSN;
 // add its own 0.1 to the clearances, I believe this is happening after
 // the load process (and moving traces) so I am of the opinion this is
 // still needed.
-static const double safetyMargin = 0.1;
+static constexpr double safetyMargin = 0.1;
 
 
 bool PCB_EDIT_FRAME::ExportSpecctraFile( const wxString& aFullFilename )
@@ -479,7 +479,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
     case PAD_SHAPE::ROUNDRECT:
     {
         // Export the shape as as polygon, round rect does not exist as primitive
-        const int      circleToSegmentsCount = 36;
+        constexpr int  circleToSegmentsCount = 36;
         int            rradius = aPad->GetRoundRectCornerRadius();
         SHAPE_POLY_SET cornerBuffer;
 

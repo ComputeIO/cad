@@ -65,7 +65,7 @@ public:
 
 bool DRC_TEST_PROVIDER_VIA_DIAMETER::Run()
 {
-    const int delta = 100;  // This is the number of tests between 2 calls to the progress bar
+    constexpr int delta = 100; // This is the number of tests between 2 calls to the progress bar
 
     if( m_drcEngine->IsErrorLimitExceeded( DRCE_VIA_DIAMETER ) )
     {

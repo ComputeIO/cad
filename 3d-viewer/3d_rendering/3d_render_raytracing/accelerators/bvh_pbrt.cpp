@@ -179,8 +179,8 @@ static void RadixSort( std::vector<MortonPrimitive>* v )
 {
     std::vector<MortonPrimitive> tempVector( v->size() );
 
-    const int bitsPerPass = 6;
-    const int nBits = 30;
+    constexpr int bitsPerPass = 6;
+    constexpr int nBits = 30;
 
     wxASSERT( ( nBits % bitsPerPass ) == 0 );
 
@@ -196,7 +196,7 @@ static void RadixSort( std::vector<MortonPrimitive>* v )
         std::vector<MortonPrimitive>& out = ( pass & 1 ) ? *v : tempVector;
 
         // Count number of zero bits in array for current radix sort bit
-        const int nBuckets = 1 << bitsPerPass;
+        constexpr int nBuckets = 1 << bitsPerPass;
         int bucketCount[nBuckets] = {0};
         const int bitMask = ( 1 << bitsPerPass ) - 1;
 
@@ -557,7 +557,7 @@ BVHBuildNode *BVH_PBRT::recursiveBuild ( std::vector<BVHPrimitiveInfo>& primitiv
                 else
                 {
                     // Allocate _BucketInfo_ for SAH partition buckets
-                    const int nBuckets = 12;
+                    constexpr int nBuckets = 12;
 
                     BucketInfo buckets[nBuckets];
 
@@ -691,8 +691,8 @@ BVHBuildNode *BVH_PBRT::HLBVHBuild( const std::vector<BVHPrimitiveInfo>& primiti
     for( int i = 0; i < (int)primitiveInfo.size(); ++i )
     {
         // Initialize _mortonPrims[i]_ for _i_th primitive
-        const int mortonBits  = 10;
-        const int mortonScale = 1 << mortonBits;
+        constexpr int mortonBits = 10;
+        constexpr int mortonScale = 1 << mortonBits;
 
         wxASSERT( primitiveInfo[i].primitiveNumber < (int)primitiveInfo.size() );
 
@@ -765,7 +765,7 @@ BVHBuildNode *BVH_PBRT::HLBVHBuild( const std::vector<BVHPrimitiveInfo>& primiti
     {
         // Generate _index_th LBVH treelet
         int nodesCreated = 0;
-        const int firstBit = 29 - 12;
+        constexpr int firstBit = 29 - 12;
 
         LBVHTreelet &tr = treeletsToBuild[index];
 
@@ -941,7 +941,7 @@ BVHBuildNode *BVH_PBRT::buildUpperSAH( std::vector<BVHBuildNode*>& treeletRoots,
     wxASSERT( centroidBounds.Max()[dim] != centroidBounds.Min()[dim] );
 
     // Allocate _BucketInfo_ for SAH partition buckets
-    const int nBuckets = 12;
+    constexpr int nBuckets = 12;
 
     BucketInfo buckets[nBuckets];
 

@@ -268,7 +268,7 @@ void PDF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, i
     /* Arcs are not so easily approximated by beziers (in the general case),
        so we approximate them in the old way */
     wxPoint   start, end;
-    const int delta = 50;   // increment (in 0.1 degrees) to draw circles
+    constexpr int delta = 50; // increment (in 0.1 degrees) to draw circles
 
     if( StAngle > EndAngle )
         std::swap( StAngle, EndAngle );
@@ -624,7 +624,7 @@ void PDF_PLOTTER::ClosePage()
        We use the MediaBox but PDF has lots of other less used boxes
        to use */
 
-    const double BIGPTsPERMIL = 0.072;
+    constexpr double BIGPTsPERMIL = 0.072;
     wxSize psPaperSize = m_pageInfo.GetSizeMils();
 
     fprintf( m_outputFile,

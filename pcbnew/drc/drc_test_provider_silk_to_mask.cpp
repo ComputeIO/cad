@@ -188,7 +188,7 @@ bool DRC_TEST_PROVIDER_SILK_TO_MASK::Run()
     };
 
     // This is the number of tests between 2 calls to the progress bar
-    const int delta = 250;
+    constexpr int delta = 250;
 
     maskTree.QueryCollidingPairs( &silkTree, layerPairs, checkClearance, m_largestClearance,
                                   [&]( int aCount, int aSize ) -> bool

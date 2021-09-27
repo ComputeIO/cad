@@ -80,7 +80,7 @@ void PCB_LAYER_BOX_SELECTOR::Resync()
     Freeze();
     Clear();
 
-    const int BM_SIZE = 14;
+    constexpr int BM_SIZE = 14;
 
     LSET show = LSET::AllLayersMask() & ~m_layerMaskDisable;
     LSET activated = getEnabledLayers() & ~m_layerMaskDisable;

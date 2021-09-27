@@ -31,9 +31,9 @@
 
 using namespace KIGFX::PREVIEW;
 
-static const double maxTickDensity = 10.0;       // min pixels between tick marks
-static const double midTickLengthFactor = 1.5;
-static const double majorTickLengthFactor = 2.5;
+static constexpr double maxTickDensity = 10.0; // min pixels between tick marks
+static constexpr double midTickLengthFactor = 1.5;
+static constexpr double majorTickLengthFactor = 2.5;
 
 
 /*

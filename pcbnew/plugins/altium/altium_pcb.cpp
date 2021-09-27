@@ -328,7 +328,7 @@ ALTIUM_PCB::~ALTIUM_PCB()
 
 void ALTIUM_PCB::checkpoint()
 {
-    const unsigned PROGRESS_DELTA = 250;
+    constexpr unsigned PROGRESS_DELTA = 250;
 
     if( m_progressReporter )
     {

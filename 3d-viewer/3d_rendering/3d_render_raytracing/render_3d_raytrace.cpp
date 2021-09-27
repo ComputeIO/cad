@@ -421,7 +421,7 @@ void RENDER_3D_RAYTRACE::renderTracing( GLubyte* ptrPBO, REPORTER* aStatusReport
 // https://github.com/g-truc/glm/blob/master/glm/gtc/color_space.inl#L12
 static SFVEC3F convertLinearToSRGB( const SFVEC3F& aRGBcolor )
 {
-    const float gammaCorrection = 1.0f / SRGB_GAMA;
+    constexpr float gammaCorrection = 1.0f / SRGB_GAMA;
     const SFVEC3F clampedColor = glm::clamp( aRGBcolor, SFVEC3F( 0.0f ), SFVEC3F( 1.0f ) );
 
     return glm::mix( glm::pow( clampedColor, SFVEC3F(gammaCorrection) ) * 1.055f - 0.055f,
@@ -1732,8 +1732,8 @@ SFVEC3F RENDER_3D_RAYTRACE::shadeHit( const SFVEC3F& aBgColor, const RAY& aRay, 
         if( ( objTransparency > 0.0f ) && m_boardAdapter.GetFlag( FL_RENDER_RAYTRACING_REFRACTIONS )
           && ( aRecursiveLevel < objMaterial->GetRefractionRecursionCount() ) )
         {
-            const float airIndex = 1.000293f;
-            const float glassIndex = 1.49f;
+            constexpr float airIndex = 1.000293f;
+            constexpr float glassIndex = 1.49f;
             const float air_over_glass = airIndex / glassIndex;
             const float glass_over_air = glassIndex / airIndex;
 

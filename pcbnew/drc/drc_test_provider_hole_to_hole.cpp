@@ -125,7 +125,7 @@ bool DRC_TEST_PROVIDER_HOLE_TO_HOLE::Run()
         return false;   // DRC cancelled
 
     // This is the number of tests between 2 calls to the progress bar
-    const size_t delta = 50;
+    constexpr size_t delta = 50;
     size_t       count = 0;
     size_t       ii = 0;
 

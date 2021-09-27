@@ -83,19 +83,19 @@ void MOUSE_TRAIL_TRACER::AddTrailPoint( const VECTOR2I& aP )
 DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
 {
     // Tuning factor for how good the "fit" of the trail must be to the posture
-    const double areaRatioThreshold = 1.3;
+    constexpr double areaRatioThreshold = 1.3;
 
     // Tuning factor to minimize flutter
-    const double areaRatioEpsilon = 0.25;
+    constexpr double areaRatioEpsilon = 0.25;
 
     // Minimum distance factor of the trail before the min area test is used to lock the solver
-    const double minAreaCutoffDistanceFactor = 6;
+    constexpr double minAreaCutoffDistanceFactor = 6;
 
     // Adjusts how far away from p0 we get before whatever posture we solved is locked in
-    const int lockDistanceFactor = 25;
+    constexpr int lockDistanceFactor = 25;
 
     // Adjusts how close to p0 we unlock the posture again if one was locked already
-    const int unlockDistanceFactor = 4;
+    constexpr int unlockDistanceFactor = 4;
 
     if( m_trail.PointCount() < 2 || m_manuallyForced )
     {

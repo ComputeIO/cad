@@ -91,7 +91,7 @@ const int* OGL_ATT_LIST::GetAttributesList( ANTIALIASING_MODE aAntiAliasingMode 
         // Check if the canvas supports multisampling.
         if( wxGLCanvas::IsDisplaySupported( m_openGL_attributes_list_to_use ) )
         {
-            static const int aaSamples[4] = {0, 2, 4, 8};
+            static constexpr int aaSamples[4] = { 0, 2, 4, 8 };
 
             // Check for possible sample sizes, start form the requested.
             int maxSamples = aaSamples[static_cast<int>( aAntiAliasingMode )];

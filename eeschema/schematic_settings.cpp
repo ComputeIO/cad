@@ -32,7 +32,7 @@
 #include <sim/spice_settings.h>
 
 
-const int schSettingsSchemaVersion = 1;
+constexpr int schSettingsSchemaVersion = 1;
 
 
 SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :

@@ -872,7 +872,7 @@ bool PS_PLOTTER::StartPlot()
     fprintf( m_outputFile, "%%%%PageOrder: Ascend\n" );
 
     // Print boundary box in 1/72 pixels per inch, box is in mils
-    const double BIGPTsPERMIL = 0.072;
+    constexpr double BIGPTsPERMIL = 0.072;
 
     /* The coordinates of the lower left corner of the boundary
        box need to be "rounded down", but the coordinates of its
