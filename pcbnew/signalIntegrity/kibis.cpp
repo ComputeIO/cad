@@ -16,12 +16,12 @@ IBIS_CORNER ReverseLogic( IBIS_CORNER aIn )
     return out;
 }
 
-bool KibisFromFile( wxString aFileName, std::vector<KIBIS_COMPONENT*>* aDest )
+bool KibisFromFile( std::string aFileName, std::vector<KIBIS_COMPONENT*>* aDest )
 {
     IbisParser* parser = new IbisParser();
     IbisFile*   file = new IbisFile();
     parser->m_parrot = true;
-    parser->parseFile( wxFileName( aFileName ), file );
+    parser->parseFile( aFileName, file );
     convertKibisAll( parser, aDest );
 
     return true;

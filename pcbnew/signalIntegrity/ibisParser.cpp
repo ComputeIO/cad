@@ -726,17 +726,16 @@ bool IbisPackageModel::Check()
 }
 
 
-
-bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
+bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
 {
     m_ibisFile = aFile;
     wxString err_msg;
 
     std::ifstream ibisFile;
-    ibisFile.open( aFileName.GetFullName() );
+    ibisFile.open( aFileName );
     if( ibisFile )
     {
-        err_msg = wxString( "Reading file " ) + aFileName.GetFullName() + wxString( "..." );
+        err_msg = wxString( "Reading file " ) + aFileName + wxString( "..." );
         m_reporter->Report( err_msg, RPT_SEVERITY_ACTION );
         std::filebuf* pbuf = ibisFile.rdbuf();
         long          size = pbuf->pubseekoff( 0, ibisFile.end );
@@ -776,7 +775,7 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
     else
     {
         err_msg = wxString( "Could not open file " );
-        err_msg += aFileName.GetFullName();
+        err_msg += aFileName;
         m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
     }
     return true;

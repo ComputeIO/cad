@@ -9,7 +9,6 @@
 #define IBIS_MAX_LINE_LENGTH 2048 // official limit is 1024
 
 #include <wx/string.h>
-#include <wx/filename.h>
 #include <reporter.h>
 //#include "common.h"
 #include <iostream>
@@ -439,7 +438,7 @@ public:
     IbisWaveform*      m_currentWaveform;
 
 
-    bool parseFile( wxFileName aFileName, IbisFile* );
+    bool parseFile( std::string aFileName, IbisFile* );
     bool parseHeader( wxString );
     bool parseComponent( wxString );
     bool parseModelSelector( wxString );

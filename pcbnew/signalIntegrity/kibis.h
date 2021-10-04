@@ -193,6 +193,6 @@ public:
     KIBIS_PIN* getPin( wxString aPinNumber );
 };
 
-bool KibisFromFile( wxString aFileName, std::vector<KIBIS_COMPONENT*>* aDest );
+bool KibisFromFile( std::string aFileName, std::vector<KIBIS_COMPONENT*>* aDest );
 
 #endif
