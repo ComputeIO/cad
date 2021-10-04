@@ -1,6 +1,5 @@
 #include "kibis.h"
 #include "ibis2kibis.h"
-#include <wx/textfile.h>
 
 IBIS_CORNER ReverseLogic( IBIS_CORNER aIn )
 {
@@ -285,25 +284,15 @@ void KIBIS_PIN::getKuKdFromFile( wxString* aSimul )
 {
     // @TODO
     // that's not the best way to do, but ¯\_(ツ)_/¯
-    wxTextFile file( "temp_input.spice" );
-    if( file.Exists() )
-    {
-        file.Clear();
-        file.Write();
-    }
-    else
-    {
-        file.Create();
-    }
-    file.AddLine( *aSimul );
-    file.Write();
+    std::ifstream in( "temp_input.spice" );
 
-    wxTextFile file2( "temp_output.spice" );
-    if( file2.Exists() )
-    {
-        file2.Clear();
-        file2.Write();
-    }
+    std::remove( "temp_input.spice" );
+    std::remove( "temp_output.spice" );
+
+    std::ofstream file( "temp_input.spice" );
+
+    file << *aSimul;
+
     system( "ngspice temp_input.spice" );
 
 
