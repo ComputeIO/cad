@@ -20,6 +20,7 @@
  */
 
 #include <array>
+#include <algorithm>
 #include "panel_eserie.h"
 
 
