@@ -5,6 +5,8 @@
 // PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
+#include "widgets/unit_selector.h"
+
 #include "panel_fusing_current_base.h"
 
 ///////////////////////////////////////////////////////////////////////////
@@ -36,9 +38,8 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_ambientValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("25"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_ambientValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	wxArrayString m_ambientUnitChoices;
-	m_ambientUnit = new wxChoice( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_ambientUnitChoices, 0 );
-	m_ambientUnit->SetSelection( 0 );
+	m_ambientUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("°C"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ambientUnit->Wrap( -1 );
 	fgSizer11->Add( m_ambientUnit, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	m_dummy2 = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
@@ -49,12 +50,11 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_meltingText->Wrap( -1 );
 	fgSizer11->Add( m_meltingText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_meltingValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("1083"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_meltingValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("1084"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_meltingValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	wxArrayString m_meltingUnitChoices;
-	m_meltingUnit = new wxChoice( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_meltingUnitChoices, 0 );
-	m_meltingUnit->SetSelection( 0 );
+	m_meltingUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("°C"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_meltingUnit->Wrap( -1 );
 	fgSizer11->Add( m_meltingUnit, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	m_widthRadio = new wxRadioButton( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
@@ -68,7 +68,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	fgSizer11->Add( m_widthValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	wxArrayString m_widthUnitChoices;
-	m_widthUnit = new wxChoice( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_widthUnitChoices, 0 );
+	m_widthUnit = new UNIT_SELECTOR_LEN( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_widthUnitChoices, 0 );
 	m_widthUnit->SetSelection( 0 );
 	fgSizer11->Add( m_widthUnit, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -83,7 +83,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	fgSizer11->Add( m_thicknessValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	wxArrayString m_thicknessUnitChoices;
-	m_thicknessUnit = new wxChoice( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_thicknessUnitChoices, 0 );
+	m_thicknessUnit = new UNIT_SELECTOR_LEN( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_thicknessUnitChoices, 0 );
 	m_thicknessUnit->SetSelection( 0 );
 	fgSizer11->Add( m_thicknessUnit, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 

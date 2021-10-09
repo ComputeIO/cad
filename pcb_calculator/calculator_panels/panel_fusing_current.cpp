@@ -22,11 +22,12 @@
 // https://adam-research.de/pdfs/TRM_WhitePaper10_AdiabaticWire.pdf
 
 #define ONDERKONK_COEFF 8.9e-6
-#define ONDERKONK_COEFF 8.9e-6
 
 #include <calculator_panels/panel_fusing_current.h>
 #include <pcb_calculator_settings.h>
 #include <string_utils.h>
+
+#include <widgets/unit_selector.h>
 
 #include <i18n_utility.h> // For _HKI definition
 wxString fusing_current_help =
@@ -80,6 +81,9 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     valid_W = m_widthValue->GetValue().ToDouble( &W );
     valid_T = m_thicknessValue->GetValue().ToDouble( &T );
     valid_time = m_timeValue->GetValue().ToDouble( &time );
+
+    T *= m_thicknessUnit->GetUnitScale() * 1000;
+    W *= m_widthUnit->GetUnitScale() * 1000;
 
     valid_Tm &= std::isfinite( Tm );
     valid_Ta &= std::isfinite( Ta );

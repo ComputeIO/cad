@@ -10,6 +10,8 @@
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
+class UNIT_SELECTOR_LEN;
+
 #include "html_window.h"
 #include "calculator_panels/calculator_panel.h"
 #include <wx/string.h>
@@ -19,8 +21,8 @@
 #include <wx/colour.h>
 #include <wx/settings.h>
 #include <wx/textctrl.h>
-#include <wx/choice.h>
 #include <wx/radiobut.h>
+#include <wx/choice.h>
 #include <wx/sizer.h>
 #include <wx/statbox.h>
 #include <wx/button.h>
@@ -44,19 +46,19 @@ class PANEL_FUSING_CURRENT_BASE : public CALCULATOR_PANEL
 		wxStaticText* m_dummy1;
 		wxStaticText* m_ambientText;
 		wxTextCtrl* m_ambientValue;
-		wxChoice* m_ambientUnit;
+		wxStaticText* m_ambientUnit;
 		wxStaticText* m_dummy2;
 		wxStaticText* m_meltingText;
 		wxTextCtrl* m_meltingValue;
-		wxChoice* m_meltingUnit;
+		wxStaticText* m_meltingUnit;
 		wxRadioButton* m_widthRadio;
 		wxStaticText* m_widthText;
 		wxTextCtrl* m_widthValue;
-		wxChoice* m_widthUnit;
+		UNIT_SELECTOR_LEN* m_widthUnit;
 		wxRadioButton* m_thicknessRadio;
 		wxStaticText* m_thicknessText;
 		wxTextCtrl* m_thicknessValue;
-		wxChoice* m_thicknessUnit;
+		UNIT_SELECTOR_LEN* m_thicknessUnit;
 		wxRadioButton* m_currentRadio;
 		wxStaticText* m_currentText;
 		wxTextCtrl* m_currentValue;
