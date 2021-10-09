@@ -66,6 +66,7 @@ class PANEL_FUSING_CURRENT_BASE : public CALCULATOR_PANEL
 		wxTextCtrl* m_timeValue;
 		wxStaticText* m_timeUnit;
 		wxButton* m_calculateButton;
+		wxStaticText* m_comment;
 		HTML_WINDOW* m_htmlHelp;
 
 		// Virtual event handlers, override them in your derived class

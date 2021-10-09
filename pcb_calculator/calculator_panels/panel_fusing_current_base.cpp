@@ -121,8 +121,18 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 
 	bSizer8->Add( m_parametersSizer, 0, wxALL, 5 );
 
+	wxBoxSizer* bSizer3;
+	bSizer3 = new wxBoxSizer( wxHORIZONTAL );
+
 	m_calculateButton = new wxButton( this, wxID_ANY, _("Calculate"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer8->Add( m_calculateButton, 0, wxALL, 5 );
+	bSizer3->Add( m_calculateButton, 0, wxALL, 5 );
+
+	m_comment = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_comment->Wrap( -1 );
+	bSizer3->Add( m_comment, 0, wxALIGN_CENTER|wxALL, 5 );
+
+
+	bSizer8->Add( bSizer3, 0, wxEXPAND, 5 );
 
 	wxStaticBoxSizer* m_helpSizer;
 	m_helpSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Help") ), wxVERTICAL );

@@ -1,5 +1,5 @@
 You can use the Onderkonk equation to check if a small track can handle huge current for a small amount of time.
-You may use it to estimate when a track fuse will blow, but results are not accurate and need validation.
+You may use it to help you design a track fuse, but results are not accurate and require further validation.
 
 <center>__8.9 * 10 <sup>-6</sup> * t * ( I / A ) <sup>2</sup>  = log<sub>10</sub> ( (T<sub>m</sub> - T<sub>a</sub> ) / ( 233 + T<sub>a</sub>  ) +1 )__</center>
 
@@ -18,3 +18,5 @@ A real track __always__ melts later than the prediction with this equation becau
 - The equation assumes no heat dissipation at all.
 
 - The equation does not predict when a track got molten, but predicts the onset of melting.
+
+- The track might never melt.

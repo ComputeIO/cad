@@ -161,4 +161,33 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         // What happened ??? an extra radio button ?
     }
+
+    // Now let's check the validity domain using the formula from the paper.
+    // https://adam-research.de/pdfs/TRM_WhitePaper10_AdiabaticWire.pdf
+    // We approximate the track with a circle having the same area.
+
+    double cp = 385;                    // Heat capacity in J / kg / K
+    double rho = 3900;                  // Mass density in kg / m^3
+    double r = sqrt( A / 3.14 ) / 1000; //radius in m;
+    double epsilon = 5.67e-8;           // Stefan-Boltzmann constant in W / ( m^2 K^4 )
+    double sigma = 0.5;                 // Surface radiative emissivity ( no unit )
+    // sigma is according to paper, between polished and oxidized
+
+    double tmKelvin = Tm + 273;
+    double frad = 0.5 * ( tmKelvin + 293 ) * ( tmKelvin + 293 ) * ( tmKelvin + 293 );
+
+    double tau = cp * rho * r / ( epsilon * sigma * frad * 2 );
+
+    std::cout << frad << std::endl;
+    std::cout << tau << std::endl;
+
+    if( 2 * time < tau )
+    {
+        m_comment->SetLabel( "" );
+    }
+    else
+    {
+        m_comment->SetLabel( "Time is high compared to geometry: results might not be accurate. "
+                             "The track could handle much more current" );
+    }
 }
