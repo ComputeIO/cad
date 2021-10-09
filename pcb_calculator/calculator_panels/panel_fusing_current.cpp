@@ -182,9 +182,6 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
 
     double tau = cp * rho * r / ( epsilon * sigma * frad * 2 );
 
-    std::cout << frad << std::endl;
-    std::cout << tau << std::endl;
-
     if( 2 * time < tau )
     {
         m_comment->SetLabel( "" );
