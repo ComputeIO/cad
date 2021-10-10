@@ -21,7 +21,9 @@
 // See equation 9b in this paper:
 // https://adam-research.de/pdfs/TRM_WhitePaper10_AdiabaticWire.pdf
 
-#define ONDERKONK_COEFF 8.9e-6
+// Onderkonk equation uses circular mils, but this constant uses mm^2
+// 33 * 0.0005067075 ^2
+#define ONDERKONK_COEFF 8.472e-6
 
 #include <calculator_panels/panel_fusing_current.h>
 #include <pcb_calculator_settings.h>
@@ -82,8 +84,12 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     valid_T = m_thicknessValue->GetValue().ToDouble( &T );
     valid_time = m_timeValue->GetValue().ToDouble( &time );
 
-    T *= m_thicknessUnit->GetUnitScale() * 1000;
-    W *= m_widthUnit->GetUnitScale() * 1000;
+    double scalingT, scalingW;
+
+    scalingT = m_thicknessUnit->GetUnitScale() * 1000;
+    scalingW = m_widthUnit->GetUnitScale() * 1000;
+    T *= scalingT;
+    W *= scalingW;
 
     valid_Tm &= std::isfinite( Tm );
     valid_Ta &= std::isfinite( Ta );
@@ -117,7 +123,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
         {
             A = I / sqrt( ftemp / time / ONDERKONK_COEFF );
             W = A / T;
-            m_widthValue->SetValue( wxString::Format( wxT( "%f" ), W ) );
+            m_widthValue->SetValue( wxString::Format( wxT( "%f" ), W / scalingW ) );
         }
         else
         {
@@ -130,7 +136,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
         {
             A = I / sqrt( ftemp / time / ONDERKONK_COEFF );
             T = A / W;
-            m_thicknessValue->SetValue( wxString::Format( wxT( "%f" ), T ) );
+            m_thicknessValue->SetValue( wxString::Format( wxT( "%f" ), T / scalingT ) );
         }
         else
         {
