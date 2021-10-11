@@ -36,10 +36,10 @@ wxString fusing_current_help =
 #include "fusing_current_help.h"
 
 
-        PANEL_FUSING_CURRENT::PANEL_FUSING_CURRENT( wxWindow * parent, wxWindowID id,
-                                                    const wxPoint& pos, const wxSize& size,
-                                                    long style, const wxString& name ) :
-        PANEL_FUSING_CURRENT_BASE( parent, id, pos, size, style, name )
+PANEL_FUSING_CURRENT::PANEL_FUSING_CURRENT( wxWindow * parent, wxWindowID id,
+                                            const wxPoint& pos, const wxSize& size,
+                                            long style, const wxString& name ) :
+PANEL_FUSING_CURRENT_BASE( parent, id, pos, size, style, name )
 {
     // show markdown formula explanation in lower help panel
     wxString msg;
@@ -77,11 +77,11 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     double Tm, Ta, I, W, T, time;
     bool   valid_Tm, valid_Ta, valid_I, valid_W, valid_T, valid_time;
 
-    valid_Tm = m_meltingValue->GetValue().ToDouble( &Tm );
-    valid_Ta = m_ambientValue->GetValue().ToDouble( &Ta );
-    valid_I = m_currentValue->GetValue().ToDouble( &I );
-    valid_W = m_widthValue->GetValue().ToDouble( &W );
-    valid_T = m_thicknessValue->GetValue().ToDouble( &T );
+    valid_Tm   = m_meltingValue->GetValue().ToDouble( &Tm );
+    valid_Ta   = m_ambientValue->GetValue().ToDouble( &Ta );
+    valid_I    = m_currentValue->GetValue().ToDouble( &I );
+    valid_W    = m_widthValue->GetValue().ToDouble( &W );
+    valid_T    = m_thicknessValue->GetValue().ToDouble( &T );
     valid_time = m_timeValue->GetValue().ToDouble( &time );
 
     double scalingT, scalingW;
@@ -91,11 +91,11 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     T *= scalingT;
     W *= scalingW;
 
-    valid_Tm &= std::isfinite( Tm );
-    valid_Ta &= std::isfinite( Ta );
-    valid_I &= std::isfinite( I );
-    valid_W &= std::isfinite( W );
-    valid_T &= std::isfinite( T );
+    valid_Tm   &= std::isfinite( Tm );
+    valid_Ta   &= std::isfinite( Ta );
+    valid_I    &= std::isfinite( I );
+    valid_W    &= std::isfinite( W );
+    valid_T    &= std::isfinite( T );
     valid_time &= std::isfinite( time );
 
     if( valid_Tm && valid_Ta )
@@ -104,18 +104,16 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
         valid_Ta &= Tm > Ta;
     }
 
-    valid_I &= ( I > 0 );
-    valid_W &= ( W > 0 );
-    valid_T &= ( T > 0 );
+    valid_I    &= ( I > 0 );
+    valid_W    &= ( W > 0 );
+    valid_T    &= ( T > 0 );
     valid_time &= ( time > 0 );
 
-    double A = W * T;
+    double A     = W * T;
     double ftemp = 1; // Temperature function
 
     if( valid_Ta && valid_Tm ) // Avoid division by 0 and log of negative
-    {
         ftemp = log10( ( Tm - Ta ) / ( 233 + Ta ) + 1 );
-    }
 
     if( m_widthRadio->GetValue() )
     {
@@ -176,11 +174,11 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     // https://adam-research.de/pdfs/TRM_WhitePaper10_AdiabaticWire.pdf
     // We approximate the track with a circle having the same area.
 
-    double cp = 385;                    // Heat capacity in J / kg / K
-    double rho = 3900;                  // Mass density in kg / m^3
-    double r = sqrt( A / 3.14 ) / 1000; //radius in m;
-    double epsilon = 5.67e-8;           // Stefan-Boltzmann constant in W / ( m^2 K^4 )
-    double sigma = 0.5;                 // Surface radiative emissivity ( no unit )
+    double cp      = 385;                     // Heat capacity in J / kg / K
+    double rho     = 3900;                    // Mass density in kg / m^3
+    double r       = sqrt( A / 3.14 ) / 1000; //radius in m;
+    double epsilon = 5.67e-8;                 // Stefan-Boltzmann constant in W / ( m^2 K^4 )
+    double sigma   = 0.5;                     // Surface radiative emissivity ( no unit )
     // sigma is according to paper, between polished and oxidized
 
     double tmKelvin = Tm + 273;
