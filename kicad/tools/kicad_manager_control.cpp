@@ -789,6 +789,7 @@ int KICAD_MANAGER_CONTROL::Execute( const TOOL_EVENT& aEvent )
         m_frame->PrintMsg( msg );
 
 #ifdef __WXMAC__
+        // This is fine because `execFile` does not derived from user input.
         wxExecute( wxString::Format( "osascript -e 'activate application \"%s\"' ", execFile ) );
 #endif
     }
