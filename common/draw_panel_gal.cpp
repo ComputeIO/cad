@@ -92,7 +92,7 @@ EDA_DRAW_PANEL_GAL::EDA_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWin
     SwitchBackend( aGalType );
     SetBackgroundStyle( wxBG_STYLE_CUSTOM );
 
-    ShowScrollbars( wxSHOW_SB_ALWAYS, wxSHOW_SB_ALWAYS );
+    ShowScrollbars( wxSHOW_SB_NEVER, wxSHOW_SB_NEVER ); // do not show scrollbar to increase viewable area
     EnableScrolling( false, false ); // otherwise Zoom Auto disables GAL canvas
 
     Connect( wxEVT_SIZE, wxSizeEventHandler( EDA_DRAW_PANEL_GAL::onSize ), nullptr, this );
