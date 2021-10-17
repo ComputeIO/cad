@@ -518,6 +518,10 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
                                           wxEmptyString,
                                           wxEmptyString,
                                           "German (DE)" ) );
+    aInfo.AddTranslator( new CONTRIBUTOR( "Mark Hämmerling",
+                                          wxEmptyString,
+                                          wxEmptyString,
+                                          "German (DE)" ) );
     aInfo.AddTranslator( new CONTRIBUTOR( "Manolis Stefanis",
                                           wxEmptyString,
                                           wxEmptyString,
