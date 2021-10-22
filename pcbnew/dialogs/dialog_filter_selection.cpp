@@ -29,20 +29,11 @@ DIALOG_FILTER_SELECTION::DIALOG_FILTER_SELECTION( PCB_BASE_FRAME* aParent, OPTIO
     DIALOG_FILTER_SELECTION_BASE( aParent ),
     m_options( aOptions )
 {
-    m_Include_Modules->SetValue( m_options.includeModules );
-    m_IncludeLockedModules->SetValue( m_options.includeLockedModules );
+    setCheckboxStatesFromOptions( aOptions );
 
-    if( m_Include_Modules->GetValue() )
-        m_IncludeLockedModules->Enable();
-    else
-        m_IncludeLockedModules->Disable();
-
-    m_Include_Tracks->SetValue( m_options.includeTracks );
-    m_Include_Vias->SetValue( m_options.includeVias );
-    m_Include_Zones->SetValue( m_options.includeZones );
-    m_Include_Draw_Items->SetValue( m_options.includeItemsOnTechLayers );
-    m_Include_Edges_Items->SetValue( m_options.includeBoardOutlineLayer );
-    m_Include_PcbTextes->SetValue( m_options.includePcbTexts );
+    // Default to "indeterminate" checkbox so previous user choices are
+    // preserved between each time dialog is displayed.
+    m_All_Items->Set3StateValue( wxCHK_UNDETERMINED );
 
     m_sdbSizer1OK->SetDefault();
     SetFocus();
@@ -60,11 +51,69 @@ void DIALOG_FILTER_SELECTION::checkBoxClicked( wxCommandEvent& aEvent )
 }
 
 
+void DIALOG_FILTER_SELECTION::setCheckboxStatesFromOptions( OPTIONS& aOptions )
+{
+    m_Include_Modules->SetValue( m_options.includeModules );
+    m_IncludeLockedModules->SetValue( m_options.includeLockedModules );
+
+    if( m_Include_Modules->GetValue() )
+        m_IncludeLockedModules->Enable();
+    else
+        m_IncludeLockedModules->Disable();
+
+    m_Include_Tracks->SetValue( m_options.includeTracks );
+    m_Include_Vias->SetValue( m_options.includeVias );
+    m_Include_Zones->SetValue( m_options.includeZones );
+    m_Include_Draw_Items->SetValue( m_options.includeItemsOnTechLayers );
+    m_Include_Edges_Items->SetValue( m_options.includeBoardOutlineLayer );
+    m_Include_PcbTexts->SetValue( m_options.includePcbTexts );
+}
+
+
+void DIALOG_FILTER_SELECTION::forceCheckboxStates( bool aNewState )
+{
+    m_Include_Modules->SetValue( aNewState );
+    m_IncludeLockedModules->SetValue( aNewState );
+
+    if( aNewState ) // Make enable state match checkbox state
+        m_IncludeLockedModules->Enable();
+    else
+        m_IncludeLockedModules->Disable();
+
+    m_Include_Tracks->SetValue( aNewState );
+    m_Include_Vias->SetValue( aNewState );
+    m_Include_Zones->SetValue( aNewState );
+    m_Include_Draw_Items->SetValue( aNewState );
+    m_Include_Edges_Items->SetValue( aNewState );
+    m_Include_PcbTexts->SetValue( aNewState );
+}
+
+
+void DIALOG_FILTER_SELECTION::allItemsClicked( wxCommandEvent& aEvent )
+{
+    switch( m_All_Items->Get3StateValue() )
+    {
+    case wxCHK_CHECKED:
+        forceCheckboxStates( true ); // Select all items
+        break;
+
+    case wxCHK_UNCHECKED:
+        forceCheckboxStates( false ); // Clear all items
+        break;
+
+    default:
+        setCheckboxStatesFromOptions( m_options ); // Restore user choices
+        break;
+    }
+}
+
+
 bool DIALOG_FILTER_SELECTION::TransferDataFromWindow()
 {
     if( !wxDialog::TransferDataFromWindow() )
         return false;
 
+    m_options.allItems                 = m_All_Items->Get3StateValue();
     m_options.includeModules           = m_Include_Modules->GetValue();
     m_options.includeLockedModules     = m_IncludeLockedModules->GetValue();
     m_options.includeTracks            = m_Include_Tracks->GetValue();
@@ -72,7 +121,7 @@ bool DIALOG_FILTER_SELECTION::TransferDataFromWindow()
     m_options.includeZones             = m_Include_Zones->GetValue();
     m_options.includeItemsOnTechLayers = m_Include_Draw_Items->GetValue();
     m_options.includeBoardOutlineLayer = m_Include_Edges_Items->GetValue();
-    m_options.includePcbTexts          = m_Include_PcbTextes->GetValue();
+    m_options.includePcbTexts          = m_Include_PcbTexts->GetValue();
 
     return true;
 }
