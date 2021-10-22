@@ -90,6 +90,7 @@ LANGUAGE_DESCR LanguagesList[] =
     { wxLANGUAGE_CATALAN,    ID_LANGUAGE_CATALAN,    wxT( "Català" ),   true },
     { wxLANGUAGE_JAPANESE,   ID_LANGUAGE_JAPANESE,   wxT( "日本語" ),    true },
     { wxLANGUAGE_LITHUANIAN, ID_LANGUAGE_LITHUANIAN, wxT( "Lietuvių" ), true },
+    { wxLANGUAGE_KOREAN,     ID_LANGUAGE_KOREAN,     wxT( "한국어"),     true },
     { 0, 0, "", false }         // Sentinel
 };
 #undef _
