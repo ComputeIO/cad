@@ -200,7 +200,7 @@ void SVG_PLOTTER::SetSvgCoordinatesFormat( unsigned aResolution, bool aUseInches
 
     // gives now a default value to iuPerDeviceUnit (because the units of the caller is now known)
     double iusPerMM = m_IUsPerDecimil / 2.54 * 1000;
-    m_iuPerDeviceUnit = pow( 10.0, m_precision ) / ( iusPerMM );
+    m_iuPerDeviceUnit = 1 / iusPerMM;
 
     if( m_useInch )
         m_iuPerDeviceUnit /= 25.4; // convert to inch
@@ -671,12 +671,12 @@ void SVG_PLOTTER::PenTo( const wxPoint& pos, char plume )
             setSVGPlotStyle();
         }
 
-        fprintf( m_outputFile, "<path d=\"M%d %d\n", (int) pos_dev.x, (int) pos_dev.y );
+        fprintf( m_outputFile, "<path d=\"M%f %f\n", pos_dev.x, pos_dev.y );
     }
     else if( m_penState != plume || pos != m_penLastpos )
     {
         DPOINT pos_dev = userToDeviceCoordinates( pos );
-        fprintf( m_outputFile, "L%d %d\n", (int) pos_dev.x, (int) pos_dev.y );
+        fprintf( m_outputFile, "L%f %f\n", pos_dev.x, pos_dev.y );
     }
 
     m_penState    = plume;
