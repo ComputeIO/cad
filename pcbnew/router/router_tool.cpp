@@ -1239,21 +1239,16 @@ int ROUTER_TOOL::ChangeRouterMode( const TOOL_EVENT& aEvent )
 }
 
 
-int ROUTER_TOOL::IncrementRouterMode( const TOOL_EVENT& aEvent )
+int ROUTER_TOOL::CycleRouterMode( const TOOL_EVENT& aEvent )
 {
     PNS::ROUTING_SETTINGS& settings = m_router->Settings();
-
     PNS::PNS_MODE mode = settings.Mode();
-    switch(mode){
-      case PNS::RM_MarkObstacles:
-          mode = PNS::RM_Shove;
-          break;
-      case PNS::RM_Shove:
-          mode = PNS::RM_Walkaround;
-          break;
-      case PNS::RM_Walkaround:
-          mode = PNS::RM_MarkObstacles;
-          break;
+
+    switch( mode )
+    {
+    case PNS::RM_MarkObstacles: mode = PNS::RM_Shove; break;
+    case PNS::RM_Shove: mode = PNS::RM_Walkaround; break;
+    case PNS::RM_Walkaround: mode = PNS::RM_MarkObstacles; break;
     }
 
     settings.SetMode( mode );
@@ -2030,7 +2025,7 @@ void ROUTER_TOOL::setTransitions()
     Go( &ROUTER_TOOL::ChangeRouterMode,       PCB_ACTIONS::routerHighlightMode.MakeEvent() );
     Go( &ROUTER_TOOL::ChangeRouterMode,       PCB_ACTIONS::routerShoveMode.MakeEvent() );
     Go( &ROUTER_TOOL::ChangeRouterMode,       PCB_ACTIONS::routerWalkaroundMode.MakeEvent() );
-    Go( &ROUTER_TOOL::IncrementRouterMode,    PCB_ACTIONS::switchRouterMode.MakeEvent() );
+    Go( &ROUTER_TOOL::CycleRouterMode,        PCB_ACTIONS::cycleRouterMode.MakeEvent() );
     Go( &ROUTER_TOOL::InlineDrag,             PCB_ACTIONS::routerInlineDrag.MakeEvent() );
     Go( &ROUTER_TOOL::InlineBreakTrack,       PCB_ACTIONS::inlineBreakTrack.MakeEvent() );
 

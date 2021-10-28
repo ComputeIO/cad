@@ -1342,9 +1342,9 @@ TOOL_ACTION PCB_ACTIONS::routerWalkaroundMode( "pcbnew.InteractiveRouter.Walkaro
         _( "Router Walkaround Mode" ), _( "Switch router to walkaround mode" ),
         BITMAPS::INVALID_BITMAP, AF_NONE, (void*) PNS::RM_Walkaround );
 
-TOOL_ACTION PCB_ACTIONS::switchRouterMode( "pcbnew.InteractiveRouter.SwitchRouterMode",
+TOOL_ACTION PCB_ACTIONS::cycleRouterMode( "pcbnew.InteractiveRouter.CycleRouterMode",
         AS_GLOBAL, 0, "",
-        _( "Switch Router Mode" ), _( "Switch router to the next mode" ),
+        _( "Cycle Router Mode" ), _( "Cycle router to the next mode" ),
         BITMAPS::INVALID_BITMAP);
 
 TOOL_ACTION PCB_ACTIONS::selectLayerPair( "pcbnew.InteractiveRouter.SelectLayerPair",
