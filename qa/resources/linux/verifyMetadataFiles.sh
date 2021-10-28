@@ -295,9 +295,9 @@ fi
 ###################################################################
 # Process return codes to flag errors for CI
 ###################################################################
-[ $METAINFO_VALID -ne 0 ] && echo 'Invalid metadata info' && exit 1
-[ $LAUNCHERS_VALID -ne 0 ] && echo 'Invalid launcher files' && exit 1
-[ $KICAD_MIME_VALID -ne 0 ] && echo 'Invalid KiCad MIME types' && exit 1
-[ $GERBER_MIME_VALID -ne 0 ] && echo 'Invalid GERBER MIME types' && exit 1
+[ $METAINFO_VALID -ne 1 ] && echo 'Invalid metadata info' && exit 1
+[ $LAUNCHERS_VALID -ne 1 ] && echo 'Invalid launcher files' && exit 1
+[ $KICAD_MIME_VALID -ne 1 ] && echo 'Invalid KiCad MIME types' && exit 1
+[ $GERBER_MIME_VALID -ne 1 ] && echo 'Invalid GERBER MIME types' && exit 1
 
 exit 0
