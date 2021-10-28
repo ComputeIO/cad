@@ -1246,9 +1246,9 @@ int ROUTER_TOOL::CycleRouterMode( const TOOL_EVENT& aEvent )
 
     switch( mode )
     {
-    case PNS::RM_MarkObstacles: mode = PNS::RM_Shove; break;
-    case PNS::RM_Shove: mode = PNS::RM_Walkaround; break;
-    case PNS::RM_Walkaround: mode = PNS::RM_MarkObstacles; break;
+    case PNS::RM_MarkObstacles: mode = PNS::RM_Shove;         break;
+    case PNS::RM_Shove:         mode = PNS::RM_Walkaround;    break;
+    case PNS::RM_Walkaround:    mode = PNS::RM_MarkObstacles; break;
     }
 
     settings.SetMode( mode );
