@@ -65,11 +65,14 @@ protected:
     bool TransferDataFromWindow() override;
 
 private:
+    wxCheckBoxState CurrCbState;
+
     void checkBoxClicked( wxCommandEvent& aEvent ) override;
     void allItemsClicked( wxCommandEvent& aEvent ) override;
 
     void setCheckboxStatesFromOptions( OPTIONS& aOptions );
     void forceCheckboxStates( bool aNewState );
+    wxCheckBoxState GetSuggestedAllItemsState( void );
 
     ///< Reference to the options struct to fill.
     OPTIONS& m_options;
