@@ -105,7 +105,7 @@ wxCheckBoxState DIALOG_FILTER_SELECTION::GetSuggestedAllItemsState( void )
 
         // If casting the child window to a checkbox isn't NULL, then the child is a checkbox
         wxCheckBox* CurrCB = dynamic_cast<wxCheckBox*>( current );
-        //if (dynamic_cast<wxCheckBox*>(current)) {
+
         if( CurrCB )
         {
             // Need to get count of checkboxes, but not include the "All Items" checkbox (the only
