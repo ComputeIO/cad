@@ -1656,8 +1656,11 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aForce
     wxLogTrace( "PNS", "buildInitialLine: m_direction %s, guessedDir %s, tail points %d",
                 m_direction.Format(), guessedDir.Format(), m_tail.PointCount() );
 
+    bool limit90 = ROUTING_SETTINGS::CornerIs90( Settings().GetCornerMode() );
+    bool fillet = ROUTING_SETTINGS::CornerIsRounded( Settings().GetCornerMode() );
     // Rounded corners don't make sense when routing orthogonally (single track at a time)
-    bool fillet = !m_orthoMode && Settings().GetCornerMode() == CORNER_MODE::ROUNDED_45;
+    if( m_orthoMode )
+      fillet = false;
 
     if( m_p_start == aP )
     {
@@ -1672,9 +1675,9 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aForce
         else
         {
             if( !m_tail.PointCount() )
-                l = guessedDir.BuildInitialTrace( m_p_start, aP, false, fillet );
+                l = guessedDir.BuildInitialTrace( m_p_start, aP, false, fillet, limit90 );
             else
-                l = m_direction.BuildInitialTrace( m_p_start, aP, false, fillet );
+                l = m_direction.BuildInitialTrace( m_p_start, aP, false, fillet, limit90 );
         }
 
         if( l.SegmentCount() > 1 && m_orthoMode )
@@ -1709,7 +1712,7 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aForce
     if( v.PushoutForce( m_currentNode, lead, force, solidsOnly, 40 ) )
     {
         SHAPE_LINE_CHAIN line = guessedDir.BuildInitialTrace( m_p_start, aP + force, false,
-                                                              fillet );
+                                                              fillet, limit90 );
         aHead = LINE( aHead, line );
 
         v.SetPos( v.Pos() + force );

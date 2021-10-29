@@ -54,9 +54,9 @@ enum PNS_OPTIMIZATION_EFFORT
 ///< What kind of corners to create in the line placers.
 enum class CORNER_MODE
 {
-    MITERED_90,     ///< H/V only (90-degree corners) (not yet implemented)
+    MITERED_90,     ///< H/V only (90-degree corners)
     MITERED_45,     ///< H/V/45 with mitered corners (default)
-    ROUNDED_90,     ///< H/V with filleted corners (not yet implemented)
+    ROUNDED_90,     ///< H/V with filleted corners
     ROUNDED_45      ///< H/V/45 with filleted corners
 };
 
@@ -151,6 +151,16 @@ public:
 
     CORNER_MODE GetCornerMode() const { return m_cornerMode; }
     void SetCornerMode( CORNER_MODE aMode ) { m_cornerMode = aMode; }
+
+    static bool CornerIsRounded( CORNER_MODE mode )
+    {
+        return mode == CORNER_MODE::ROUNDED_90 || mode == CORNER_MODE::ROUNDED_45;
+    }
+
+    static bool CornerIs90( CORNER_MODE mode )
+    {
+        return mode == CORNER_MODE::ROUNDED_90 || mode == CORNER_MODE::MITERED_90;
+    }
 
     bool GetOptimizeEntireDraggedTrack() const { return m_optimizeEntireDraggedTrack; }
     void SetOptimizeEntireDraggedTrack( bool aEnable ) { m_optimizeEntireDraggedTrack = aEnable; }

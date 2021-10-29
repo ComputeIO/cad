@@ -819,12 +819,10 @@ void ROUTER::ToggleRounded()
 
     switch( m_settings->GetCornerMode() )
     {
-    case CORNER_MODE::MITERED_45:
-        newMode = CORNER_MODE::ROUNDED_45;
-        break;
-
-    default:
-        break;
+    case CORNER_MODE::MITERED_90: newMode = CORNER_MODE::ROUNDED_45; break;
+    case CORNER_MODE::MITERED_45: newMode = CORNER_MODE::MITERED_90; break;
+    case CORNER_MODE::ROUNDED_90: newMode = CORNER_MODE::MITERED_45; break;
+    case CORNER_MODE::ROUNDED_45: newMode = CORNER_MODE::ROUNDED_90; break;
     }
 
     m_settings->SetCornerMode( newMode );
