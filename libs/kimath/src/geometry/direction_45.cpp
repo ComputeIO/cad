@@ -19,10 +19,9 @@
 
 #include <geometry/direction45.h>
 
-const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace90( const VECTOR2I& aP0,
-                                                          const VECTOR2I& aP1,
+const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace90( const VECTOR2I& aP0, const VECTOR2I& aP1,
                                                           bool aStartHorizontal,
-                                                          bool aFillet  ) const
+                                                          bool aFillet ) const
 {
     bool startHorizontal; //If we start with a diagonal or horizontal (in case a90Limit is set) track
 
@@ -53,35 +52,36 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace90( const VECTOR2I& aP0,
      *
      *          <-mp0->
      * aP0 -------------------+
-     *  .                     |  ^
-     *  .                     | mp1
-     *  .                     |  V
-     *  mp1 . . . . . . . .  aP1
+     *  .                     |
+     *  .                     |
+     *  .                     |
+     *                       aP1
      *
      * Filleted case:
      *
-     * For a fillet, we need to know the arc start point (A in the diagram below)
-     * A straight segment will be needed between aP0 and A in case distance aP0,mp0 is bigger
-     # than the distance mp0,aP1
+     * For a fillet, we need to know the arc end point
+     * A straight segment will be needed between aP0 and arcEnd in case distance aP0,mp0 is bigger
+     * than the distance mp0,aP1, if the distance is shorter the straigth segment is  between
+     * arcEnd and aP1. If both distances are equal, we don't need a straight segment.
      *
-     * aP0 ----- A ---__
-     *                   --
-     *                      \
-     *                       |
-     *                       aP1
+     * aP0 ----- arcEnd ---__
+     *                       --
+     *                          \
+     *                           |
+     *          arcCenter       aP1
      *
-     * For the length of the radius we use the shorter of the two distances mP0, aP0 and mp0,aP1.
+     * For the length of the radius we use the shorter of the horizontal and vertical distance.
      */
 
 
     VECTOR2I mp0;
     if( startHorizontal )
     {
-        mp0 = VECTOR2I(  w  * sw, 0 );     // direction: E
+        mp0 = VECTOR2I( w * sw, 0 ); // direction: E
     }
     else
     {
-        mp0 = VECTOR2I( 0, sh * h );       // direction: N
+        mp0 = VECTOR2I( 0, sh * h ); // direction: N
     }
 
 
@@ -91,12 +91,12 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace90( const VECTOR2I& aP0,
 
         if( w == h ) // we only need one arc without a straigth line.
         {
-          arc.ConstructFromStartEndCenter( aP0, aP1, aP1 - mp0, sh == sw != startHorizontal );
-          pl.Append( arc );
-          return pl;
+            arc.ConstructFromStartEndCenter( aP0, aP1, aP1 - mp0, sh == sw != startHorizontal );
+            pl.Append( arc );
+            return pl;
         }
 
-        VECTOR2I arcEnd;   // Arc position that is not at aP0 nor aP1
+        VECTOR2I arcEnd; // Arc position that is not at aP0 nor aP1
         VECTOR2I arcCenter;
 
         if( startHorizontal )
@@ -106,7 +106,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace90( const VECTOR2I& aP0,
                 int x = aP1.x - ( h * sw );
                 arcEnd = VECTOR2I( x, aP0.y );
                 arcCenter = VECTOR2I( x, aP1.y );
-                pl.Append( aP0  );
+                pl.Append( aP0 );
                 arc.ConstructFromStartEndCenter( arcEnd, aP1, arcCenter, sh != sw );
                 pl.Append( arc );
             }
@@ -127,14 +127,14 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace90( const VECTOR2I& aP0,
                 int y = aP1.y - ( w * sh );
                 arcEnd = VECTOR2I( aP0.x, y );
                 arcCenter = VECTOR2I( aP1.x, y );
-                pl.Append( aP0  );
+                pl.Append( aP0 );
                 arc.ConstructFromStartEndCenter( arcEnd, aP1, arcCenter, sh == sw );
                 pl.Append( arc );
             }
             else        // Arc followed by a horizontal line
             {
                 int x = aP0.x + ( h * sw );
-                arcEnd = VECTOR2I( x,  aP1.y );
+                arcEnd = VECTOR2I( x, aP1.y );
                 arcCenter = VECTOR2I( x, aP0.y );
                 arc.ConstructFromStartEndCenter( aP0, arcEnd, arcCenter, sh == sw );
                 pl.Append( arc );
@@ -224,7 +224,6 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
 
     // Shortcut where we can generate just one segment and quit.  Avoids more complicated handling
     // of precision errors if filleting is enabled
-    // TODO: needs refactoring if we support 90-degree arcs via this function
     if( w == h || w == 0 || h == 0 )
     {
         pl.Append( aP0 );

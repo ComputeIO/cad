@@ -1660,7 +1660,7 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aForce
     bool fillet = ROUTING_SETTINGS::CornerIsRounded( Settings().GetCornerMode() );
     // Rounded corners don't make sense when routing orthogonally (single track at a time)
     if( m_orthoMode )
-      fillet = false;
+        fillet = false;
 
     if( m_p_start == aP )
     {
@@ -1711,8 +1711,8 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aForce
 
     if( v.PushoutForce( m_currentNode, lead, force, solidsOnly, 40 ) )
     {
-        SHAPE_LINE_CHAIN line = guessedDir.BuildInitialTrace( m_p_start, aP + force, false,
-                                                              fillet, limit90 );
+        SHAPE_LINE_CHAIN line =
+                guessedDir.BuildInitialTrace( m_p_start, aP + force, false, fillet, limit90 );
         aHead = LINE( aHead, line );
 
         v.SetPos( v.Pos() + force );
