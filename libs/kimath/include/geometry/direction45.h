@@ -215,13 +215,6 @@ public:
         return ( m_dir % 2 ) == 1;
     }
 
-    /**
-     * Returns true if the direction is horizontal
-     *
-     * @return true, when horizontal.
-     */
-    bool IsHorizontal() const { return ( ( m_dir / 2 ) % 2 ) == 1; }
-
     bool IsDefined() const
     {
         return m_dir != UNDEFINED;
