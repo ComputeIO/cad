@@ -19,10 +19,148 @@
 
 #include <geometry/direction45.h>
 
+const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace90( const VECTOR2I& aP0,
+                                                          const VECTOR2I& aP1,
+                                                          bool aStartHorizontal,
+                                                          bool aFillet  ) const
+{
+    bool startHorizontal; //If we start with a diagonal or horizontal (in case a90Limit is set) track
+
+    if( m_dir == UNDEFINED )
+        startHorizontal = aStartHorizontal;
+    else
+        startHorizontal = IsHorizontal();
+
+    int w = abs( aP1.x - aP0.x );
+    int h = abs( aP1.y - aP0.y );
+    int sw = sign( aP1.x - aP0.x );
+    int sh = sign( aP1.y - aP0.y );
+
+    SHAPE_LINE_CHAIN pl;
+
+    // Shortcut where we can generate just one segment and quit.
+    if( w == 0 || h == 0 )
+    {
+        pl.Append( aP0 );
+        pl.Append( aP1 );
+        return pl;
+    }
+
+    /*
+     * Non-filleted case:
+     *
+     * For width greater than height, we're calculating something like this.
+     *
+     *          <-mp0->
+     * aP0 -------------------+
+     *  .                     |  ^
+     *  .                     | mp1
+     *  .                     |  V
+     *  mp1 . . . . . . . .  aP1
+     *
+     * Filleted case:
+     *
+     * For a fillet, we need to know the arc start point (A in the diagram below)
+     * A straight segment will be needed between aP0 and A in case distance aP0,mp0 is bigger
+     # than the distance mp0,aP1
+     *
+     * aP0 ----- A ---__
+     *                   --
+     *                      \
+     *                       |
+     *                       aP1
+     *
+     * For the length of the radius we use the shorter of the two distances mP0, aP0 and mp0,aP1.
+     */
+
+
+    VECTOR2I mp0;
+    if( startHorizontal )
+    {
+        mp0 = VECTOR2I(  w  * sw, 0 );     // direction: E
+    }
+    else
+    {
+        mp0 = VECTOR2I( 0, sh * h );       // direction: N
+    }
+
+
+    if( aFillet )
+    {
+        SHAPE_ARC arc;
+
+        if( w == h ) // we only need one arc without a straigth line.
+        {
+          arc.ConstructFromStartEndCenter( aP0, aP1, aP1 - mp0, sh == sw != startHorizontal );
+          pl.Append( arc );
+          return pl;
+        }
+
+        VECTOR2I arcEnd;   // Arc position that is not at aP0 nor aP1
+        VECTOR2I arcCenter;
+
+        if( startHorizontal )
+        {
+            if( w > h ) // Horizontal line followed by the arc
+            {
+                int x = aP1.x - ( h * sw );
+                arcEnd = VECTOR2I( x, aP0.y );
+                arcCenter = VECTOR2I( x, aP1.y );
+                pl.Append( aP0  );
+                arc.ConstructFromStartEndCenter( arcEnd, aP1, arcCenter, sh != sw );
+                pl.Append( arc );
+            }
+            else        // Arc followed by a vertical line
+            {
+                int y = aP0.y + ( w * sh );
+                arcEnd = VECTOR2I( aP1.x, y );
+                arcCenter = VECTOR2I( aP0.x, y );
+                arc.ConstructFromStartEndCenter( aP0, arcEnd, arcCenter, sh != sw );
+                pl.Append( arc );
+                pl.Append( aP1 );
+            }
+        }
+        else
+        {
+            if( w < h ) // Vertical line followed by the arc
+            {
+                int y = aP1.y - ( w * sh );
+                arcEnd = VECTOR2I( aP0.x, y );
+                arcCenter = VECTOR2I( aP1.x, y );
+                pl.Append( aP0  );
+                arc.ConstructFromStartEndCenter( arcEnd, aP1, arcCenter, sh == sw );
+                pl.Append( arc );
+            }
+            else        // Arc followed by a horizontal line
+            {
+                int x = aP0.x + ( h * sw );
+                arcEnd = VECTOR2I( x,  aP1.y );
+                arcCenter = VECTOR2I( x, aP0.y );
+                arc.ConstructFromStartEndCenter( aP0, arcEnd, arcCenter, sh == sw );
+                pl.Append( arc );
+                pl.Append( aP1 );
+            }
+        }
+    }
+    else
+    {
+        pl.Append( aP0 );
+        pl.Append( aP0 + mp0 );
+        pl.Append( aP1 );
+    }
+
+    pl.Simplify();
+    return pl;
+}
+
 
 const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, const VECTOR2I& aP1,
-                                                        bool aStartDiagonal, bool aFillet ) const
+                                                        bool aStartDiagonal, bool aFillet,
+                                                        bool a90Limit ) const
 {
+    if( a90Limit )
+        return BuildInitialTrace90( aP0, aP1, aStartDiagonal, aFillet );
+
     bool startDiagonal;
 
     if( m_dir == UNDEFINED )

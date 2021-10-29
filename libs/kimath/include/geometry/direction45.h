@@ -203,6 +203,16 @@ public:
         return ( m_dir % 2 ) == 1;
     }
 
+    /**
+     * Returns true if the direction is horizontal
+     *
+     * @return true, when horizontal.
+     */
+    bool IsHorizontal() const
+    {
+        return ( ( m_dir / 2 ) % 2 ) == 1;
+    }
+
     bool IsDefined() const
     {
         return m_dir != UNDEFINED;
@@ -216,11 +226,14 @@ public:
      * @param aP1 ending point
      * @param aStartDiagonal whether the first segment has to be diagonal
      * @param aFillet if true will fillet the 45-degree portion of the line chain
+     * @param a90Limit if true will limit it to 90° instead of 45°. aStartDiagonal now means 
+     *  start horizontal.
      * @return the trace
      */
     const SHAPE_LINE_CHAIN BuildInitialTrace( const VECTOR2I& aP0, const VECTOR2I& aP1,
                                               bool aStartDiagonal = false,
-                                              bool aFillet = false ) const;
+                                              bool aFillet = false,
+                                              bool a90Limit = false ) const;
 
     bool operator==( const DIRECTION_45& aOther ) const
     {
@@ -295,6 +308,10 @@ public:
     }
 
 private:
+    const SHAPE_LINE_CHAIN BuildInitialTrace90( const VECTOR2I& aP0,
+                                                const VECTOR2I& aP1,
+                                                bool aStartHorizontal,
+                                                bool aFillet=false  ) const;
 
     /**
      * Calculate the direction from a vector. If the vector's angle is not a multiple of 45
