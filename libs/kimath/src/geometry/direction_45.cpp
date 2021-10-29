@@ -19,7 +19,6 @@
 
 #include <geometry/direction45.h>
 
-
 const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, const VECTOR2I& aP1,
                                                         bool       aStartDiagonal,
                                                         CornerMode aMode ) const
