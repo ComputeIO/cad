@@ -238,6 +238,7 @@ void RECTWAVEGUIDE::get_rectwaveguide_phys()
 
 /*
  * analyze - analysis function
+ * source: https://empossible.net/wp-content/uploads/2018/03/Lecture-5c-Rectangular-waveguide.pdf
  */
 void RECTWAVEGUIDE::calcAnalyze()
 {
@@ -276,6 +277,10 @@ void RECTWAVEGUIDE::calcAnalyze()
 
 /*
  * synthesize - synthesis function
+ * source: re-arrangment of calcAnalyze equation
+ * TE10 (via fc(1,0) ) results in the b term not influencing the result, as long as 
+ * 1) fc > f
+ * 2) a > b
  */
 void RECTWAVEGUIDE::calcSynthesize()
 {
