@@ -388,7 +388,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
 
         pin->SetPosition( MILS_POINT( p.x - 300, p.y + 100 ) );
         pin->SetLength( Mils2iu( 100 ) );
-        pin->SetOrientation( PIN_RIGHT );
+        pin->SetOrientation( DRAW_PIN_ORIENT::PIN_RIGHT );
         pin->SetType( ELECTRICAL_PINTYPE::PT_INPUT );
         pin->SetNumber( wxT( "1" ) );
         pin->SetName( wxT( "-" ) );
@@ -400,7 +400,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
 
         pin->SetPosition( MILS_POINT( p.x - 300, p.y - 100 ) );
         pin->SetLength( Mils2iu( 100 ) );
-        pin->SetOrientation( PIN_RIGHT );
+        pin->SetOrientation( DRAW_PIN_ORIENT::PIN_RIGHT );
         pin->SetType( ELECTRICAL_PINTYPE::PT_INPUT );
         pin->SetNumber( wxT( "2" ) );
         pin->SetName( wxT( "+" ) );
@@ -412,7 +412,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
 
         pin->SetPosition( MILS_POINT( p.x + 300, p.y ) );
         pin->SetLength( Mils2iu( 100 ) );
-        pin->SetOrientation( PIN_LEFT );
+        pin->SetOrientation( DRAW_PIN_ORIENT::PIN_LEFT );
         pin->SetType( ELECTRICAL_PINTYPE::PT_OUTPUT );
         pin->SetNumber( wxT( "3" ) );
         pin->SetName( wxT( "OUT" ) );

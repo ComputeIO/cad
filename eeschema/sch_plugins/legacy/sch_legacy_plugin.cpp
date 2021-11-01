@@ -3571,7 +3571,17 @@ LIB_PIN* SCH_LEGACY_PLUGIN_CACHE::loadPin( std::unique_ptr<LIB_SYMBOL>& aSymbol,
                            aReader.LineNumber(), pos );
 
     pos += tmp.size() + 1;
-    int orientation = tmp[0];
+    DRAW_PIN_ORIENT orientation = DRAW_PIN_ORIENT::PIN_UP;
+    switch( static_cast<char>( tmp[0] ) )
+    {
+    case 'U': orientation = DRAW_PIN_ORIENT::PIN_UP;    break;
+    case 'D': orientation = DRAW_PIN_ORIENT::PIN_DOWN;  break;
+    case 'L': orientation = DRAW_PIN_ORIENT::PIN_LEFT;  break;
+    case 'R': orientation = DRAW_PIN_ORIENT::PIN_RIGHT; break;
+    default:
+        THROW_PARSE_ERROR( "unknown pin orientation", aReader.GetSource(), aReader.Line(),
+                           aReader.LineNumber(), pos );
+    }
 
     tmp = tokens.GetNextToken();
 

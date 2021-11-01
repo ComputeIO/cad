@@ -623,7 +623,8 @@ void DIALOG_LIB_EDIT_PIN_TABLE::OnAddRow( wxCommandEvent& event )
 
         SYMBOL_EDITOR_SETTINGS* cfg = m_editFrame->GetSettings();
 
-        if( last->GetOrientation() == PIN_LEFT || last->GetOrientation() == PIN_RIGHT )
+        if( last->GetOrientation() == DRAW_PIN_ORIENT::PIN_LEFT
+            || last->GetOrientation() == DRAW_PIN_ORIENT::PIN_RIGHT )
             pos.y -= Mils2iu(cfg->m_Repeat.pin_step);
         else
             pos.x += Mils2iu(cfg->m_Repeat.pin_step);

@@ -36,7 +36,7 @@
 
 
 static ELECTRICAL_PINTYPE g_LastPinType          = ELECTRICAL_PINTYPE::PT_INPUT;
-static int                g_LastPinOrient        = PIN_RIGHT;
+static DRAW_PIN_ORIENT    g_LastPinOrient        = DRAW_PIN_ORIENT::PIN_RIGHT;
 static GRAPHIC_PINSHAPE   g_LastPinShape         = GRAPHIC_PINSHAPE::LINE;
 static bool               g_LastPinCommonConvert = false;
 static bool               g_LastPinCommonUnit    = false;
@@ -424,10 +424,10 @@ LIB_PIN* SYMBOL_EDITOR_PIN_TOOL::RepeatPin( const LIB_PIN* aSourcePin )
 
     switch( pin->GetOrientation() )
     {
-    case PIN_UP:    step.x = Mils2iu(settings->m_Repeat.pin_step);   break;
-    case PIN_DOWN:  step.x = Mils2iu(settings->m_Repeat.pin_step);   break;
-    case PIN_LEFT:  step.y = Mils2iu(-settings->m_Repeat.pin_step);  break;
-    case PIN_RIGHT: step.y = Mils2iu(-settings->m_Repeat.pin_step);  break;
+    case DRAW_PIN_ORIENT::PIN_UP:    step.x = Mils2iu( settings->m_Repeat.pin_step );  break;
+    case DRAW_PIN_ORIENT::PIN_DOWN:  step.x = Mils2iu( settings->m_Repeat.pin_step );  break;
+    case DRAW_PIN_ORIENT::PIN_LEFT:  step.y = Mils2iu( -settings->m_Repeat.pin_step ); break;
+    case DRAW_PIN_ORIENT::PIN_RIGHT: step.y = Mils2iu( -settings->m_Repeat.pin_step ); break;
     }
 
     pin->Offset( step );

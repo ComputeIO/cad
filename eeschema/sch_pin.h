@@ -133,7 +133,7 @@ public:
 
     GRAPHIC_PINSHAPE GetShape() const;
 
-    int GetOrientation() const;
+    DRAW_PIN_ORIENT GetOrientation() const;
 
     int GetLength() const;
 

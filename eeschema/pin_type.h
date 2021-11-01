@@ -28,6 +28,7 @@
 #include <vector>
 
 enum class BITMAPS : unsigned int;
+enum class DRAW_PIN_ORIENT : int;
 
 /**
  * The symbol library pin object electrical types used in ERC tests.
@@ -79,8 +80,8 @@ wxString ElectricalPinTypeGetText( ELECTRICAL_PINTYPE );
 BITMAPS ElectricalPinTypeGetBitmap( ELECTRICAL_PINTYPE );
 
 wxString PinOrientationName( unsigned aPinOrientationCode );
-int PinOrientationCode( int index );
-int PinOrientationIndex( int code );
+DRAW_PIN_ORIENT PinOrientationCode( int index );
+int             PinOrientationIndex( DRAW_PIN_ORIENT code );
 
 const wxArrayString& PinTypeNames();
 const std::vector<BITMAPS>& PinTypeIcons();

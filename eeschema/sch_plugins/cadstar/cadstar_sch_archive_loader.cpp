@@ -2929,15 +2929,15 @@ void CADSTAR_SCH_ARCHIVE_LOADER::fixUpLibraryPins( LIB_SYMBOL* aSymbolToFix, int
                 {
                     int oDeg = (int) NormalizeAngle180( RAD2DEG( aAngleRad ) );
 
-                    if( oDeg >= -45 && oDeg <= 45 )
-                        pin->SetOrientation( 'R' ); // 0 degrees
-                    else if( oDeg >= 45 && oDeg <= 135 )
-                        pin->SetOrientation( 'U' ); // 90 degrees
-                    else if( oDeg >= 135 || oDeg <= -135 )
-                        pin->SetOrientation( 'L' ); // 180 degrees
-                    else
-                        pin->SetOrientation( 'D' ); // -90 degrees
-                };
+                if( oDeg >= -45 && oDeg <= 45 )
+                    pin->SetOrientation( DRAW_PIN_ORIENT::PIN_RIGHT ); // 0 degrees
+                else if( oDeg >= 45 && oDeg <= 135 )
+                    pin->SetOrientation( DRAW_PIN_ORIENT::PIN_UP ); // 90 degrees
+                else if( oDeg >= 135 || oDeg <= -135 )
+                    pin->SetOrientation( DRAW_PIN_ORIENT::PIN_LEFT ); // 180 degrees
+                else
+                    pin->SetOrientation( DRAW_PIN_ORIENT::PIN_DOWN ); // -90 degrees
+            };
 
         if( uniqueSegments.count( pin->GetPosition() ) )
         {

@@ -93,7 +93,7 @@ static int externalPinDecoSize( const RENDER_SETTINGS* aSettings, const LIB_PIN 
 
 LIB_PIN::LIB_PIN( LIB_SYMBOL* aParent ) :
         LIB_ITEM( LIB_PIN_T, aParent ),
-        m_orientation( PIN_RIGHT ),
+        m_orientation( DRAW_PIN_ORIENT::PIN_RIGHT ),
         m_shape( GRAPHIC_PINSHAPE::LINE ),
         m_type( ELECTRICAL_PINTYPE::PT_UNSPECIFIED ),
         m_attributes( 0 )
@@ -119,8 +119,9 @@ LIB_PIN::LIB_PIN( LIB_SYMBOL* aParent ) :
 
 
 LIB_PIN::LIB_PIN( LIB_SYMBOL* aParent, const wxString& aName, const wxString& aNumber,
-                  int aOrientation, ELECTRICAL_PINTYPE aPinType, int aLength, int aNameTextSize,
-                  int aNumTextSize, int aConvert, const VECTOR2I& aPos, int aUnit ) :
+                  DRAW_PIN_ORIENT aOrientation, ELECTRICAL_PINTYPE aPinType, int aLength,
+                  int aNameTextSize, int aNumTextSize, int aConvert, const VECTOR2I& aPos,
+                  int aUnit ) :
         LIB_ITEM( LIB_PIN_T, aParent ),
         m_position( aPos ),
         m_length( aLength ),
@@ -189,10 +190,10 @@ VECTOR2I LIB_PIN::GetPinRoot() const
     switch( m_orientation )
     {
     default:
-    case PIN_RIGHT: return VECTOR2I( m_position.x + m_length, -( m_position.y ) );
-    case PIN_LEFT:  return VECTOR2I( m_position.x - m_length, -( m_position.y ) );
-    case PIN_UP:    return VECTOR2I( m_position.x, -( m_position.y + m_length ) );
-    case PIN_DOWN:  return VECTOR2I( m_position.x, -( m_position.y - m_length ) );
+    case DRAW_PIN_ORIENT::PIN_RIGHT: return VECTOR2I( m_position.x + m_length, -( m_position.y ) );
+    case DRAW_PIN_ORIENT::PIN_LEFT:  return VECTOR2I( m_position.x - m_length, -( m_position.y ) );
+    case DRAW_PIN_ORIENT::PIN_UP:    return VECTOR2I( m_position.x, -( m_position.y + m_length ) );
+    case DRAW_PIN_ORIENT::PIN_DOWN:  return VECTOR2I( m_position.x, -( m_position.y - m_length ) );
     }
 }
 
@@ -208,7 +209,7 @@ void LIB_PIN::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, 
     LIB_SYMBOL* part = GetParent();
 
     /* Calculate pin orient taking in account the symbol orientation. */
-    int orient = PinDrawOrient( aTransform );
+    DRAW_PIN_ORIENT orient = PinDrawOrient( aTransform );
 
     /* Calculate the pin position */
     VECTOR2I pos1 = aTransform.TransformCoordinate( m_position ) + aOffset;
@@ -236,7 +237,7 @@ void LIB_PIN::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, 
 }
 
 
-void LIB_PIN::printPinSymbol( const RENDER_SETTINGS* aSettings, const VECTOR2I& aPos, int aOrient )
+void LIB_PIN::printPinSymbol( const RENDER_SETTINGS* aSettings, const VECTOR2I& aPos, DRAW_PIN_ORIENT aOrient )
 {
     wxDC*   DC = aSettings->GetPrintDC();
     int     MapX1, MapY1, x1, y1;
@@ -250,10 +251,10 @@ void LIB_PIN::printPinSymbol( const RENDER_SETTINGS* aSettings, const VECTOR2I& 
 
     switch( aOrient )
     {
-    case PIN_UP:     y1 = posY - len;  MapY1 = 1;   break;
-    case PIN_DOWN:   y1 = posY + len;  MapY1 = -1;  break;
-    case PIN_LEFT:   x1 = posX - len;  MapX1 = 1;   break;
-    case PIN_RIGHT:  x1 = posX + len;  MapX1 = -1;  break;
+    case DRAW_PIN_ORIENT::PIN_UP:    y1 = posY - len; MapY1 =  1; break;
+    case DRAW_PIN_ORIENT::PIN_DOWN:  y1 = posY + len; MapY1 = -1; break;
+    case DRAW_PIN_ORIENT::PIN_LEFT:  x1 = posX - len; MapX1 =  1; break;
+    case DRAW_PIN_ORIENT::PIN_RIGHT: x1 = posX + len; MapX1 = -1; break;
     }
 
     if( m_shape == GRAPHIC_PINSHAPE::INVERTED || m_shape == GRAPHIC_PINSHAPE::INVERTED_CLOCK )
@@ -347,7 +348,7 @@ void LIB_PIN::printPinSymbol( const RENDER_SETTINGS* aSettings, const VECTOR2I& 
 }
 
 
-void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos, int aPinOrient,
+void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos, DRAW_PIN_ORIENT aPinOrient,
                              int aTextInside, bool aDrawPinNum, bool aDrawPinName )
 {
     if( !aDrawPinName && !aDrawPinNum )
@@ -377,10 +378,10 @@ void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos
 
     switch( aPinOrient )
     {
-    case PIN_UP:    y1 -= m_length; break;
-    case PIN_DOWN:  y1 += m_length; break;
-    case PIN_LEFT:  x1 -= m_length; break;
-    case PIN_RIGHT: x1 += m_length; break;
+    case DRAW_PIN_ORIENT::PIN_UP:    y1 -= m_length; break;
+    case DRAW_PIN_ORIENT::PIN_DOWN:  y1 += m_length; break;
+    case DRAW_PIN_ORIENT::PIN_LEFT:  x1 -= m_length; break;
+    case DRAW_PIN_ORIENT::PIN_RIGHT: x1 += m_length; break;
     }
 
     wxString name = GetShownName();
@@ -394,19 +395,20 @@ void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos
 
     if( aTextInside )  // Draw the text inside, but the pin numbers outside.
     {
-        if(( aPinOrient == PIN_LEFT) || ( aPinOrient == PIN_RIGHT) )
+        if( ( aPinOrient == DRAW_PIN_ORIENT::PIN_LEFT )
+            || ( aPinOrient == DRAW_PIN_ORIENT::PIN_RIGHT ) )
         {
             // It is an horizontal line
             if( aDrawPinName )
             {
-                if( aPinOrient == PIN_RIGHT )
+                if( aPinOrient == DRAW_PIN_ORIENT::PIN_RIGHT )
                 {
                     x = x1 + aTextInside;
                     GRPrintText( DC, VECTOR2I( x, y1 ), NameColor, name, ANGLE_HORIZONTAL,
                                  pinNameSize, GR_TEXT_H_ALIGN_LEFT, GR_TEXT_V_ALIGN_CENTER,
                                  namePenWidth, false, false, font );
                 }
-                else    // Orient == PIN_LEFT
+                else // Orient == DRAW_PIN_ORIENT::PIN_LEFT
                 {
                     x = x1 - aTextInside;
                     GRPrintText( DC, VECTOR2I( x, y1 ), NameColor, name, ANGLE_HORIZONTAL,
@@ -425,7 +427,7 @@ void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos
         else            /* Its a vertical line. */
         {
             // Text is drawn from bottom to top (i.e. to negative value for Y axis)
-            if( aPinOrient == PIN_DOWN )
+            if( aPinOrient == DRAW_PIN_ORIENT::PIN_DOWN )
             {
                 y = y1 + aTextInside;
 
@@ -443,7 +445,7 @@ void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos
                                  GR_TEXT_V_ALIGN_BOTTOM, numPenWidth, false, false, font );
                 }
             }
-            else        /* PIN_UP */
+            else /* DRAW_PIN_ORIENT::PIN_UP */
             {
                 y = y1 - aTextInside;
 
@@ -465,7 +467,7 @@ void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos
     }
     else     /**** Draw num & text pin outside  ****/
     {
-        if( ( aPinOrient == PIN_LEFT) || ( aPinOrient == PIN_RIGHT) )
+        if( ( aPinOrient == DRAW_PIN_ORIENT::PIN_LEFT) || ( aPinOrient == DRAW_PIN_ORIENT::PIN_RIGHT) )
         {
             /* Its an horizontal line. */
             if( aDrawPinName )
@@ -506,7 +508,7 @@ void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, VECTOR2I& aPinPos
 
 
 void LIB_PIN::printPinElectricalTypeName( const RENDER_SETTINGS* aSettings, VECTOR2I& aPosition,
-                                          int aOrientation )
+                                          DRAW_PIN_ORIENT aOrientation )
 {
     wxDC*       DC = aSettings->GetPrintDC();
     wxString    typeName = GetElectricalTypeName();
@@ -532,22 +534,20 @@ void LIB_PIN::printPinElectricalTypeName( const RENDER_SETTINGS* aSettings, VECT
 
     switch( aOrientation )
     {
-    case PIN_UP:
+    case DRAW_PIN_ORIENT::PIN_UP:
         txtpos.y += offset;
         orient = ANGLE_VERTICAL;
         hjustify = GR_TEXT_H_ALIGN_RIGHT;
         break;
 
-    case PIN_DOWN:
+    case DRAW_PIN_ORIENT::PIN_DOWN:
         txtpos.y -= offset;
         orient = ANGLE_VERTICAL;
         break;
 
-    case PIN_LEFT:
-        txtpos.x += offset;
-        break;
+    case DRAW_PIN_ORIENT::PIN_LEFT: txtpos.x += offset; break;
 
-    case PIN_RIGHT:
+    case DRAW_PIN_ORIENT::PIN_RIGHT:
         txtpos.x -= offset;
         hjustify = GR_TEXT_H_ALIGN_RIGHT;
         break;
@@ -558,7 +558,7 @@ void LIB_PIN::printPinElectricalTypeName( const RENDER_SETTINGS* aSettings, VECT
 }
 
 
-void LIB_PIN::PlotSymbol( PLOTTER* aPlotter, const VECTOR2I& aPosition, int aOrientation ) const
+void LIB_PIN::PlotSymbol( PLOTTER* aPlotter, const VECTOR2I& aPosition, DRAW_PIN_ORIENT aOrientation ) const
 {
     int     MapX1, MapY1, x1, y1;
     COLOR4D color = aPlotter->RenderSettings()->GetLayerColor( LAYER_PIN );
@@ -572,10 +572,10 @@ void LIB_PIN::PlotSymbol( PLOTTER* aPlotter, const VECTOR2I& aPosition, int aOri
 
     switch( aOrientation )
     {
-    case PIN_UP:     y1 = aPosition.y - m_length;  MapY1 = 1;   break;
-    case PIN_DOWN:   y1 = aPosition.y + m_length;  MapY1 = -1;  break;
-    case PIN_LEFT:   x1 = aPosition.x - m_length;  MapX1 = 1;   break;
-    case PIN_RIGHT:  x1 = aPosition.x + m_length;  MapX1 = -1;  break;
+    case DRAW_PIN_ORIENT::PIN_UP:    y1 = aPosition.y - m_length; MapY1 =  1; break;
+    case DRAW_PIN_ORIENT::PIN_DOWN:  y1 = aPosition.y + m_length; MapY1 = -1; break;
+    case DRAW_PIN_ORIENT::PIN_LEFT:  x1 = aPosition.x - m_length; MapX1 =  1; break;
+    case DRAW_PIN_ORIENT::PIN_RIGHT: x1 = aPosition.x + m_length; MapX1 = -1; break;
     }
 
     if( m_shape == GRAPHIC_PINSHAPE::INVERTED || m_shape == GRAPHIC_PINSHAPE::INVERTED_CLOCK )
@@ -691,7 +691,7 @@ void LIB_PIN::PlotSymbol( PLOTTER* aPlotter, const VECTOR2I& aPosition, int aOri
 }
 
 
-void LIB_PIN::PlotPinTexts( PLOTTER* aPlotter, const VECTOR2I& aPinPos, int aPinOrient,
+void LIB_PIN::PlotPinTexts( PLOTTER* aPlotter, const VECTOR2I& aPinPos, DRAW_PIN_ORIENT aPinOrient,
                             int aTextInside, bool aDrawPinNum, bool aDrawPinName ) const
 {
     wxString name = GetShownName();
@@ -727,26 +727,27 @@ void LIB_PIN::PlotPinTexts( PLOTTER* aPlotter, const VECTOR2I& aPinPos, int aPin
 
     switch( aPinOrient )
     {
-    case PIN_UP:     y1 -= m_length;  break;
-    case PIN_DOWN:   y1 += m_length;  break;
-    case PIN_LEFT:   x1 -= m_length;  break;
-    case PIN_RIGHT:  x1 += m_length;  break;
+    case DRAW_PIN_ORIENT::PIN_UP:    y1 -= m_length; break;
+    case DRAW_PIN_ORIENT::PIN_DOWN:  y1 += m_length; break;
+    case DRAW_PIN_ORIENT::PIN_LEFT:  x1 -= m_length; break;
+    case DRAW_PIN_ORIENT::PIN_RIGHT: x1 += m_length; break;
     }
 
     /* Draw the text inside, but the pin numbers outside. */
     if( aTextInside )
     {
-        if( ( aPinOrient == PIN_LEFT) || ( aPinOrient == PIN_RIGHT) ) /* Its an horizontal line. */
+        if( ( aPinOrient == DRAW_PIN_ORIENT::PIN_LEFT )
+            || ( aPinOrient == DRAW_PIN_ORIENT::PIN_RIGHT ) ) /* Its an horizontal line. */
         {
             if( aDrawPinName )
             {
                 GR_TEXT_H_ALIGN_T hjustify;
-                if( aPinOrient == PIN_RIGHT )
+                if( aPinOrient == DRAW_PIN_ORIENT::PIN_RIGHT )
                 {
                     x = x1 + aTextInside;
                     hjustify = GR_TEXT_H_ALIGN_LEFT;
                 }
-                else    // orient == PIN_LEFT
+                else // orient == DRAW_PIN_ORIENT::PIN_LEFT
                 {
                     x = x1 - aTextInside;
                     hjustify = GR_TEXT_H_ALIGN_RIGHT;
@@ -764,7 +765,7 @@ void LIB_PIN::PlotPinTexts( PLOTTER* aPlotter, const VECTOR2I& aPinPos, int aPin
         }
         else         /* Its a vertical line. */
         {
-            if( aPinOrient == PIN_DOWN )
+            if( aPinOrient == DRAW_PIN_ORIENT::PIN_DOWN )
             {
                 y = y1 + aTextInside;
 
@@ -780,7 +781,7 @@ void LIB_PIN::PlotPinTexts( PLOTTER* aPlotter, const VECTOR2I& aPinPos, int aPin
                                     GR_TEXT_V_ALIGN_BOTTOM, numPenWidth, false, false );
                 }
             }
-            else        /* PIN_UP */
+            else /* DRAW_PIN_ORIENT::PIN_UP */
             {
                 y = y1 - aTextInside;
 
@@ -802,7 +803,8 @@ void LIB_PIN::PlotPinTexts( PLOTTER* aPlotter, const VECTOR2I& aPinPos, int aPin
     }
     else     /* Draw num & text pin outside */
     {
-        if(( aPinOrient == PIN_LEFT) || ( aPinOrient == PIN_RIGHT) )
+        if( ( aPinOrient == DRAW_PIN_ORIENT::PIN_LEFT )
+            || ( aPinOrient == DRAW_PIN_ORIENT::PIN_RIGHT ) )
         {
             /* Its an horizontal line. */
             if( aDrawPinName )
@@ -842,34 +844,34 @@ void LIB_PIN::PlotPinTexts( PLOTTER* aPlotter, const VECTOR2I& aPinPos, int aPin
 }
 
 
-int LIB_PIN::PinDrawOrient( const TRANSFORM& aTransform ) const
+DRAW_PIN_ORIENT LIB_PIN::PinDrawOrient( const TRANSFORM& aTransform ) const
 {
-    int      orient;
-    VECTOR2I end; // position of pin end starting at 0,0 according to its orientation, length = 1
+    DRAW_PIN_ORIENT orient;
+    VECTOR2I        end; // position of pin end starting at 0,0 according to its orientation, length = 1
 
     switch( m_orientation )
     {
-    case PIN_UP:     end.y = 1;   break;
-    case PIN_DOWN:   end.y = -1;  break;
-    case PIN_LEFT:   end.x = -1;  break;
-    case PIN_RIGHT:  end.x = 1;   break;
+    case DRAW_PIN_ORIENT::PIN_UP:    end.y =  1; break;
+    case DRAW_PIN_ORIENT::PIN_DOWN:  end.y = -1; break;
+    case DRAW_PIN_ORIENT::PIN_LEFT:  end.x = -1; break;
+    case DRAW_PIN_ORIENT::PIN_RIGHT: end.x =  1; break;
     }
 
     // = pos of end point, according to the symbol orientation.
     end    = aTransform.TransformCoordinate( end );
-    orient = PIN_UP;
+    orient = DRAW_PIN_ORIENT::PIN_UP;
 
     if( end.x == 0 )
     {
         if( end.y > 0 )
-            orient = PIN_DOWN;
+            orient = DRAW_PIN_ORIENT::PIN_DOWN;
     }
     else
     {
-        orient = PIN_RIGHT;
+        orient = DRAW_PIN_ORIENT::PIN_RIGHT;
 
         if( end.x < 0 )
-            orient = PIN_LEFT;
+            orient = DRAW_PIN_ORIENT::PIN_LEFT;
     }
 
     return orient;
@@ -913,7 +915,7 @@ int LIB_PIN::compare( const LIB_ITEM& aOther, LIB_ITEM::COMPARE_FLAGS aCompareFl
         return m_length - tmp->m_length;
 
     if( m_orientation != tmp->m_orientation )
-        return m_orientation - tmp->m_orientation;
+        return static_cast<int>( m_orientation ) - static_cast<int>( tmp->m_orientation );
 
     if( m_shape != tmp->m_shape )
         return static_cast<int>( m_shape ) - static_cast<int>( tmp->m_shape );
@@ -982,10 +984,10 @@ void LIB_PIN::MirrorHorizontal( const VECTOR2I& aCenter )
     m_position.x *= -1;
     m_position.x += aCenter.x;
 
-    if( m_orientation == PIN_RIGHT )
-        m_orientation = PIN_LEFT;
-    else if( m_orientation == PIN_LEFT )
-        m_orientation = PIN_RIGHT;
+    if( m_orientation == DRAW_PIN_ORIENT::PIN_RIGHT )
+        m_orientation = DRAW_PIN_ORIENT::PIN_LEFT;
+    else if( m_orientation == DRAW_PIN_ORIENT::PIN_LEFT )
+        m_orientation = DRAW_PIN_ORIENT::PIN_RIGHT;
 }
 
 
@@ -995,10 +997,10 @@ void LIB_PIN::MirrorVertical( const VECTOR2I& aCenter )
     m_position.y *= -1;
     m_position.y += aCenter.y;
 
-    if( m_orientation == PIN_UP )
-        m_orientation = PIN_DOWN;
-    else if( m_orientation == PIN_DOWN )
-        m_orientation = PIN_UP;
+    if( m_orientation == DRAW_PIN_ORIENT::PIN_UP )
+        m_orientation = DRAW_PIN_ORIENT::PIN_DOWN;
+    else if( m_orientation == DRAW_PIN_ORIENT::PIN_DOWN )
+        m_orientation = DRAW_PIN_ORIENT::PIN_UP;
 }
 
 
@@ -1012,20 +1014,20 @@ void LIB_PIN::Rotate( const VECTOR2I& aCenter, bool aRotateCCW )
     {
         switch( m_orientation )
         {
-        case PIN_RIGHT: m_orientation = PIN_UP;    break;
-        case PIN_UP:    m_orientation = PIN_LEFT;  break;
-        case PIN_LEFT:  m_orientation = PIN_DOWN;  break;
-        case PIN_DOWN:  m_orientation = PIN_RIGHT; break;
+        case DRAW_PIN_ORIENT::PIN_RIGHT: m_orientation = DRAW_PIN_ORIENT::PIN_UP;    break;
+        case DRAW_PIN_ORIENT::PIN_UP:    m_orientation = DRAW_PIN_ORIENT::PIN_LEFT;  break;
+        case DRAW_PIN_ORIENT::PIN_LEFT:  m_orientation = DRAW_PIN_ORIENT::PIN_DOWN;  break;
+        case DRAW_PIN_ORIENT::PIN_DOWN:  m_orientation = DRAW_PIN_ORIENT::PIN_RIGHT; break;
         }
     }
     else
     {
         switch( m_orientation )
         {
-        case PIN_RIGHT: m_orientation = PIN_DOWN;  break;
-        case PIN_UP:    m_orientation = PIN_RIGHT; break;
-        case PIN_LEFT:  m_orientation = PIN_UP;    break;
-        case PIN_DOWN:  m_orientation = PIN_LEFT;  break;
+        case DRAW_PIN_ORIENT::PIN_RIGHT: m_orientation = DRAW_PIN_ORIENT::PIN_DOWN;  break;
+        case DRAW_PIN_ORIENT::PIN_UP:    m_orientation = DRAW_PIN_ORIENT::PIN_RIGHT; break;
+        case DRAW_PIN_ORIENT::PIN_LEFT:  m_orientation = DRAW_PIN_ORIENT::PIN_UP;    break;
+        case DRAW_PIN_ORIENT::PIN_DOWN:  m_orientation = DRAW_PIN_ORIENT::PIN_LEFT;  break;
         }
     }
 }
@@ -1037,8 +1039,8 @@ void LIB_PIN::Plot( PLOTTER* aPlotter, const VECTOR2I& aOffset, bool aFill,
     if( !IsVisible() )
         return;
 
-    int     orient = PinDrawOrient( aTransform );
-    VECTOR2I pos = aTransform.TransformCoordinate( m_position ) + aOffset;
+    DRAW_PIN_ORIENT orient = PinDrawOrient( aTransform );
+    VECTOR2I        pos = aTransform.TransformCoordinate( m_position ) + aOffset;
 
     PlotSymbol( aPlotter, pos, orient );
     PlotPinTexts( aPlotter, pos, orient, GetParent()->GetPinNameOffset(),
@@ -1126,7 +1128,7 @@ const EDA_RECT LIB_PIN::GetBoundingBox( bool aIncludeInvisibles, bool aPinOnly )
         minsizeV = std::max( TARGET_PIN_RADIUS, externalPinDecoSize( nullptr, *this ) );
 
     // calculate top left corner position
-    // for the default pin orientation (PIN_RIGHT)
+    // for the default pin orientation (DRAW_PIN_ORIENT::PIN_RIGHT)
     begin.y = std::max( minsizeV, numberTextHeight + Mils2iu( PIN_TEXT_MARGIN ) );
     begin.x = std::min( 0, m_length - ( numberTextLength / 2) );
 
@@ -1155,31 +1157,30 @@ const EDA_RECT LIB_PIN::GetBoundingBox( bool aIncludeInvisibles, bool aPinOnly )
     }
 
     // Now, calculate boundary box corners position for the actual pin orientation
-    int orient = PinDrawOrient( DefaultTransform );
+    DRAW_PIN_ORIENT orient = PinDrawOrient( DefaultTransform );
 
     /* Calculate the pin position */
     switch( orient )
     {
-    case PIN_UP:
+    case DRAW_PIN_ORIENT::PIN_UP:
         // Pin is rotated and texts positions are mirrored
         RotatePoint( begin, VECTOR2I( 0, 0 ), -ANGLE_90 );
         RotatePoint( end, VECTOR2I( 0, 0 ), -ANGLE_90 );
         break;
 
-    case PIN_DOWN:
+    case DRAW_PIN_ORIENT::PIN_DOWN:
         RotatePoint( begin, VECTOR2I( 0, 0 ), ANGLE_90 );
         RotatePoint( end, VECTOR2I( 0, 0 ), ANGLE_90 );
         begin.x = -begin.x;
         end.x = -end.x;
         break;
 
-    case PIN_LEFT:
+    case DRAW_PIN_ORIENT::PIN_LEFT:
         begin.x = -begin.x;
         end.x = -end.x;
         break;
 
-    case PIN_RIGHT:
-        break;
+    case DRAW_PIN_ORIENT::PIN_RIGHT: break;
     }
 
     begin += m_position;
