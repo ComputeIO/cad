@@ -1656,10 +1656,10 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aForce
     wxLogTrace( "PNS", "buildInitialLine: m_direction %s, guessedDir %s, tail points %d",
                 m_direction.Format(), guessedDir.Format(), m_tail.PointCount() );
 
-    DIRECTION_45::CornerMode cornerMode = Settings().GetCornerMode();
+    DIRECTION_45::CORNER_MODE cornerMode = Settings().GetCornerMode();
     // Rounded corners don't make sense when routing orthogonally (single track at a time)
     if( m_orthoMode )
-        cornerMode = DIRECTION_45::CornerMode::MITERED_45;
+        cornerMode = DIRECTION_45::CORNER_MODE::MITERED_45;
 
     if( m_p_start == aP )
     {

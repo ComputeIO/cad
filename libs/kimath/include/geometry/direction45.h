@@ -63,7 +63,7 @@ public:
      * Corner modes.
      * A corner can either be 45° or 90° and can be fillet/rounded or mitered
      */
-    enum CornerMode
+    enum CORNER_MODE
     {
         MITERED_90,     ///< H/V only (90-degree corners)
         MITERED_45,     ///< H/V/45 with mitered corners (default)
@@ -227,13 +227,13 @@ public:
      * @param aP0 starting point
      * @param aP1 ending point
      * @param aStartDiagonal whether the first segment has to be diagonal
-     * @param CornerMode How the corner is made. If it is a 90° corner, aStartDiagonal means
+     * @param aMode How the corner is made. If it is a 90° corner, aStartDiagonal means
      *  start horizontal (or vertical if aStartDiagonal is false) .
      * @return the trace
      */
     const SHAPE_LINE_CHAIN BuildInitialTrace( const VECTOR2I& aP0, const VECTOR2I& aP1,
-                                              bool       aStartDiagonal = false,
-                                              CornerMode aMode = CornerMode::MITERED_45 ) const;
+                                              bool        aStartDiagonal = false,
+                                              CORNER_MODE aMode = CORNER_MODE::MITERED_45 ) const;
 
     bool operator==( const DIRECTION_45& aOther ) const
     {

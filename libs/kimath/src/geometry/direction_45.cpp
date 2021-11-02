@@ -21,8 +21,8 @@
 
 
 const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, const VECTOR2I& aP1,
-                                                        bool       aStartDiagonal,
-                                                        CornerMode aMode ) const
+                                                        bool        aStartDiagonal,
+                                                        CORNER_MODE aMode ) const
 
 {
     bool startDiagonal;
@@ -37,7 +37,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
     int sw = sign( aP1.x - aP0.x );
     int sh = sign( aP1.y - aP0.y );
 
-    bool is90mode = aMode == CornerMode::ROUNDED_90 || aMode == CornerMode::MITERED_90;
+    bool is90mode = aMode == CORNER_MODE::ROUNDED_90 || aMode == CORNER_MODE::MITERED_90;
     SHAPE_LINE_CHAIN pl;
 
     // Shortcut where we can generate just one segment and quit.  Avoids more complicated handling
@@ -84,7 +84,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
 
     switch( aMode )
     {
-    case CornerMode::MITERED_45:
+    case CORNER_MODE::MITERED_45:
         /*
          * For width greater than height, we're calculating something like this.
          * mp0 will be used if we start straight; mp1 if we start diagonal.
@@ -100,7 +100,8 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
         pl.Append( startDiagonal ? ( aP0 + mp1 ) : ( aP0 + mp0 ) );
         pl.Append( aP1 );
         break;
-    case CornerMode::ROUNDED_45:
+
+    case CORNER_MODE::ROUNDED_45:
     {
         /*
          * For a fillet, we need to know the arc start point (A in the diagram below)
@@ -215,7 +216,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
         }
         break;
     }
-    case CornerMode::MITERED_90:
+    case CORNER_MODE::MITERED_90:
         /*
          * For width greater than height, we're calculating something like this.
          *
@@ -230,7 +231,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
         pl.Append( aP0 + mp0 );
         pl.Append( aP1 );
         break;
-    case CornerMode::ROUNDED_90:
+    case CORNER_MODE::ROUNDED_90:
         /*
          * For a fillet, we need to know the arc end point
          * A straight segment will be needed between aP0 and arcEnd in case distance aP0,mp0 is bigger
@@ -301,6 +302,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
         }
         break;
     }
+
     pl.Simplify();
     return pl;
 }

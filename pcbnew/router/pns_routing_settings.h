@@ -141,8 +141,8 @@ public:
     bool GetSnapToTracks() const { return m_snapToTracks; }
     bool GetSnapToPads() const { return m_snapToPads; }
 
-    DIRECTION_45::CornerMode GetCornerMode() const { return m_cornerMode; }
-    void SetCornerMode( DIRECTION_45::CornerMode aMode ) { m_cornerMode = aMode; }
+    DIRECTION_45::CORNER_MODE GetCornerMode() const { return m_cornerMode; }
+    void SetCornerMode( DIRECTION_45::CORNER_MODE aMode ) { m_cornerMode = aMode; }
 
     bool GetOptimizeEntireDraggedTrack() const { return m_optimizeEntireDraggedTrack; }
     void SetOptimizeEntireDraggedTrack( bool aEnable ) { m_optimizeEntireDraggedTrack = aEnable; }
@@ -172,7 +172,7 @@ private:
     bool m_autoPosture;
     bool m_fixAllSegments;
 
-    DIRECTION_45::CornerMode m_cornerMode;
+    DIRECTION_45::CORNER_MODE m_cornerMode;
 
     PNS_MODE m_routingMode;
     PNS_OPTIMIZATION_EFFORT m_optimizerEffort;
