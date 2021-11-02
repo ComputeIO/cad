@@ -231,6 +231,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
         pl.Append( aP0 + mp0 );
         pl.Append( aP1 );
         break;
+
     case CORNER_MODE::ROUNDED_90:
         /*
          * For a fillet, we need to know the arc end point
