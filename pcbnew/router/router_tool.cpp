@@ -2063,10 +2063,10 @@ void ROUTER_TOOL::updateMessagePanel()
     {
         switch( m_router->Settings().GetCornerMode() )
         {
-        case PNS::CORNER_MODE::MITERED_45: cornerMode = _( "45-degree" );         break;
-        case PNS::CORNER_MODE::ROUNDED_45: cornerMode = _( "45-degree rounded" ); break;
-        case PNS::CORNER_MODE::MITERED_90: cornerMode = _( "90-degree" );         break;
-        case PNS::CORNER_MODE::ROUNDED_90: cornerMode = _( "90-degree rounded" ); break;
+        case DIRECTION_45::CORNER_MODE::MITERED_45: cornerMode = _( "45-degree" );         break;
+        case DIRECTION_45::CORNER_MODE::ROUNDED_45: cornerMode = _( "45-degree rounded" ); break;
+        case DIRECTION_45::CORNER_MODE::MITERED_90: cornerMode = _( "90-degree" );         break;
+        case DIRECTION_45::CORNER_MODE::ROUNDED_90: cornerMode = _( "90-degree rounded" ); break;
         default: break;
         }
     }
