@@ -228,7 +228,7 @@ public:
      * @param aP1 ending point
      * @param aStartDiagonal whether the first segment has to be diagonal
      * @param aMode How the corner is made. If it is a 90° corner, aStartDiagonal means
-     *  start horizontal (or vertical if aStartDiagonal is false) .
+     *  start with the shorter direction first / use arc before the straight segment.
      * @return the trace
      */
     const SHAPE_LINE_CHAIN BuildInitialTrace( const VECTOR2I& aP0, const VECTOR2I& aP1,

@@ -54,7 +54,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
 
     if( is90mode )
     {
-        if( startDiagonal )
+        if( startDiagonal == ( h >= w ) )
         {
             mp0 = VECTOR2I( w * sw, 0 ); // direction: E
         }
@@ -259,7 +259,28 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
         VECTOR2I arcEnd; // Arc position that is not at aP0 nor aP1
         VECTOR2I arcCenter;
 
-        if( startDiagonal ) //Means start horizontal
+        if( startDiagonal ) //Means start with the arc first
+        {
+            if( h > w ) // Arc followed by a vertical line
+            {
+                int y = aP0.y + ( w * sh );
+                arcEnd = VECTOR2I( aP1.x, y );
+                arcCenter = VECTOR2I( aP0.x, y );
+                arc.ConstructFromStartEndCenter( aP0, arcEnd, arcCenter, sh != sw );
+                pl.Append( arc );
+                pl.Append( aP1 );
+            }
+            else        // Arc followed by a horizontal line
+            {
+                int x = aP0.x + ( h * sw );
+                arcEnd = VECTOR2I( x, aP1.y );
+                arcCenter = VECTOR2I( x, aP0.y );
+                arc.ConstructFromStartEndCenter( aP0, arcEnd, arcCenter, sh == sw );
+                pl.Append( arc );
+                pl.Append( aP1 );
+            }
+        }
+        else
         {
             if( w > h ) // Horizontal line followed by the arc
             {
@@ -270,19 +291,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
                 arc.ConstructFromStartEndCenter( arcEnd, aP1, arcCenter, sh != sw );
                 pl.Append( arc );
             }
-            else        // Arc followed by a vertical line
-            {
-                int y = aP0.y + ( w * sh );
-                arcEnd = VECTOR2I( aP1.x, y );
-                arcCenter = VECTOR2I( aP0.x, y );
-                arc.ConstructFromStartEndCenter( aP0, arcEnd, arcCenter, sh != sw );
-                pl.Append( arc );
-                pl.Append( aP1 );
-            }
-        }
-        else
-        {
-            if( w < h ) // Vertical line followed by the arc
+            else        // Vertical line followed by the arc
             {
                 int y = aP1.y - ( w * sh );
                 arcEnd = VECTOR2I( aP0.x, y );
@@ -290,15 +299,6 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
                 pl.Append( aP0 );
                 arc.ConstructFromStartEndCenter( arcEnd, aP1, arcCenter, sh == sw );
                 pl.Append( arc );
-            }
-            else        // Arc followed by a horizontal line
-            {
-                int x = aP0.x + ( h * sw );
-                arcEnd = VECTOR2I( x, aP1.y );
-                arcCenter = VECTOR2I( x, aP0.y );
-                arc.ConstructFromStartEndCenter( aP0, arcEnd, arcCenter, sh == sw );
-                pl.Append( arc );
-                pl.Append( aP1 );
             }
         }
         break;
