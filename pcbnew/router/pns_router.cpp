@@ -813,7 +813,7 @@ bool ROUTER::IsPlacingVia() const
 }
 
 
-void ROUTER::ToggleRounded()
+void ROUTER::ToggleCornerMode()
 {
     DIRECTION_45::CORNER_MODE mode = m_settings->GetCornerMode();
 
