@@ -157,7 +157,7 @@ static const TOOL_ACTION ACT_SwitchPosture( "pcbnew.InteractiveRouter.SwitchPost
         _( "Switches posture of the currently routed track." ),
         BITMAPS::change_entry_orient );
 
-static const TOOL_ACTION ACT_SwitchCornerMode( "pcbnew.InteractiveRouter.SwitchRounding", 
+static const TOOL_ACTION ACT_SwitchCornerMode( "pcbnew.InteractiveRouter.SwitchRounding",
         AS_CONTEXT,
         MD_CTRL + '/', "",
         _( "Track Corner Mode" ),
