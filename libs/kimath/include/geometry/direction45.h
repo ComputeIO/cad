@@ -65,10 +65,10 @@ public:
      */
     enum CORNER_MODE
     {
-        MITERED_90,     ///< H/V only (90-degree corners)
-        MITERED_45,     ///< H/V/45 with mitered corners (default)
-        ROUNDED_90,     ///< H/V with filleted corners
-        ROUNDED_45      ///< H/V/45 with filleted corners
+        MITERED_45 = 0, ///< H/V/45 with mitered corners (default)
+        ROUNDED_45 = 1, ///< H/V/45 with filleted corners
+        MITERED_90 = 2, ///< H/V only (90-degree corners)
+        ROUNDED_90 = 3, ///< H/V with filleted corners
     };
 
     /**
