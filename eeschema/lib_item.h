@@ -67,8 +67,8 @@ public:
 
     virtual ~LIB_ITEM() { }
 
-    // Define the enums for basic
-    enum LIB_CONVERT : int  { BASE = 1, DEMORGAN = 2 };
+    // Define the enum for basic
+    enum LIB_CONVERT : int { BASE = 1 };
 
     /**
      * The list of flags used by the #compare function.
@@ -270,7 +270,7 @@ protected:
      *
      * The base object sort order which always proceeds the derived object sort order
      * is as follows:
-     *      - Symbol alternate part (DeMorgan) number.
+     *      - Symbol alternate shape (De Morgan) number.
      *      - Symbol part number.
      *      - KICAD_T enum value.
      *      - Result of derived classes comparison.
@@ -310,8 +310,8 @@ protected:
     int         m_unit;
 
     /**
-     * Shape identification for alternate body styles.  Set 0 if the item is common to all
-     * body styles.  This is typially used for representing DeMorgan variants in KiCad.
+     * Shape identification for alternate symbol shapes.  Set 0 if the item is common to all
+     * alternate shapes.  This was typically used for representing De Morgan variants in KiCad.
      */
     int         m_convert;
 };

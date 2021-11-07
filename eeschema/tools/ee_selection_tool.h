@@ -47,7 +47,7 @@ class EE_CONDITIONS : public SELECTION_CONDITIONS
 public:
     static SELECTION_CONDITION SingleSymbol;
     static SELECTION_CONDITION SingleSymbolOrPower;
-    static SELECTION_CONDITION SingleDeMorganSymbol;
+    static SELECTION_CONDITION SingleMultiConvertSymbol;
     static SELECTION_CONDITION SingleMultiUnitSymbol;
 };
 
@@ -299,7 +299,7 @@ private:
     bool            m_isSymbolEditor;    // True when the symbol editor is the parent frame
     bool            m_isSymbolViewer;    // True when the symbol browser is the parent frame
     int             m_unit;              // Fixed unit filter (for symbol editor)
-    int             m_convert;           // Fixed DeMorgan filter (for symbol editor)
+    int             m_convert;           // Fixed (alternate) shape filter (for symbol editor)
 };
 
 #endif //KICAD_SCH_SELECTION_TOOL_H

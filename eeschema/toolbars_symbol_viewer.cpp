@@ -65,11 +65,10 @@ void SYMBOL_VIEWER_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( ACTIONS::zoomFitScreen );
 
     m_mainToolBar->AddScaledSeparator( this );
-    m_mainToolBar->Add( EE_ACTIONS::showDeMorganStandard,  ACTION_TOOLBAR::TOGGLE );
-    m_mainToolBar->Add( EE_ACTIONS::showDeMorganAlternate, ACTION_TOOLBAR::TOGGLE );
-
-    m_mainToolBar->AddScaledSeparator( this );
-
+    if( m_convertChoice == nullptr )
+        m_convertChoice = new wxChoice( m_mainToolBar, ID_LIBVIEW_SELECT_CONVERT_NUMBER,
+                                        wxDefaultPosition, wxSize( 150, -1 ) );
+    m_mainToolBar->AddControl( m_convertChoice );
     if( m_unitChoice == nullptr )
         m_unitChoice = new wxChoice( m_mainToolBar, ID_LIBVIEW_SELECT_UNIT_NUMBER,
                                      wxDefaultPosition, wxSize( 150, -1 ) );

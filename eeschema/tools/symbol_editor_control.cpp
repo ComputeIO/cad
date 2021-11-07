@@ -274,32 +274,6 @@ int SYMBOL_EDITOR_CONTROL::DuplicateSymbol( const TOOL_EVENT& aEvent )
 }
 
 
-int SYMBOL_EDITOR_CONTROL::OnDeMorgan( const TOOL_EVENT& aEvent )
-{
-    int convert = aEvent.IsAction( &EE_ACTIONS::showDeMorganStandard ) ?
-            LIB_ITEM::LIB_CONVERT::BASE : LIB_ITEM::LIB_CONVERT::DEMORGAN;
-
-    if( m_frame->IsType( FRAME_SCH_SYMBOL_EDITOR ) )
-    {
-        m_toolMgr->RunAction( ACTIONS::cancelInteractive, true );
-        m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
-
-        SYMBOL_EDIT_FRAME* symbolEditor = static_cast<SYMBOL_EDIT_FRAME*>( m_frame );
-        symbolEditor->SetConvert( convert );
-
-        m_toolMgr->ResetTools( TOOL_BASE::MODEL_RELOAD );
-        symbolEditor->RebuildView();
-    }
-    else if( m_frame->IsType( FRAME_SCH_VIEWER ) || m_frame->IsType( FRAME_SCH_VIEWER_MODAL ) )
-    {
-        SYMBOL_VIEWER_FRAME* symbolViewer = static_cast<SYMBOL_VIEWER_FRAME*>( m_frame );
-        symbolViewer->SetUnitAndConvert( symbolViewer->GetUnit(), convert );
-    }
-
-    return 0;
-}
-
-
 int SYMBOL_EDITOR_CONTROL::PinLibrary( const TOOL_EVENT& aEvent )
 {
     if( m_frame->IsType( FRAME_SCH_SYMBOL_EDITOR ) )
@@ -548,9 +522,6 @@ void SYMBOL_EDITOR_CONTROL::setTransitions()
     Go( &SYMBOL_EDITOR_CONTROL::ExportView,            EE_ACTIONS::exportSymbolView.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::ExportSymbolAsSVG,     EE_ACTIONS::exportSymbolAsSVG.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::AddSymbolToSchematic,  EE_ACTIONS::addSymbolToSchematic.MakeEvent() );
-
-    Go( &SYMBOL_EDITOR_CONTROL::OnDeMorgan,            EE_ACTIONS::showDeMorganStandard.MakeEvent() );
-    Go( &SYMBOL_EDITOR_CONTROL::OnDeMorgan,            EE_ACTIONS::showDeMorganAlternate.MakeEvent() );
 
     Go( &SYMBOL_EDITOR_CONTROL::ShowElectricalTypes,   EE_ACTIONS::showElectricalTypes.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::PinLibrary,            ACTIONS::pinLibrary.MakeEvent() );

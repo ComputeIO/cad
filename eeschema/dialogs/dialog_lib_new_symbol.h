@@ -56,11 +56,11 @@ public:
     void SetReference( const wxString& reference ) { m_textReference->SetValue( reference ); }
     wxString GetReference( void ) { return m_textReference->GetValue(); }
 
-    void SetPartCount( int count ) { m_spinPartCount->SetValue( count ); }
-    int GetUnitCount( void ) { return m_spinPartCount->GetValue(); }
+    void SetUnitCount( int count ) { m_spinUnitCount->SetValue( count ); }
+    int GetUnitCount( void ) { return m_spinUnitCount->GetValue(); }
 
-    void SetAlternateBodyStyle( bool enable ) { m_checkHasConversion->SetValue( enable ); }
-    bool GetAlternateBodyStyle( void )  { return m_checkHasConversion->GetValue(); }
+    void SetConvertCount( int count ) { m_spinConvertCount->SetValue( count ); }
+    int GetConvertCount( void ) { return m_spinConvertCount->GetValue(); }
 
     void SetPowerSymbol( bool enable ) { m_checkIsPowerSymbol->SetValue( enable ); }
     bool GetPowerSymbol( void ) { return m_checkIsPowerSymbol->GetValue(); }

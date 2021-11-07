@@ -384,30 +384,30 @@ BOOST_AUTO_TEST_CASE( GetUnitItems )
     // There are no unit draw items in the empty LIB_SYMBOL object.
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems( 1, 1 ).size() == 0 );
 
-    // A single unique unit with 1 pin common to all units and all body styles.
+    // A single unique unit with 1 pin common to all units and all alternate shapes.
     LIB_PIN* pin1 = new LIB_PIN( &m_part_no_data );
     m_part_no_data.AddDrawItem( pin1 );
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems( 0, 0 ).size() == 1 );
 
-    // A single unique unit with 1 pin in unit 1 and common to all body styles.
+    // A single unique unit with 1 pin in unit 1 and common to all alternate shapes.
     pin1->SetUnit( 1 );
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems( 1, 0 ).size() == 1 );
 
-    // A single unique unit with 1 pin in unit 1 and body style 1.
+    // A single unique unit with 1 pin in unit 1 and shape 1.
     pin1->SetConvert( 1 );
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems( 1, 1 ).size() == 1 );
 
-    // Two unique units with pin 1 assigned to unit 1 and body style 1 and pin 2 assigned to
-    // unit 2 and body style 1.
+    // Two unique units with pin 1 assigned to unit 1 and shape 1 and pin 2 assigned to
+    // unit 2 and shape 1.
     LIB_PIN* pin2 = new LIB_PIN( &m_part_no_data );
-    m_part_no_data.SetUnitCount( 2 );
+    m_part_no_data.SetUnitCount( 2, 1 );
     pin2->SetUnit( 2 );
     pin2->SetConvert( 2 );
     pin2->SetNumber( "4" );
     m_part_no_data.AddDrawItem( pin2 );
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems( 2, 2 ).size() == 1 );
 
-    // Make pin 1 body style common to all units.
+    // Make pin 1 alternate shape common to all units.
     pin1->SetConvert( 0 );
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems( 1, 1 ).size() == 0 );
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems( 2, 1 ).size() == 1 );
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE( GetUnitDrawItems )
     // There are no unit draw items in the empty LIB_SYMBOL object.
     BOOST_CHECK( m_part_no_data.GetUnitDrawItems().size() == 0 );
 
-    // A single unique unit with 1 pin common to all units and all body styles.
+    // A single unique unit with 1 pin common to all units and all alternate shapes.
     LIB_PIN* pin1 = new LIB_PIN( &m_part_no_data );
     pin1->SetNumber( "1" );
     m_part_no_data.AddDrawItem( pin1 );

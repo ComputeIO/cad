@@ -563,9 +563,9 @@ XNODE* NETLIST_EXPORTER_XML::makeLibParts()
         /* we must erase redundant Pins references in pinList
          * These redundant pins exist because some pins
          * are found more than one time when a symbol has
-         * multiple parts per package or has 2 representations (DeMorgan conversion)
-         * For instance, a 74ls00 has DeMorgan conversion, with different pin shapes,
-         * and therefore each pin  appears 2 times in the list.
+         * multiple parts per package or has multiple representations (alternate shapes)
+         * For instance, a 74LS00 has De Morgan conversion, with different pin shapes,
+         * and therefore each pin appears 2 times in the list.
          * Common pins (VCC, GND) can also be found more than once.
          */
         sort( pinList.begin(), pinList.end(), sortPinsByNumber );

@@ -87,7 +87,7 @@ public:
      * @param aLibId is the #LIB_ID of alias to create.
      * @param aSheet is the schematic sheet the symbol is place into.
      * @param unit is unit for symbols that have multiple parts per package.
-     * @param convert is the alternate body style for the schematic symbols.
+     * @param convert is the alternate shape for the schematic symbols.
      * @param pos is the position of the symbol.
      * @param setNewItemFlag is used to set the symbol #IS_NEW and #IS_MOVING flags.
      */
@@ -214,14 +214,21 @@ public:
      * Change the unit number to \a aUnit without setting any internal flags.
      * This has meaning only for symbols made up of multiple units per package.
      *
-     * @note This also set the modified flag bit
-     *
      * @param aUnit is the new unit to select.
      */
     void UpdateUnit( int aUnit );
 
     int GetConvert() const { return m_convert; }
 
+    /**
+     * Change the alternate shape number to \a aConvert
+     *
+     * This has meaning only for symbols made up of multiple shapes.
+     *
+     * @note This also sets the modified flag bit
+     *
+     * @param aConvert is the new shape to select.
+     */
     void SetConvert( int aConvert );
 
     wxString GetPrefix() const { return m_prefix; }
@@ -239,6 +246,13 @@ public:
      * @return the number of units per package or zero if the library entry cannot be found.
      */
     int GetUnitCount() const;
+
+    /**
+     * Return the number of shapes of the symbol.
+     *
+     * @return the number of symbol shapes or zero if the library entry cannot be found.
+     */
+    int GetConvertCount() const;
 
     /**
      * Compute the new transform matrix based on \a aOrientation for the symbol which is
@@ -677,8 +691,8 @@ private:
     wxPoint     m_pos;
     LIB_ID      m_lib_id;       ///< Name and library the symbol was loaded from, i.e. 74xx:74LS00.
     int         m_unit;         ///< The unit for multiple part per package symbols.
-    int         m_convert;      ///< The alternate body style for symbols that have more than
-                                ///<   one body style defined.  Primarily used for symbols that
+    int         m_convert;      ///< The alternate shape for symbols that have more than
+                                ///<   one shape defined.  Primarily used for symbols that
                                 ///<   have a De Morgan conversion.
     wxString    m_prefix;       ///< C, R, U, Q etc - the first character(s) which typically
                                 ///<   indicate what the symbol is. Determined, upon placement,

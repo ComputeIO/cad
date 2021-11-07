@@ -146,7 +146,7 @@ public:
      * @param aHistoryList is the list of previously loaded symbols - will be edited
      * @param aUseLibBrowser is the flag to call the library viewer to select the symbol
      * @param aUnit is the preselected unit.
-     * @param aConvert is the preselected De Morgan shape.
+     * @param aConvert is the preselected alternate shape.
      * @param aHighlight is the name of symbol to highlight in the list.
      *                   highlights none if there isn't one by that name.
      * @param aShowFootprints is the whether to show footprints in the dialog.
@@ -184,7 +184,7 @@ public:
      *          and/or some other filter.
      * @param aPreselectedLibId is the preselected symbol's #LIB_ID. Not valid if none selected.
      * @param aUnit is the preselected unit.
-     * @param aConvert is the preselected deMorgan conversion.
+     * @param aConvert is the preselected alternate shape.
      * @return the selected symbol.
      */
     PICKED_SYMBOL PickSymbolFromLibBrowser( wxTopLevelWindow* aParent,

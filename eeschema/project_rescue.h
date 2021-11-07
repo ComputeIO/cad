@@ -133,7 +133,7 @@ public:
      * @param aNewName is the name we want to change it to.
      * @param aLibCandidate is the part that will give us.
      * @param aUnit is the unit of the rescued symbol.
-     * @param aConvert is the body style of the rescued symbol.
+     * @param aConvert is the (alternate) shape of the rescued symbol.
      */
     RESCUE_CASE_CANDIDATE( const wxString& aRequestedName, const wxString& aNewName,
                            LIB_SYMBOL* aLibCandidate, int aUnit = 0, int aConvert = 0 );
@@ -167,7 +167,7 @@ public:
      * @param aCacheCandidate is the part from the cache.
      * @param aLibCandidate is the part that would be loaded from the library.
      * @param aUnit is the unit of the rescued symbol.
-     * @param aConvert is the body style of the rescued symbol.
+     * @param aConvert is the (alternate) shape of the rescued symbol.
      */
     RESCUE_CACHE_CANDIDATE( const wxString& aRequestedName, const wxString& aNewName,
                             LIB_SYMBOL* aCacheCandidate, LIB_SYMBOL* aLibCandidate,
@@ -202,7 +202,7 @@ public:
      * @param aCacheCandidate is the part from the cache.
      * @param aLibCandidate is the part that would be loaded from the library.
      * @param aUnit is the unit of the rescued symbol.
-     * @param aConvert is the body style of the rescued symbol.
+     * @param aConvert is the (alternate) shape of the rescued symbol.
      */
     RESCUE_SYMBOL_LIB_TABLE_CANDIDATE( const LIB_ID& aRequestedId, const LIB_ID& aNewId,
                                        LIB_SYMBOL* aCacheCandidate, LIB_SYMBOL* aLibCandidate,

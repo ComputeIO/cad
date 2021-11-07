@@ -63,13 +63,14 @@ class DIALOG_LIB_SYMBOL_PROPERTIES_BASE : public DIALOG_SHIM
 		wxStaticText* m_inheritsStaticText;
 		wxComboBox* m_inheritanceSelectCombo;
 		wxBoxSizer* bSizerLowerBasicPanel;
-		wxCheckBox* m_AsConvertButt;
 		wxCheckBox* m_OptionPower;
 		wxCheckBox* m_excludeFromBomCheckBox;
 		wxCheckBox* m_excludeFromBoardCheckBox;
+		wxCheckBox* m_OptionPartsInterchangeable;
 		wxStaticText* m_staticTextNbUnits;
 		wxSpinCtrl* m_SelNumberOfUnits;
-		wxCheckBox* m_OptionPartsInterchangeable;
+		wxStaticText* m_staticTextNbConverts;
+		wxSpinCtrl* m_SelNumberOfConverts;
 		wxCheckBox* m_ShowPinNumButt;
 		wxCheckBox* m_ShowPinNameButt;
 		wxCheckBox* m_PinsNameInsideButt;
@@ -98,8 +99,8 @@ class DIALOG_LIB_SYMBOL_PROPERTIES_BASE : public DIALOG_SHIM
 		virtual void OnSymbolNameText( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnText( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCombobox( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnCheckBox( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onPowerCheckBox( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCheckBox( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSpinCtrl( wxSpinEvent& event ) { event.Skip(); }
 		virtual void OnSpinCtrlText( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnFilterDClick( wxMouseEvent& event ) { event.Skip(); }

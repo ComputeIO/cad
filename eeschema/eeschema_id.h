@@ -43,6 +43,10 @@
  */
 #define MAX_UNIT_COUNT_PER_PACKAGE 676
 
+/**
+ * The maximum number of shapes per symbol.
+ */
+#define MAX_CONVERT_COUNT_PER_PACKAGE 64
 
 /**
  * Command IDs for the schematic editor.
@@ -58,12 +62,14 @@ enum id_eeschema_frm
 
     /* Library editor horizontal toolbar IDs. */
     ID_LIBEDIT_SELECT_UNIT_NUMBER,
+    ID_LIBEDIT_SELECT_CONVERT_NUMBER,
 
     /* Library viewer horizontal toolbar IDs */
     ID_LIBVIEW_SELECT_PART,
     ID_LIBVIEW_NEXT,
     ID_LIBVIEW_PREVIOUS,
     ID_LIBVIEW_SELECT_UNIT_NUMBER,
+    ID_LIBVIEW_SELECT_CONVERT_NUMBER,
     ID_LIBVIEW_LIB_LIST,
     ID_LIBVIEW_SYM_LIST,
 
@@ -85,9 +91,16 @@ enum id_eeschema_frm
     // Unit select context menus command IDs.
     ID_POPUP_SCH_SELECT_UNIT_CMP,
     ID_POPUP_SCH_SELECT_UNIT1,
-    // ... leave room for MAX_UNIT_COUNT_PER_PACKAGE IDs ,
+    // ... leave room for MAX_UNIT_COUNT_PER_PACKAGE IDs,
     // to select one unit among MAX_UNIT_COUNT_PER_PACKAGE in popup menu
-    ID_POPUP_SCH_SELECT_UNIT_SYM_MAX = ID_POPUP_SCH_SELECT_UNIT1 + MAX_UNIT_COUNT_PER_PACKAGE
+    ID_POPUP_SCH_SELECT_UNIT_SYM_MAX = ID_POPUP_SCH_SELECT_UNIT1 + MAX_UNIT_COUNT_PER_PACKAGE,
+
+    // Alternate symbol shape select context menus command IDs.
+    ID_POPUP_SCH_SELECT_CONVERT_CMP,
+    ID_POPUP_SCH_SELECT_CONVERT1,
+    // ... leave room for MAX_CONVERT_COUNT_PER_PACKAGE IDs,
+    // to select one shape among MAX_CONVERT_COUNT_PER_PACKAGE in popup menu
+    ID_POPUP_SCH_SELECT_CONVERT_SYM_MAX = ID_POPUP_SCH_SELECT_CONVERT1 + MAX_CONVERT_COUNT_PER_PACKAGE
 };
 
 

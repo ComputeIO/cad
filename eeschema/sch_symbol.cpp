@@ -195,7 +195,7 @@ void SCH_SYMBOL::Init( const wxPoint& pos )
 {
     m_pos     = pos;
     m_unit    = 1;  // In multi unit chip - which unit to draw.
-    m_convert = LIB_ITEM::LIB_CONVERT::BASE;  // De Morgan Handling
+    m_convert = LIB_ITEM::LIB_CONVERT::BASE;  // alternate shape handling
 
     // The rotation/mirror transformation matrix. pos normal
     m_transform = TRANSFORM();
@@ -371,6 +371,15 @@ int SCH_SYMBOL::GetUnitCount() const
 {
     if( m_part )
         return m_part->GetUnitCount();
+
+    return 0;
+}
+
+
+int SCH_SYMBOL::GetConvertCount() const
+{
+    if( m_part )
+        return m_part->GetConvertCount();
 
     return 0;
 }

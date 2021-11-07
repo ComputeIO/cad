@@ -322,7 +322,9 @@ bool SYMBOL_EDIT_FRAME::LoadSymbolFromCurrentLib( const wxString& aAliasName, in
 
     ClearUndoRedoList();
     m_toolManager->RunAction( ACTIONS::zoomFitScreen, true );
-    SetShowDeMorgan( GetCurSymbol()->Flatten()->HasConversion() );
+
+    if( aConvert > 0 )
+        RebuildSymbolConvertsList();
 
     if( aUnit > 0 )
         RebuildSymbolUnitsList();
@@ -383,7 +385,7 @@ bool SYMBOL_EDIT_FRAME::LoadOneLibrarySymbolAux( LIB_SYMBOL* aEntry, const wxStr
 
     updateTitle();
     RebuildSymbolUnitsList();
-    SetShowDeMorgan( GetCurSymbol()->HasConversion() );
+    RebuildSymbolConvertsList();
 
     // Display the document information based on the entry selected just in
     // case the entry is an alias.
@@ -460,6 +462,7 @@ void SYMBOL_EDIT_FRAME::CreateNewSymbol()
     {
         new_symbol.GetReferenceField().SetText( dlg.GetReference() );
         new_symbol.SetUnitCount( dlg.GetUnitCount() );
+        new_symbol.SetConvertCount( dlg.GetConvertCount() );
 
         // Initialize new_symbol.m_TextInside member:
         // if 0, pin text is outside the body (on the pin)
@@ -485,12 +488,6 @@ void SYMBOL_EDIT_FRAME::CreateNewSymbol()
 
         if( dlg.GetUnitCount() < 2 )
             new_symbol.LockUnits( false );
-
-        new_symbol.SetConversion( dlg.GetAlternateBodyStyle() );
-
-        // must be called after loadSymbol, that calls SetShowDeMorgan, but
-        // because the symbol is empty,it looks like it has no alternate body
-        SetShowDeMorgan( dlg.GetAlternateBodyStyle() );
     }
     else
     {
@@ -747,7 +744,7 @@ void SYMBOL_EDIT_FRAME::UpdateAfterSymbolProperties( wxString* aOldName )
     }
 
     RebuildSymbolUnitsList();
-    SetShowDeMorgan( GetCurSymbol()->Flatten()->HasConversion() );
+    RebuildSymbolConvertsList();
     updateTitle();
     UpdateMsgPanel();
 
@@ -1123,6 +1120,7 @@ bool SYMBOL_EDIT_FRAME::saveLibrary( const wxString& aLibrary, bool aNewFile )
     ClearMsgPanel();
     msg.Printf( _( "Symbol library file '%s' saved." ), fn.GetFullPath() );
     RebuildSymbolUnitsList();
+    RebuildSymbolConvertsList();
 
     return true;
 }
@@ -1230,12 +1228,12 @@ void SYMBOL_EDIT_FRAME::UpdateSymbolMsgPanelInfo()
 
     AppendMsgPanel( _( "Unit" ), msg, 8 );
 
-    if( m_convert > 1 )
-        msg = _( "Convert" );
+    if( m_convert == 0 )
+        msg = _( "All" );
     else
-        msg = _( "Normal" );
+        msg = wxString::Format( wxT( "%d" ), m_convert );
 
-    AppendMsgPanel( _( "Body" ), msg, 8 );
+    AppendMsgPanel( _( "Shape" ), msg, 8 );
 
     if( m_symbol->IsPower() )
         msg = _( "Power Symbol" );

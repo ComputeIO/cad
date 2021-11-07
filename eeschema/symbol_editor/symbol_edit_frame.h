@@ -169,6 +169,7 @@ public:
     void DuplicateSymbol( bool aFromClipboard );
 
     void OnSelectUnit( wxCommandEvent& event );
+    void OnSelectConvert( wxCommandEvent& event );
 
     void OnToggleSymbolTree( wxCommandEvent& event );
 
@@ -177,9 +178,11 @@ public:
     void ThawLibraryTree();
 
     void OnUpdateUnitNumber( wxUpdateUIEvent& event );
+    void OnUpdateConvertNumber( wxUpdateUIEvent& event );
 
     void UpdateAfterSymbolProperties( wxString* aOldName = nullptr );
     void RebuildSymbolUnitsList();
+    void RebuildSymbolConvertsList();
 
     bool canCloseWindow( wxCloseEvent& aCloseEvent ) override;
     void doCloseWindow() override;
@@ -223,9 +226,6 @@ public:
 
     int GetConvert() const { return m_convert; }
     void SetConvert( int aConvert ) { m_convert = aConvert; }
-
-    bool GetShowDeMorgan() const { return m_showDeMorgan; }
-    void SetShowDeMorgan( bool show ) { m_showDeMorgan = show; }
 
     void ClearMsgPanel() override
     {
@@ -275,7 +275,7 @@ public:
      *
      * @param aLibId is the #LIB_ID of the symbol to select.
      * @param aUnit the unit to show
-     * @param aConvert the DeMorgan variant to show
+     * @param aConvert the shape variant to show
      * @return true if the symbol defined by \a aLibId was loaded.
      */
     bool LoadSymbol( const LIB_ID& aLibId, int aUnit, int aConvert );
@@ -412,7 +412,7 @@ private:
      *
      * @param aAliasName The symbol alias name to load from the current library.
      * @param aUnit Unit to be selected
-     * @param aConvert Convert to be selected
+     * @param aConvert Shape to be selected
      * @return true if the symbol loaded correctly.
      */
     bool LoadSymbolFromCurrentLib( const wxString& aAliasName, int aUnit = 0, int aConvert = 0 );
@@ -424,7 +424,7 @@ private:
      * @param aLibrary the path to the library file that \a aLibEntry was loaded from.  This is
      *                 for error messaging purposes only.
      * @param aUnit the initial unit to show.
-     * @param aConvert the initial DeMorgan variant to show.
+     * @param aConvert the initial shape variant to show.
      * @return True if a copy of \a aLibEntry was successfully copied.
      */
     bool LoadOneLibrarySymbolAux( LIB_SYMBOL* aLibEntry, const wxString& aLibrary, int aUnit,
@@ -504,7 +504,7 @@ private:
 public:
     /**
      * Set to true to synchronize pins at the same position when editing symbols with multiple
-     * units or multiple body styles.  Deleting or moving pins will affect all pins at the same
+     * units or alternate shapes.  Deleting or moving pins will affect all pins at the same
      * location.
      * When units are interchangeable, synchronizing editing of pins is usually the best way,
      * because if units are interchangeable, it implies that all similar pins are at the same
@@ -512,8 +512,8 @@ public:
      * When units are not interchangeable, do not synchronize editing of pins, because each symbol
      * is specific, and there are no (or few) similar pins between units.
      *
-     * Setting this to false allows editing each pin per symbol or body style regardless other
-     * pins at the same location. This requires the user to open each symbol or body style to make
+     * Setting this to false allows editing each pin per symbol or alternate shape regardless other
+     * pins at the same location. This requires the user to open each symbol or shape to make
      * changes to the other pins at the same location.
      *
      * To know if others pins must be coupled when editing a pin, use SynchronizePins() instead
@@ -533,6 +533,8 @@ private:
                                                  // copy could be.
     wxComboBox*             m_unitSelectBox;     // a ComboBox to select a unit to edit (if the
                                                  // symbol has multiple units)
+    wxComboBox*             m_convertSelectBox;  // a ComboBox to select a shape to edit (if the
+                                                 // symbol has multiple shapes)
     SYMBOL_TREE_PANE*       m_treePane;          // symbol search tree widget
     SYMBOL_LIBRARY_MANAGER* m_libMgr;            // manager taking care of temporary modifications
     SYMBOL_EDITOR_SETTINGS* m_settings;          // Handle to the settings
@@ -542,7 +544,7 @@ private:
     // The unit number to edit and show
     int         m_unit;
 
-    // Show the normal shape ( m_convert <= 1 ) or the converted shape ( m_convert > 1 )
+    // Show the base shape ( m_convert <= 1 ) or an alternate shape ( m_convert > 1 )
     int         m_convert;
 
     ///< Flag if the symbol being edited was loaded directly from a schematic.
@@ -550,11 +552,6 @@ private:
 
      ///< RefDes of the symbol (only valid if symbol was loaded from schematic)
     wxString    m_reference;
-
-    // True to force DeMorgan/normal tools selection enabled.
-    // They are enabled when the loaded symbol has graphic items for converted shape
-    // But under some circumstances (New symbol created) these tools must left enabled
-    static bool m_showDeMorgan;
 };
 
 #endif  // SYMBOL_EDIT_FRAME_H

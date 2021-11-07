@@ -51,7 +51,7 @@ public:
     int EditField( const TOOL_EVENT& aEvent );
     int AutoplaceFields( const TOOL_EVENT& aEvent );
     int ChangeSymbols( const TOOL_EVENT& aEvent );
-    int ConvertDeMorgan( const TOOL_EVENT& aEvent );
+    int ChangeConvert( const TOOL_EVENT& aEvent );
     int EditPageNumber( const TOOL_EVENT& aEvent );
 
     /**

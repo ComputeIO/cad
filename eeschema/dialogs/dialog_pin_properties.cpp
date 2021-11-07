@@ -198,12 +198,12 @@ DIALOG_PIN_PROPERTIES::DIALOG_PIN_PROPERTIES( SYMBOL_EDIT_FRAME* parent, LIB_PIN
     m_alternatesGrid->SetTable( m_alternatesDataModel );
     m_alternatesGrid->PushEventHandler( new GRID_TRICKS( m_alternatesGrid ) );
 
-    if( aPin->GetParent()->HasConversion() )
+    if( aPin->GetParent()->GetConvertCount() > 1 )
     {
         m_alternatesTurndown->Collapse();
         m_alternatesTurndown->Disable();
         m_alternatesTurndown->SetToolTip(
-                _( "Alternate pin assignments are not available for De Morgan symbols." ) );
+                _( "Alternate pin assignments are not available for alternate shapes symbols." ) );
     }
 
     // Set special attributes

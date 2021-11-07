@@ -452,6 +452,18 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                     m_toolMgr->RunAction( ACTIONS::refreshPreview );
                 }
             }
+            else if( evt->GetCommandId().get() >= ID_POPUP_SCH_SELECT_CONVERT_CMP
+                && evt->GetCommandId().get() <= ID_POPUP_SCH_SELECT_CONVERT_SYM_MAX )
+            {
+                SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( selection.Front() );
+                int convert = evt->GetCommandId().get() - ID_POPUP_SCH_SELECT_CONVERT_CMP;
+
+                if( symbol )
+                {
+                    m_frame->SelectConvert( symbol, convert );
+                    m_toolMgr->RunAction( ACTIONS::refreshPreview );
+                }
+            }
         }
         //------------------------------------------------------------------------
         // Handle context menu

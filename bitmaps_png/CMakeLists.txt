@@ -190,6 +190,7 @@ set( BMAPS_MID
     curved_ratsnest
     checked_ok
     color_materials
+    component_select_alternate_shape
     component_select_unit
     config
     convert

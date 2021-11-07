@@ -189,7 +189,7 @@ DIALOG_LIB_TEXT_PROPERTIES_BASE::DIALOG_LIB_TEXT_PROPERTIES_BASE( wxWindow* pare
 	m_CommonUnit = new wxCheckBox( this, wxID_ANY, _("Common to all units"), wxDefaultPosition, wxDefaultSize, 0 );
 	bBottomtBoxSizer->Add( m_CommonUnit, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
-	m_CommonConvert = new wxCheckBox( this, wxID_ANY, _("Common to all body styles"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_CommonConvert = new wxCheckBox( this, wxID_ANY, _("Common to all shapes"), wxDefaultPosition, wxDefaultSize, 0 );
 	bBottomtBoxSizer->Add( m_CommonConvert, 0, wxLEFT|wxRIGHT, 5 );
 
 

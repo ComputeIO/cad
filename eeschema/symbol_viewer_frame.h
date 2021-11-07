@@ -129,7 +129,7 @@ public:
      * Set unit and convert, and set flag preventing them from automatically resetting to 1.
      *
      * @param aUnit is the unit, if invalid will be set to 1.
-     * @param aConvert is the alternate body style, if invalid will be set to 1.
+     * @param aConvert is the alternate symbol shape, if invalid will be set to 1.
      */
     void SetUnitAndConvert( int aUnit, int aConvert );
     int GetUnit() const { return m_unit; }
@@ -156,15 +156,18 @@ private:
 
     void DClickOnCmpList( wxCommandEvent& event );
 
+    void onUpdateConvertChoice( wxUpdateUIEvent& aEvent );
     void onUpdateUnitChoice( wxUpdateUIEvent& aEvent );
 
     void onSelectNextSymbol( wxCommandEvent& aEvent );
     void onSelectPreviousSymbol( wxCommandEvent& aEvent );
+    void onSelectSymbolConvert( wxCommandEvent& aEvent );
     void onSelectSymbolUnit( wxCommandEvent& aEvent );
 
     void updatePreviewSymbol();
 
 private:
+    wxChoice*           m_convertChoice;
     wxChoice*           m_unitChoice;
 
     wxListBox*          m_libList;             // The list of libraries.

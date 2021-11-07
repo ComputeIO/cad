@@ -200,7 +200,7 @@ void SYMBOL_PREVIEW_WIDGET::DisplaySymbol( const LIB_ID& aSymbolID, int aUnit, i
         // draw all of them.)
         settings->m_ShowUnit = ( m_previewItem->IsMulti() && aUnit == 0 ) ? 1 : aUnit;
 
-        // For symbols having a De Morgan body style, use the first style
+        // For symbols having alternate shapes, use the first shape if not specified
         settings->m_ShowConvert =
                 ( m_previewItem->HasConversion() && aConvert == 0 ) ? 1 : aConvert;
 
@@ -240,7 +240,6 @@ void SYMBOL_PREVIEW_WIDGET::DisplayPart( LIB_SYMBOL* aSymbol, int aUnit, int aCo
     {
         m_previewItem = new LIB_SYMBOL( *aSymbol );
 
-        // For symbols having a De Morgan body style, use the first style
         auto settings =
                 static_cast<KIGFX::SCH_RENDER_SETTINGS*>( view->GetPainter()->GetSettings() );
 
@@ -248,6 +247,7 @@ void SYMBOL_PREVIEW_WIDGET::DisplayPart( LIB_SYMBOL* aSymbol, int aUnit, int aCo
         // draw all of them.)
         settings->m_ShowUnit = ( m_previewItem->IsMulti() && aUnit == 0 ) ? 1 : aUnit;
 
+        // For symbols having alternate shapes, use the first shape if not specified
         settings->m_ShowConvert =
                 ( m_previewItem->HasConversion() && aConvert == 0 ) ? 1 : aConvert;
 

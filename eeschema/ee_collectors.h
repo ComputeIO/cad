@@ -79,7 +79,7 @@ public:
      *                    collection.
      * @param aPos are the coordinates to use in hit testing.
      * @param aUnit is the symbol unit filter (for symbol editor).
-     * @param aConvert is the DeMorgan filter (for symbol editor)
+     * @param aConvert is the symbol shape filter (for symbol editor)
      */
     void Collect( SCH_SCREEN* aScreen, const KICAD_T aFilterList[], const wxPoint& aPos,
                   int aUnit = 0, int aConvert = 0 );
@@ -93,7 +93,7 @@ public:
      *                    collection.
      * @param aPos are the coordinates to use in hit testing.
      * @param aUnit is the symbol unit filter (for symbol editor).
-     * @param aConvert is the DeMorgan filter (for symbol editor).
+     * @param aConvert is the symbol shape filter (for symbol editor).
      */
     void Collect( LIB_ITEMS_CONTAINER& aItems, const KICAD_T aFilterList[], const wxPoint& aPos,
                   int aUnit = 0, int aConvert = 0 );
@@ -107,7 +107,7 @@ public:
 
 public:
     int      m_Unit;            // Fixed symbol unit filter (for symbol editor)
-    int      m_Convert;         // Fixed DeMorgan filter (for symbol editor)
+    int      m_Convert;         // Fixed symbol shape filter (for symbol editor)
 };
 
 

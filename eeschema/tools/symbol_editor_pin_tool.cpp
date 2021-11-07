@@ -226,7 +226,7 @@ bool SYMBOL_EDITOR_PIN_TOOL::PlacePin( LIB_PIN* aPin )
         if( test == aPin || aPin->GetPosition() != test->GetPosition() || test->GetEditFlags() )
             continue;
 
-        // test for same body style
+        // test for same alternate shape
         if( test->GetConvert() && test->GetConvert() != aPin->GetConvert() )
             continue;
 
@@ -328,7 +328,7 @@ void SYMBOL_EDITOR_PIN_TOOL::CreateImagePins( LIB_PIN* aPin )
     LIB_PIN* newPin;
 
     // if "synchronize pins editing" option is off, do not create any similar pin for other
-    // units and/or shapes: each unit is edited regardless other units or body
+    // units and/or shapes: each unit is edited regardless other units or shapes
     if( !m_frame->SynchronizePins() )
         return;
 
@@ -337,7 +337,7 @@ void SYMBOL_EDITOR_PIN_TOOL::CreateImagePins( LIB_PIN* aPin )
 
     // When units are interchangeable, all units are expected to have similar pins
     // at the same position
-    // to facilitate pin editing, create pins for all other units for the current body style
+    // to facilitate pin editing, create pins for all other units for the current shape
     // at the same position as aPin
 
     for( ii = 1; ii <= aPin->GetParent()->GetUnitCount(); ii++ )

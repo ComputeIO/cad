@@ -96,7 +96,7 @@ void SYMBOL_EDIT_FRAME::GetSymbolFromRedoList()
     }
 
     RebuildSymbolUnitsList();
-    SetShowDeMorgan( symbol->HasConversion() );
+    RebuildSymbolConvertsList();
     updateTitle();
 
     RebuildView();
@@ -144,7 +144,7 @@ void SYMBOL_EDIT_FRAME::GetSymbolFromUndoList()
     }
 
     RebuildSymbolUnitsList();
-    SetShowDeMorgan( symbol->HasConversion() );
+    RebuildSymbolConvertsList();
     updateTitle();
 
     RebuildView();
@@ -173,7 +173,7 @@ void SYMBOL_EDIT_FRAME::RollbackSymbolFromUndo()
     selTool->RebuildSelection();
 
     RebuildSymbolUnitsList();
-    SetShowDeMorgan( symbol->HasConversion() );
+    RebuildSymbolConvertsList();
 
     RebuildView();
 }
