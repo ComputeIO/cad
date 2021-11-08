@@ -629,12 +629,12 @@ public:
      *
      * @param aMarkerType Type of markers to be deleted.
      */
-    void DeleteAllMarkers( enum MARKER_BASE::TYPEMARKER aMarkerType, bool aIncludeExclusions );
+    void DeleteAllMarkers( MARKER_BASE::TYPEMARKER aMarkerType, bool aIncludeExclusions );
 
     /**
      * Delete all markers of a particular type and error code.
      */
-    void DeleteMarkers( enum MARKER_BASE::TYPEMARKER aMarkerTyp, int aErrorCode,
+    void DeleteMarkers( MARKER_BASE::TYPEMARKER aMarkerTyp, int aErrorCode,
                         bool aIncludeExclusions = true );
 
     /**

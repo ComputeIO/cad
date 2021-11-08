@@ -150,7 +150,7 @@ void SCH_SHEET_PIN::SetSide( SHEET_SIDE aEdge )
 }
 
 
-enum SHEET_SIDE SCH_SHEET_PIN::GetSide() const
+SHEET_SIDE SCH_SHEET_PIN::GetSide() const
 {
     return m_edge;
 }
