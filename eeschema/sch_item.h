@@ -56,7 +56,7 @@ enum class FIELDS_AUTOPLACED
 };
 
 
-enum DANGLING_END_T
+enum class DANGLING_END : int
 {
     UNKNOWN = 0,
     WIRE_END,
@@ -78,7 +78,7 @@ enum DANGLING_END_T
 class DANGLING_END_ITEM
 {
 public:
-    DANGLING_END_ITEM( DANGLING_END_T aType, EDA_ITEM* aItem, const VECTOR2I& aPosition )
+    DANGLING_END_ITEM( DANGLING_END aType, EDA_ITEM* aItem, const VECTOR2I& aPosition )
     {
         m_item = aItem;
         m_type = aType;
@@ -86,7 +86,7 @@ public:
         m_parent = aItem;
     }
 
-    DANGLING_END_ITEM( DANGLING_END_T aType, EDA_ITEM* aItem, const VECTOR2I& aPosition,
+    DANGLING_END_ITEM( DANGLING_END aType, EDA_ITEM* aItem, const VECTOR2I& aPosition,
                        const EDA_ITEM* aParent )
     {
         m_item = aItem;
@@ -120,12 +120,12 @@ public:
     VECTOR2I GetPosition() const { return m_pos; }
     EDA_ITEM* GetItem() const { return m_item; }
     const EDA_ITEM* GetParent() const { return m_parent; }
-    DANGLING_END_T GetType() const { return m_type; }
+    DANGLING_END GetType() const { return m_type; }
 
 private:
     EDA_ITEM*       m_item;         /// A pointer to the connectable object.
     VECTOR2I        m_pos;          /// The position of the connection point.
-    DANGLING_END_T  m_type;         /// The type of connection of #m_item.
+    DANGLING_END    m_type;         /// The type of connection of #m_item.
     const EDA_ITEM* m_parent;       /// A pointer to the parent object (in the case of pins)
 };
 

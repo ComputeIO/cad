@@ -323,7 +323,7 @@ void SCH_SHEET_PIN::CreateGraphicShape( const RENDER_SETTINGS* aSettings,
 
 void SCH_SHEET_PIN::GetEndPoints( std::vector<DANGLING_END_ITEM>& aItemList )
 {
-    DANGLING_END_ITEM item( SHEET_LABEL_END, this, GetTextPos() );
+    DANGLING_END_ITEM item( DANGLING_END::SHEET_LABEL_END, this, GetTextPos() );
     aItemList.push_back( item );
 }
 

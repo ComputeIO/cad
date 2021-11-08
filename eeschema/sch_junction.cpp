@@ -151,7 +151,7 @@ void SCH_JUNCTION::Rotate( const VECTOR2I& aCenter )
 
 void SCH_JUNCTION::GetEndPoints( std::vector <DANGLING_END_ITEM>& aItemList )
 {
-    DANGLING_END_ITEM item( JUNCTION_END, this, m_pos );
+    DANGLING_END_ITEM item( DANGLING_END::JUNCTION_END, this, m_pos );
     aItemList.push_back( item );
 }
 

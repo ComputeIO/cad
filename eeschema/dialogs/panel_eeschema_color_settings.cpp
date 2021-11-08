@@ -393,7 +393,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
         pin->SetNumber( wxT( "1" ) );
         pin->SetName( wxT( "-" ) );
 
-        endPoints.emplace_back( PIN_END, pin, mapLibItemPosition( pin->GetPosition() ) );
+        endPoints.emplace_back( DANGLING_END::PIN_END, pin, mapLibItemPosition( pin->GetPosition() ) );
         symbol->AddDrawItem( pin );
 
         pin = new LIB_PIN( symbol );
@@ -405,7 +405,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
         pin->SetNumber( wxT( "2" ) );
         pin->SetName( wxT( "+" ) );
 
-        endPoints.emplace_back( PIN_END, pin, mapLibItemPosition( pin->GetPosition() ) );
+        endPoints.emplace_back( DANGLING_END::PIN_END, pin, mapLibItemPosition( pin->GetPosition() ) );
         symbol->AddDrawItem( pin );
 
         pin = new LIB_PIN( symbol );
@@ -417,7 +417,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
         pin->SetNumber( wxT( "3" ) );
         pin->SetName( wxT( "OUT" ) );
 
-        endPoints.emplace_back( PIN_END, pin, mapLibItemPosition( pin->GetPosition() ) );
+        endPoints.emplace_back( DANGLING_END::PIN_END, pin, mapLibItemPosition( pin->GetPosition() ) );
         symbol->AddDrawItem( pin );
 
         addItem( symbol );
