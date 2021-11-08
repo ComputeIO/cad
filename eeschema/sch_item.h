@@ -48,11 +48,11 @@ class NETLIST_OBJECT_LIST;
 using KIGFX::RENDER_SETTINGS;
 
 
-enum FIELDS_AUTOPLACED
+enum class FIELDS_AUTOPLACED
 {
-    FIELDS_AUTOPLACED_NO = 0,
-    FIELDS_AUTOPLACED_AUTO,
-    FIELDS_AUTOPLACED_MANUAL
+    NONE = 0,
+    AUTO,
+    MANUAL
 };
 
 
@@ -409,8 +409,8 @@ public:
      */
     FIELDS_AUTOPLACED GetFieldsAutoplaced() const { return m_fieldsAutoplaced; }
 
-    void SetFieldsAutoplaced() { m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO; }
-    void ClearFieldsAutoplaced() { m_fieldsAutoplaced = FIELDS_AUTOPLACED_NO; }
+    void SetFieldsAutoplaced()   { m_fieldsAutoplaced = FIELDS_AUTOPLACED::AUTO; }
+    void ClearFieldsAutoplaced() { m_fieldsAutoplaced = FIELDS_AUTOPLACED::NONE;   }
 
     /**
      * Autoplace fields only if correct to do so automatically.
@@ -421,8 +421,8 @@ public:
      */
     void AutoAutoplaceFields( SCH_SCREEN* aScreen )
     {
-        if( GetFieldsAutoplaced() )
-            AutoplaceFields( aScreen, GetFieldsAutoplaced() == FIELDS_AUTOPLACED_MANUAL );
+        if( GetFieldsAutoplaced() != FIELDS_AUTOPLACED::NONE)
+            AutoplaceFields( aScreen, GetFieldsAutoplaced() == FIELDS_AUTOPLACED::MANUAL );
     }
 
     virtual void AutoplaceFields( SCH_SCREEN* aScreen, bool aManual ) { }

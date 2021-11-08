@@ -1087,7 +1087,7 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_SYMBOL* aSymbol, SCH_SHEET_PATH* aSheetPa
     m_out->Print( aNestLevel + 1, "(in_bom %s)", ( aSymbol->GetIncludeInBom() ) ? "yes" : "no" );
     m_out->Print( 0, " (on_board %s)", ( aSymbol->GetIncludeOnBoard() ) ? "yes" : "no" );
 
-    if( aSymbol->GetFieldsAutoplaced() != FIELDS_AUTOPLACED_NO )
+    if( aSymbol->GetFieldsAutoplaced() != FIELDS_AUTOPLACED::NONE )
         m_out->Print( 0, " (fields_autoplaced)" );
 
     m_out->Print( 0, "\n" );
@@ -1221,7 +1221,7 @@ void SCH_SEXPR_PLUGIN::saveSheet( SCH_SHEET* aSheet, int aNestLevel )
                   FormatInternalUnits( aSheet->GetSize().GetWidth() ).c_str(),
                   FormatInternalUnits( aSheet->GetSize().GetHeight() ).c_str() );
 
-    if( aSheet->GetFieldsAutoplaced() != FIELDS_AUTOPLACED_NO )
+    if( aSheet->GetFieldsAutoplaced() != FIELDS_AUTOPLACED::NONE )
         m_out->Print( 0, " (fields_autoplaced)" );
 
     m_out->Print( 0, "\n" );
@@ -1455,7 +1455,7 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
                       FormatAngle( angle ).c_str() );
     }
 
-    if( aText->GetFieldsAutoplaced() != FIELDS_AUTOPLACED_NO )
+    if( aText->GetFieldsAutoplaced() != FIELDS_AUTOPLACED::NONE )
         m_out->Print( 0, " (fields_autoplaced)" );
 
     m_out->Print( 0, "\n" );

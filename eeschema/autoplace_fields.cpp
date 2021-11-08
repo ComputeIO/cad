@@ -729,5 +729,5 @@ void SCH_SYMBOL::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
 
     AUTOPLACER autoplacer( this, aScreen );
     autoplacer.DoAutoplace( aManual );
-    m_fieldsAutoplaced = ( aManual ? FIELDS_AUTOPLACED_MANUAL : FIELDS_AUTOPLACED_AUTO );
+    m_fieldsAutoplaced = ( aManual ? FIELDS_AUTOPLACED::MANUAL : FIELDS_AUTOPLACED::AUTO );
 }

@@ -716,7 +716,7 @@ void EE_POINT_EDITOR::updateParentItem() const
         sheet->SetSize( wxSize( botRight.x - topLeft.x, botRight.y - topLeft.y ) );
 
         // Update the fields if we're in autoplace mode
-        if( sheet->GetFieldsAutoplaced() == FIELDS_AUTOPLACED_AUTO )
+        if( sheet->GetFieldsAutoplaced() == FIELDS_AUTOPLACED::AUTO )
             sheet->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
 
         // Keep sheet pins attached to edges:

@@ -762,7 +762,7 @@ void SCH_LABEL_BASE::Rotate90( bool aClockwise )
 {
     SCH_TEXT::Rotate90( aClockwise );
 
-    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED_AUTO )
+    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED::AUTO )
     {
         AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
     }
@@ -878,7 +878,7 @@ void SCH_LABEL_BASE::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
             accumulated += field.GetTextHeight() + margin;
     }
 
-    m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO;
+    m_fieldsAutoplaced = FIELDS_AUTOPLACED::AUTO;
 }
 
 
@@ -1488,7 +1488,7 @@ void SCH_NETCLASS_FLAG::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
         origin -= field.GetTextHeight() + margin;
     }
 
-    m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO;
+    m_fieldsAutoplaced = FIELDS_AUTOPLACED::AUTO;
 }
 
 
