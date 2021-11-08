@@ -1074,7 +1074,7 @@ void SCH_SCREEN::TestDanglingEnds( const SCH_SHEET_PATH* aPath,
 
 
 SCH_LINE* SCH_SCREEN::GetLine( const VECTOR2I& aPosition, int aAccuracy, int aLayer,
-                               SCH_LINE_TEST_T aSearchType ) const
+                               SCH_LINE_TEST aSearchType ) const
 {
     // an accuracy of 0 had problems with rounding errors; use at least 1
     aAccuracy = std::max( aAccuracy, 1 );
@@ -1092,15 +1092,15 @@ SCH_LINE* SCH_SCREEN::GetLine( const VECTOR2I& aPosition, int aAccuracy, int aLa
 
         switch( aSearchType )
         {
-        case ENTIRE_LENGTH_T:
+        case SCH_LINE_TEST::ENTIRE_LENGTH:
             return (SCH_LINE*) item;
 
-        case EXCLUDE_END_POINTS_T:
+        case SCH_LINE_TEST::EXCLUDE_END_POINTS:
             if( !( (SCH_LINE*) item )->IsEndPoint( aPosition ) )
                 return (SCH_LINE*) item;
             break;
 
-        case END_POINTS_ONLY_T:
+        case SCH_LINE_TEST::END_POINTS_ONLY:
             if( ( (SCH_LINE*) item )->IsEndPoint( aPosition ) )
                 return (SCH_LINE*) item;
         }
