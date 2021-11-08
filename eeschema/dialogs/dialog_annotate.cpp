@@ -57,7 +57,7 @@ private:
     // User functions:
     bool GetResetItems();
 
-    ANNOTATE_SCOPE_T GetScope();
+    ANNOTATE_SCOPE GetScope();
 
     ANNOTATE_ORDER_T GetSortOrder();
 
@@ -248,14 +248,14 @@ bool DIALOG_ANNOTATE::GetResetItems()
 }
 
 
-ANNOTATE_SCOPE_T DIALOG_ANNOTATE::GetScope()
+ANNOTATE_SCOPE DIALOG_ANNOTATE::GetScope()
 {
     switch( m_rbScope->GetSelection() )
     {
-    case 0:  return ANNOTATE_ALL;
-    case 1:  return ANNOTATE_CURRENT_SHEET;
-    case 2:  return ANNOTATE_SELECTION;
-    default: return ANNOTATE_ALL;
+    case 0:  return ANNOTATE_SCOPE::ANNOTATE_ALL;
+    case 1:  return ANNOTATE_SCOPE::ANNOTATE_CURRENT_SHEET;
+    case 2:  return ANNOTATE_SCOPE::ANNOTATE_SELECTION;
+    default: return ANNOTATE_SCOPE::ANNOTATE_ALL;
     }
 }
 
