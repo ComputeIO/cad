@@ -154,11 +154,11 @@ public:
      *                   status bar if aPath is specified
      * @param aSearchHierarchy If false, search the current sheet only.  Otherwise,
      *                         the entire hierarchy
-     * @param aSearchType A #SCH_SEARCH_T value used to determine what to search for.
+     * @param aSearchType A #SCH_SEARCH value used to determine what to search for.
      * @param aSearchText The text to search for, either in value, reference or elsewhere.
      */
     SCH_ITEM* FindSymbolAndItem( const wxString* aPath, const wxString* aReference,
-                                 bool aSearchHierarchy, SCH_SEARCH_T aSearchType,
+                                 bool aSearchHierarchy, SCH_SEARCH aSearchType,
                                  const wxString& aSearchText );
 
 private:

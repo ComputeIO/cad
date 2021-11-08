@@ -108,7 +108,7 @@ enum ANNOTATE_ALGO_T
 
 
 /// Schematic search type used by the socket link with Pcbnew
-enum SCH_SEARCH_T
+enum class SCH_SEARCH
 {
     HIGHLIGHT_PIN,
     HIGHLIGHT_SYMBOL
