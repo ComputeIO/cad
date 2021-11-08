@@ -409,7 +409,7 @@ void BACK_ANNOTATE::applyChangelist()
 
     if( !m_dryRun )
     {
-        m_frame->RecalculateConnections( NO_CLEANUP );
+        m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
         m_frame->UpdateNetHighlightStatus();
     }
 

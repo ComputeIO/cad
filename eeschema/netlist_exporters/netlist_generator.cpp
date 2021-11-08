@@ -49,7 +49,7 @@ bool SCH_EDIT_FRAME::WriteNetListFile( int aFormat, const wxString& aFullFileNam
     Schematic().GetSheets().AnnotatePowerSymbols();
 
     // Ensure the netlist data is up to date:
-    RecalculateConnections( NO_CLEANUP );
+    RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
 
     if( !ReadyToNetlist( _( "Exporting netlist requires a fully annotated schematic." ) ) )
         return false;

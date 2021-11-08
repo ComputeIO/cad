@@ -488,11 +488,11 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         {
             DIALOG_MIGRATE_BUSES dlg( this );
             dlg.ShowQuasiModal();
-            RecalculateConnections( NO_CLEANUP );
+            RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
             OnModify();
         }
 
-        RecalculateConnections( GLOBAL_CLEANUP );
+        RecalculateConnections( SCH_CLEANUP_FLAGS::GLOBAL_CLEANUP );
         ClearUndoRedoList();
     }
 
@@ -1232,7 +1232,7 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
                 FixupJunctions();
             }
 
-            RecalculateConnections( GLOBAL_CLEANUP );
+            RecalculateConnections( SCH_CLEANUP_FLAGS::GLOBAL_CLEANUP );
 
             // Only perform the dangling end test on root sheet.
             GetScreen()->TestDanglingEnds();

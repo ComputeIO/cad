@@ -115,7 +115,7 @@ enum class SCH_SEARCH
 };
 
 
-enum SCH_CLEANUP_FLAGS
+enum class SCH_CLEANUP_FLAGS
 {
     NO_CLEANUP,
     LOCAL_CLEANUP,

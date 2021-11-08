@@ -926,7 +926,7 @@ int SCH_EDIT_TOOL::RepeatDrawItem( const TOOL_EVENT& aEvent )
 
         m_toolMgr->RunAction( EE_ACTIONS::addNeededJunctions, true, &new_sel );
 
-        m_frame->RecalculateConnections( LOCAL_CLEANUP );
+        m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::LOCAL_CLEANUP );
         m_frame->TestDanglingEnds();
     }
 

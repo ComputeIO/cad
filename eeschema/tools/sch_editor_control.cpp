@@ -190,7 +190,7 @@ bool SCH_EDITOR_CONTROL::rescueProject( RESCUER& aRescuer, bool aRunningOnDemand
             SCH_SCREENS schematic( m_frame->Schematic().Root() );
 
             schematic.UpdateSymbolLinks();
-            m_frame->RecalculateConnections( GLOBAL_CLEANUP );
+            m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::GLOBAL_CLEANUP );
         }
 
         m_frame->ClearUndoRedoList();
@@ -218,7 +218,7 @@ int SCH_EDITOR_CONTROL::RemapSymbols( const TOOL_EVENT& aEvent )
 int SCH_EDITOR_CONTROL::Print( const TOOL_EVENT& aEvent )
 {
     if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
-        m_frame->RecalculateConnections( NO_CLEANUP );
+        m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
 
     InvokeDialogPrintUsingPrinter( m_frame );
 
@@ -234,7 +234,7 @@ int SCH_EDITOR_CONTROL::Print( const TOOL_EVENT& aEvent )
 int SCH_EDITOR_CONTROL::Plot( const TOOL_EVENT& aEvent )
 {
     if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
-        m_frame->RecalculateConnections( NO_CLEANUP );
+        m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
 
     DIALOG_PLOT_SCHEMATIC dlg( m_frame );
 
@@ -995,7 +995,7 @@ int SCH_EDITOR_CONTROL::AssignNetclass( const TOOL_EVENT& aEvent )
     // TODO remove once real-time connectivity is a given
     if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
         // Ensure the netlist data is up to date:
-        m_frame->RecalculateConnections( NO_CLEANUP );
+        m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
 
     // Remove selection in favor of highlighting so the whole net is highlighted
     selectionTool->ClearSelection();
@@ -1247,7 +1247,7 @@ int SCH_EDITOR_CONTROL::HighlightNetCursor( const TOOL_EVENT& aEvent )
 {
     // TODO(JE) remove once real-time connectivity is a given
     if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
-        m_frame->RecalculateConnections( NO_CLEANUP );
+        m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
 
     std::string  tool = aEvent.GetCommandStr().get();
     PICKER_TOOL* picker = m_toolMgr->GetTool<PICKER_TOOL>();
@@ -2021,7 +2021,7 @@ int SCH_EDITOR_CONTROL::GenerateBOM( const TOOL_EVENT& aEvent )
 int SCH_EDITOR_CONTROL::DrawSheetOnClipboard( const TOOL_EVENT& aEvent )
 {
     if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
-        m_frame->RecalculateConnections( LOCAL_CLEANUP );
+        m_frame->RecalculateConnections( SCH_CLEANUP_FLAGS::LOCAL_CLEANUP );
 
     m_frame->DrawCurrentSheetToClipboard();
     return 0;
