@@ -358,11 +358,16 @@ void Refresh()
 {
     if( s_PcbEditFrame )
     {
-        auto board = s_PcbEditFrame->GetBoard();
+        BOARD* board = s_PcbEditFrame->GetBoard();
         board->BuildConnectivity();
 
         // Re-init everything: this is the easy way to do that
         s_PcbEditFrame->ActivateGalCanvas();
+
+        // Rebuild view, re-init tools, etc.
+        s_PcbEditFrame->SetBoard( nullptr );
+        s_PcbEditFrame->SetBoard( board );
+
         s_PcbEditFrame->GetCanvas()->Refresh();
     }
 }
