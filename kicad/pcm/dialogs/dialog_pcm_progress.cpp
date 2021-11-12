@@ -29,8 +29,6 @@ DIALOG_PCM_PROGRESS::DIALOG_PCM_PROGRESS( wxWindow* parent, bool aShowDownloadSe
         PROGRESS_REPORTER_BASE( 1 ),
         m_downloaded( 0 ),
         m_downloadTotal( 0 ),
-        m_overallProgress( 0 ),
-        m_overallProgressTotal( 0 ),
         m_finished( false )
 #if wxCHECK_VERSION( 3, 1, 0 )
         ,
@@ -89,8 +87,7 @@ uint64_t DIALOG_PCM_PROGRESS::toKb( uint64_t aValue )
 
 void DIALOG_PCM_PROGRESS::SetOverallProgress( uint64_t aProgress, uint64_t aTotal )
 {
-    m_overallProgress.store( std::min( aProgress, aTotal ) );
-    m_overallProgressTotal.store( aTotal );
+    SetCurrentProgress( std::min( aProgress, aTotal) / (double) aTotal );
 }
 
 
@@ -105,7 +102,7 @@ bool DIALOG_PCM_PROGRESS::updateUI()
     bool   finished = m_finished.load();
     int    phase = m_phase.load();
     int    phases = m_numPhases.load();
-    double current = m_overallProgress.load() / (double) m_overallProgressTotal.load();
+    double current = m_progress.load() / (double) m_maxProgress.load();
 
     if( phases > 0 )
         current = ( phase + current ) / phases;
