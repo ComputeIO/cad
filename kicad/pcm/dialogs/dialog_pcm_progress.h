@@ -69,9 +69,6 @@ private:
     std::atomic_int64_t  m_downloaded;
     std::atomic_int64_t  m_downloadTotal;
 
-    std::atomic_int64_t  m_overallProgress;
-    std::atomic_int64_t  m_overallProgressTotal;
-
     std::atomic_bool     m_finished;
 
     std::vector< std::pair<wxString, SEVERITY> > m_reports;
