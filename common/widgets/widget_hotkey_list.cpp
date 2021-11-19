@@ -459,7 +459,7 @@ WIDGET_HOTKEY_LIST::WIDGET_HOTKEY_LIST( wxWindow* aParent, HOTKEY_STORE& aHotkey
     if( !m_readOnly )
         command_header << " " << _( "(double-click to edit)" );
 
-    AppendColumn( command_header, 450, wxALIGN_LEFT, wxCOL_RESIZABLE | wxCOL_SORTABLE );
+    AppendColumn( command_header, 350, wxALIGN_LEFT, wxCOL_RESIZABLE | wxCOL_SORTABLE );
     AppendColumn( _( "Hotkey" ), 120, wxALIGN_LEFT, wxCOL_RESIZABLE | wxCOL_SORTABLE );
     AppendColumn( _( "Description" ), 900, wxALIGN_LEFT, wxCOL_RESIZABLE | wxCOL_SORTABLE );
 
@@ -544,16 +544,24 @@ bool WIDGET_HOTKEY_LIST::TransferDataToControl()
 void WIDGET_HOTKEY_LIST::updateColumnWidths()
 {
     wxDataViewColumn* col = GetDataView()->GetColumn( 0 );
+
+    // Automatic column widths are broken in wxGTK 3.0.x ~ 3.1.5
+#if !defined( __WXGTK__ )
     col->SetWidth( wxCOL_WIDTH_AUTOSIZE );
     col->SetWidth( col->GetWidth() );
+#endif
 
 #if defined( __WXGTK__ ) && !wxCHECK_VERSION( 3, 1, 0 )
     col->SetResizeable( true );
 #endif
 
     col = GetDataView()->GetColumn( 1 );
+
+    // Automatic column widths are broken in wxGTK 3.0.x ~ 3.1.5
+#if !defined( __WXGTK__ )
     col->SetWidth( wxCOL_WIDTH_AUTOSIZE );
     col->SetWidth( col->GetWidth() );
+#endif
 
 #if defined( __WXGTK__ ) && !wxCHECK_VERSION( 3, 1, 0 )
     col->SetResizeable( true );
