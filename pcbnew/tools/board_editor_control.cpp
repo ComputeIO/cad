@@ -745,12 +745,28 @@ int BOARD_EDITOR_CONTROL::TrackWidthInc( const TOOL_EVENT& aEvent )
     {
         int widthIndex = designSettings.GetTrackWidthIndex() + 1;
 
+        if( routerTool && routerTool->IsToolActive()
+            && routerTool->Router()->GetState() == PNS::ROUTER::RouterState::ROUTE_TRACK )
+        {
+            int currentWidth = routerTool->Router()->Sizes().TrackWidth();
+
+            for( int n = 1, count = designSettings.m_TrackWidthList.size(); n < count; n++ )
+            {
+                if( designSettings.m_TrackWidthList[n] > currentWidth )
+                {
+                    widthIndex = n;
+                    break;
+                }
+            }
+        }
+
         // If we go past the last track width entry in the list, start over at the beginning
         if( widthIndex >= (int) designSettings.m_TrackWidthList.size() )
             widthIndex = 0;
 
         designSettings.SetTrackWidthIndex( widthIndex );
         designSettings.UseCustomTrackViaSize( false );
+        designSettings.m_UseConnectedTrackWidth = false;
 
         m_toolMgr->RunAction( PCB_ACTIONS::trackViaSizeChanged, true );
     }
@@ -814,12 +830,28 @@ int BOARD_EDITOR_CONTROL::TrackWidthDec( const TOOL_EVENT& aEvent )
     {
         int widthIndex = designSettings.GetTrackWidthIndex() - 1;
 
+        if( routerTool && routerTool->IsToolActive()
+            && routerTool->Router()->GetState() == PNS::ROUTER::RouterState::ROUTE_TRACK )
+        {
+            int currentWidth = routerTool->Router()->Sizes().TrackWidth();
+
+            for( int count = designSettings.m_TrackWidthList.size(), n = count - 1; n >= 1; n-- )
+            {
+                if( designSettings.m_TrackWidthList[n] < currentWidth )
+                {
+                    widthIndex = n;
+                    break;
+                }
+            }
+        }
+
         // If we get to the lowest entry start over at the highest
         if( widthIndex < 0 )
             widthIndex = designSettings.m_TrackWidthList.size() - 1;
 
         designSettings.SetTrackWidthIndex( widthIndex );
         designSettings.UseCustomTrackViaSize( false );
+        designSettings.m_UseConnectedTrackWidth = false;
 
         m_toolMgr->RunAction( PCB_ACTIONS::trackViaSizeChanged, true );
     }

@@ -1986,7 +1986,21 @@ int ROUTER_TOOL::CustomTrackWidthDialog( const TOOL_EVENT& aEvent )
 
     if( sizeDlg.ShowModal() == wxID_OK )
     {
-        bds.UseCustomTrackViaSize( true );
+        bds.m_UseConnectedTrackWidth = false;
+
+        // Only use custom size mode if the entered size is not in the predefined list
+        auto widthIt = std::find( bds.m_TrackWidthList.begin(), bds.m_TrackWidthList.end(),
+                                  bds.GetCustomTrackWidth() );
+        auto viaIt = std::find( bds.m_ViasDimensionsList.begin(), bds.m_ViasDimensionsList.end(),
+                                VIA_DIMENSION( bds.GetCustomViaSize(), bds.GetCustomViaDrill() ) );
+
+        if( widthIt != bds.m_TrackWidthList.end() && viaIt != bds.m_ViasDimensionsList.end() )
+        {
+            bds.SetTrackWidthIndex( widthIt - bds.m_TrackWidthList.begin() );
+            bds.SetViaSizeIndex( viaIt - bds.m_ViasDimensionsList.begin() );
+        }
+        else
+            bds.UseCustomTrackViaSize( true );
 
         TOOL_EVENT dummy;
         onTrackViaSizeChanged( dummy );
