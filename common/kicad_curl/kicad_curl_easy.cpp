@@ -289,8 +289,8 @@ int KICAD_CURL_EASY::GetTransferTotal( uint64_t& aDownloadedBytes ) const
     int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD_T, &dl );
     aDownloadedBytes = (uint64_t) dl;
 #else
-    double     dl;
-    int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD, &dl );
+    double     dl;
+    int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD, &dl );
     aDownloadedBytes = (uint64_t) dl;
 #endif
     return result;
