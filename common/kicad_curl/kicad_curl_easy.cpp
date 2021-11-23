@@ -97,6 +97,13 @@ static int xferinfo( void* p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t u
 }
 
 
+static int progressinfo( void* p, double dltotal, double dlnow, double ultotal,
+                         double ulnow )
+{
+    return xferinfo( p, (curl_off_t)dltotal, (curl_off_t)dlnow, (curl_off_t)ultotal, (curl_off_t)ulnow );
+}
+
+
 KICAD_CURL_EASY::KICAD_CURL_EASY() : m_headers( nullptr )
 {
     // Call KICAD_CURL::Init() from in here every time, but only the first time
@@ -255,8 +262,13 @@ std::string KICAD_CURL_EASY::Escape( const std::string& aUrl )
 bool KICAD_CURL_EASY::SetTransferCallback( const TRANSFER_CALLBACK& aCallback, size_t aInterval )
 {
     progress = std::make_unique<CURL_PROGRESS>( this, aCallback, (curl_off_t) aInterval );
+#ifdef CURLOPT_XFERINFOFUNCTION
     setOption( CURLOPT_XFERINFOFUNCTION, xferinfo );
     setOption( CURLOPT_XFERINFODATA, progress.get() );
+#else
+    setOption( CURLOPT_PROGRESSFUNCTION, progressinfo );
+    setOption( CURLOPT_PROGRESSDATA, progress.get() );
+#endif
     setOption( CURLOPT_NOPROGRESS, 0L );
     return true;
 }
@@ -272,8 +284,14 @@ bool KICAD_CURL_EASY::SetOutputStream( const std::ostream* aOutput )
 
 int KICAD_CURL_EASY::GetTransferTotal( uint64_t& aDownloadedBytes ) const
 {
+#ifdef CURLINFO_SIZE_DOWNLOAD_T
     curl_off_t dl;
     int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD_T, &dl );
     aDownloadedBytes = (uint64_t) dl;
+#else
+    double     dl;
+    int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD, &dl );
+    aDownloadedBytes = (uint64_t) dl;
+#endif
     return result;
 }
