@@ -97,10 +97,10 @@ static int xferinfo( void* p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t u
 }
 
 
-static int progressinfo( void* p, double dltotal, double dlnow, double ultotal,
-                         double ulnow )
+static int progressinfo( void* p, double dltotal, double dlnow, double ultotal, double ulnow )
 {
-    return xferinfo( p, (curl_off_t)dltotal, (curl_off_t)dlnow, (curl_off_t)ultotal, (curl_off_t)ulnow );
+    return xferinfo( p, (curl_off_t) dltotal, (curl_off_t) dlnow, (curl_off_t) ultotal,
+                     (curl_off_t) ulnow );
 }
 
 
@@ -289,8 +289,8 @@ int KICAD_CURL_EASY::GetTransferTotal( uint64_t& aDownloadedBytes ) const
     int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD_T, &dl );
     aDownloadedBytes = (uint64_t) dl;
 #else
-    double     dl;
-    int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD, &dl );
+    double dl;
+    int    result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD, &dl );
     aDownloadedBytes = (uint64_t) dl;
 #endif
     return result;
