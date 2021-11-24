@@ -59,9 +59,9 @@ static size_t write_callback( void* contents, size_t size, size_t nmemb, void* u
 {
     size_t realsize = size * nmemb;
 
-    std::string* p = (std::string*) userp;
+    std::string* p = static_cast<std::string*>( userp );
 
-    p->append( (const char*) contents, realsize );
+    p->append( static_cast<const char*>( contents ), realsize );
 
     return realsize;
 }
@@ -73,7 +73,7 @@ static size_t stream_write_callback( void* contents, size_t size, size_t nmemb, 
 
     std::ostream* p = (std::ostream*) userp;
 
-    p->write( (const char*) contents, realsize );
+    p->write( static_cast<const char*>( contents ), realsize );
 
     return realsize;
 }
@@ -82,7 +82,7 @@ static size_t stream_write_callback( void* contents, size_t size, size_t nmemb, 
 static int xferinfo( void* p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal,
                      curl_off_t ulnow )
 {
-    CURL_PROGRESS* progress = (CURL_PROGRESS*) p;
+    CURL_PROGRESS* progress = static_cast<CURL_PROGRESS*>( p );
     curl_off_t     curtime = 0;
 
     curl_easy_getinfo( progress->curl->GetCurl(), CURLINFO_TOTAL_TIME, &curtime );
@@ -99,8 +99,8 @@ static int xferinfo( void* p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t u
 
 static int progressinfo( void* p, double dltotal, double dlnow, double ultotal, double ulnow )
 {
-    return xferinfo( p, (curl_off_t) dltotal, (curl_off_t) dlnow, (curl_off_t) ultotal,
-                     (curl_off_t) ulnow );
+    return xferinfo( p, static_cast<curl_off_t>( dltotal ), static_cast<curl_off_t>( dlnow ),
+                     static_cast<curl_off_t>( ultotal ), static_cast<curl_off_t>( ulnow ) );
 }
 
 
@@ -185,13 +185,13 @@ void KICAD_CURL_EASY::SetHeader( const std::string& aName, const std::string& aV
 template <typename T>
 int KICAD_CURL_EASY::setOption( int aOption, T aArg )
 {
-    return curl_easy_setopt( m_CURL, (CURLoption) aOption, aArg );
+    return curl_easy_setopt( m_CURL, static_cast<CURLoption>( aOption ), aArg );
 }
 
 
 const std::string KICAD_CURL_EASY::GetErrorText( int aCode )
 {
-    return curl_easy_strerror( (CURLcode) aCode );
+    return curl_easy_strerror( static_cast<CURLcode>( aCode ) );
 }
 
 
@@ -261,7 +261,8 @@ std::string KICAD_CURL_EASY::Escape( const std::string& aUrl )
 
 bool KICAD_CURL_EASY::SetTransferCallback( const TRANSFER_CALLBACK& aCallback, size_t aInterval )
 {
-    progress = std::make_unique<CURL_PROGRESS>( this, aCallback, (curl_off_t) aInterval );
+    progress = std::make_unique<CURL_PROGRESS>( this, aCallback,
+                                                static_cast<curl_off_t>( aInterval ) );
 #ifdef CURLOPT_XFERINFOFUNCTION
     setOption( CURLOPT_XFERINFOFUNCTION, xferinfo );
     setOption( CURLOPT_XFERINFODATA, progress.get() );
@@ -277,7 +278,7 @@ bool KICAD_CURL_EASY::SetTransferCallback( const TRANSFER_CALLBACK& aCallback, s
 bool KICAD_CURL_EASY::SetOutputStream( const std::ostream* aOutput )
 {
     curl_easy_setopt( m_CURL, CURLOPT_WRITEFUNCTION, stream_write_callback );
-    curl_easy_setopt( m_CURL, CURLOPT_WRITEDATA, (void*) aOutput );
+    curl_easy_setopt( m_CURL, CURLOPT_WRITEDATA, reinterpret_cast<void*>( aOutput ) );
     return true;
 }
 
@@ -287,11 +288,11 @@ int KICAD_CURL_EASY::GetTransferTotal( uint64_t& aDownloadedBytes ) const
 #ifdef CURLINFO_SIZE_DOWNLOAD_T
     curl_off_t dl;
     int        result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD_T, &dl );
-    aDownloadedBytes = (uint64_t) dl;
+    aDownloadedBytes = static_cast<uint64_t>( dl );
 #else
     double dl;
     int    result = curl_easy_getinfo( m_CURL, CURLINFO_SIZE_DOWNLOAD, &dl );
-    aDownloadedBytes = (uint64_t) dl;
+    aDownloadedBytes = static_cast<uint64_t>( dl );
 #endif
     return result;
 }
