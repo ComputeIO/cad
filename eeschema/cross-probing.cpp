@@ -66,6 +66,7 @@ SCH_ITEM* SCH_EDITOR_CONTROL::FindSymbolAndItem( const wxString* aPath, const wx
 
             // Search by path if specified, otherwise search by reference
             bool found = false;
+
             if( aPath )
             {
                 wxString path = sheet.PathAsString() + candidate->m_Uuid.AsString();
