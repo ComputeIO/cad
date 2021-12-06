@@ -386,8 +386,10 @@ void DIALOG_FIND::OnCloseButtonClick( wxCommandEvent& aEvent )
 bool DIALOG_FIND::Show( bool show )
 {
     bool ret = DIALOG_FIND_BASE::Show( show );
+
     if( show )
         m_searchCombo->SetFocus();
+
     return ret;
 }
 
