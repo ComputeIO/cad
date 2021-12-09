@@ -136,13 +136,15 @@ VECTOR2<T> GetVectorSnapped45( const VECTOR2<T>& aVec, bool only45 = false )
 /**
  * Clamps a vector to values that can be negated, respecting numeric limits
  * of coordinates data type.
+ * 
+ * Takes care of rounding in case of floating point to integer conversion.
  *
  * @param aCoord - vector to clamp.
  * @param aPadding - padding from the limits.
  * @return clamped vector.
  */
-template <typename T>
-VECTOR2<T> GetClampedCoords( const VECTOR2<T>& aCoords, long aPadding = 0 )
+template <typename in_type, typename ret_type = in_type>
+VECTOR2<ret_type> GetClampedCoords( const VECTOR2<in_type>& aCoords, long aPadding = 0 )
 {
     typedef std::numeric_limits<int> coord_limits;
 
@@ -152,8 +154,8 @@ VECTOR2<T> GetClampedCoords( const VECTOR2<T>& aCoords, long aPadding = 0 )
     long max = coord_limits::max() - coord_limits::epsilon() - aPadding;
     long min = -max;
 
-    T x = aCoords.x;
-    T y = aCoords.y;
+    in_type x = aCoords.x;
+    in_type y = aCoords.y;
 
     if( x < min )
         x = min;
@@ -165,7 +167,10 @@ VECTOR2<T> GetClampedCoords( const VECTOR2<T>& aCoords, long aPadding = 0 )
     else if( y > max )
         y = max;
 
-    return VECTOR2<T>( x, y );
+    if( !std::is_integral<in_type>() && std::is_integral<ret_type>() )
+        return VECTOR2<ret_type>( KiROUND( x ), KiROUND( y ) );
+
+    return VECTOR2<ret_type>( x, y );
 }
 
 
