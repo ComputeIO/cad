@@ -134,6 +134,38 @@ VECTOR2<T> GetVectorSnapped45( const VECTOR2<T>& aVec, bool only45 = false )
 
 
 /**
+ * Clamps a vector to values that can be negated, respecting numeric limits
+ * of coordinates data type.
+ *
+ * @param aCoord - vector to clamp.
+ * @return clamped vector.
+ */
+template <typename T>
+VECTOR2<T> GetClampedCoords( const VECTOR2<T>& aCoords, long padding = 0 )
+{
+    typedef std::numeric_limits<int> coord_limits;
+
+    long max = coord_limits::max() - coord_limits::epsilon() - padding;
+    long min = -max;
+
+    T x = aCoords.x;
+    T y = aCoords.y;
+
+    if( x < min )
+        x = min;
+    else if( x > max )
+        x = max;
+
+    if( y < min )
+        y = min;
+    else if( y > max )
+        y = max;
+
+    return VECTOR2<T>( x, y );
+}
+
+
+/**
  * Test if any part of a line falls within the bounds of a rectangle.
  *
  * Please note that this is only accurate for lines that are one pixel wide.
