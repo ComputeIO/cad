@@ -138,14 +138,18 @@ VECTOR2<T> GetVectorSnapped45( const VECTOR2<T>& aVec, bool only45 = false )
  * of coordinates data type.
  *
  * @param aCoord - vector to clamp.
+ * @param aPadding - padding from the limits.
  * @return clamped vector.
  */
 template <typename T>
-VECTOR2<T> GetClampedCoords( const VECTOR2<T>& aCoords, long padding = 0 )
+VECTOR2<T> GetClampedCoords( const VECTOR2<T>& aCoords, long aPadding = 0 )
 {
     typedef std::numeric_limits<int> coord_limits;
 
-    long max = coord_limits::max() - coord_limits::epsilon() - padding;
+    if( aPadding < 0 )
+        aPadding = 0;
+
+    long max = coord_limits::max() - coord_limits::epsilon() - aPadding;
     long min = -max;
 
     T x = aCoords.x;
