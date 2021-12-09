@@ -140,7 +140,7 @@ VECTOR2<T> GetVectorSnapped45( const VECTOR2<T>& aVec, bool only45 = false )
  * Takes care of rounding in case of floating point to integer conversion.
  *
  * @param aCoord - vector to clamp.
- * @param aPadding - padding from the limits.
+ * @param aPadding - padding from the limits. Must not be negative.
  * @return clamped vector.
  */
 template <typename in_type, typename ret_type = in_type>
@@ -149,9 +149,12 @@ VECTOR2<ret_type> GetClampedCoords( const VECTOR2<in_type>& aCoords, long aPaddi
     typedef std::numeric_limits<int> coord_limits;
 
     if( aPadding < 0 )
+    {
+        kimathLogDebug( "Negative padding %ld is not allowed in GetClampedCoords", aPadding );
         aPadding = 0;
+    }
 
-    long max = coord_limits::max() - coord_limits::epsilon() - aPadding;
+    long max = coord_limits::max() - aPadding;
     long min = -max;
 
     in_type x = aCoords.x;
