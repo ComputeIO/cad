@@ -143,16 +143,11 @@ VECTOR2<T> GetVectorSnapped45( const VECTOR2<T>& aVec, bool only45 = false )
  * @param aPadding - padding from the limits. Must not be negative.
  * @return clamped vector.
  */
-template <typename in_type, typename ret_type = in_type>
-VECTOR2<ret_type> GetClampedCoords( const VECTOR2<in_type>& aCoords, long aPadding = 0 )
+template <typename in_type, typename ret_type = in_type, typename pad_type = unsigned int,
+          typename = typename std::enable_if<std::is_unsigned<pad_type>::value>::type>
+VECTOR2<ret_type> GetClampedCoords( const VECTOR2<in_type>& aCoords, pad_type aPadding = 0u )
 {
     typedef std::numeric_limits<int> coord_limits;
-
-    if( aPadding < 0 )
-    {
-        kimathLogDebug( "Negative padding %ld is not allowed in GetClampedCoords", aPadding );
-        aPadding = 0;
-    }
 
     long max = coord_limits::max() - aPadding;
     long min = -max;
