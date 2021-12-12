@@ -1700,7 +1700,7 @@ bool SHAPE_POLY_SET::CollideEdge( const VECTOR2I& aPoint,
     for( CONST_SEGMENT_ITERATOR iterator = CIterateSegmentsWithHoles(); iterator; iterator++ )
     {
         const SEG currentSegment = *iterator;
-        double    distance = sqrt( currentSegment.SquaredDistance( aPoint ) ); // Avoid overflow
+        int distance = currentSegment.Distance( aPoint );
 
         // Check for collisions
         if( distance <= aClearance )
