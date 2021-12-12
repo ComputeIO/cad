@@ -1747,8 +1747,14 @@ void DIALOG_NET_INSPECTOR::adjustListColumns()
     assert( column_order.size() == 8 );
 
     // At resizing of the list the width of middle column (Net Names) changes only.
+
+#ifdef __WINDOWS__
     int width = m_netsList->GetClientSize().x;
-    w1        = width - w0 - w2 - w3 - w4 - w5 - w6 - w7;
+#else
+    int width = m_netsList->GetClientSize().x - 24;
+#endif
+
+    w1 = width - w0 - w2 - w3 - w4 - w5 - w6 - w7;
 
     if( w1 < minw_col1 )
         w1 = minw_col1;
