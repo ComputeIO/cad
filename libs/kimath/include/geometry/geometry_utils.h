@@ -135,7 +135,9 @@ VECTOR2<T> GetVectorSnapped45( const VECTOR2<T>& aVec, bool only45 = false )
 
 /**
  * Clamps a vector to values that can be negated, respecting numeric limits
- * of coordinates data type.
+ * of coordinates data type with specified padding.
+ * 
+ * Numeric limits are (-2^31 + 1) to (2^31 - 1).
  * 
  * Takes care of rounding in case of floating point to integer conversion.
  *
