@@ -1747,13 +1747,11 @@ void DIALOG_NET_INSPECTOR::adjustListColumns()
     assert( column_order.size() == 8 );
 
     // Windows returns the widget size with scrollbar width subtracted.
-    // On other platforms, subtract it manually.
-#if defined( __WINDOWS__ )
+    // On other platforms, subtract it manually. The 12 value is to counteract fast resizing.
+#ifdef __WINDOWS__
     int width = m_netsList->GetClientSize().x;
-#elif defined( __WXGTK__ )
-    int width = m_netsList->GetClientSize().x - 30;
 #else
-    int width = m_netsList->GetClientSize().x - 20;
+    int width = m_netsList->GetClientSize().x - wxSystemSettings::GetMetric( wxSYS_VSCROLL_X ) - 12;
 #endif
 
     // At resizing of the list the width of middle column (Net Names) changes only.
