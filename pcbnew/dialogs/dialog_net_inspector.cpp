@@ -1748,10 +1748,12 @@ void DIALOG_NET_INSPECTOR::adjustListColumns()
 
     // Windows returns the widget size with scrollbar width subtracted.
     // On other platforms, subtract it manually.
-#ifdef __WINDOWS__
+#if defined( __WINDOWS__ )
     int width = m_netsList->GetClientSize().x;
+#elif defined( __WXGTK__ )
+    int width = m_netsList->GetClientSize().x - 30;
 #else
-    int width = m_netsList->GetClientSize().x - 24;
+    int width = m_netsList->GetClientSize().x - 20;
 #endif
 
     // At resizing of the list the width of middle column (Net Names) changes only.
