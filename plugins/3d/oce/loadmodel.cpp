@@ -1086,21 +1086,26 @@ bool processFace( const TopoDS_Face& face, DATA& data, SGNODE* parent,
     if( triangulation.IsNull() == Standard_True )
         return false;
 
+    // TODO(snh): This is removed as face color checks create problematic
+    // color fights in models.  See
+    // https://gitlab.com/kicad/code/kicad/-/issues/9835
+    // https://gitlab.com/kicad/code/kicad/-/issues/9416
+    // check for a face color; this has precedence over SOLID colors
+
     Quantity_Color lcolor;
 
-    // check for a face color; this has precedence over SOLID colors
-    do
-    {
-        TDF_Label L;
-
-        if( data.m_color->ShapeTool()->Search( face, L ) )
-        {
-            if( data.m_color->GetColor( L, XCAFDoc_ColorGen, lcolor )
-                || data.m_color->GetColor( L, XCAFDoc_ColorCurv, lcolor )
-                || data.m_color->GetColor( L, XCAFDoc_ColorSurf, lcolor ) )
-                color = &lcolor;
-        }
-    } while( 0 );
+//    do
+//    {
+//        TDF_Label L;
+//
+//        if( data.m_color->ShapeTool()->Search( face, L ) )
+//        {
+//            if( data.m_color->GetColor( L, XCAFDoc_ColorGen, lcolor )
+//                || data.m_color->GetColor( L, XCAFDoc_ColorCurv, lcolor )
+//                || data.m_color->GetColor( L, XCAFDoc_ColorSurf, lcolor ) )
+//                color = &lcolor;
+//        }
+//    } while( 0 );
 
     SGNODE* ocolor = data.GetColor( color );
 
