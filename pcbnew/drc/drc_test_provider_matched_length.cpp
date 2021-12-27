@@ -19,6 +19,7 @@
 
 #include <common.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <pad.h>
 #include <pcb_track.h>
 
@@ -88,13 +89,6 @@ private:
     BOARD* m_board;
     DRC_LENGTH_REPORT m_report;
 };
-
-
-static int computeViaThruLength( PCB_VIA *aVia, const std::set<BOARD_CONNECTED_ITEM*> &conns )
-{
-    return 0; // fixme: not yet there...
-}
-
 
 void DRC_TEST_PROVIDER_MATCHED_LENGTH::checkLengths( DRC_CONSTRAINT& aConstraint,
                                                      std::vector<CONNECTION>& aMatchedConnections )
@@ -292,8 +286,11 @@ bool DRC_TEST_PROVIDER_MATCHED_LENGTH::runInternal( bool aDelayReportMode )
                 if( citem->Type() == PCB_VIA_T )
                 {
                     ent.viaCount++;
-                    ent.totalVia += computeViaThruLength( static_cast<PCB_VIA*>( citem ),
-                                                          nitem.second );
+
+                    if ( m_board->GetDesignSettings().m_UseHeightForLengthCalcs )
+                    {
+                        ent.totalVia += m_board->GetDesignSettings().GetStackupDescriptor().GetLayerDistance( static_cast<PCB_VIA*>( citem )->TopLayer(), static_cast<PCB_VIA*>( citem )->BottomLayer() );
+                    }
                 }
                 else if( citem->Type() == PCB_TRACE_T )
                 {
