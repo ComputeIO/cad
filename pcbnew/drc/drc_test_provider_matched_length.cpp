@@ -293,10 +293,8 @@ bool DRC_TEST_PROVIDER_MATCHED_LENGTH::runInternal( bool aDelayReportMode )
                     {
                         const PCB_VIA* v = static_cast<PCB_VIA*>( citem );
                         
-                        ent.totalVia += ds.GetStackupDescriptor()
-                                          .GetLayerDistance( v->TopLayer(),
-                                                             v->BottomLayer() );
-
+                        ent.totalVia += ds.GetStackupDescriptor().GetLayerDistance(
+                                v->TopLayer(), v->BottomLayer() );
                     }
                 }
                 else if( citem->Type() == PCB_TRACE_T )
