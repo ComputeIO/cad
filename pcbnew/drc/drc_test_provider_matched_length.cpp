@@ -291,9 +291,11 @@ bool DRC_TEST_PROVIDER_MATCHED_LENGTH::runInternal( bool aDelayReportMode )
 
                     if( ds.m_UseHeightForLengthCalcs )
                     {
-                        ent.totalVia += 
-                            ds.GetStackupDescriptor().GetLayerDistance( v->TopLayer(),
-                                                                        v->BottomLayer() );
+                        const PCB_VIA* v = static_cast<PCB_VIA*>( citem );
+                        
+                        ent.totalVia += ds.GetStackupDescriptor()
+                                          .GetLayerDistance( v->TopLayer(),
+                                                             v->BottomLayer() );
 
                     }
                 }
