@@ -285,11 +285,16 @@ bool DRC_TEST_PROVIDER_MATCHED_LENGTH::runInternal( bool aDelayReportMode )
             {
                 if( citem->Type() == PCB_VIA_T )
                 {
+                    const BOARD_DESIGN_SETTINGS& ds = m_board->GetDesignSettings();
+
                     ent.viaCount++;
 
-                    if ( m_board->GetDesignSettings().m_UseHeightForLengthCalcs )
+                    if( ds.m_UseHeightForLengthCalcs )
                     {
-                        ent.totalVia += m_board->GetDesignSettings().GetStackupDescriptor().GetLayerDistance( static_cast<PCB_VIA*>( citem )->TopLayer(), static_cast<PCB_VIA*>( citem )->BottomLayer() );
+                        ent.totalVia += 
+                            ds.GetStackupDescriptor().GetLayerDistance( v->TopLayer(),
+                                                                        v->BottomLayer() );
+
                     }
                 }
                 else if( citem->Type() == PCB_TRACE_T )
