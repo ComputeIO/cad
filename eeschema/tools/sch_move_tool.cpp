@@ -910,9 +910,13 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                                            EDA_ITEMS& aList )
 {
     EE_RTREE&         items = m_frame->GetScreen()->Items();
-    EE_RTREE::EE_TYPE itemsOverlapping = items.Overlapping( aOriginalItem->GetBoundingBox() );
+    EE_RTREE::EE_TYPE itemsOverlappingRTree = items.Overlapping( aOriginalItem->GetBoundingBox() );
+    std::vector<SCH_ITEM*> itemsOverlapping;
     bool              ptHasUnselectedJunction = false;
     SCH_LINE*         newWire = nullptr;
+
+    for( SCH_ITEM* item : itemsOverlappingRTree )
+        itemsOverlapping.push_back( item );
 
     for( SCH_ITEM* item : itemsOverlapping )
     {
