@@ -229,8 +229,8 @@ public:
      * In KiCad the bezier curves have 4 control points:
      * start ctrl1 ctrl2 end
      */
-    virtual void BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
-                              const wxPoint& aControl2, const wxPoint& aEnd,
+    virtual void BezierCurve( const VECTOR2I& aStart, const VECTOR2I& aControl1,
+                              const VECTOR2I& aControl2, const VECTOR2I& aEnd,
                               int aTolerance, int aLineThickness = USE_DEFAULT_LINE_WIDTH );
 
     /**

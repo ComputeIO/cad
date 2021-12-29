@@ -207,14 +207,14 @@ void PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int 
 }
 
 
-void PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
-                           const wxPoint& aControl2, const wxPoint& aEnd,
+void PLOTTER::BezierCurve( const VECTOR2I& aStart, const VECTOR2I& aControl1,
+                           const VECTOR2I& aControl2, const VECTOR2I& aEnd,
                            int aTolerance, int aLineThickness )
 {
     // Generic fallback: Quadratic Bezier curve plotted as a polyline
     int minSegLen = aLineThickness;  // The segment min length to approximate a bezier curve
 
-    std::vector<wxPoint> ctrlPoints;
+    std::vector<VECTOR2I> ctrlPoints;
     ctrlPoints.push_back( aStart );
     ctrlPoints.push_back( aControl1 );
     ctrlPoints.push_back( aControl2 );
@@ -222,7 +222,7 @@ void PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
 
     BEZIER_POLY bezier_converter( ctrlPoints );
 
-    std::vector<wxPoint> approxPoints;
+    std::vector<VECTOR2I> approxPoints;
     bezier_converter.GetPoly( approxPoints, minSegLen );
 
     SetCurrentLineWidth( aLineThickness );

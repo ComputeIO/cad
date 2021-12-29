@@ -533,8 +533,8 @@ void SVG_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, 
 }
 
 
-void SVG_PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
-                               const wxPoint& aControl2, const wxPoint& aEnd,
+void SVG_PLOTTER::BezierCurve( const VECTOR2I& aStart, const VECTOR2I& aControl1,
+                               const VECTOR2I& aControl2, const VECTOR2I& aEnd,
                                int aTolerance, int aLineThickness )
 {
 #if 1

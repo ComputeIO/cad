@@ -453,8 +453,8 @@ public:
     virtual void Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int rayon,
                       FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
 
-    virtual void BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
-                              const wxPoint& aControl2, const wxPoint& aEnd,
+    virtual void BezierCurve( const VECTOR2I& aStart, const VECTOR2I& aControl1,
+                              const VECTOR2I& aControl2, const VECTOR2I& aEnd,
                               int aTolerance,
                               int aLineThickness = USE_DEFAULT_LINE_WIDTH ) override;
 
