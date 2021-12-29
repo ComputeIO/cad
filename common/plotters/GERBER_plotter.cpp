@@ -1923,19 +1923,19 @@ void GERBER_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aDiamete
 }
 
 
-void GERBER_PLOTTER::Text( const wxPoint&           aPos,
-                           const COLOR4D&           aColor,
-                           const wxString&          aText,
-                           const EDA_ANGLE&         aOrient,
-                           const wxSize&            aSize,
-                           enum GR_TEXT_H_ALIGN_T   aH_justify,
-                           enum GR_TEXT_V_ALIGN_T   aV_justify,
-                           int                      aWidth,
-                           bool                     aItalic,
-                           bool                     aBold,
-                           bool                     aMultilineAllowed,
-                           KIFONT::FONT*            aFont,
-                           void*                    aData )
+void GERBER_PLOTTER::Text( const VECTOR2I&             aPos,
+                           const COLOR4D&              aColor,
+                           const wxString&             aText,
+                           const EDA_ANGLE&            aOrient,
+                           const VECTOR2I&             aSize,
+                           enum GR_TEXT_H_ALIGN_T      aH_justify,
+                           enum GR_TEXT_V_ALIGN_T      aV_justify,
+                           int                         aWidth,
+                           bool                        aItalic,
+                           bool                        aBold,
+                           bool                        aMultilineAllowed,
+                           KIFONT::FONT*               aFont,
+                           void*                       aData )
 {
     GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
 

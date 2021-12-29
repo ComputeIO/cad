@@ -88,9 +88,9 @@ bool PLOTTER::OpenFile( const wxString& aFullFilename )
 }
 
 
-DPOINT PLOTTER::userToDeviceCoordinates( const wxPoint& aCoordinate )
+DPOINT PLOTTER::userToDeviceCoordinates( const VECTOR2I& aCoordinate )
 {
-    wxPoint pos = aCoordinate - m_plotOffset;
+    VECTOR2I pos = aCoordinate - m_plotOffset;
 
     // Don't allow overflows; they can cause rendering failures in some file viewers
     // (such as Acrobat)
@@ -119,7 +119,7 @@ DPOINT PLOTTER::userToDeviceCoordinates( const wxPoint& aCoordinate )
 }
 
 
-DPOINT PLOTTER::userToDeviceSize( const wxSize& size )
+DPOINT PLOTTER::userToDeviceSize( const VECTOR2I& size )
 {
     return DPOINT( size.x * m_plotScale * m_iuPerDeviceUnit,
                    size.y * m_plotScale * m_iuPerDeviceUnit );
@@ -649,19 +649,19 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_T aFill, int a
  * @param aData is a parameter used by some plotters in SetCurrentLineWidth(),
  *              not directly used here.
  */
-void PLOTTER::Text( const wxPoint&           aPos,
-                    const COLOR4D&           aColor,
-                    const wxString&          aText,
-                    const EDA_ANGLE&         aOrient,
-                    const wxSize&            aSize,
-                    enum GR_TEXT_H_ALIGN_T   aH_justify,
-                    enum GR_TEXT_V_ALIGN_T   aV_justify,
-                    int                      aPenWidth,
-                    bool                     aItalic,
-                    bool                     aBold,
-                    bool                     aMultilineAllowed,
-                    KIFONT::FONT*            aFont,
-                    void*                    aData )
+void PLOTTER::Text( const VECTOR2I&             aPos,
+                    const COLOR4D&              aColor,
+                    const wxString&             aText,
+                    const EDA_ANGLE&            aOrient,
+                    const VECTOR2I&              aSize,
+                    enum GR_TEXT_H_ALIGN_T      aH_justify,
+                    enum GR_TEXT_V_ALIGN_T      aV_justify,
+                    int                         aPenWidth,
+                    bool                        aItalic,
+                    bool                        aBold,
+                    bool                        aMultilineAllowed,
+                    KIFONT::FONT*               aFont,
+                    void*                       aData )
 {
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth, aData );

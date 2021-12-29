@@ -434,10 +434,10 @@ void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
 }
 
 
-void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
+void PSLIKE_PLOTTER::computeTextParameters( const VECTOR2I&          aPos,
                                             const wxString&          aText,
                                             const EDA_ANGLE&         aOrient,
-                                            const wxSize&            aSize,
+                                            const VECTOR2I&          aSize,
                                             bool                     aMirror,
                                             enum GR_TEXT_H_ALIGN_T   aH_justify,
                                             enum GR_TEXT_V_ALIGN_T   aV_justify,
@@ -454,7 +454,7 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
                                             double                   *heightFactor )
 {
     // Compute the starting position (compensated for alignment)
-    wxPoint start_pos = aPos;
+    VECTOR2I start_pos = aPos;
 
     // This is an approximation of the text bounds (in IUs)
     int tw = returnPostscriptTextWidth( aText, aSize.x, aItalic, aWidth );
@@ -958,19 +958,19 @@ bool PS_PLOTTER::EndPlot()
 
 
 
-void PS_PLOTTER::Text( const wxPoint&           aPos,
-                       const COLOR4D&           aColor,
-                       const wxString&          aText,
-                       const EDA_ANGLE&         aOrient,
-                       const wxSize&            aSize,
-                       enum GR_TEXT_H_ALIGN_T   aH_justify,
-                       enum GR_TEXT_V_ALIGN_T   aV_justify,
-                       int                      aWidth,
-                       bool                     aItalic,
-                       bool                     aBold,
-                       bool                     aMultilineAllowed,
-                       KIFONT::FONT*            aFont,
-                       void*                    aData )
+void PS_PLOTTER::Text( const VECTOR2I&             aPos,
+                       const COLOR4D&              aColor,
+                       const wxString&             aText,
+                       const EDA_ANGLE&            aOrient,
+                       const VECTOR2I&             aSize,
+                       enum GR_TEXT_H_ALIGN_T      aH_justify,
+                       enum GR_TEXT_V_ALIGN_T      aV_justify,
+                       int                         aWidth,
+                       bool                        aItalic,
+                       bool                        aBold,
+                       bool                        aMultilineAllowed,
+                       KIFONT::FONT*               aFont,
+                       void*                       aData )
 {
     SetCurrentLineWidth( aWidth );
     SetColor( aColor );

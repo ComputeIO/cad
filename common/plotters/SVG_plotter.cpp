@@ -755,26 +755,26 @@ bool SVG_PLOTTER::EndPlot()
 }
 
 
-void SVG_PLOTTER::Text( const wxPoint&           aPos,
-                        const COLOR4D&           aColor,
-                        const wxString&          aText,
-                        const EDA_ANGLE&         aOrient,
-                        const wxSize&            aSize,
-                        enum GR_TEXT_H_ALIGN_T   aH_justify,
-                        enum GR_TEXT_V_ALIGN_T   aV_justify,
-                        int                      aWidth,
-                        bool                     aItalic,
-                        bool                     aBold,
-                        bool                     aMultilineAllowed,
-                        KIFONT::FONT*            aFont,
-                        void*                    aData )
+void SVG_PLOTTER::Text( const VECTOR2I&             aPos,
+                        const COLOR4D&              aColor,
+                        const wxString&             aText,
+                        const EDA_ANGLE&            aOrient,
+                        const VECTOR2I&             aSize,
+                        enum GR_TEXT_H_ALIGN_T      aH_justify,
+                        enum GR_TEXT_V_ALIGN_T      aV_justify,
+                        int                         aWidth,
+                        bool                        aItalic,
+                        bool                        aBold,
+                        bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
+                        void*                       aData )
 {
     setFillMode( FILL_T::NO_FILL );
     SetColor( aColor );
     SetCurrentLineWidth( aWidth );
 
-    wxPoint text_pos = aPos;
-    const char *hjust = "start";
+    VECTOR2I    text_pos = aPos;
+    const char* hjust = "start";
 
     switch( aH_justify )
     {

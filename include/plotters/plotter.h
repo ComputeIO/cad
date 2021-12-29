@@ -399,19 +399,19 @@ public:
      * For convenience it accept the color to use for specific plotters (GERBER) aData is used
      * to pass extra parameters.
      */
-    virtual void Text( const wxPoint&           aPos,
-                       const COLOR4D&           aColor,
-                       const wxString&          aText,
-                       const EDA_ANGLE&         aOrient,
-                       const wxSize&            aSize,
-                       enum GR_TEXT_H_ALIGN_T   aH_justify,
-                       enum GR_TEXT_V_ALIGN_T   aV_justify,
-                       int                      aWidth,
-                       bool                     aItalic,
-                       bool                     aBold,
-                       bool                     aMultilineAllowed = false,
-                       KIFONT::FONT*            aFont = nullptr,
-                       void*                    aData = nullptr );
+    virtual void Text( const VECTOR2I&             aPos,
+                       const COLOR4D&              aColor,
+                       const wxString&             aText,
+                       const EDA_ANGLE&            aOrient,
+                       const VECTOR2I&             aSize,
+                       enum GR_TEXT_H_ALIGN_T      aH_justify,
+                       enum GR_TEXT_V_ALIGN_T      aV_justify,
+                       int                         aWidth,
+                       bool                        aItalic,
+                       bool                        aBold,
+                       bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
+                       void*                       aData = nullptr );
 
     /**
      * Draw a marker (used for the drill map).
@@ -533,12 +533,12 @@ protected:
      * convert from a wxPoint to DPOINT, since some output engines needs floating point
      * coordinates.
      */
-    virtual DPOINT userToDeviceCoordinates( const wxPoint& aCoordinate );
+    virtual DPOINT userToDeviceCoordinates( const VECTOR2I& aCoordinate );
 
     /**
      * Modify size according to the plotter scale factors (wxSize version, returns a DPOINT).
      */
-    virtual DPOINT userToDeviceSize( const wxSize& size );
+    virtual DPOINT userToDeviceSize( const VECTOR2I& size );
 
     /**
      * Modify size according to the plotter scale factors (simple double version).
@@ -563,7 +563,7 @@ protected:      // variables used in most of plotters:
 
     double           m_iuPerDeviceUnit;     // Device scale (from IUs to plotter device units;
                                             // usually decimils)
-    wxPoint          m_plotOffset;          // Plot offset (in IUs)
+    VECTOR2I         m_plotOffset;          // Plot offset (in IUs)
     bool             m_plotMirror;          // X axis orientation (SVG)
                                             // and plot mirrored (only for PS, PDF HPGL and SVG)
     bool             m_mirrorIsHorizontal;  // true to mirror horizontally (else vertically)
