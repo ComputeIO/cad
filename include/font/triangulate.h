@@ -21,27 +21,10 @@
 #ifndef TRIANGULATE_H
 #define TRIANGULATE_H
 
-#include <earcut.hpp>
 #include <math/vector2d.h>
 #include <font/glyph.h>
 #include <geometry/shape_poly_set.h>
 #include <functional>
-
-namespace mapbox
-{
-template <>
-struct util::nth<0, VECTOR2I>
-{
-    inline static auto get( const VECTOR2I& t ) { return t.x; }
-};
-
-
-template <>
-struct util::nth<1, VECTOR2I>
-{
-    inline static auto get( const VECTOR2I& t ) { return t.y; }
-};
-} // namespace mapbox
 
 
 typedef std::function<void( int, const VECTOR2I& aPoint1, const VECTOR2I& aPoint2,
@@ -56,11 +39,5 @@ void Triangulate( const KIFONT::GLYPH& aGlyph, TRIANGULATE_CALLBACK aCallback,
 
 void Triangulate( const std::shared_ptr<KIFONT::GLYPH>& aGlyph, TRIANGULATE_CALLBACK aCallback,
                   void* aCallbackData = nullptr );
-
-/*
-void TriangulateWithBackground( const KIFONT::GLYPH_LIST& aGlyphList,
-                                const SHAPE_POLY_SET& aBackground, TRIANGULATE_CALLBACK aCallback,
-                                void* aCallbackData = nullptr );
-*/
 
 #endif // TRIANGULATE_H

@@ -517,10 +517,8 @@ target_include_directories( common PUBLIC
     )  # used by altium_parser.cpp
 
 # outline font support
-add_dependencies( common earcut )
 add_dependencies( common pegtl )
 target_include_directories( common PUBLIC
-    $<TARGET_PROPERTY:earcut,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:pegtl,INTERFACE_INCLUDE_DIRECTORIES>
     )
 

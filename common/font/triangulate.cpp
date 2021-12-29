@@ -24,50 +24,22 @@
 void Triangulate( const SHAPE_POLY_SET& aPolylist, TRIANGULATE_CALLBACK aCallback,
                   void* aCallbackData )
 {
-    for( int i = 0; i < aPolylist.OutlineCount(); i++ )
+    SHAPE_POLY_SET polys( aPolylist );
+
+    polys.Fracture( SHAPE_POLY_SET::PM_FAST ); // TODO verify aFastMode
+    polys.CacheTriangulation();
+
+    for( unsigned int i = 0; i < polys.TriangulatedPolyCount(); i++ )
     {
-        std::vector<std::vector<VECTOR2I>> polygon;
-        std::vector<VECTOR2I>              allPoints;
-        std::vector<uint32_t>              indices;
-        std::vector<VECTOR2I>              outline;
-
-        for( int j = 0; j < aPolylist.COutline( i ).PointCount(); j++ )
+        const SHAPE_POLY_SET::TRIANGULATED_POLYGON* polygon = polys.TriangulatedPolygon( i );
+        for ( size_t j = 0; j < polygon->GetTriangleCount(); j++ )
         {
-            const VECTOR2I& p = aPolylist.COutline( i ).GetPoint( j );
-            outline.push_back( p );
-            allPoints.push_back( p );
-        }
-        polygon.push_back( outline );
+            VECTOR2I a;
+            VECTOR2I b;
+            VECTOR2I c;
 
-        std::vector<VECTOR2I> hole;
-        for( int k = 0; k < aPolylist.HoleCount( i ); k++ )
-        {
-            hole.clear();
-
-            for( int m = 0; m < aPolylist.CHole( i, k ).PointCount(); m++ )
-            {
-                const VECTOR2I& p = aPolylist.CHole( i, k ).GetPoint( m );
-                hole.push_back( p );
-                allPoints.push_back( p );
-            }
-            polygon.push_back( hole );
-        }
-
-        indices = mapbox::earcut<uint32_t>( polygon );
-
-        for( long unsigned int n = 0; n < indices.size(); n += 3 )
-        {
-            /* aCallback is called for each triangle in each polygon
-             *
-             * Parameters:
-             * - polygon index
-             * - 1st triangle vertex
-             * - 2nd triangle vertex
-             * - 3rd triangle vertex
-             * - aCallbackData
-             */
-            aCallback( i, allPoints[indices[n]], allPoints[indices[n + 1]],
-                       allPoints[indices[n + 2]], aCallbackData );
+            polygon->GetTriangle( j, a, b, c );
+            aCallback( i, a, b, c, aCallbackData );
         }
     }
 }
@@ -86,6 +58,7 @@ void Triangulate( const std::shared_ptr<KIFONT::GLYPH>& aGlyph, TRIANGULATE_CALL
 }
 
 
+#if 0
 void TriangulateWithBackground( const SHAPE_POLY_SET& aPolylist, const SHAPE_POLY_SET& aBackground,
                                 TRIANGULATE_CALLBACK aCallback, void* aCallbackData )
 {
@@ -182,3 +155,4 @@ void TriangulateWithBackground( const SHAPE_POLY_SET& aPolylist, const SHAPE_POL
         }
     }
 }
+#endif
