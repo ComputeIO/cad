@@ -196,7 +196,7 @@ void PDF_PLOTTER::SetDash( PLOT_DASH_TYPE dashed )
 }
 
 
-void PDF_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int width )
+void PDF_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int width )
 {
     wxASSERT( workFile );
     DPOINT p1_dev = userToDeviceCoordinates( p1 );
@@ -208,7 +208,7 @@ void PDF_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int w
 }
 
 
-void PDF_PLOTTER::Circle( const wxPoint& pos, int diametre, FILL_T aFill, int width )
+void PDF_PLOTTER::Circle( const VECTOR2I& pos, int diametre, FILL_T aFill, int width )
 {
     wxASSERT( workFile );
     DPOINT pos_dev = userToDeviceCoordinates( pos );
@@ -261,7 +261,7 @@ void PDF_PLOTTER::Circle( const wxPoint& pos, int diametre, FILL_T aFill, int wi
 }
 
 
-void PDF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+void PDF_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int radius,
                        FILL_T fill, int width )
 {
     wxASSERT( workFile );

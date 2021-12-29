@@ -160,10 +160,10 @@ void PLOTTER::Arc( const SHAPE_ARC& aArc )
 }
 
 
-void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+void PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int radius,
                    FILL_T fill, int width )
 {
-    wxPoint   start, end;
+    VECTOR2I  start, end;
     const int delta = 50;   // increment (in 0.1 degrees) to draw circles
 
     if( StAngle > EndAngle )

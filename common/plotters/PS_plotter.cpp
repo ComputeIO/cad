@@ -564,7 +564,7 @@ void PS_PLOTTER::SetDash( PLOT_DASH_TYPE dashed )
 }
 
 
-void PS_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int width )
+void PS_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int width )
 {
     DPOINT p1_dev = userToDeviceCoordinates( p1 );
     DPOINT p2_dev = userToDeviceCoordinates( p2 );
@@ -575,7 +575,7 @@ void PS_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int wi
 }
 
 
-void PS_PLOTTER::Circle( const wxPoint& pos, int diametre, FILL_T fill, int width )
+void PS_PLOTTER::Circle( const VECTOR2I& pos, int diametre, FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );
     DPOINT pos_dev = userToDeviceCoordinates( pos );
@@ -586,7 +586,7 @@ void PS_PLOTTER::Circle( const wxPoint& pos, int diametre, FILL_T fill, int widt
 }
 
 
-void PS_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+void PS_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int radius,
                       FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );

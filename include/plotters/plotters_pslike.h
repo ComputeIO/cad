@@ -197,11 +197,11 @@ public:
 
     virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
-    virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
+    virtual void Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Circle( const wxPoint& pos, int diametre, FILL_T fill,
+    virtual void Circle( const VECTOR2I& pos, int diametre, FILL_T fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+    virtual void Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int rayon,
                       FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
 
     virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
@@ -308,20 +308,20 @@ public:
     /**
      * Rectangles in PDF. Supported by the native operator.
      */
-    virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
+    virtual void Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
 
     /**
      * Circle drawing for PDF. They're approximated by curves, but fill is supported
      */
-    virtual void Circle( const wxPoint& pos, int diametre, FILL_T fill,
+    virtual void Circle( const VECTOR2I& pos, int diametre, FILL_T fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
 
     /**
      * The PDF engine can't directly plot arcs, it uses the base emulation.
      * So no filled arcs (not a great loss... )
      */
-    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+    virtual void Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int rayon,
                       FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
 
     /**
@@ -446,11 +446,11 @@ public:
 
     virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
-    virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
+    virtual void Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Circle( const wxPoint& pos, int diametre, FILL_T fill,
+    virtual void Circle( const VECTOR2I& pos, int diametre, FILL_T fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+    virtual void Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int rayon,
                       FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
 
     virtual void BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,

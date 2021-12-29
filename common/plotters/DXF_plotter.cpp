@@ -409,7 +409,7 @@ void DXF_PLOTTER::SetColor( const COLOR4D& color )
 }
 
 
-void DXF_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int width )
+void DXF_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );
     MoveTo( p1 );
@@ -420,7 +420,7 @@ void DXF_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int w
 }
 
 
-void DXF_PLOTTER::Circle( const wxPoint& centre, int diameter, FILL_T fill, int width )
+void DXF_PLOTTER::Circle( const VECTOR2I& centre, int diameter, FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );
     double radius = userToDeviceSize( diameter / 2 );
@@ -619,7 +619,7 @@ void DXF_PLOTTER::ThickSegment( const wxPoint& aStart, const wxPoint& aEnd, int 
 }
 
 
-void DXF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+void DXF_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int radius,
                        FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );

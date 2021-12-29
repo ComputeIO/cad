@@ -65,11 +65,11 @@ public:
                               double aScale, bool aMirror ) override;
 
     // Basic plot primitives
-    virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
+    virtual void Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Circle( const wxPoint& pos, int diametre, FILL_T fill,
+    virtual void Circle( const VECTOR2I& pos, int diametre, FILL_T fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Arc( const wxPoint& aCenter, double aStAngle, double aEndAngle, int aRadius,
+    virtual void Arc( const VECTOR2I& aCenter, double aStAngle, double aEndAngle, int aRadius,
                       FILL_T aFill, int aWidth = USE_DEFAULT_LINE_WIDTH ) override;
 
     virtual void Arc( const SHAPE_ARC& aArc ) override;
@@ -272,7 +272,7 @@ protected:
      * plot an usual arc item.  The line thickness is not initialized in plotArc, and must
      * be initialized before calling it if needed.
      */
-    void plotArc( const wxPoint& aCenter, double aStAngle, double aEndAngle,
+    void plotArc( const VECTOR2I& aCenter, double aStAngle, double aEndAngle,
                   int aRadius, bool aPlotInRegion );
     void plotArc( const SHAPE_ARC& aArc, bool aPlotInRegion );
 

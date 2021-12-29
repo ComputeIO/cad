@@ -383,7 +383,7 @@ void HPGL_PLOTTER::SetPenDiameter( double diameter )
 }
 
 
-void HPGL_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int width )
+void HPGL_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );
 
@@ -405,7 +405,7 @@ void HPGL_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int 
 }
 
 
-void HPGL_PLOTTER::Circle( const wxPoint& centre, int diameter, FILL_T fill, int width )
+void HPGL_PLOTTER::Circle( const VECTOR2I& centre, int diameter, FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );
     double radius = userToDeviceSize( diameter / 2 );
@@ -562,7 +562,7 @@ void HPGL_PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end,
 }
 
 
-void HPGL_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+void HPGL_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int radius,
                         FILL_T fill, int width )
 {
     wxASSERT( m_outputFile );

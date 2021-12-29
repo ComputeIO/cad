@@ -96,9 +96,9 @@ public:
 
     virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
-    virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
+    virtual void Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Circle( const wxPoint& pos, int diametre, FILL_T fill,
+    virtual void Circle( const VECTOR2I& pos, int diametre, FILL_T fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) override;
@@ -118,7 +118,7 @@ public:
      * EndAngle is end angle the arc.
      * Radius is the radius of the arc.
      */
-    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+    virtual void Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int rayon,
                       FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void PenTo( const VECTOR2I& pos, char plume ) override;
     virtual void FlashPadCircle( const wxPoint& aPadPos, int aDiameter,

@@ -371,7 +371,7 @@ void SVG_PLOTTER::SetDash( PLOT_DASH_TYPE dashed )
 }
 
 
-void SVG_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int width )
+void SVG_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int width )
 {
     EDA_RECT rect( p1, wxSize( p2.x -p1.x,  p2.y -p1.y ) );
     rect.Normalize();
@@ -408,7 +408,7 @@ void SVG_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int w
 }
 
 
-void SVG_PLOTTER::Circle( const wxPoint& pos, int diametre, FILL_T fill, int width )
+void SVG_PLOTTER::Circle( const VECTOR2I& pos, int diametre, FILL_T fill, int width )
 {
     DPOINT  pos_dev = userToDeviceCoordinates( pos );
     double  radius  = userToDeviceSize( diametre / 2.0 );
@@ -431,7 +431,7 @@ void SVG_PLOTTER::Circle( const wxPoint& pos, int diametre, FILL_T fill, int wid
 }
 
 
-void SVG_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+void SVG_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int radius,
                        FILL_T fill, int width )
 {
     /* Draws an arc of a circle, centered on (xc,yc), with starting point

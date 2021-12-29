@@ -793,9 +793,9 @@ void GERBER_PLOTTER::PenTo( const VECTOR2I& aPos, char plume )
 }
 
 
-void GERBER_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, int width )
+void GERBER_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int width )
 {
-    std::vector< wxPoint > cornerList;
+    std::vector<VECTOR2I> cornerList;
 
     // Build corners list
     cornerList.push_back( p1 );
@@ -811,14 +811,14 @@ void GERBER_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill, in
 }
 
 
-void GERBER_PLOTTER::Circle( const wxPoint& aCenter, int aDiameter, FILL_T aFill, int aWidth )
+void GERBER_PLOTTER::Circle( const VECTOR2I& aCenter, int aDiameter, FILL_T aFill, int aWidth )
 {
     Arc( aCenter, 0, 3600, aDiameter / 2, aFill, aWidth );
 }
 
 
 
-void GERBER_PLOTTER::Arc( const wxPoint& aCenter, double aStAngle, double aEndAngle, int aRadius,
+void GERBER_PLOTTER::Arc( const VECTOR2I& aCenter, double aStAngle, double aEndAngle, int aRadius,
                           FILL_T aFill, int aWidth )
 {
     SetCurrentLineWidth( aWidth );
@@ -868,10 +868,10 @@ void GERBER_PLOTTER::plotArc( const SHAPE_ARC& aArc, bool aPlotInRegion )
 }
 
 
-void GERBER_PLOTTER::plotArc( const wxPoint& aCenter, double aStAngle, double aEndAngle,
+void GERBER_PLOTTER::plotArc( const VECTOR2I& aCenter, double aStAngle, double aEndAngle,
                               int aRadius, bool aPlotInRegion )
 {
-    wxPoint start, end;
+    VECTOR2I start, end;
     start.x = aCenter.x + KiROUND( cosdecideg( aRadius, aStAngle ) );
     start.y = aCenter.y - KiROUND( sindecideg( aRadius, aStAngle ) );
 
