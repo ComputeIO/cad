@@ -596,7 +596,7 @@ void HPGL_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle,
     angle /= 10;
 
     // Calculate arc start point:
-    wxPoint cmap;
+    VECTOR2I cmap;
     cmap.x  = centre.x + KiROUND( cosdecideg( radius, StAngle ) );
     cmap.y  = centre.y - KiROUND( sindecideg( radius, StAngle ) );
     DPOINT  cmap_dev = userToDeviceCoordinates( cmap );
@@ -630,14 +630,14 @@ void HPGL_PLOTTER::FlashPadOval( const VECTOR2I& pos, const VECTOR2I& aSize, dou
 
     if( trace_mode == FILLED )
     {
-        FlashPadRect( pos, wxSize( size.x, deltaxy + KiROUND( penDiameter ) ),
+        FlashPadRect( pos, VECTOR2I( size.x, deltaxy + KiROUND( penDiameter ) ),
                       orient, trace_mode, aData );
         cx = 0; cy = deltaxy / 2;
         RotatePoint( &cx, &cy, orient );
-        FlashPadCircle( wxPoint( cx + pos.x, cy + pos.y ), size.x, trace_mode, aData );
+        FlashPadCircle( VECTOR2I( cx + pos.x, cy + pos.y ), size.x, trace_mode, aData );
         cx = 0; cy = -deltaxy / 2;
         RotatePoint( &cx, &cy, orient );
-        FlashPadCircle( wxPoint( cx + pos.x, cy + pos.y ), size.x, trace_mode, aData );
+        FlashPadCircle( VECTOR2I( cx + pos.x, cy + pos.y ), size.x, trace_mode, aData );
     }
     else    // Plot in outline mode.
     {
@@ -670,10 +670,10 @@ void HPGL_PLOTTER::FlashPadCircle( const VECTOR2I& pos, int diametre,
     {
         // A filled polygon uses always the current point to start the polygon.
         // Gives a correct current starting point for the circle
-        MoveTo( wxPoint( pos.x+radius, pos.y ) );
+        MoveTo( VECTOR2I( pos.x + radius, pos.y ) );
 
         // Plot filled area and its outline
-        startOrAppendItem( userToDeviceCoordinates( wxPoint( pos.x + radius, pos.y ) ),
+        startOrAppendItem( userToDeviceCoordinates( VECTOR2I( pos.x + radius, pos.y ) ),
                            wxString::Format( "PM 0; PA %.0f,%.0f;CI %.0f;%s",
                                              pos_dev.x, pos_dev.y, rsize, hpgl_end_polygon_cmd ) );
         m_current_item->lift_before = true;

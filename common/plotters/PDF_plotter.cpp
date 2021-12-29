@@ -274,7 +274,7 @@ void PDF_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, 
 
     /* Arcs are not so easily approximated by beziers (in the general case),
        so we approximate them in the old way */
-    wxPoint   start, end;
+    VECTOR2I  start, end;
     const int delta = 50;   // increment (in 0.1 degrees) to draw circles
 
     if( StAngle > EndAngle )
@@ -372,7 +372,7 @@ void PDF_PLOTTER::PenTo( const VECTOR2I& pos, char plume )
 void PDF_PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor )
 {
     wxASSERT( workFile );
-    wxSize pix_size( aImage.GetWidth(), aImage.GetHeight() );
+    VECTOR2I pix_size( aImage.GetWidth(), aImage.GetHeight() );
 
     // Requested size (in IUs)
     DPOINT drawsize( aScaleFactor * pix_size.x, aScaleFactor * pix_size.y );

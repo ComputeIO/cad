@@ -425,7 +425,7 @@ public:
      * @param aDiameter is the diameter of the marker.
      * @param aShapeId is the index (used to generate forms characters).
      */
-    void Marker( const wxPoint& position, int diametre, unsigned aShapeId );
+    void Marker( const VECTOR2I& position, int diametre, unsigned aShapeId );
 
     /**
      * Set the current Gerber layer polarity to positive or negative
@@ -484,37 +484,37 @@ protected:
     /**
      * Plot a circle centered on the position. Building block for markers
      */
-    void markerCircle( const wxPoint& pos, int radius );
+    void markerCircle( const VECTOR2I& pos, int radius );
 
     /**
      * Plot a - bar centered on the position. Building block for markers
      */
-    void markerHBar( const wxPoint& pos, int radius );
+    void markerHBar( const VECTOR2I& pos, int radius );
 
     /**
      * Plot a / bar centered on the position. Building block for markers
      */
-    void markerSlash( const wxPoint& pos, int radius );
+    void markerSlash( const VECTOR2I& pos, int radius );
 
     /**
      * Plot a \ bar centered on the position. Building block for markers
      */
-    void markerBackSlash( const wxPoint& pos, int radius );
+    void markerBackSlash( const VECTOR2I& pos, int radius );
 
     /**
      * Plot a | bar centered on the position. Building block for markers
      */
-    void markerVBar( const wxPoint& pos, int radius );
+    void markerVBar( const VECTOR2I& pos, int radius );
 
     /**
      * Plot a square centered on the position. Building block for markers
      */
-    void markerSquare( const wxPoint& position, int radius );
+    void markerSquare( const VECTOR2I& position, int radius );
 
     /**
      * Plot a lozenge centered on the position. Building block for markers
      */
-    void markerLozenge( const wxPoint& position, int radius );
+    void markerLozenge( const VECTOR2I& position, int radius );
 
     // Helper function for sketched filler segment
 
@@ -530,13 +530,13 @@ protected:
 
     /**
      * Modify coordinates according to the orientation, scale factor, and offsets trace. Also
-     * convert from a wxPoint to DPOINT, since some output engines needs floating point
+     * convert from a VECTOR2I to DPOINT, since some output engines needs floating point
      * coordinates.
      */
     virtual DPOINT userToDeviceCoordinates( const VECTOR2I& aCoordinate );
 
     /**
-     * Modify size according to the plotter scale factors (wxSize version, returns a DPOINT).
+     * Modify size according to the plotter scale factors (VECTOR2I version, returns a DPOINT).
      */
     virtual DPOINT userToDeviceSize( const VECTOR2I& size );
 

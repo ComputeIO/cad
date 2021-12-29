@@ -110,8 +110,8 @@ void PSLIKE_PLOTTER::FlashPadOval( const VECTOR2I& aPadPos, const VECTOR2I& aSiz
     RotatePoint( &x1, &y1, aPadOrient );
 
     if( aTraceMode == FILLED )
-        ThickSegment( wxPoint( aPadPos.x + x0, aPadPos.y + y0 ),
-                      wxPoint( aPadPos.x + x1, aPadPos.y + y1 ), size.x, aTraceMode, nullptr );
+        ThickSegment( VECTOR2I( aPadPos.x + x0, aPadPos.y + y0 ),
+                      VECTOR2I( aPadPos.x + x1, aPadPos.y + y1 ), size.x, aTraceMode, nullptr );
     else
         sketchOval( aPadPos, size, aPadOrient, -1 );
 }
@@ -164,7 +164,7 @@ void PSLIKE_PLOTTER::FlashPadRect( const VECTOR2I& aPadPos, const VECTOR2I& aSiz
     int dx = size.x / 2;
     int dy = size.y / 2;
 
-    wxPoint corner;
+    VECTOR2I corner;
     corner.x = aPadPos.x - dx;
     corner.y = aPadPos.y + dy;
     cornerList.push_back( corner );
@@ -213,7 +213,7 @@ void PSLIKE_PLOTTER::FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I&
     TransformRoundChamferedRectToPolygon( outline, aPadPos, size, aOrient, aCornerRadius,
                                           0.0, 0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
 
-    std::vector< wxPoint > cornerList;
+    std::vector<VECTOR2I> cornerList;
 
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );
@@ -248,7 +248,7 @@ void PSLIKE_PLOTTER::FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aS
     }
 
 
-    std::vector< wxPoint > cornerList;
+    std::vector<VECTOR2I> cornerList;
 
     for( int cnt = 0; cnt < aPolygons->OutlineCount(); ++cnt )
     {
@@ -647,7 +647,7 @@ void PS_PLOTTER::PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFil
 
 void PS_PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor )
 {
-    wxSize pix_size;                // size of the bitmap in pixels
+    VECTOR2I pix_size; // size of the bitmap in pixels
     pix_size.x = aImage.GetWidth();
     pix_size.y = aImage.GetHeight();
     DPOINT drawsize( aScaleFactor * pix_size.x,

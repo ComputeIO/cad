@@ -155,7 +155,7 @@ double PLOTTER::GetDashGapLenIU() const
 
 void PLOTTER::Arc( const SHAPE_ARC& aArc )
 {
-    Arc( wxPoint( aArc.GetCenter() ), aArc.GetStartAngle(), aArc.GetEndAngle(), aArc.GetRadius(),
+    Arc( VECTOR2I( aArc.GetCenter() ), aArc.GetStartAngle(), aArc.GetEndAngle(), aArc.GetRadius(),
          FILL_T::NO_FILL, aArc.GetWidth() );
 }
 
@@ -237,7 +237,7 @@ void PLOTTER::BezierCurve( const VECTOR2I& aStart, const VECTOR2I& aControl1,
 
 void PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor )
 {
-    wxSize size( aImage.GetWidth() * aScaleFactor, aImage.GetHeight() * aScaleFactor );
+    VECTOR2I size( aImage.GetWidth() * aScaleFactor, aImage.GetHeight() * aScaleFactor );
 
     VECTOR2I start = aPos;
     start.x -= size.x / 2;
@@ -251,11 +251,12 @@ void PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aSc
 }
 
 
-void PLOTTER::markerSquare( const wxPoint& position, int radius )
+void PLOTTER::markerSquare( const VECTOR2I& position, int radius )
 {
-    double r = KiROUND( radius / 1.4142 );
-    std::vector< wxPoint > corner_list;
-    wxPoint corner;
+    double                r = KiROUND( radius / 1.4142 );
+    std::vector<VECTOR2I> corner_list;
+    VECTOR2I              corner;
+
     corner.x = position.x + r;
     corner.y = position.y + r;
     corner_list.push_back( corner );
@@ -276,16 +277,17 @@ void PLOTTER::markerSquare( const wxPoint& position, int radius )
 }
 
 
-void PLOTTER::markerCircle( const wxPoint& position, int radius )
+void PLOTTER::markerCircle( const VECTOR2I& position, int radius )
 {
     Circle( position, radius * 2, FILL_T::NO_FILL, GetCurrentLineWidth() );
 }
 
 
-void PLOTTER::markerLozenge( const wxPoint& position, int radius )
+void PLOTTER::markerLozenge( const VECTOR2I& position, int radius )
 {
-    std::vector< wxPoint > corner_list;
-    wxPoint corner;
+    std::vector<VECTOR2I> corner_list;
+    VECTOR2I              corner;
+
     corner.x = position.x;
     corner.y = position.y + radius;
     corner_list.push_back( corner );
@@ -306,35 +308,35 @@ void PLOTTER::markerLozenge( const wxPoint& position, int radius )
 }
 
 
-void PLOTTER::markerHBar( const wxPoint& pos, int radius )
+void PLOTTER::markerHBar( const VECTOR2I& pos, int radius )
 {
-    MoveTo( wxPoint( pos.x - radius, pos.y ) );
-    FinishTo( wxPoint( pos.x + radius, pos.y ) );
+    MoveTo( VECTOR2I( pos.x - radius, pos.y ) );
+    FinishTo( VECTOR2I( pos.x + radius, pos.y ) );
 }
 
 
-void PLOTTER::markerSlash( const wxPoint& pos, int radius )
+void PLOTTER::markerSlash( const VECTOR2I& pos, int radius )
 {
-    MoveTo( wxPoint( pos.x - radius, pos.y - radius ) );
-    FinishTo( wxPoint( pos.x + radius, pos.y + radius ) );
+    MoveTo( VECTOR2I( pos.x - radius, pos.y - radius ) );
+    FinishTo( VECTOR2I( pos.x + radius, pos.y + radius ) );
 }
 
 
-void PLOTTER::markerBackSlash( const wxPoint& pos, int radius )
+void PLOTTER::markerBackSlash( const VECTOR2I& pos, int radius )
 {
-    MoveTo( wxPoint( pos.x + radius, pos.y - radius ) );
-    FinishTo( wxPoint( pos.x - radius, pos.y + radius ) );
+    MoveTo( VECTOR2I( pos.x + radius, pos.y - radius ) );
+    FinishTo( VECTOR2I( pos.x - radius, pos.y + radius ) );
 }
 
 
-void PLOTTER::markerVBar( const wxPoint& pos, int radius )
+void PLOTTER::markerVBar( const VECTOR2I& pos, int radius )
 {
-    MoveTo( wxPoint( pos.x, pos.y - radius ) );
-    FinishTo( wxPoint( pos.x, pos.y + radius ) );
+    MoveTo( VECTOR2I( pos.x, pos.y - radius ) );
+    FinishTo( VECTOR2I( pos.x, pos.y + radius ) );
 }
 
 
-void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
+void PLOTTER::Marker( const VECTOR2I& position, int diametre, unsigned aShapeId )
 {
     int radius = diametre / 2;
 
@@ -459,8 +461,8 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
 void PLOTTER::segmentAsOval( const VECTOR2I& start, const VECTOR2I& end, int width,
                              OUTLINE_MODE tracemode )
 {
-    wxPoint center( (start.x + end.x) / 2, (start.y + end.y) / 2 );
-    wxSize  size( end.x - start.x, end.y - start.y );
+    VECTOR2I center( ( start.x + end.x ) / 2, ( start.y + end.y ) / 2 );
+    VECTOR2I size( end.x - start.x, end.y - start.y );
     double  orient;
 
     if( size.y == 0 )
@@ -495,29 +497,30 @@ void PLOTTER::sketchOval( const VECTOR2I& pos, const VECTOR2I& aSize, double ori
     cx = -radius;
     cy = -deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    MoveTo( wxPoint( cx + pos.x, cy + pos.y ) );
+    MoveTo( VECTOR2I( cx + pos.x, cy + pos.y ) );
     cx = -radius;
     cy = deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    FinishTo( wxPoint( cx + pos.x, cy + pos.y ) );
+    FinishTo( VECTOR2I( cx + pos.x, cy + pos.y ) );
 
     cx = radius;
     cy = -deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    MoveTo( wxPoint( cx + pos.x, cy + pos.y ) );
+    MoveTo( VECTOR2I( cx + pos.x, cy + pos.y ) );
     cx = radius;
     cy = deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    FinishTo( wxPoint( cx + pos.x, cy + pos.y ) );
+    FinishTo( VECTOR2I( cx + pos.x, cy + pos.y ) );
 
     cx = 0;
     cy = deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    Arc( wxPoint( cx + pos.x, cy + pos.y ), orient + 1800, orient + 3600, radius, FILL_T::NO_FILL );
+    Arc( VECTOR2I( cx + pos.x, cy + pos.y ), orient + 1800, orient + 3600, radius,
+         FILL_T::NO_FILL );
     cx = 0;
     cy = -deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    Arc( wxPoint( cx + pos.x, cy + pos.y ), orient, orient + 1800, radius, FILL_T::NO_FILL );
+    Arc( VECTOR2I( cx + pos.x, cy + pos.y ), orient, orient + 1800, radius, FILL_T::NO_FILL );
 }
 
 
@@ -573,10 +576,10 @@ void PLOTTER::ThickRect( const VECTOR2I& p1, const VECTOR2I& p2, int width,
     else
     {
         SetCurrentLineWidth( -1 );
-        wxPoint offsetp1( p1.x - (width - m_currentPenWidth) / 2,
-                          p1.y - (width - m_currentPenWidth) / 2 );
-        wxPoint offsetp2( p2.x + (width - m_currentPenWidth) / 2,
-                          p2.y + (width - m_currentPenWidth) / 2 );
+        VECTOR2I offsetp1( p1.x - ( width - m_currentPenWidth ) / 2,
+                           p1.y - (width - m_currentPenWidth) / 2 );
+        VECTOR2I offsetp2( p2.x + ( width - m_currentPenWidth ) / 2,
+                           p2.y + (width - m_currentPenWidth) / 2 );
         Rect( offsetp1, offsetp2, FILL_T::NO_FILL, -1 );
         offsetp1.x += ( width - m_currentPenWidth );
         offsetp1.y += ( width - m_currentPenWidth );
@@ -619,7 +622,7 @@ void PLOTTER::FilledCircle( const VECTOR2I& pos, int diametre, OUTLINE_MODE trac
 
 void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_T aFill, int aWidth, void* aData )
 {
-    std::vector<wxPoint> cornerList;
+    std::vector<VECTOR2I> cornerList;
     cornerList.reserve( aCornerList.PointCount() );
 
     for( int ii = 0; ii < aCornerList.PointCount(); ii++ )

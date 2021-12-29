@@ -155,7 +155,7 @@ public:
      * @param aPlotMode is the drawing mode, FILLED or SKETCH.
      * @param aData is the a reference to Gerber attributes descr.
      */
-    void FlashPadChamferRoundRect( const wxPoint& aShapePos, const wxSize& aPadSize,
+    void FlashPadChamferRoundRect( const VECTOR2I& aShapePos, const VECTOR2I& aPadSize,
                                    int aCornerRadius, double aChamferRatio,
                                    int aChamferPositions, double aPadOrient,
                                    OUTLINE_MODE aPlotMode, void* aData );
@@ -165,7 +165,7 @@ public:
      * and add the TA.AperFunction if aData contains this attribute, and clear it
      * after plotting.
      */
-    void PlotGerberRegion( const std::vector< wxPoint >& aCornerList, void* aData = nullptr );
+    void PlotGerberRegion( const std::vector<VECTOR2I>& aCornerList, void* aData = nullptr );
 
     void PlotGerberRegion( const SHAPE_LINE_CHAIN& aPoly, void* aData = nullptr );
 

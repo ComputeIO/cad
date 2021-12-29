@@ -413,10 +413,10 @@ void DXF_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int
 {
     wxASSERT( m_outputFile );
     MoveTo( p1 );
-    LineTo( wxPoint( p1.x, p2.y ) );
-    LineTo( wxPoint( p2.x, p2.y ) );
-    LineTo( wxPoint( p2.x, p1.y ) );
-    FinishTo( wxPoint( p1.x, p1.y ) );
+    LineTo( VECTOR2I( p1.x, p2.y ) );
+    LineTo( VECTOR2I( p2.x, p2.y ) );
+    LineTo( VECTOR2I( p2.x, p1.y ) );
+    FinishTo( VECTOR2I( p1.x, p1.y ) );
 }
 
 
@@ -534,18 +534,18 @@ void DXF_PLOTTER::PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFi
     last = path.PointCount() - 1;
     VECTOR2I point = path.CPoint( 0 );
 
-    wxPoint startPoint( point.x, point.y );
+    VECTOR2I startPoint( point.x, point.y );
     MoveTo( startPoint );
 
     for( int ii = 1; ii < path.PointCount(); ii++ )
     {
         point = path.CPoint( ii );
-        LineTo( wxPoint( point.x, point.y ) );
+        LineTo( VECTOR2I( point.x, point.y ) );
     }
 
     // Close polygon, if needed
     point = path.CPoint( last );
-    wxPoint endPoint( point.x, point.y );
+    VECTOR2I endPoint( point.x, point.y );
 
     if( endPoint != startPoint )
         LineTo( startPoint );
@@ -699,8 +699,8 @@ void DXF_PLOTTER::FlashPadRect( const VECTOR2I& pos, const VECTOR2I& padsize,
         fx = pos.x;
         fy = pos.y + size.y;
         RotatePoint( &fx, &fy, pos.x, pos.y, orient );
-        MoveTo( wxPoint( ox, oy ) );
-        FinishTo( wxPoint( fx, fy ) );
+        MoveTo( VECTOR2I( ox, oy ) );
+        FinishTo( VECTOR2I( fx, fy ) );
         return;
     }
 
@@ -712,32 +712,32 @@ void DXF_PLOTTER::FlashPadRect( const VECTOR2I& pos, const VECTOR2I& padsize,
         fx = pos.x + size.x;
         fy = pos.y;
         RotatePoint( &fx, &fy, pos.x, pos.y, orient );
-        MoveTo( wxPoint( ox, oy ) );
-        FinishTo( wxPoint( fx, fy ) );
+        MoveTo( VECTOR2I( ox, oy ) );
+        FinishTo( VECTOR2I( fx, fy ) );
         return;
     }
 
     ox = pos.x - size.x;
     oy = pos.y - size.y;
     RotatePoint( &ox, &oy, pos.x, pos.y, orient );
-    MoveTo( wxPoint( ox, oy ) );
+    MoveTo( VECTOR2I( ox, oy ) );
 
     fx = pos.x - size.x;
     fy = pos.y + size.y;
     RotatePoint( &fx, &fy, pos.x, pos.y, orient );
-    LineTo( wxPoint( fx, fy ) );
+    LineTo( VECTOR2I( fx, fy ) );
 
     fx = pos.x + size.x;
     fy = pos.y + size.y;
     RotatePoint( &fx, &fy, pos.x, pos.y, orient );
-    LineTo( wxPoint( fx, fy ) );
+    LineTo( VECTOR2I( fx, fy ) );
 
     fx = pos.x + size.x;
     fy = pos.y - size.y;
     RotatePoint( &fx, &fy, pos.x, pos.y, orient );
-    LineTo( wxPoint( fx, fy ) );
+    LineTo( VECTOR2I( fx, fy ) );
 
-    FinishTo( wxPoint( ox, oy ) );
+    FinishTo( VECTOR2I( ox, oy ) );
 }
 
 
@@ -752,12 +752,12 @@ void DXF_PLOTTER::FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I& aS
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );
 
-    MoveTo( wxPoint( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
+    MoveTo( VECTOR2I( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
 
     for( int ii = 1; ii < poly.PointCount(); ++ii )
-        LineTo( wxPoint( poly.CPoint( ii ).x, poly.CPoint( ii ).y ) );
+        LineTo( VECTOR2I( poly.CPoint( ii ).x, poly.CPoint( ii ).y ) );
 
-    FinishTo( wxPoint( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
+    FinishTo( VECTOR2I( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
 }
 
 void DXF_PLOTTER::FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
@@ -768,12 +768,12 @@ void DXF_PLOTTER::FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize
     {
         SHAPE_LINE_CHAIN& poly = aPolygons->Outline( cnt );
 
-        MoveTo( wxPoint( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
+        MoveTo( VECTOR2I( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
 
         for( int ii = 1; ii < poly.PointCount(); ++ii )
-            LineTo( wxPoint( poly.CPoint( ii ).x, poly.CPoint( ii ).y ) );
+            LineTo( VECTOR2I( poly.CPoint( ii ).x, poly.CPoint( ii ).y ) );
 
-        FinishTo( wxPoint( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
+        FinishTo( VECTOR2I( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
     }
 }
 

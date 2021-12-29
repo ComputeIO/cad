@@ -373,7 +373,7 @@ void SVG_PLOTTER::SetDash( PLOT_DASH_TYPE dashed )
 
 void SVG_PLOTTER::Rect( const VECTOR2I& p1, const VECTOR2I& p2, FILL_T fill, int width )
 {
-    EDA_RECT rect( p1, wxSize( p2.x -p1.x,  p2.y -p1.y ) );
+    EDA_RECT rect( p1, VECTOR2I( p2.x - p1.x, p2.y - p1.y ) );
     rect.Normalize();
     DPOINT  org_dev  = userToDeviceCoordinates( rect.GetOrigin() );
     DPOINT  end_dev = userToDeviceCoordinates( rect.GetEnd() );
@@ -712,7 +712,7 @@ bool SVG_PLOTTER::StartPlot()
     }
 
     // Write viewport pos and size
-    wxPoint origin;    // TODO set to actual value
+    VECTOR2I origin; // TODO set to actual value
     fprintf( m_outputFile, "  width=\"%fcm\" height=\"%fcm\" viewBox=\"%d %d %d %d\">\n",
              (double) m_paperSize.x / m_IUsPerDecimil * 2.54 / 10000,
              (double) m_paperSize.y / m_IUsPerDecimil * 2.54 / 10000, origin.x, origin.y,
@@ -790,7 +790,7 @@ void SVG_PLOTTER::Text( const VECTOR2I&             aPos,
     case GR_TEXT_V_ALIGN_BOTTOM:                            break;
     }
 
-    wxSize text_size;
+    VECTOR2I text_size;
 
     // aSize.x or aSize.y is < 0 for mirrored texts.
     // The actual text size value is the absolute value
