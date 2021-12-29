@@ -157,7 +157,7 @@ void TransformTrapezoidToPolygon( SHAPE_POLY_SET& aCornerBuffer,
  * @param aErrorLoc determines if the approximation error be placed outside or inside the polygon.
  */
 void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer,
-                                           const wxPoint& aPosition, const wxSize& aSize,
+                                           const VECTOR2I& aPosition, const VECTOR2I& aSize,
                                            double aRotation, int aCornerRadius,
                                            double aChamferRatio, int aChamferCorners, int aInflate,
                                            int aError, ERROR_LOC aErrorLoc );

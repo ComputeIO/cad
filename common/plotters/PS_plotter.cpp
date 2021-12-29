@@ -87,12 +87,12 @@ void PSLIKE_PLOTTER::SetColor( const COLOR4D& color )
 }
 
 
-void PSLIKE_PLOTTER::FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize,
+void PSLIKE_PLOTTER::FlashPadOval( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                    double aPadOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     wxASSERT( m_outputFile );
     int x0, y0, x1, y1, delta;
-    wxSize size( aSize );
+    VECTOR2I size( aSize );
 
     // The pad is reduced to an oval by dy > dx
     if( size.x > size.y )
@@ -117,7 +117,7 @@ void PSLIKE_PLOTTER::FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize,
 }
 
 
-void PSLIKE_PLOTTER::FlashPadCircle( const wxPoint& aPadPos, int aDiameter,
+void PSLIKE_PLOTTER::FlashPadCircle( const VECTOR2I& aPadPos, int aDiameter,
                                      OUTLINE_MODE aTraceMode, void* aData )
 {
     if( aTraceMode == FILLED )
@@ -140,11 +140,11 @@ void PSLIKE_PLOTTER::FlashPadCircle( const wxPoint& aPadPos, int aDiameter,
 }
 
 
-void PSLIKE_PLOTTER::FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize,
+void PSLIKE_PLOTTER::FlashPadRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                    double aPadOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
-    static std::vector< wxPoint > cornerList;
-    wxSize size( aSize );
+    static std::vector<VECTOR2I> cornerList;
+    VECTOR2I size( aSize );
     cornerList.clear();
 
     if( aTraceMode == FILLED )
@@ -180,7 +180,7 @@ void PSLIKE_PLOTTER::FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize,
 
     for( unsigned ii = 0; ii < cornerList.size(); ii++ )
     {
-        RotatePoint( &cornerList[ii], aPadPos, aPadOrient );
+        RotatePoint( cornerList[ii], aPadPos, aPadOrient );
     }
 
     cornerList.push_back( cornerList[0] );
@@ -190,11 +190,11 @@ void PSLIKE_PLOTTER::FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize,
 }
 
 
-void PSLIKE_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
+void PSLIKE_PLOTTER::FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                         int aCornerRadius, double aOrient,
                                         OUTLINE_MODE aTraceMode, void* aData )
 {
-    wxSize size( aSize );
+    VECTOR2I size( aSize );
 
     if( aTraceMode == FILLED )
     {
@@ -230,11 +230,11 @@ void PSLIKE_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aS
 }
 
 
-void PSLIKE_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
+void PSLIKE_PLOTTER::FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                      double aOrient, SHAPE_POLY_SET* aPolygons,
                                      OUTLINE_MODE aTraceMode, void* aData )
 {
-    wxSize size( aSize );
+    VECTOR2I size( aSize );
 
     if( aTraceMode == FILLED )
     {
@@ -267,10 +267,10 @@ void PSLIKE_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize
 }
 
 
-void PSLIKE_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
+void PSLIKE_PLOTTER::FlashPadTrapez( const VECTOR2I& aPadPos, const VECTOR2I* aCorners,
                                      double aPadOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
-    static std::vector< wxPoint > cornerList;
+    static std::vector<VECTOR2I> cornerList;
     cornerList.clear();
 
     for( int ii = 0; ii < 4; ii++ )
@@ -304,7 +304,7 @@ void PSLIKE_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCor
 
     for( int ii = 0; ii < 4; ii++ )
     {
-        RotatePoint( &cornerList[ii], aPadOrient );
+        RotatePoint( cornerList[ii], aPadOrient );
         cornerList[ii] += aPadPos;
     }
 
@@ -314,7 +314,7 @@ void PSLIKE_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCor
 }
 
 
-void PSLIKE_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aRadius, int aCornerCount,
+void PSLIKE_PLOTTER::FlashRegularPolygon( const VECTOR2I& aShapePos, int aRadius, int aCornerCount,
                                           double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     // Do nothing

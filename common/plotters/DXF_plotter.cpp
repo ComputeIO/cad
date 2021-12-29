@@ -648,11 +648,11 @@ void DXF_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, 
 }
 
 
-void DXF_PLOTTER::FlashPadOval( const wxPoint& pos, const wxSize& aSize, double orient,
+void DXF_PLOTTER::FlashPadOval( const VECTOR2I& pos, const VECTOR2I& aSize, double orient,
                                 OUTLINE_MODE trace_mode, void* aData )
 {
     wxASSERT( m_outputFile );
-    wxSize size( aSize );
+    VECTOR2I size( aSize );
 
     /* The chip is reduced to an oval tablet with size.y > size.x
      * (Oval vertical orientation 0) */
@@ -666,7 +666,7 @@ void DXF_PLOTTER::FlashPadOval( const wxPoint& pos, const wxSize& aSize, double 
 }
 
 
-void DXF_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
+void DXF_PLOTTER::FlashPadCircle( const VECTOR2I& pos, int diametre,
                                   OUTLINE_MODE trace_mode, void* aData )
 {
     wxASSERT( m_outputFile );
@@ -674,11 +674,11 @@ void DXF_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
 }
 
 
-void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
+void DXF_PLOTTER::FlashPadRect( const VECTOR2I& pos, const VECTOR2I& padsize,
                                 double orient, OUTLINE_MODE trace_mode, void* aData )
 {
     wxASSERT( m_outputFile );
-    wxSize size;
+    VECTOR2I size;
     int    ox, oy, fx, fy;
 
     size.x = padsize.x / 2;
@@ -741,7 +741,7 @@ void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
 }
 
 
-void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
+void DXF_PLOTTER::FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                      int aCornerRadius, double aOrient,
                                      OUTLINE_MODE aTraceMode, void* aData )
 {
@@ -760,7 +760,7 @@ void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize
     FinishTo( wxPoint( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
 }
 
-void DXF_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
+void DXF_PLOTTER::FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                   double aOrient, SHAPE_POLY_SET* aPolygons,
                                   OUTLINE_MODE aTraceMode, void* aData )
 {
@@ -778,16 +778,16 @@ void DXF_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
 }
 
 
-void DXF_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
+void DXF_PLOTTER::FlashPadTrapez( const VECTOR2I& aPadPos, const VECTOR2I* aCorners,
                                   double aPadOrient, OUTLINE_MODE aTrace_Mode, void* aData )
 {
     wxASSERT( m_outputFile );
-    wxPoint coord[4];       /* coord actual corners of a trapezoidal trace */
+    VECTOR2I coord[4]; /* coord actual corners of a trapezoidal trace */
 
     for( int ii = 0; ii < 4; ii++ )
     {
         coord[ii] = aCorners[ii];
-        RotatePoint( &coord[ii], aPadOrient );
+        RotatePoint( coord[ii], aPadOrient );
         coord[ii] += aPadPos;
     }
 
@@ -800,7 +800,7 @@ void DXF_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorner
 }
 
 
-void DXF_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aRadius, int aCornerCount,
+void DXF_PLOTTER::FlashRegularPolygon( const VECTOR2I& aShapePos, int aRadius, int aCornerCount,
                                        double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     // Do nothing

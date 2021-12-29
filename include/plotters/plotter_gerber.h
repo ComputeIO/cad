@@ -116,26 +116,26 @@ public:
     /**
      * Filled circular flashes are stored as apertures
      */
-    virtual void FlashPadCircle( const wxPoint& pos, int diametre,
+    virtual void FlashPadCircle( const VECTOR2I& pos, int diametre,
                                  OUTLINE_MODE trace_mode, void* aData ) override;
 
-    virtual void FlashPadOval( const wxPoint& aPadPos, const wxSize& size, double orient,
+    virtual void FlashPadOval( const VECTOR2I& aPadPos, const VECTOR2I& size, double orient,
                                OUTLINE_MODE trace_mode, void* aData ) override;
 
-    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& size,
+    virtual void FlashPadRect( const VECTOR2I& aPadPos, const VECTOR2I& size,
                                double orient, OUTLINE_MODE trace_mode, void* aData ) override;
 
-    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
+    virtual void FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                     int aCornerRadius, double aOrient,
                                     OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
+    virtual void FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                  double aPadOrient, SHAPE_POLY_SET* aPolygons,
                                  OUTLINE_MODE aTraceMode, void* aData ) override;
 
-    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
+    virtual void FlashPadTrapez( const VECTOR2I& aPadPos, const VECTOR2I* aCorners,
                             double aPadOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
 
-    virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
+    virtual void FlashRegularPolygon( const VECTOR2I& aShapePos, int aDiameter, int aCornerCount,
                             double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
 
     /**
@@ -233,7 +233,7 @@ public:
      * @return an index to the aperture in aperture list which meets the size and type of tool
      *         if the aperture does not exist, it is created and entered in aperture list.
      */
-    int GetOrCreateAperture( const wxSize& aSize, int aRadius, double aRotDegree,
+    int GetOrCreateAperture( const VECTOR2I& aSize, int aRadius, double aRotDegree,
                              APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
 
     /**
@@ -245,7 +245,7 @@ public:
      * @return an index to the aperture in aperture list which meets the data and type of tool
      *         if the aperture does not exist, it is created and entered in aperture list.
      */
-    int GetOrCreateAperture( const std::vector<wxPoint>& aCorners, double aRotDegree,
+    int GetOrCreateAperture( const std::vector<VECTOR2I>& aCorners, double aRotDegree,
                              APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
 
 protected:
@@ -260,7 +260,7 @@ protected:
      * @param aCornerRadius is the radius of the corners.
      * @param aOrient is the rotation of the rectangle.
      */
-    void plotRoundRectAsRegion( const wxPoint& aRectCenter, const wxSize& aSize,
+    void plotRoundRectAsRegion( const VECTOR2I& aRectCenter, const VECTOR2I& aSize,
                                 int aCornerRadius, double aOrient );
     /**
      * Plot a Gerber arc.
@@ -281,7 +281,7 @@ protected:
      *
      * Write the DCode selection on gerber file.
      */
-    void selectAperture( const wxSize& aSize, int aRadius, double aRotDegree,
+    void selectAperture( const VECTOR2I& aSize, int aRadius, double aRotDegree,
                          APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
     /**
      * Pick an existing aperture or create a new one, matching the aDiameter, aPolygonRotation,
@@ -290,7 +290,7 @@ protected:
      * It apply only to apertures with type = AT_REGULAR_POLY3 to AT_REGULAR_POLY12
      * write the DCode selection on gerber file
      */
-    void selectAperture( const std::vector<wxPoint>& aCorners, double aPolygonRotation,
+    void selectAperture( const std::vector<VECTOR2I>& aCorners, double aPolygonRotation,
                          APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
 
     /**

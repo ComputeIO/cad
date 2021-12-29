@@ -612,12 +612,12 @@ void HPGL_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle,
 }
 
 
-void HPGL_PLOTTER::FlashPadOval( const wxPoint& pos, const wxSize& aSize, double orient,
+void HPGL_PLOTTER::FlashPadOval( const VECTOR2I& pos, const VECTOR2I& aSize, double orient,
                                  OUTLINE_MODE trace_mode, void* aData )
 {
     wxASSERT( m_outputFile );
     int     deltaxy, cx, cy;
-    wxSize  size( aSize );
+    VECTOR2I size( aSize );
 
     // The pad will be drawn as an oblong shape with size.y > size.x (Oval vertical orientation 0).
     if( size.x > size.y )
@@ -646,7 +646,7 @@ void HPGL_PLOTTER::FlashPadOval( const wxPoint& pos, const wxSize& aSize, double
 }
 
 
-void HPGL_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
+void HPGL_PLOTTER::FlashPadCircle( const VECTOR2I& pos, int diametre,
                                    OUTLINE_MODE trace_mode, void* aData )
 {
     wxASSERT( m_outputFile );
@@ -691,7 +691,7 @@ void HPGL_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
 }
 
 
-void HPGL_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
+void HPGL_PLOTTER::FlashPadRect( const VECTOR2I& pos, const VECTOR2I& padsize,
                                  double orient, OUTLINE_MODE trace_mode, void* aData )
 {
     // Build rect polygon:
@@ -729,13 +729,13 @@ void HPGL_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
 }
 
 
-void HPGL_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
+void HPGL_PLOTTER::FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                       int aCornerRadius, double aOrient,
                                       OUTLINE_MODE aTraceMode, void* aData )
 {
     SHAPE_POLY_SET outline;
 
-    wxSize size = aSize;
+    VECTOR2I size = aSize;
 
     if( aTraceMode == FILLED )
     {
@@ -767,7 +767,7 @@ void HPGL_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSiz
 }
 
 
-void HPGL_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aOrient,
+void HPGL_PLOTTER::FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize, double aOrient,
                                    SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode, void* aData )
 {
     std::vector<VECTOR2I> cornerList;
@@ -790,7 +790,7 @@ void HPGL_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, 
 }
 
 
-void HPGL_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners,
+void HPGL_PLOTTER::FlashPadTrapez( const VECTOR2I& aPadPos, const VECTOR2I* aCorners,
                                    double aPadOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     std::vector<VECTOR2I> cornerList;
@@ -798,8 +798,8 @@ void HPGL_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorne
 
     for( int ii = 0; ii < 4; ii++ )
     {
-        wxPoint coord( aCorners[ii] );
-        RotatePoint( &coord, aPadOrient );
+        VECTOR2I coord( aCorners[ii] );
+        RotatePoint( coord, aPadOrient );
         coord += aPadPos;
         cornerList.push_back( coord );
     }
@@ -811,7 +811,7 @@ void HPGL_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorne
 }
 
 
-void HPGL_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aRadius, int aCornerCount,
+void HPGL_PLOTTER::FlashRegularPolygon( const VECTOR2I& aShapePos, int aRadius, int aCornerCount,
                                         double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     // Do nothing

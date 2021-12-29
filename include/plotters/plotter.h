@@ -321,7 +321,7 @@ public:
      * @param aTraceMode is the drawing mode, FILLED or SKETCH.
      * @param aData is an auxiliary info (mainly for gerber format attributes).
      */
-    virtual void FlashPadCircle( const wxPoint& aPadPos, int aDiameter, OUTLINE_MODE aTraceMode,
+    virtual void FlashPadCircle( const VECTOR2I& aPadPos, int aDiameter, OUTLINE_MODE aTraceMode,
                                  void* aData ) = 0;
 
     /**
@@ -331,7 +331,7 @@ public:
      * @param aTraceMode is the drawing mode, FILLED or SKETCH.
      * @param aData an auxiliary info (mainly for gerber format attributes).
      */
-    virtual void FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
+    virtual void FlashPadOval( const VECTOR2I& aPadPos, const VECTOR2I& aSize, double aPadOrient,
                                OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
@@ -341,7 +341,7 @@ public:
      * @param aTraceMode is the drawing mode, FILLED or SKETCH.
      * @param aData an auxiliary info (mainly for gerber format attributes).
      */
-    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
+    virtual void FlashPadRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize, double aPadOrient,
                                OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
@@ -352,7 +352,7 @@ public:
      * @param aTraceMode is the drawing mode, FILLED or SKETCH.
      * @param aData an auxiliary info (mainly for gerber format attributes).
      */
-    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize, int aCornerRadius,
+    virtual void FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize, int aCornerRadius,
                                     double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
@@ -363,7 +363,7 @@ public:
      * @param aTraceMode is the drawing mode, FILLED or SKETCH.
      * @param aData an auxiliary info (mainly for gerber format attributes).
      */
-    virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
+    virtual void FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize, double aPadOrient,
                                  SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
                                  void* aData ) = 0;
 
@@ -377,7 +377,7 @@ public:
      * @param aTraceMode is the drawing mode, FILLED or SKETCH.
      * @param aData an auxiliary info (mainly for gerber format attributes).
      */
-    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners, double aPadOrient,
+    virtual void FlashPadTrapez( const VECTOR2I& aPadPos, const VECTOR2I* aCorners, double aPadOrient,
                                  OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
@@ -390,7 +390,7 @@ public:
      * @param aData is a auxiliary parameter used (if needed) to handle extra info
      *              specific to the plotter.
      */
-    virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
+    virtual void FlashRegularPolygon( const VECTOR2I& aShapePos, int aDiameter, int aCornerCount,
                                       double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
@@ -524,7 +524,7 @@ protected:
     void segmentAsOval( const VECTOR2I& start, const VECTOR2I& end, int width,
                         OUTLINE_MODE tracemode );
 
-    void sketchOval( const wxPoint& pos, const wxSize& size, double orient, int width );
+    void sketchOval( const VECTOR2I& pos, const VECTOR2I& size, double orient, int width );
 
     // Coordinate and scaling conversion functions
 

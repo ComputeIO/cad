@@ -434,13 +434,13 @@ void TransformTrapezoidToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& 
 }
 
 
-void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& aPosition,
-                                           const wxSize& aSize, double aRotation, int aCornerRadius,
+void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer, const VECTOR2I& aPosition,
+                                           const VECTOR2I& aSize, double aRotation, int aCornerRadius,
                                            double aChamferRatio, int aChamferCorners, int aInflate,
                                            int aError, ERROR_LOC aErrorLoc )
 {
     SHAPE_POLY_SET outline;
-    wxSize         size( aSize / 2 );
+    VECTOR2I       size( aSize / 2 );
     int            chamferCnt = std::bitset<8>( aChamferCorners ).count();
     double         chamferDeduct = 0;
 

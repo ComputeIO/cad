@@ -120,33 +120,33 @@ public:
      * DXF round pad: always done in sketch mode; it could be filled but it isn't
      * pretty if other kinds of pad aren't...
      */
-    virtual void FlashPadCircle( const wxPoint& pos, int diametre,
+    virtual void FlashPadCircle( const VECTOR2I& pos, int diametre,
                                  OUTLINE_MODE trace_mode, void* aData ) override;
 
     /**
      * DXF oval pad: always done in sketch mode.
      */
-    virtual void FlashPadOval( const wxPoint& pos, const wxSize& size, double orient,
+    virtual void FlashPadOval( const VECTOR2I& pos, const VECTOR2I& size, double orient,
                                OUTLINE_MODE trace_mode, void* aData ) override;
 
     /**
      * DXF rectangular pad: always done in sketch mode.
      */
-    virtual void FlashPadRect( const wxPoint& pos, const wxSize& size,
+    virtual void FlashPadRect( const VECTOR2I& pos, const VECTOR2I& size,
                                double orient, OUTLINE_MODE trace_mode, void* aData ) override;
-    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
+    virtual void FlashPadRoundRect( const VECTOR2I& aPadPos, const VECTOR2I& aSize,
                                     int aCornerRadius, double aOrient,
                                     OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aOrient,
+    virtual void FlashPadCustom( const VECTOR2I& aPadPos, const VECTOR2I& aSize, double aOrient,
                                  SHAPE_POLY_SET* aPolygons,
                                  OUTLINE_MODE aTraceMode, void* aData ) override;
 
     /**
      * DXF trapezoidal pad: only sketch mode is supported.
      */
-    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
+    virtual void FlashPadTrapez( const VECTOR2I& aPadPos, const VECTOR2I* aCorners,
                                  double aPadOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
+    virtual void FlashRegularPolygon( const VECTOR2I& aShapePos, int aDiameter, int aCornerCount,
                             double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
 
     virtual void Text( const VECTOR2I&             aPos,

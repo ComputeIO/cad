@@ -477,12 +477,12 @@ void PLOTTER::segmentAsOval( const VECTOR2I& start, const VECTOR2I& end, int wid
 }
 
 
-void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient, int width )
+void PLOTTER::sketchOval( const VECTOR2I& pos, const VECTOR2I& aSize, double orient, int width )
 {
     SetCurrentLineWidth( width );
     width = m_currentPenWidth;
     int radius, deltaxy, cx, cy;
-    wxSize size( aSize );
+    VECTOR2I size( aSize );
 
     if( size.x > size.y )
     {
