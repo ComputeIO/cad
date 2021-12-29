@@ -269,7 +269,7 @@ public:
     /**
      * Draw a polygon ( filled or not ).
      *
-     * @param aCornerList is the corners list (a std::vector< wxPoint >).
+     * @param aCornerList is the corners list (a std::vector< VECTOR2I >).
      * @param aFill is the type of fill.
      * @param aWidth is the line width.
      * @param aData is an auxiliary info (mainly for gerber format).
