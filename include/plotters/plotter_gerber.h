@@ -61,7 +61,7 @@ public:
     virtual void SetColor( const COLOR4D& color ) override {}
 
     // Currently, aScale and aMirror are not used in gerber plotter
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+    virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
 
     // Basic plot primitives

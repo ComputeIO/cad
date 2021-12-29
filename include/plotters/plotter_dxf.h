@@ -83,7 +83,7 @@ public:
      * The DXF engine doesn't support line widths and mirroring. The output
      * coordinate system is in the first quadrant (in mm).
      */
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+    virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
 
     /**

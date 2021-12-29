@@ -141,7 +141,7 @@ void DXF_PLOTTER::SetUnits( DXF_UNITS aUnit )
 }
 
 
-void DXF_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+void DXF_PLOTTER::SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                                double aScale, bool aMirror )
 {
     m_plotOffset  = aOffset;

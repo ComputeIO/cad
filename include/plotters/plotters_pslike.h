@@ -195,7 +195,7 @@ public:
      */
     virtual void SetDash( PLOT_DASH_TYPE dashed ) override;
 
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+    virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
@@ -302,7 +302,7 @@ public:
      * PDF can have multiple pages, so SetPageSettings can be called
      * with the outputFile open (but not inside a page stream!)
      */
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+    virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
 
     /**
@@ -444,7 +444,7 @@ public:
      */
     virtual void SetDash( PLOT_DASH_TYPE dashed ) override;
 
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+    virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;

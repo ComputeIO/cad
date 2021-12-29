@@ -118,7 +118,7 @@ GERBER_PLOTTER::GERBER_PLOTTER()
 }
 
 
-void GERBER_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+void GERBER_PLOTTER::SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                                   double aScale, bool aMirror )
 {
     wxASSERT( aMirror == false );

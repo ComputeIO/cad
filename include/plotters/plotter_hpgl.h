@@ -94,7 +94,7 @@ public:
 
     virtual void SetPenDiameter( double diameter );
 
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+    virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) override;
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_T fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;

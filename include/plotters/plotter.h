@@ -187,7 +187,7 @@ public:
      * @param aMirror flips the plot in the Y direction (useful for toner
      *      transfers or some kind of film).
      */
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+    virtual void SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                               double aScale, bool aMirror ) = 0;
 
     /**

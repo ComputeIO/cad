@@ -122,7 +122,7 @@ bool PDF_PLOTTER::OpenFile( const wxString& aFullFilename )
 }
 
 
-void PDF_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+void PDF_PLOTTER::SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                                double aScale, bool aMirror )
 {
     m_plotMirror    = aMirror;

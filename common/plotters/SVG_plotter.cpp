@@ -173,7 +173,7 @@ SVG_PLOTTER::SVG_PLOTTER()
 }
 
 
-void SVG_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+void SVG_PLOTTER::SetViewport( const VECTOR2I& aOffset, double aIusPerDecimil,
                                double aScale, bool aMirror )
 {
     m_plotMirror    = aMirror;
