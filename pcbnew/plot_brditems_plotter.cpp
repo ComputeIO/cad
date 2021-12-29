@@ -62,7 +62,6 @@
 #include <zone.h>
 
 #include <wx/debug.h>                         // for wxASSERT_MSG
-#include <wx/gdicmn.h>
 
 
 COLOR4D BRDITEMS_PLOTTER::getColor( int aLayer ) const
