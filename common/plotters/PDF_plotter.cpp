@@ -632,7 +632,7 @@ void PDF_PLOTTER::ClosePage()
        to use */
 
     const double BIGPTsPERMIL = 0.072;
-    wxSize psPaperSize = m_pageInfo.GetSizeMils();
+    VECTOR2I psPaperSize = m_pageInfo.GetSizeMils();
 
     fprintf( m_outputFile,
              "<<\n"

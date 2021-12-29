@@ -583,7 +583,7 @@ protected:      // variables used in most of plotters:
     wxString         m_filename;
     wxString         m_title;
     PAGE_INFO        m_pageInfo;
-    wxSize           m_paperSize;           // Paper size in IU - not in mils
+    VECTOR2I         m_paperSize;           // Paper size in IU - not in mils
 
     wxArrayString    m_headerExtraLines;    // a set of string to print in header file
 

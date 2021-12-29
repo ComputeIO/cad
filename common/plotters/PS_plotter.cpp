@@ -864,10 +864,13 @@ bool PS_PLOTTER::StartPlot()
     /* The coordinates of the lower left corner of the boundary
        box need to be "rounded down", but the coordinates of its
        upper right corner need to be "rounded up" instead. */
-    wxSize psPaperSize = m_pageInfo.GetSizeMils();
+    VECTOR2I psPaperSize = m_pageInfo.GetSizeMils();
 
     if( !m_pageInfo.IsPortrait() )
-        psPaperSize.Set( m_pageInfo.GetHeightMils(), m_pageInfo.GetWidthMils() );
+    {
+        psPaperSize.x = m_pageInfo.GetHeightMils();
+        psPaperSize.y = m_pageInfo.GetWidthMils();
+    }
 
     fprintf( m_outputFile, "%%%%BoundingBox: 0 0 %d %d\n",
              (int) ceil( psPaperSize.x * BIGPTsPERMIL ),
