@@ -315,7 +315,7 @@ void PDF_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, 
 }
 
 
-void PDF_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill, int aWidth,
+void PDF_PLOTTER::PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill, int aWidth,
                             void* aData )
 {
     wxASSERT( workFile );
@@ -369,7 +369,7 @@ void PDF_PLOTTER::PenTo( const VECTOR2I& pos, char plume )
 }
 
 
-void PDF_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
+void PDF_PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor )
 {
     wxASSERT( workFile );
     wxSize pix_size( aImage.GetWidth(), aImage.GetHeight() );
@@ -378,7 +378,7 @@ void PDF_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double 
     DPOINT drawsize( aScaleFactor * pix_size.x, aScaleFactor * pix_size.y );
 
     // calculate the bitmap start position
-    wxPoint start( aPos.x - drawsize.x / 2, aPos.y + drawsize.y / 2);
+    VECTOR2I start( aPos.x - drawsize.x / 2, aPos.y + drawsize.y / 2 );
 
     DPOINT dev_start = userToDeviceCoordinates( start );
 

@@ -204,13 +204,13 @@ public:
     virtual void Arc( const VECTOR2I& centre, double StAngle, double EndAngle, int rayon,
                       FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
 
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
+    virtual void PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) override;
 
     /**
      * PostScript-likes at the moment are the only plot engines supporting bitmaps.
      */
-    virtual void PlotImage( const wxImage& aImage, const wxPoint& aPos,
+    virtual void PlotImage( const wxImage& aImage, const VECTOR2I& aPos,
                             double aScaleFactor ) override;
 
     virtual void PenTo( const VECTOR2I& pos, char plume ) override;
@@ -327,7 +327,7 @@ public:
     /**
      * Polygon plotting for PDF. Everything is supported
      */
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
+    virtual void PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) override;
 
     virtual void PenTo( const VECTOR2I& pos, char plume ) override;
@@ -349,7 +349,7 @@ public:
     /**
      * PDF images are handles as inline, not XObject streams...
      */
-    virtual void PlotImage( const wxImage& aImage, const wxPoint& aPos,
+    virtual void PlotImage( const wxImage& aImage, const VECTOR2I& aPos,
                             double aScaleFactor ) override;
 
 
@@ -458,13 +458,13 @@ public:
                               int aTolerance,
                               int aLineThickness = USE_DEFAULT_LINE_WIDTH ) override;
 
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
+    virtual void PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void * aData = nullptr ) override;
 
     /**
      * PostScript-likes at the moment are the only plot engines supporting bitmaps.
      */
-    virtual void PlotImage( const wxImage& aImage, const wxPoint& aPos,
+    virtual void PlotImage( const wxImage& aImage, const VECTOR2I& aPos,
                             double aScaleFactor ) override;
 
     virtual void PenTo( const VECTOR2I& pos, char plume ) override;

@@ -123,8 +123,8 @@ void TransformCircleToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& aCe
 }
 
 
-void TransformOvalToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& aStart,
-                             const wxPoint& aEnd, int aWidth, int aError, ERROR_LOC aErrorLoc,
+void TransformOvalToPolygon( SHAPE_POLY_SET& aCornerBuffer, const VECTOR2I& aStart,
+                             const VECTOR2I& aEnd, int aWidth, int aError, ERROR_LOC aErrorLoc,
                              int aMinSegCount )
 {
     // To build the polygonal shape outside the actual shape, we use a bigger
@@ -149,8 +149,8 @@ void TransformOvalToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& aStar
     }
 
     // end point is the coordinate relative to aStart
-    wxPoint        endp = aEnd - aStart;
-    wxPoint        startp = aStart;
+    VECTOR2I       endp = aEnd - aStart;
+    VECTOR2I       startp = aStart;
     wxPoint        corner;
     SHAPE_POLY_SET polyshape;
 

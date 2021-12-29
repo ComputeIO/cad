@@ -623,7 +623,7 @@ void PS_PLOTTER::Arc( const VECTOR2I& centre, double StAngle, double EndAngle, i
 }
 
 
-void PS_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
+void PS_PLOTTER::PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill,
                            int aWidth, void * aData )
 {
     if( aCornerList.size() <= 1 )
@@ -645,7 +645,7 @@ void PS_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFi
 }
 
 
-void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
+void PS_PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor )
 {
     wxSize pix_size;                // size of the bitmap in pixels
     pix_size.x = aImage.GetWidth();
@@ -654,12 +654,12 @@ void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double a
                      aScaleFactor * pix_size.y ); // requested size of image
 
     // calculate the bottom left corner position of bitmap
-    wxPoint start = aPos;
+    VECTOR2I start = aPos;
     start.x -= drawsize.x / 2;    // left
     start.y += drawsize.y / 2;    // bottom (Y axis reversed)
 
     // calculate the top right corner position of bitmap
-    wxPoint end;
+    VECTOR2I end;
     end.x = start.x + drawsize.x;
     end.y = start.y - drawsize.y;
 

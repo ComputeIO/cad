@@ -556,7 +556,7 @@ void SVG_PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
 }
 
 
-void SVG_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_T aFill,
+void SVG_PLOTTER::PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill,
                             int aWidth, void* aData )
 {
     if( aCornerList.size() <= 1 )
@@ -601,15 +601,15 @@ void SVG_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_T aFil
 }
 
 
-void SVG_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
+void SVG_PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor )
 {
-    wxSize pix_size( aImage.GetWidth(), aImage.GetHeight() );
+    VECTOR2I pix_size( aImage.GetWidth(), aImage.GetHeight() );
 
     // Requested size (in IUs)
     DPOINT drawsize( aScaleFactor * pix_size.x, aScaleFactor * pix_size.y );
 
     // calculate the bitmap start position
-    wxPoint start( aPos.x - drawsize.x / 2, aPos.y - drawsize.y / 2);
+    VECTOR2I start( aPos.x - drawsize.x / 2, aPos.y - drawsize.y / 2 );
 
     // Rectangles having a 0 size value for height or width are just not drawn on Inkscape,
     // so use a line when happens.

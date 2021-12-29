@@ -235,15 +235,15 @@ void PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
 }
 
 
-void PLOTTER::PlotImage(const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
+void PLOTTER::PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor )
 {
     wxSize size( aImage.GetWidth() * aScaleFactor, aImage.GetHeight() * aScaleFactor );
 
-    wxPoint start = aPos;
+    VECTOR2I start = aPos;
     start.x -= size.x / 2;
     start.y -= size.y / 2;
 
-    wxPoint end = start;
+    VECTOR2I end = start;
     end.x += size.x;
     end.y += size.y;
 
@@ -456,7 +456,7 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
 }
 
 
-void PLOTTER::segmentAsOval( const wxPoint& start, const wxPoint& end, int width,
+void PLOTTER::segmentAsOval( const VECTOR2I& start, const VECTOR2I& end, int width,
                              OUTLINE_MODE tracemode )
 {
     wxPoint center( (start.x + end.x) / 2, (start.y + end.y) / 2 );
@@ -521,7 +521,7 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
 }
 
 
-void PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end, int width,
+void PLOTTER::ThickSegment( const VECTOR2I& start, const VECTOR2I& end, int width,
                             OUTLINE_MODE tracemode, void* aData )
 {
     if( tracemode == FILLED )
@@ -545,7 +545,7 @@ void PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end, int width,
 }
 
 
-void PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
+void PLOTTER::ThickArc( const VECTOR2I& centre, double StAngle, double EndAngle,
                         int radius, int width, OUTLINE_MODE tracemode, void* aData )
 {
     if( tracemode == FILLED )
@@ -563,7 +563,7 @@ void PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
 }
 
 
-void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
+void PLOTTER::ThickRect( const VECTOR2I& p1, const VECTOR2I& p2, int width,
                          OUTLINE_MODE tracemode, void* aData )
 {
     if( tracemode == FILLED )
@@ -587,7 +587,7 @@ void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
 }
 
 
-void PLOTTER::ThickCircle( const wxPoint& pos, int diametre, int width, OUTLINE_MODE tracemode,
+void PLOTTER::ThickCircle( const VECTOR2I& pos, int diametre, int width, OUTLINE_MODE tracemode,
                            void* aData )
 {
     if( tracemode == FILLED )
@@ -603,7 +603,7 @@ void PLOTTER::ThickCircle( const wxPoint& pos, int diametre, int width, OUTLINE_
 }
 
 
-void PLOTTER::FilledCircle( const wxPoint& pos, int diametre, OUTLINE_MODE tracemode, void* aData )
+void PLOTTER::FilledCircle( const VECTOR2I& pos, int diametre, OUTLINE_MODE tracemode, void* aData )
 {
     if( tracemode == FILLED )
     {

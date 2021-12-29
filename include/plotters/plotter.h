@@ -274,7 +274,7 @@ public:
      * @param aWidth is the line width.
      * @param aData is an auxiliary info (mainly for gerber format).
      */
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
+    virtual void PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) = 0;
 
     /**
@@ -298,18 +298,18 @@ public:
      * @param aScaleFactor is the scale factor to apply to the bitmap size
      *                      (this is not the plot scale factor).
      */
-    virtual void PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor );
+    virtual void PlotImage( const wxImage& aImage, const VECTOR2I& aPos, double aScaleFactor );
 
     // Higher level primitives -- can be drawn as line, sketch or 'filled'
-    virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
+    virtual void ThickSegment( const VECTOR2I& start, const VECTOR2I& end, int width,
                                OUTLINE_MODE tracemode, void* aData );
-    virtual void ThickArc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+    virtual void ThickArc( const VECTOR2I& centre, double StAngle, double EndAngle, int rayon,
                            int width, OUTLINE_MODE tracemode, void* aData );
-    virtual void ThickRect( const wxPoint& p1, const wxPoint& p2, int width, OUTLINE_MODE tracemode,
+    virtual void ThickRect( const VECTOR2I& p1, const VECTOR2I& p2, int width, OUTLINE_MODE tracemode,
                             void* aData );
-    virtual void ThickCircle( const wxPoint& pos, int diametre, int width, OUTLINE_MODE tracemode,
+    virtual void ThickCircle( const VECTOR2I& pos, int diametre, int width, OUTLINE_MODE tracemode,
                               void* aData );
-    virtual void FilledCircle( const wxPoint& pos, int diametre, OUTLINE_MODE tracemode,
+    virtual void FilledCircle( const VECTOR2I& pos, int diametre, OUTLINE_MODE tracemode,
                                void* aData );
 
 
@@ -521,7 +521,7 @@ protected:
     /**
      * Convert a thick segment and plot it as an oval
      */
-    void segmentAsOval( const wxPoint& start, const wxPoint& end, int width,
+    void segmentAsOval( const VECTOR2I& start, const VECTOR2I& end, int width,
                         OUTLINE_MODE tracemode );
 
     void sketchOval( const wxPoint& pos, const wxSize& size, double orient, int width );

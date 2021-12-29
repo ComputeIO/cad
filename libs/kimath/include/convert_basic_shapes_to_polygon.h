@@ -110,8 +110,8 @@ void TransformCircleToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& aCe
  * @param aMinSegCount is the min count of segments to approximate.
  * Default = 0 to do not force a min count.
  */
-void TransformOvalToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& aStart,
-                             const wxPoint& aEnd, int aWidth, int aError, ERROR_LOC aErrorLoc,
+void TransformOvalToPolygon( SHAPE_POLY_SET& aCornerBuffer, const VECTOR2I& aStart,
+                             const VECTOR2I& aEnd, int aWidth, int aError, ERROR_LOC aErrorLoc,
                              int aMinSegCount = 0 );
 
 /**

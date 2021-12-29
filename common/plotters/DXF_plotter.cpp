@@ -454,7 +454,7 @@ void DXF_PLOTTER::Circle( const VECTOR2I& centre, int diameter, FILL_T fill, int
 }
 
 
-void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_T aFill, int aWidth,
+void DXF_PLOTTER::PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill, int aWidth,
                             void* aData )
 {
     if( aCornerList.size() <= 1 )
@@ -589,12 +589,12 @@ void DXF_PLOTTER::SetDash( PLOT_DASH_TYPE aDashed )
 }
 
 
-void DXF_PLOTTER::ThickSegment( const wxPoint& aStart, const wxPoint& aEnd, int aWidth,
+void DXF_PLOTTER::ThickSegment( const VECTOR2I& aStart, const VECTOR2I& aEnd, int aWidth,
                                 OUTLINE_MODE aPlotMode, void* aData )
 {
     if( aPlotMode == SKETCH )
     {
-        std::vector<wxPoint> cornerList;
+        std::vector<VECTOR2I> cornerList;
         SHAPE_POLY_SET outlineBuffer;
         TransformOvalToPolygon( outlineBuffer, aStart, aEnd, aWidth, GetPlotterArcHighDef(),
                                 ERROR_INSIDE );

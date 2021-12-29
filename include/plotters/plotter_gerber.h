@@ -75,23 +75,23 @@ public:
     virtual void Arc( const SHAPE_ARC& aArc ) override;
 
     // These functions plot an item and manage X2 gerber attributes
-    virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
+    virtual void ThickSegment( const VECTOR2I& start, const VECTOR2I& end, int width,
                                OUTLINE_MODE tracemode, void* aData ) override;
 
-    virtual void ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
+    virtual void ThickArc( const VECTOR2I& centre, double StAngle, double EndAngle,
                            int rayon, int width, OUTLINE_MODE tracemode, void* aData ) override;
-    virtual void ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
+    virtual void ThickRect( const VECTOR2I& p1, const VECTOR2I& p2, int width,
                             OUTLINE_MODE tracemode, void* aData ) override;
-    virtual void ThickCircle( const wxPoint& pos, int diametre, int width,
+    virtual void ThickCircle( const VECTOR2I& pos, int diametre, int width,
                               OUTLINE_MODE tracemode, void* aData ) override;
-    virtual void FilledCircle( const wxPoint& pos, int diametre,
+    virtual void FilledCircle( const VECTOR2I& pos, int diametre,
                               OUTLINE_MODE tracemode, void* aData ) override;
 
     /**
      * Gerber polygon: they can (and *should*) be filled with the
      * appropriate G36/G37 sequence
      */
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
+    virtual void PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) override;
 
     virtual void PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_T aFill,

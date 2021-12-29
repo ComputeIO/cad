@@ -1052,7 +1052,7 @@ void GERBER_PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aPoly, FILL_T aFill, int 
     }
 }
 
-void GERBER_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill, int aWidth,
+void GERBER_PLOTTER::PlotPoly( const std::vector<VECTOR2I>& aCornerList, FILL_T aFill, int aWidth,
                                void * aData )
 {
     if( aCornerList.size() <= 1 )
@@ -1102,7 +1102,7 @@ void GERBER_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T
 }
 
 
-void GERBER_PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end, int width,
+void GERBER_PLOTTER::ThickSegment( const VECTOR2I& start, const VECTOR2I& end, int width,
                                    OUTLINE_MODE tracemode, void* aData )
 {
     if( tracemode == FILLED )
@@ -1123,7 +1123,7 @@ void GERBER_PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end, int
     }
 }
 
-void GERBER_PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
+void GERBER_PLOTTER::ThickArc( const VECTOR2I& centre, double StAngle, double EndAngle,
                            int radius, int width, OUTLINE_MODE tracemode, void* aData )
 {
     GBR_METADATA *gbr_metadata = static_cast<GBR_METADATA*>( aData );
@@ -1147,7 +1147,7 @@ void GERBER_PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double End
 }
 
 
-void GERBER_PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
+void GERBER_PLOTTER::ThickRect( const VECTOR2I& p1, const VECTOR2I& p2, int width,
                             OUTLINE_MODE tracemode, void* aData )
 {
     GBR_METADATA *gbr_metadata = static_cast<GBR_METADATA*>( aData );
@@ -1177,7 +1177,7 @@ void GERBER_PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
 }
 
 
-void GERBER_PLOTTER::ThickCircle( const wxPoint& pos, int diametre, int width,
+void GERBER_PLOTTER::ThickCircle( const VECTOR2I& pos, int diametre, int width,
                                   OUTLINE_MODE tracemode, void* aData )
 {
     GBR_METADATA *gbr_metadata = static_cast<GBR_METADATA*>( aData );
@@ -1201,7 +1201,7 @@ void GERBER_PLOTTER::ThickCircle( const wxPoint& pos, int diametre, int width,
 }
 
 
-void GERBER_PLOTTER::FilledCircle( const wxPoint& pos, int diametre,
+void GERBER_PLOTTER::FilledCircle( const VECTOR2I& pos, int diametre,
                               OUTLINE_MODE tracemode, void* aData )
 {
     // A filled circle is a graphic item, not a pad.
