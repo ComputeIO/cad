@@ -400,7 +400,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                     if( m_isDrag && cfg->m_Drawing.hv_lines_only && line
                         && ( line->HasFlag( STARTPOINT ) != line->HasFlag( ENDPOINT ) ) )
                     {
-                        if( AnglesAreEqual( splitDelta.Angle(), line->Angle() )
+                        if( ( EDA_ANGLE( splitDelta ).IsParallelTo( line->Angle() ) )
                             && line->GetLength() != 0 )
                         {
                             // If the move is the same angle as this line, leave the unselected end alone,
@@ -432,7 +432,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                     SCH_LINE* cLine = static_cast<SCH_LINE*>( cItem );
 
                                     // A matching angle on a non-zero-length line means lengthen/shorten will work
-                                    if( AnglesAreEqual( splitDelta.Angle(), cLine->Angle() )
+                                    if( ( EDA_ANGLE( splitDelta ).IsParallelTo( cLine->Angle() ) )
                                         && cLine->GetLength() != 0 )
                                         foundLine = cLine;
 
@@ -453,8 +453,11 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             bool preferOriginalLine = false;
                             if( foundLine && ( foundLine->GetLength() == 0 )
                                 && ( line->GetLength() == 0 )
-                                && AnglesAreEqual( splitDelta.Angle(), line->GetStoredAngle() ) )
+                                && ( EDA_ANGLE( splitDelta )
+                                             .IsParallelTo( line->GetStoredAngle() ) ) )
+                            {
                                 preferOriginalLine = true;
+                            }
 
                             // We want to drag our found line if it's in the same angle as the move or zero length,
                             // but if the original drag line is also zero and the same original angle we should extend
@@ -477,9 +480,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                                         true );
 
                                 if( foundLine->GetStartPoint() == unselectedEnd )
-                                    foundLine->MoveStart( (wxPoint) splitDelta );
+                                    foundLine->MoveStart( splitDelta );
                                 else if( foundLine->GetEndPoint() == unselectedEnd )
-                                    foundLine->MoveEnd( (wxPoint) splitDelta );
+                                    foundLine->MoveEnd( splitDelta );
 
                                 updateItem( foundLine, true );
 
@@ -497,9 +500,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                                     fflush( stdout );
                                     if( line->HasFlag( STARTPOINT ) )
-                                        line->SetEndPoint( (wxPoint) bendLine->GetEndPoint() );
+                                        line->SetEndPoint( bendLine->GetEndPoint() );
                                     else
-                                        line->SetStartPoint( (wxPoint) bendLine->GetEndPoint() );
+                                        line->SetStartPoint( bendLine->GetEndPoint() );
 
                                     // Update our cache of the connected items.
 
@@ -540,9 +543,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                 else
                                 {
                                     if( line->HasFlag( STARTPOINT ) )
-                                        line->MoveEnd( (wxPoint) splitDelta );
+                                        line->MoveEnd( splitDelta );
                                     else
-                                        line->MoveStart( (wxPoint) splitDelta );
+                                        line->MoveStart( splitDelta );
                                 }
 
                                 updateItem( line, true );
@@ -576,13 +579,13 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                 // Create a new wire ending at the unselected end, we'll
                                 // move the new wire's start point to the unselected end
                                 SCH_LINE* a = new SCH_LINE( unselectedEnd, line->GetLayer() );
-                                a->MoveStart( wxPoint( xMove, yMove ) );
+                                a->MoveStart( VECTOR2I( xMove, yMove ) );
                                 a->SetFlags( IS_NEW );
                                 m_frame->AddToScreen( a, m_frame->GetScreen() );
                                 m_newDragLines.insert( a );
 
                                 SCH_LINE* b = new SCH_LINE( a->GetStartPoint(), line->GetLayer() );
-                                b->MoveStart( wxPoint( splitDelta.x, splitDelta.y ) );
+                                b->MoveStart( VECTOR2I( splitDelta.x, splitDelta.y ) );
                                 b->SetFlags( IS_NEW | STARTPOINT );
                                 m_frame->AddToScreen( b, m_frame->GetScreen() );
                                 m_newDragLines.insert( b );
@@ -592,12 +595,13 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                                 // Ok move the unselected end of our item
                                 if( line->HasFlag( STARTPOINT ) )
-                                    line->MoveEnd( wxPoint( splitDelta.x ? splitDelta.x : xMove,
-                                                            splitDelta.y ? splitDelta.y : yMove ) );
+                                    line->MoveEnd(
+                                            VECTOR2I( splitDelta.x ? splitDelta.x : xMove,
+                                                      splitDelta.y ? splitDelta.y : yMove ) );
                                 else
                                     line->MoveStart(
-                                            wxPoint( splitDelta.x ? splitDelta.x : xMove,
-                                                     splitDelta.y ? splitDelta.y : yMove ) );
+                                            VECTOR2I( splitDelta.x ? splitDelta.x : xMove,
+                                                      splitDelta.y ? splitDelta.y : yMove ) );
 
                                 updateItem( line, true );
 
@@ -613,9 +617,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             else if( !foundAttachment )
                             {
                                 if( line->HasFlag( STARTPOINT ) )
-                                    line->MoveEnd( (wxPoint) splitDelta );
+                                    line->MoveEnd( splitDelta );
                                 else
-                                    line->MoveStart( (wxPoint) splitDelta );
+                                    line->MoveStart( splitDelta );
                             }
                         }
                     }
@@ -1009,7 +1013,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
         case SCH_SHEET_T:
         case SCH_SYMBOL_T:
         case SCH_JUNCTION_T:
-            if( test->IsConnected( aPoint ) && !newWire && aOriginalItem->Type() != SCH_LINE_T )
+            if( test->IsConnected( aPoint ) && !newWire )
             {
                 // Add a new wire between the symbol or junction and the selected item so
                 // the selected item can be dragged.
