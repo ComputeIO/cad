@@ -213,7 +213,7 @@ public:
     virtual void PlotImage( const wxImage& aImage, const wxPoint& aPos,
                             double aScaleFactor ) override;
 
-    virtual void PenTo( const wxPoint& pos, char plume ) override;
+    virtual void PenTo( const VECTOR2I& pos, char plume ) override;
     virtual void Text( const VECTOR2I&             aPos,
                        const COLOR4D&              aColor,
                        const wxString&             aText,
@@ -330,7 +330,7 @@ public:
     virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) override;
 
-    virtual void PenTo( const wxPoint& pos, char plume ) override;
+    virtual void PenTo( const VECTOR2I& pos, char plume ) override;
 
     virtual void Text( const VECTOR2I&             aPos,
                        const COLOR4D&              aColor,
@@ -467,7 +467,7 @@ public:
     virtual void PlotImage( const wxImage& aImage, const wxPoint& aPos,
                             double aScaleFactor ) override;
 
-    virtual void PenTo( const wxPoint& pos, char plume ) override;
+    virtual void PenTo( const VECTOR2I& pos, char plume ) override;
 
     /**
      * Select SVG step size (number of digits needed for 1 mm or 1 inch )

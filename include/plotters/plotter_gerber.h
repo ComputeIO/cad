@@ -97,7 +97,7 @@ public:
     virtual void PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_T aFill,
                            int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) override;
 
-    virtual void PenTo( const wxPoint& pos, char plume ) override;
+    virtual void PenTo( const VECTOR2I& pos, char plume ) override;
 
     virtual void Text( const VECTOR2I&             aPos,
                        const COLOR4D&              aColor,

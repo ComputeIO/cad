@@ -120,7 +120,7 @@ public:
      */
     virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
                       FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void PenTo( const wxPoint& pos, char plume ) override;
+    virtual void PenTo( const VECTOR2I& pos, char plume ) override;
     virtual void FlashPadCircle( const wxPoint& aPadPos, int aDiameter,
                                  OUTLINE_MODE aTraceMode, void* aData ) override;
     virtual void FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,

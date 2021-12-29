@@ -506,7 +506,7 @@ void HPGL_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_T aFi
 }
 
 
-void HPGL_PLOTTER::PenTo( const wxPoint& pos, char plume )
+void HPGL_PLOTTER::PenTo( const VECTOR2I& pos, char plume )
 {
     wxASSERT( m_outputFile );
 

@@ -771,7 +771,7 @@ void GERBER_PLOTTER::writeApertureList()
 }
 
 
-void GERBER_PLOTTER::PenTo( const wxPoint& aPos, char plume )
+void GERBER_PLOTTER::PenTo( const VECTOR2I& aPos, char plume )
 {
     wxASSERT( m_outputFile );
     DPOINT pos_dev = userToDeviceCoordinates( aPos );

@@ -554,7 +554,7 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_T aFil
 }
 
 
-void DXF_PLOTTER::PenTo( const wxPoint& pos, char plume )
+void DXF_PLOTTER::PenTo( const VECTOR2I& pos, char plume )
 {
     wxASSERT( m_outputFile );
 

@@ -647,7 +647,7 @@ void SVG_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double 
 }
 
 
-void SVG_PLOTTER::PenTo( const wxPoint& pos, char plume )
+void SVG_PLOTTER::PenTo( const VECTOR2I& pos, char plume )
 {
     if( plume == 'Z' )
     {

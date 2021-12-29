@@ -241,20 +241,20 @@ public:
      *      'D' draw a line from the current position and 'Z' finish
      *      the drawing and returns the 'pen' to rest (flushes the trace).
      */
-    virtual void PenTo( const wxPoint& pos, char plume ) = 0;
+    virtual void PenTo( const VECTOR2I& pos, char plume ) = 0;
 
     // Convenience functions for PenTo
-    void MoveTo( const wxPoint& pos )
+    void MoveTo( const VECTOR2I& pos )
     {
         PenTo( pos, 'U' );
     }
 
-    void LineTo( const wxPoint& pos )
+    void LineTo( const VECTOR2I& pos )
     {
         PenTo( pos, 'D' );
     }
 
-    void FinishTo( const wxPoint& pos )
+    void FinishTo( const VECTOR2I& pos )
     {
         PenTo( pos, 'D' );
         PenTo( pos, 'Z' );
@@ -263,7 +263,7 @@ public:
     void PenFinish()
     {
         // The point is not important with Z motion
-        PenTo( wxPoint( 0, 0 ), 'Z' );
+        PenTo( VECTOR2I( 0, 0 ), 'Z' );
     }
 
     /**
@@ -577,7 +577,7 @@ protected:      // variables used in most of plotters:
     bool             m_negativeMode;        // true to generate a negative image (PS mode mainly)
     int              m_currentPenWidth;
     char             m_penState;            // current pen state: 'U', 'D' or 'Z' (see PenTo)
-    wxPoint          m_penLastpos;          // last pen position; -1,-1 when pen is at rest
+    VECTOR2I         m_penLastpos;          // last pen position; -1,-1 when pen is at rest
 
     wxString         m_creator;
     wxString         m_filename;

@@ -339,7 +339,7 @@ void PDF_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_T aF
 }
 
 
-void PDF_PLOTTER::PenTo( const wxPoint& pos, char plume )
+void PDF_PLOTTER::PenTo( const VECTOR2I& pos, char plume )
 {
     wxASSERT( workFile );
 

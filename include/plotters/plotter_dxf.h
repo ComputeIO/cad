@@ -114,7 +114,7 @@ public:
                                OUTLINE_MODE tracemode, void* aData ) override;
     virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle,
                       int rayon, FILL_T fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void PenTo( const wxPoint& pos, char plume ) override;
+    virtual void PenTo( const VECTOR2I& pos, char plume ) override;
 
     /**
      * DXF round pad: always done in sketch mode; it could be filled but it isn't

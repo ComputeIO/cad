@@ -752,7 +752,7 @@ void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double a
 }
 
 
-void PS_PLOTTER::PenTo( const wxPoint& pos, char plume )
+void PS_PLOTTER::PenTo( const VECTOR2I& pos, char plume )
 {
     wxASSERT( m_outputFile );
 
