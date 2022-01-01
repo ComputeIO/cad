@@ -680,9 +680,13 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
     std::deque<EDA_ITEM*> items;
 
     if( crossProbingSettings.allow_multiple )
+    {
         items = selection.GetItems();
-    else if( selection.Size() == 1 )
+    }
+    else if( selection.Size() == 1 && selection.Front()->Type() != SCH_SHEET_T )
+    {
         items = { selection.Front() };
+    }
 
     m_frame->SendSelectItems( aForce, items );
 }
