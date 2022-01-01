@@ -100,7 +100,10 @@ SELECTION_CONDITION SELECTION_CONDITIONS::LessThan( int aNumber )
 
 bool SELECTION_CONDITIONS::hasTypeFunc( const SELECTION& aSelection, KICAD_T aType )
 {
-    for( const auto& item : aSelection )
+    if( aSelection.Empty() )
+        return false;
+
+    for( const EDA_ITEM* item : aSelection )
     {
         if( item->Type() == aType )
             return true;
@@ -112,7 +115,10 @@ bool SELECTION_CONDITIONS::hasTypeFunc( const SELECTION& aSelection, KICAD_T aTy
 
 bool SELECTION_CONDITIONS::hasTypesFunc( const SELECTION& aSelection, const KICAD_T aTypes[] )
 {
-    for( const auto& item : aSelection )
+    if( aSelection.Empty() )
+        return false;
+
+    for( const EDA_ITEM* item : aSelection )
     {
         if( item->IsType( aTypes ) )
             return true;
@@ -129,7 +135,7 @@ bool SELECTION_CONDITIONS::onlyTypeFunc( const SELECTION& aSelection, KICAD_T aT
 
     KICAD_T types[] = { aType, EOT };
 
-    for( const auto& item : aSelection )
+    for( const EDA_ITEM* item : aSelection )
     {
         if( !item->IsType( types ) )
             return false;
@@ -144,7 +150,7 @@ bool SELECTION_CONDITIONS::onlyTypesFunc( const SELECTION& aSelection, const KIC
     if( aSelection.Empty() )
         return false;
 
-    for( const auto& item : aSelection )
+    for( const EDA_ITEM* item : aSelection )
     {
         if( !item->IsType( aTypes ) )
             return false;
