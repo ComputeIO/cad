@@ -410,7 +410,7 @@ protected:
 
                 if( line && !side.x )
                 {
-                    wxPoint start = line->GetStartPoint(), end = line->GetEndPoint();
+                    VECTOR2I start = line->GetStartPoint(), end = line->GetEndPoint();
 
                     if( start.y == end.y && collision != COLLIDE_OBJECTS )
                         collision = COLLIDE_H_WIRES;
@@ -527,7 +527,7 @@ protected:
      */
     wxPoint fieldBoxPlacement( SIDE_AND_NPINS aFieldSideAndPins )
     {
-        wxPoint fbox_center = m_symbol_bbox.Centre();
+        VECTOR2I fbox_center = m_symbol_bbox.Centre();
         int     offs_x = ( m_symbol_bbox.GetWidth() + m_fbox_size.GetWidth() ) / 2;
         int     offs_y = ( m_symbol_bbox.GetHeight() + m_fbox_size.GetHeight() ) / 2;
 
@@ -600,7 +600,7 @@ protected:
             if( !line )
                 return false;
 
-            wxPoint start = line->GetStartPoint(), end = line->GetEndPoint();
+            VECTOR2I start = line->GetStartPoint(), end = line->GetEndPoint();
 
             if( start.y != end.y )
                 return false;
@@ -617,7 +617,7 @@ protected:
         // return false after this point.
         m_fbox_size = computeFBoxSize( /* aDynamic */ false );
 
-        wxPoint pos = aBox->GetPosition();
+        VECTOR2I pos = aBox->GetPosition();
 
         pos.y = round_n( pos.y, WIRE_V_SPACING, aSide == SIDE_BOTTOM );
 

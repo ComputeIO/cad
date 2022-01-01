@@ -53,7 +53,7 @@
 #include <tool/tool_manager.h>
 #include <tools/ee_actions.h>
 
-SCH_FIELD::SCH_FIELD( const wxPoint& aPos, int aFieldId, SCH_ITEM* aParent,
+SCH_FIELD::SCH_FIELD( const VECTOR2I& aPos, int aFieldId, SCH_ITEM* aParent,
                       const wxString& aName ) :
     SCH_ITEM( aParent, SCH_FIELD_T ),
     EDA_TEXT( wxEmptyString ),
@@ -213,11 +213,11 @@ int SCH_FIELD::GetPenWidth() const
 }
 
 
-void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
+void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset )
 {
     wxDC*    DC = aSettings->GetPrintDC();
     COLOR4D  color = aSettings->GetLayerColor( IsForceVisible() ? LAYER_HIDDEN : m_layer );
-    wxPoint  textpos;
+    VECTOR2I textpos;
     int      penWidth = GetEffectiveTextPenWidth( aSettings->GetDefaultPenWidth() );
 
     if( ( !IsVisible() && !IsForceVisible() ) || IsVoid() )
@@ -297,7 +297,7 @@ EDA_ANGLE SCH_FIELD::GetDrawRotation() const
 }
 
 
-wxPoint SCH_FIELD::GetDrawPos() const
+VECTOR2I SCH_FIELD::GetDrawPos() const
 {
     return GetBoundingBox().Centre();
 }
@@ -321,12 +321,12 @@ const EDA_RECT SCH_FIELD::GetBoundingBox() const
     EDA_RECT rect = GetTextBox();
 
     // Calculate the bounding box position relative to the parent:
-    wxPoint origin = GetParentPosition();
-    wxPoint pos = GetTextPos() - origin;
-    wxPoint begin = rect.GetOrigin() - origin;
-    wxPoint end = rect.GetEnd() - origin;
-    RotatePoint( &begin, pos, GetTextAngle() );
-    RotatePoint( &end, pos, GetTextAngle() );
+    VECTOR2I origin = GetParentPosition();
+    VECTOR2I pos = GetTextPos() - origin;
+    VECTOR2I begin = rect.GetOrigin() - origin;
+    VECTOR2I end = rect.GetEnd() - origin;
+    RotatePoint( begin, pos, GetTextAngle() );
+    RotatePoint( end, pos, GetTextAngle() );
 
     // Now, apply the symbol transform (mirror/rot)
     TRANSFORM transform;
@@ -359,8 +359,8 @@ const EDA_RECT SCH_FIELD::GetBoundingBox() const
 
 bool SCH_FIELD::IsHorizJustifyFlipped() const
 {
-    wxPoint render_center = GetBoundingBox().Centre();
-    wxPoint pos = GetPosition();
+    VECTOR2I render_center = GetBoundingBox().Centre();
+    VECTOR2I pos = GetPosition();
 
     switch( GetHorizJustify() )
     {
@@ -396,8 +396,8 @@ GR_TEXT_H_ALIGN_T SCH_FIELD::GetEffectiveHorizJustify() const
 
 bool SCH_FIELD::IsVertJustifyFlipped() const
 {
-    wxPoint render_center = GetBoundingBox().Centre();
-    wxPoint pos = GetPosition();
+    VECTOR2I render_center = GetBoundingBox().Centre();
+    VECTOR2I pos = GetPosition();
 
     switch( GetVertJustify() )
     {
@@ -577,10 +577,10 @@ bool SCH_FIELD::Replace( const wxFindReplaceData& aSearchData, void* aAuxData )
 }
 
 
-void SCH_FIELD::Rotate( const wxPoint& aCenter )
+void SCH_FIELD::Rotate( const VECTOR2I& aCenter )
 {
-    wxPoint pt = GetPosition();
-    RotatePoint( &pt, aCenter, 900 );
+    VECTOR2I pt = GetPosition();
+    RotatePoint( pt, aCenter, 900 );
     SetPosition( pt );
 }
 
@@ -786,7 +786,7 @@ BITMAPS SCH_FIELD::GetMenuImage() const
 }
 
 
-bool SCH_FIELD::HitTest( const wxPoint& aPosition, int aAccuracy ) const
+bool SCH_FIELD::HitTest( const VECTOR2I& aPosition, int aAccuracy ) const
 {
     // Do not hit test hidden or empty fields.
     if( !IsVisible() || IsVoid() )
@@ -859,14 +859,14 @@ void SCH_FIELD::Plot( PLOTTER* aPlotter ) const
      */
     GR_TEXT_H_ALIGN_T hjustify = GR_TEXT_H_ALIGN_CENTER;
     GR_TEXT_V_ALIGN_T vjustify = GR_TEXT_V_ALIGN_CENTER;
-    wxPoint           textpos = GetBoundingBox().Centre();
+    VECTOR2I          textpos = GetBoundingBox().Centre();
 
     aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),  hjustify, vjustify,
                     penWidth, IsItalic(), IsBold() );
 }
 
 
-void SCH_FIELD::SetPosition( const wxPoint& aPosition )
+void SCH_FIELD::SetPosition( const VECTOR2I& aPosition )
 {
     // Actual positions are calculated by the rotation/mirror transform of the parent symbol
     // of the field.  The inverse transform is used to calculate the position relative to the
@@ -874,7 +874,7 @@ void SCH_FIELD::SetPosition( const wxPoint& aPosition )
     if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
         SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
-        wxPoint     relPos = aPosition - parentSymbol->GetPosition();
+        VECTOR2I    relPos = aPosition - parentSymbol->GetPosition();
 
         relPos = parentSymbol->GetTransform().InverseTransform().TransformCoordinate( relPos );
 
@@ -886,12 +886,12 @@ void SCH_FIELD::SetPosition( const wxPoint& aPosition )
 }
 
 
-wxPoint SCH_FIELD::GetPosition() const
+VECTOR2I SCH_FIELD::GetPosition() const
 {
     if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
         SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
-        wxPoint     relativePos = GetTextPos() - parentSymbol->GetPosition();
+        VECTOR2I    relativePos = GetTextPos() - parentSymbol->GetPosition();
 
         relativePos = parentSymbol->GetTransform().TransformCoordinate( relativePos );
 
@@ -902,7 +902,7 @@ wxPoint SCH_FIELD::GetPosition() const
 }
 
 
-wxPoint SCH_FIELD::GetParentPosition() const
+VECTOR2I SCH_FIELD::GetParentPosition() const
 {
     return m_parent ? m_parent->GetPosition() : wxPoint( 0, 0 );
 }

@@ -161,14 +161,15 @@ void moveFootprintsInArea( CRectPlacement& aPlacementArea, std::vector <FOOTPRIN
 
     for( unsigned it = 0; it < vecSubRects.size(); ++it )
     {
-        wxPoint pos( vecSubRects[it].x, vecSubRects[it].y );
+        VECTOR2I pos( vecSubRects[it].x, vecSubRects[it].y );
         pos.x *= scale;
         pos.y *= scale;
 
         FOOTPRINT* footprint = aFootprintList[vecSubRects[it].n];
 
         EDA_RECT fpBBox = footprint->GetBoundingBox( false, false );
-        wxPoint mod_pos = pos + ( footprint->GetPosition() - fpBBox.GetOrigin() )
+        VECTOR2I mod_pos =
+                pos + ( footprint->GetPosition() - fpBBox.GetOrigin() )
                           + aFreeArea.GetOrigin();
 
         footprint->Move( mod_pos - footprint->GetPosition() );
@@ -260,7 +261,8 @@ void SpreadFootprints( std::vector<FOOTPRINT*>* aFootprints, wxPoint aSpreadArea
 
                 if( pass == 1 )
                 {
-                    wxPoint areapos = placementSheetAreas[subareaIdx].GetOrigin()
+                    VECTOR2I areapos =
+                            placementSheetAreas[subareaIdx].GetOrigin()
                                       + aSpreadAreaPosition;
                     freeArea.SetOrigin( areapos );
                 }

@@ -1353,7 +1353,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
 
         case SHAPE_T::RECT:
         {
-            std::vector<wxPoint> pts = aShape->GetRectCorners();
+            std::vector<VECTOR2I> pts = aShape->GetRectCorners();
 
             if( outline_mode )
             {
@@ -1380,7 +1380,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
                     SHAPE_POLY_SET poly;
                     poly.NewOutline();
 
-                    for( const wxPoint& pt : pts )
+                    for( const VECTOR2I& pt : pts )
                         poly.Append( pt );
 
                     m_gal->DrawPolygon( poly );
@@ -1652,9 +1652,9 @@ void PCB_PAINTER::draw( const PCB_GROUP* aGroup, int aLayer )
         EDA_RECT bbox = aGroup->GetBoundingBox();
         m_gal->SetStrokeColor( color );
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth * 2.0f );
-        wxPoint topLeft = bbox.GetPosition();
-        wxPoint width = wxPoint( bbox.GetWidth(), 0 );
-        wxPoint height = wxPoint( 0, bbox.GetHeight() );
+        VECTOR2I topLeft = bbox.GetPosition();
+        VECTOR2I width = VECTOR2I( bbox.GetWidth(), 0 );
+        VECTOR2I height = VECTOR2I( 0, bbox.GetHeight() );
 
         m_gal->DrawLine( topLeft, topLeft + width );
         m_gal->DrawLine( topLeft + width, topLeft + width + height );

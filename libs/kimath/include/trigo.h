@@ -41,8 +41,8 @@
  *
  * @return true if the point is on the line segment.
  */
-bool IsPointOnSegment( const wxPoint& aSegStart, const wxPoint& aSegEnd,
-                       const wxPoint& aTestPoint );
+bool IsPointOnSegment( const VECTOR2I& aSegStart, const VECTOR2I& aSegEnd,
+                       const VECTOR2I& aTestPoint );
 
 /**
  * Test if two lines intersect.
@@ -55,9 +55,9 @@ bool IsPointOnSegment( const wxPoint& aSegStart, const wxPoint& aSegEnd,
  * @return bool - true if the two segments defined by four points intersect.
  * (i.e. if the 2 segments have at least a common point)
  */
-bool SegmentIntersectsSegment( const wxPoint& a_p1_l1, const wxPoint& a_p2_l1,
-                               const wxPoint& a_p1_l2, const wxPoint& a_p2_l2,
-                               wxPoint* aIntersectionPoint = nullptr );
+bool SegmentIntersectsSegment( const VECTOR2I& a_p1_l1, const VECTOR2I& a_p2_l1,
+                               const VECTOR2I& a_p1_l2, const VECTOR2I& a_p2_l2,
+                               VECTOR2I* aIntersectionPoint = nullptr );
 
 /*
  * Calculate the new point of coord coord pX, pY,
@@ -94,7 +94,17 @@ inline void RotatePoint( wxPoint* point, EDA_ANGLE angle )
     RotatePoint( &point->x, &point->y, angle.AsTenthsOfADegree() );
 }
 
+inline void RotatePoint( VECTOR2I& point, EDA_ANGLE angle )
+{
+    RotatePoint( &point.x, &point.y, angle.AsTenthsOfADegree() );
+}
+
 void RotatePoint( VECTOR2I& point, const VECTOR2I& centre, double angle );
+
+inline void RotatePoint( VECTOR2I& point, const VECTOR2I& centre, EDA_ANGLE angle )
+{
+    RotatePoint( point, centre, angle.AsTenthsOfADegree() );
+}
 
 /*
  * Calculate the new coord point point for a center rotation center and angle in (1/10 degree).
@@ -178,8 +188,8 @@ inline double EuclideanNorm( const VECTOR2I& vector )
 //! @param linePointA Point on line
 //! @param linePointB Point on line
 //! @param referencePoint Reference point
-inline double DistanceLinePoint( const wxPoint& linePointA, const wxPoint& linePointB,
-                                 const wxPoint& referencePoint )
+inline double DistanceLinePoint( const VECTOR2I& linePointA, const VECTOR2I& linePointB,
+                                 const VECTOR2I& referencePoint )
 {
     // Some of the multiple double casts are redundant. However in the previous
     // definition the cast was (implicitly) done too late, just before
@@ -198,9 +208,9 @@ inline double DistanceLinePoint( const wxPoint& linePointA, const wxPoint& lineP
 //! @param pointB Second point
 //! @param threshold The maximum distance
 //! @return True or false
-inline bool HitTestPoints( const wxPoint& pointA, const wxPoint& pointB, double threshold )
+inline bool HitTestPoints( const VECTOR2I& pointA, const VECTOR2I& pointB, double threshold )
 {
-    wxPoint vectorAB = pointB - pointA;
+    VECTOR2I vectorAB = pointB - pointA;
 
     // Compare the distances squared. The double is needed to avoid
     // overflow during int multiplication
@@ -226,7 +236,7 @@ inline double CrossProduct( const wxPoint& vectorA, const wxPoint& vectorB )
  * @param aEnd is the second end-point of the line segment
  * @param aDist = maximum distance for hit
 */
-bool TestSegmentHit( const wxPoint& aRefPoint, const wxPoint& aStart, const wxPoint& aEnd,
+bool TestSegmentHit( const VECTOR2I& aRefPoint, const VECTOR2I& aStart, const VECTOR2I& aEnd,
                      int aDist );
 
 /**
@@ -237,6 +247,19 @@ bool TestSegmentHit( const wxPoint& aRefPoint, const wxPoint& aStart, const wxPo
  * @return Length of a line (as double)
  */
 inline double GetLineLength( const wxPoint& aPointA, const wxPoint& aPointB )
+{
+    // Implicitly casted to double
+    return hypot( aPointA.x - aPointB.x, aPointA.y - aPointB.y );
+}
+
+/**
+ * Return the length of a line segment defined by \a aPointA and \a aPointB.
+ *
+ * See also EuclideanNorm and Distance for the single vector or four scalar versions.
+ *
+ * @return Length of a line (as double)
+ */
+inline double GetLineLength( const VECTOR2I& aPointA, const VECTOR2I& aPointB )
 {
     // Implicitly casted to double
     return hypot( aPointA.x - aPointB.x, aPointA.y - aPointB.y );

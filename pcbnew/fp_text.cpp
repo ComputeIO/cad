@@ -82,14 +82,14 @@ void FP_TEXT::SetTextAngle( const EDA_ANGLE& aAngle )
 }
 
 
-bool FP_TEXT::TextHitTest( const wxPoint& aPoint, int aAccuracy ) const
+bool FP_TEXT::TextHitTest( const VECTOR2I& aPoint, int aAccuracy ) const
 {
     EDA_RECT rect = GetTextBox();
-    wxPoint location = aPoint;
+    VECTOR2I location = aPoint;
 
     rect.Inflate( aAccuracy );
 
-    RotatePoint( &location, GetTextPos(), -GetDrawRotation() );
+    RotatePoint( location, GetTextPos(), -GetDrawRotation() );
 
     return rect.Contains( location );
 }
@@ -126,13 +126,13 @@ void FP_TEXT::KeepUpright( double aOldOrientation, double aNewOrientation )
 }
 
 
-void FP_TEXT::Rotate( const wxPoint& aRotCentre, double aAngle )
+void FP_TEXT::Rotate( const VECTOR2I& aRotCentre, double aAngle )
 {
     // Used in footprint editing
     // Note also in footprint editor, m_Pos0 = m_Pos
 
-    wxPoint pt = GetTextPos();
-    RotatePoint( &pt, aRotCentre, aAngle );
+    VECTOR2I pt = GetTextPos();
+    RotatePoint( pt, aRotCentre, aAngle );
     SetTextPos( pt );
 
     SetTextAngle( GetTextAngle().AsTenthsOfADegree() + aAngle );
@@ -140,7 +140,7 @@ void FP_TEXT::Rotate( const wxPoint& aRotCentre, double aAngle )
 }
 
 
-void FP_TEXT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
+void FP_TEXT::Flip( const VECTOR2I& aCentre, bool aFlipLeftRight )
 {
     // flipping the footprint is relative to the X axis
     if( aFlipLeftRight )
@@ -167,7 +167,7 @@ bool FP_TEXT::IsParentFlipped() const
 }
 
 
-void FP_TEXT::Mirror( const wxPoint& aCentre, bool aMirrorAroundXAxis )
+void FP_TEXT::Mirror( const VECTOR2I& aCentre, bool aMirrorAroundXAxis )
 {
     // the position is mirrored, but the text itself is not mirrored
 
@@ -180,7 +180,7 @@ void FP_TEXT::Mirror( const wxPoint& aCentre, bool aMirrorAroundXAxis )
 }
 
 
-void FP_TEXT::Move( const wxPoint& aMoveVector )
+void FP_TEXT::Move( const VECTOR2I& aMoveVector )
 {
     Offset( aMoveVector );
     SetLocalCoord();
@@ -203,8 +203,8 @@ void FP_TEXT::SetDrawCoord()
     {
         double angle = parentFootprint->GetOrientation();
 
-        wxPoint pt = GetTextPos();
-        RotatePoint( &pt, angle );
+        VECTOR2I pt = GetTextPos();
+        RotatePoint( pt, angle );
         SetTextPos( pt );
 
         Offset( parentFootprint->GetPosition() );
@@ -226,7 +226,7 @@ void FP_TEXT::SetLocalCoord()
     }
     else
     {
-        m_Pos0 = GetTextPos();
+        m_Pos0 = (wxPoint)GetTextPos();
     }
 }
 

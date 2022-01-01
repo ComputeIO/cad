@@ -832,9 +832,9 @@ bool EDA_DRAW_FRAME::saveCanvasTypeSetting( EDA_DRAW_PANEL_GAL::GAL_TYPE aCanvas
 }
 
 
-wxPoint EDA_DRAW_FRAME::GetNearestGridPosition( const wxPoint& aPosition ) const
+VECTOR2I EDA_DRAW_FRAME::GetNearestGridPosition( const VECTOR2I& aPosition ) const
 {
-    const wxPoint& gridOrigin = GetGridOrigin();
+    const VECTOR2I& gridOrigin = GetGridOrigin();
     VECTOR2D       gridSize = GetCanvas()->GetGAL()->GetGridSize();
 
     double xOffset = fmod( gridOrigin.x, gridSize.x );
@@ -842,13 +842,13 @@ wxPoint EDA_DRAW_FRAME::GetNearestGridPosition( const wxPoint& aPosition ) const
     double yOffset = fmod( gridOrigin.y, gridSize.y );
     int    y = KiROUND( (aPosition.y - yOffset) / gridSize.y );
 
-    return wxPoint( KiROUND( x * gridSize.x + xOffset ), KiROUND( y * gridSize.y + yOffset ) );
+    return VECTOR2I( KiROUND( x * gridSize.x + xOffset ), KiROUND( y * gridSize.y + yOffset ) );
 }
 
 
-wxPoint EDA_DRAW_FRAME::GetNearestHalfGridPosition( const wxPoint& aPosition ) const
+VECTOR2I EDA_DRAW_FRAME::GetNearestHalfGridPosition( const VECTOR2I& aPosition ) const
 {
-    const wxPoint& gridOrigin = GetGridOrigin();
+    const VECTOR2I& gridOrigin = GetGridOrigin();
     VECTOR2D       gridSize = GetCanvas()->GetGAL()->GetGridSize() / 2.0;
 
     double xOffset = fmod( gridOrigin.x, gridSize.x );
@@ -856,7 +856,7 @@ wxPoint EDA_DRAW_FRAME::GetNearestHalfGridPosition( const wxPoint& aPosition ) c
     double yOffset = fmod( gridOrigin.y, gridSize.y );
     int    y = KiROUND( (aPosition.y - yOffset) / gridSize.y );
 
-    return wxPoint( KiROUND( x * gridSize.x + xOffset ), KiROUND( y * gridSize.y + yOffset ) );
+    return VECTOR2I( KiROUND( x * gridSize.x + xOffset ), KiROUND( y * gridSize.y + yOffset ) );
 }
 
 
@@ -893,7 +893,7 @@ std::vector<wxWindow*> EDA_DRAW_FRAME::findDialogs()
 }
 
 
-void EDA_DRAW_FRAME::FocusOnLocation( const wxPoint& aPos )
+void EDA_DRAW_FRAME::FocusOnLocation( const VECTOR2I& aPos )
 {
     bool  centerView = false;
     BOX2D r = GetCanvas()->GetView()->GetViewport();
@@ -913,7 +913,7 @@ void EDA_DRAW_FRAME::FocusOnLocation( const wxPoint& aPos )
     }
 
     // Center if we're behind an obscuring dialog, or within 10% of its edge
-    for( BOX2D rect : dialogScreenRects )
+    for( BOX2D rect : dialogScreenRects ) 
     {
         rect.Inflate( rect.GetWidth() / 10 );
 

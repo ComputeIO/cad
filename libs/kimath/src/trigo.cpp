@@ -39,11 +39,11 @@
 // Returns true if the point P is on the segment S.
 // faster than TestSegmentHit() because P should be exactly on S
 // therefore works fine only for H, V and 45 deg segm (suitable for wires in eeschema)
-bool IsPointOnSegment( const wxPoint& aSegStart, const wxPoint& aSegEnd,
-                       const wxPoint& aTestPoint )
+bool IsPointOnSegment( const VECTOR2I& aSegStart, const VECTOR2I& aSegEnd,
+                       const VECTOR2I& aTestPoint )
 {
-    wxPoint vectSeg   = aSegEnd - aSegStart;    // Vector from S1 to S2
-    wxPoint vectPoint = aTestPoint - aSegStart; // Vector from S1 to P
+    VECTOR2I vectSeg = aSegEnd - aSegStart;      // Vector from S1 to S2
+    VECTOR2I vectPoint = aTestPoint - aSegStart; // Vector from S1 to P
 
     // Use long long here to avoid overflow in calculations
     if( (long long) vectSeg.x * vectPoint.y - (long long) vectSeg.y * vectPoint.x )
@@ -58,9 +58,9 @@ bool IsPointOnSegment( const wxPoint& aSegStart, const wxPoint& aSegEnd,
 
 
 // Returns true if the segment 1 intersected the segment 2.
-bool SegmentIntersectsSegment( const wxPoint& a_p1_l1, const wxPoint& a_p2_l1,
-                               const wxPoint& a_p1_l2, const wxPoint& a_p2_l2,
-                               wxPoint* aIntersectionPoint )
+bool SegmentIntersectsSegment( const VECTOR2I& a_p1_l1, const VECTOR2I& a_p2_l1,
+                               const VECTOR2I& a_p1_l2, const VECTOR2I& a_p2_l2,
+                               VECTOR2I* aIntersectionPoint )
 {
 
     //We are forced to use 64bit ints because the internal units can overflow 32bit ints when
@@ -126,14 +126,14 @@ bool SegmentIntersectsSegment( const wxPoint& a_p1_l1, const wxPoint& a_p2_l1,
 }
 
 
-bool TestSegmentHit( const wxPoint& aRefPoint, const wxPoint& aStart, const wxPoint& aEnd,
+bool TestSegmentHit( const VECTOR2I& aRefPoint, const VECTOR2I& aStart, const VECTOR2I& aEnd,
                      int aDist )
 {
     int xmin = aStart.x;
     int xmax = aEnd.x;
     int ymin = aStart.y;
     int ymax = aEnd.y;
-    wxPoint delta = aStart - aRefPoint;
+    VECTOR2I delta = aStart - aRefPoint;
 
     if( xmax < xmin )
         std::swap( xmax, xmin );

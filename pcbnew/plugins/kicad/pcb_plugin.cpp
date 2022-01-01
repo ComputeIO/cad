@@ -498,9 +498,9 @@ void PCB_PLUGIN::formatSetup( const BOARD* aBoard, int aNestLevel ) const
         m_out->Print( aNestLevel+1, "(pad_to_paste_clearance_ratio %s)\n",
                       Double2Str( dsnSettings.m_SolderPasteMarginRatio ).c_str() );
 
-    wxPoint origin = dsnSettings.GetAuxOrigin();
+    VECTOR2I origin = dsnSettings.GetAuxOrigin();
 
-    if( origin != wxPoint( 0, 0 ) )
+    if( origin != VECTOR2I( 0, 0 ) )
     {
         m_out->Print( aNestLevel+1, "(aux_axis_origin %s %s)\n",
                       FormatInternalUnits( origin.x ).c_str(),
@@ -1458,7 +1458,7 @@ void PCB_PLUGIN::format( const PAD* aPad, int aNestLevel ) const
         m_out->Print( 0, " (rect_delta %s)", FormatInternalUnits( aPad->GetDelta() ).c_str() );
 
     wxSize sz = aPad->GetDrillSize();
-    wxPoint shapeoffset = aPad->GetOffset();
+    VECTOR2I shapeoffset = aPad->GetOffset();
 
     if( (sz.GetWidth() > 0) || (sz.GetHeight() > 0) ||
         (shapeoffset.x != 0) || (shapeoffset.y != 0) )

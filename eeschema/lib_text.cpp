@@ -53,7 +53,7 @@ void LIB_TEXT::ViewGetLayers( int aLayers[], int& aCount ) const
 }
 
 
-bool LIB_TEXT::HitTest( const wxPoint& aPosition, int aAccuracy ) const
+bool LIB_TEXT::HitTest( const VECTOR2I& aPosition, int aAccuracy ) const
 {
     EDA_TEXT tmp_text( *this );
     tmp_text.SetTextPos( DefaultTransform.TransformCoordinate( GetTextPos() ) );
@@ -116,13 +116,13 @@ int LIB_TEXT::compare( const LIB_ITEM& aOther, LIB_ITEM::COMPARE_FLAGS aCompareF
 }
 
 
-void LIB_TEXT::Offset( const wxPoint& aOffset )
+void LIB_TEXT::Offset( const VECTOR2I& aOffset )
 {
     EDA_TEXT::Offset( aOffset );
 }
 
 
-void LIB_TEXT::MoveTo( const wxPoint& newPosition )
+void LIB_TEXT::MoveTo( const VECTOR2I& newPosition )
 {
     SetTextPos( newPosition );
 }
@@ -130,7 +130,7 @@ void LIB_TEXT::MoveTo( const wxPoint& newPosition )
 
 void LIB_TEXT::NormalizeJustification( bool inverse )
 {
-    wxPoint  delta( 0, 0 );
+    VECTOR2I delta( 0, 0 );
     EDA_RECT bbox = GetTextBox();
 
     if( GetTextAngle().IsHorizontal() )
@@ -165,7 +165,7 @@ void LIB_TEXT::NormalizeJustification( bool inverse )
 }
 
 
-void LIB_TEXT::MirrorHorizontal( const wxPoint& center )
+void LIB_TEXT::MirrorHorizontal( const VECTOR2I& center )
 {
     NormalizeJustification( false );
     int x = GetTextPos().x;
@@ -194,7 +194,7 @@ void LIB_TEXT::MirrorHorizontal( const wxPoint& center )
 }
 
 
-void LIB_TEXT::MirrorVertical( const wxPoint& center )
+void LIB_TEXT::MirrorVertical( const VECTOR2I& center )
 {
     NormalizeJustification( false );
     int y = GetTextPos().y;
@@ -223,13 +223,13 @@ void LIB_TEXT::MirrorVertical( const wxPoint& center )
 }
 
 
-void LIB_TEXT::Rotate( const wxPoint& center, bool aRotateCCW )
+void LIB_TEXT::Rotate( const VECTOR2I& center, bool aRotateCCW )
 {
     NormalizeJustification( false );
     int rot_angle = aRotateCCW ? -900 : 900;
 
-    wxPoint pt = GetTextPos();
-    RotatePoint( &pt, center, rot_angle );
+    VECTOR2I pt = GetTextPos();
+    RotatePoint( pt, center, rot_angle );
     SetTextPos( pt );
 
     if( GetTextAngle().IsHorizontal() )
@@ -257,7 +257,7 @@ void LIB_TEXT::Rotate( const wxPoint& center, bool aRotateCCW )
 }
 
 
-void LIB_TEXT::Plot( PLOTTER* plotter, const wxPoint& offset, bool fill,
+void LIB_TEXT::Plot( PLOTTER* plotter, const VECTOR2I& offset, bool fill,
                      const TRANSFORM& aTransform ) const
 {
     wxASSERT( plotter != nullptr );
@@ -265,12 +265,12 @@ void LIB_TEXT::Plot( PLOTTER* plotter, const wxPoint& offset, bool fill,
     EDA_RECT bBox = GetBoundingBox();
     // convert coordinates from draw Y axis to symbol_editor Y axis
     bBox.RevertYAxis();
-    wxPoint txtpos = bBox.Centre();
+    VECTOR2I txtpos = bBox.Centre();
 
     // The text orientation may need to be flipped if the transformation matrix causes xy
     // axes to be flipped.
     int t1  = ( aTransform.x1 != 0 ) ^ ( GetTextAngle() != EDA_ANGLE::HORIZONTAL );
-    wxPoint pos = aTransform.TransformCoordinate( txtpos ) + offset;
+    VECTOR2I pos = aTransform.TransformCoordinate( txtpos ) + offset;
 
     // Get color
     COLOR4D color;
@@ -296,7 +296,7 @@ int LIB_TEXT::GetPenWidth() const
 }
 
 
-void LIB_TEXT::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, void* aData,
+void LIB_TEXT::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
                       const TRANSFORM& aTransform )
 {
     wxDC*   DC = aSettings->GetPrintDC();
@@ -329,7 +329,7 @@ void LIB_TEXT::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, 
 
     // convert coordinates from draw Y axis to symbol_editor Y axis:
     bBox.RevertYAxis();
-    wxPoint txtpos = bBox.Centre();
+    VECTOR2I txtpos = bBox.Centre();
 
     // Calculate pos according to mirror/rotation.
     txtpos = aTransform.TransformCoordinate( txtpos ) + aOffset;
@@ -382,11 +382,11 @@ const EDA_RECT LIB_TEXT::GetBoundingBox() const
     rect.RevertYAxis();
 
     // We are using now a bottom to top Y axis.
-    wxPoint orig = rect.GetOrigin();
-    wxPoint end  = rect.GetEnd();
+    VECTOR2I orig = rect.GetOrigin();
+    VECTOR2I end = rect.GetEnd();
 
-    RotatePoint( &orig, GetTextPos(), -GetTextAngle() );
-    RotatePoint( &end,  GetTextPos(), -GetTextAngle() );
+    RotatePoint( orig, GetTextPos(), -GetTextAngle() );
+    RotatePoint( end, GetTextPos(), -GetTextAngle() );
 
     rect.SetOrigin( orig );
     rect.SetEnd( end );
@@ -410,13 +410,13 @@ BITMAPS LIB_TEXT::GetMenuImage() const
 }
 
 
-void LIB_TEXT::BeginEdit( const wxPoint& aPosition )
+void LIB_TEXT::BeginEdit( const VECTOR2I& aPosition )
 {
     SetTextPos( aPosition );
 }
 
 
-void LIB_TEXT::CalcEdit( const wxPoint& aPosition )
+void LIB_TEXT::CalcEdit( const VECTOR2I& aPosition )
 {
     SetTextPos( aPosition );
 }

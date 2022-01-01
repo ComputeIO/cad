@@ -224,13 +224,13 @@ public:
     void SetTextHeight( int aHeight )           { m_attributes.m_Size.y = aHeight; }
     int GetTextHeight() const                   { return m_attributes.m_Size.y; }
 
-    void SetTextPos( const wxPoint& aPoint )    { m_pos = aPoint; }
-    const wxPoint& GetTextPos() const           { return m_pos; }
+    void SetTextPos( const VECTOR2I& aPoint )   { m_pos = aPoint; }
+    const VECTOR2I& GetTextPos() const          { return m_pos; }
 
     void SetTextX( int aX )                     { m_pos.x = aX; }
     void SetTextY( int aY )                     { m_pos.y = aY; }
 
-    void Offset( const wxPoint& aOffset )       { m_pos += aOffset; }
+    void Offset( const VECTOR2I& aOffset ) { m_pos += aOffset; }
 
     void Empty()                                { m_text.Empty(); }
 
@@ -246,7 +246,7 @@ public:
      * @param aColor text color.
      * @param aDisplay_mode #FILLED or #SKETCH.
      */
-    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+    void Print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset,
                 const COLOR4D& aColor, OUTLINE_MODE aDisplay_mode = FILLED );
 
     /**
@@ -255,7 +255,7 @@ public:
      * Each segment is stored as 2 wxPoints: the starting point and the ending point
      * there are therefore 2*n points.
      */
-    std::vector<wxPoint> TransformToSegmentList() const;
+    std::vector<VECTOR2I> TransformToSegmentList() const;
 
     /**
      * Convert the text bounding box to a rectangular polygon depending on the text
@@ -280,7 +280,7 @@ public:
      * @param aAccuracy Amount to inflate the bounding box.
      * @return true if a hit, else false.
      */
-    virtual bool TextHitTest( const wxPoint& aPoint, int aAccuracy = 0 ) const;
+    virtual bool TextHitTest( const VECTOR2I& aPoint, int aAccuracy = 0 ) const;
 
     /**
      * Test if object bounding box is contained within or intersects \a aRect.
@@ -333,7 +333,7 @@ public:
      * @param aPositions is the list to populate by the wxPoint positions.
      * @param aLineCount is the number of lines (not recalculated here for efficiency reasons.
      */
-    void GetLinePositions( std::vector<wxPoint>& aPositions, int aLineCount ) const;
+    void GetLinePositions( std::vector<VECTOR2I>& aPositions, int aLineCount ) const;
 
     /**
      * Output the object to \a aFormatter in s-expression form.
@@ -346,7 +346,7 @@ public:
     virtual void Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControlBits ) const;
 
     virtual EDA_ANGLE GetDrawRotation() const               { return GetTextAngle(); }
-    virtual wxPoint GetDrawPos() const                      { return GetTextPos(); }
+    virtual VECTOR2I GetDrawPos() const                      { return GetTextPos(); }
     virtual GR_TEXT_H_ALIGN_T GetDrawHorizJustify() const   { return GetHorizJustify(); };
     virtual GR_TEXT_V_ALIGN_T GetDrawVertJustify() const    { return GetVertJustify(); };
 
@@ -364,16 +364,16 @@ private:
      * @param aText the single line of text to draw.
      * @param aPos the position of this line ).
      */
-    void printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+    void printOneLineOfText( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset,
                              const COLOR4D& aColor, OUTLINE_MODE aFillMode, const wxString& aText,
-                             const wxPoint& aPos );
+                             const VECTOR2I& aPos );
 
     wxString        m_text;
     wxString        m_shown_text;           // Cache of unescaped text for efficient access
     bool            m_shown_text_has_text_var_refs;
 
     TEXT_ATTRIBUTES m_attributes;
-    wxPoint         m_pos;
+    VECTOR2I        m_pos;
 };
 
 
