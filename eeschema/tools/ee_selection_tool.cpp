@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -170,7 +170,8 @@ bool EE_SELECTION_TOOL::Init()
                                         SCH_SHEET_PIN_T,
                                         SCH_PIN_T,
                                         EOT };
-    static KICAD_T crossProbingTypes[] = { SCH_SYMBOL_T, SCH_SHEET_T, EOT };
+
+    static KICAD_T crossProbingTypes[] = { SCH_SYMBOL_T, SCH_PIN_T, SCH_SHEET_T, EOT };
 
     auto wireSelection =      E_C::MoreThan( 0 ) && E_C::OnlyType( SCH_ITEM_LOCATE_WIRE_T );
     auto busSelection =       E_C::MoreThan( 0 ) && E_C::OnlyType( SCH_ITEM_LOCATE_BUS_T );

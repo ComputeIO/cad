@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -672,63 +672,19 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
     if( m_probingPcbToSch )
         return;
 
-    EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
-    SCH_ITEM*          item = nullptr;
-    SCH_SYMBOL*        symbol = nullptr;
+    EE_SELECTION_TOOL*      selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
+    CROSS_PROBING_SETTINGS& crossProbingSettings = m_frame->eeconfig()->m_CrossProbing;
 
-    if( aForce )
-    {
-        EE_SELECTION& selection = selTool->RequestSelection();
+    EE_SELECTION& selection = aForce ? selTool->RequestSelection() : selTool->GetSelection();
 
-        if( selection.GetSize() >= 1 )
-            item = (SCH_ITEM*) selection.Front();
-    }
-    else
-    {
-        EE_SELECTION& selection = selTool->GetSelection();
+    std::deque<EDA_ITEM*> items;
 
-        if( selection.GetSize() >= 1 )
-            item = (SCH_ITEM*) selection.Front();
-    }
+    if( crossProbingSettings.allow_multiple )
+        items = selection.GetItems();
+    else if( selection.Size() == 1 )
+        items = { selection.Front() };
 
-    if( !item )
-    {
-        if( aForce )
-            m_frame->SendMessageToPCBNEW( nullptr, nullptr );
-
-        return;
-    }
-
-
-    switch( item->Type() )
-    {
-    case SCH_FIELD_T:
-    case LIB_FIELD_T:
-        if( item->GetParent() && item->GetParent()->Type() == SCH_SYMBOL_T )
-        {
-            symbol = (SCH_SYMBOL*) item->GetParent();
-            m_frame->SendMessageToPCBNEW( item, symbol );
-        }
-        break;
-
-    case SCH_SYMBOL_T:
-        symbol = (SCH_SYMBOL*) item;
-        m_frame->SendMessageToPCBNEW( item, symbol );
-        break;
-
-    case SCH_PIN_T:
-        symbol = (SCH_SYMBOL*) item->GetParent();
-        m_frame->SendMessageToPCBNEW( static_cast<SCH_PIN*>( item ), symbol );
-        break;
-
-    case SCH_SHEET_T:
-        if( aForce )
-            m_frame->SendMessageToPCBNEW( item, nullptr );
-        break;
-
-    default:
-        break;
-    }
+    m_frame->SendSelectItems( aForce, items );
 }
 
 
