@@ -482,7 +482,6 @@ std::string FormatProbeItems( bool aSelectConnections, const std::deque<EDA_ITEM
     {
         switch( item->Type() )
         {
-
         case SCH_SYMBOL_T:
         {
             SCH_SYMBOL* symbol = (SCH_SYMBOL*) item;
@@ -523,7 +522,7 @@ std::string FormatProbeItems( bool aSelectConnections, const std::deque<EDA_ITEM
 
         case SCH_PIN_T:
         {
-            SCH_PIN* pin = (SCH_PIN*) item;
+            SCH_PIN*    pin = (SCH_PIN*) item;
             SCH_SYMBOL* symbol = pin->GetParentSymbol();
 
             wxString ref = symbol->GetField( REFERENCE_FIELD )->GetText();

@@ -432,7 +432,7 @@ std::vector<BOARD_ITEM*> PCB_EDIT_FRAME::FindItemsFromSyncSelection( std::string
             {
                 if( syncData.StartsWith( fpRefEscaped ) )
                 {
-                    std::string selectPadNumberEscaped =
+                    wxString selectPadNumberEscaped =
                             syncData.substr( fpRefEscaped.size() + 1 ); // Skips the slash
 
                     wxString selectPadNumber = UnescapeString( selectPadNumberEscaped );
@@ -543,7 +543,8 @@ void PCB_EDIT_FRAME::KiwayMailIn( KIWAY_EXPRESS& mail )
                 wxFAIL;
             }
 
-            std::vector<BOARD_ITEM*> items = FindItemsFromSyncSelection( paramStr.substr( modeEnd + 1 ) );
+            std::vector<BOARD_ITEM*> items =
+                    FindItemsFromSyncSelection( paramStr.substr( modeEnd + 1 ) );
 
             m_syncingSchToPcbSelection = true; // recursion guard
 

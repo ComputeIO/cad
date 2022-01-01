@@ -338,8 +338,8 @@ private:
 
     ///< Set selection to items passed by parameter and connected nets (optionally).
     ///< Zooms to fit, if enabled
-    int syncSelection( const TOOL_EVENT& aEvent );
-    int syncSelectionWithNets( const TOOL_EVENT& aEvent );
+    int  syncSelection( const TOOL_EVENT& aEvent );
+    int  syncSelectionWithNets( const TOOL_EVENT& aEvent );
     void doSyncSelection( const std::vector<BOARD_ITEM*>& aItems, bool aWithNets );
 
     ///< Invoke filter dialog and modify current selection
