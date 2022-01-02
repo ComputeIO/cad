@@ -444,8 +444,8 @@ void SPARSELIZARD_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aC
     {
     case F_Mask:
     case B_Mask:
-        clearance.x += pad->GetSolderMaskMargin();
-        clearance.y += pad->GetSolderMaskMargin();
+        clearance.x += pad->GetLocalSolderMaskMargin();
+        clearance.y += pad->GetLocalSolderMaskMargin();
         break;
 
     case F_Paste:

@@ -298,10 +298,10 @@ void GMSH_MESHER::Load3DMesh()
         // TODO: define size externally?
         if( boundingBox.IsValid() )
         {
-            wxSize boundingBoxSize =
+            VECTOR2I boundingBoxSize =
                     boundingBox.GetSize()
-                    + wxSize( 1.6 * 20 * IU_PER_MM,
-                              1.6 * 20 * IU_PER_MM ); // 20 times the board thickness on each side
+                    + VECTOR2I( 1.6 * 20 * IU_PER_MM,
+                                1.6 * 20 * IU_PER_MM ); // 20 times the board thickness on each side
             int    boundingBoxHeight = std::min( boundingBoxSize.x, boundingBoxSize.y );
             GenerateAir3D( boundingBox.Centre(), boundingBoxSize, boundingBoxHeight, fragments,
                            regions );
@@ -554,7 +554,7 @@ void GMSH_MESHER::GenerateNet3D( int aRegionId, int aNetcode,
 
 void GMSH_MESHER::GenerateDrill3D( int aRegionId, const GMSH_MESHER_STACKUP& aStackup,
                                    int aMaxError, PCB_LAYER_ID aLayerStart, PCB_LAYER_ID aLayerEnd,
-                                   wxPoint aPosition, int aDrillSize,
+                                   VECTOR2I aPosition, int aDrillSize,
                                    std::vector<std::pair<int, int>>& aFragments,
                                    GMSH_MESHER_REGIONS&              aRegions,
                                    std::map<int, int>&               aRegionMapper )
@@ -614,7 +614,7 @@ void GMSH_MESHER::GenerateDielectric3D( int aRegionId, const SHAPE_POLY_SET& aPo
 }
 
 
-void GMSH_MESHER::GenerateAir3D( const wxPoint aCenter, const wxSize aSize, const int aHeight,
+void GMSH_MESHER::GenerateAir3D( const VECTOR2I aCenter, const VECTOR2I aSize, const int aHeight,
                                  std::vector<std::pair<int, int>>& aFragments,
                                  GMSH_MESHER_REGIONS&              aRegions )
 {
@@ -1138,7 +1138,7 @@ void GMSH_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     // as their hole:
     if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
     {
-        if( pad->GetDrillSize() == pad->GetSize() && pad->GetOffset() == wxPoint( 0, 0 ) )
+        if( pad->GetDrillSize() == pad->GetSize() && pad->GetOffset() == VECTOR2I( 0, 0 ) )
         {
             switch( pad->GetShape() )
             {
@@ -1163,14 +1163,14 @@ void GMSH_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     if( !isPlated )
         return;
 
-    wxSize clearance( aClearance, aClearance );
+    VECTOR2I clearance( aClearance, aClearance );
 
     switch( aLayer )
     {
     case F_Mask:
     case B_Mask:
-        clearance.x += pad->GetSolderMaskMargin();
-        clearance.y += pad->GetSolderMaskMargin();
+        clearance.x += pad->GetLocalSolderMaskMargin();
+        clearance.y += pad->GetLocalSolderMaskMargin();
         break;
 
     case F_Paste:
@@ -1189,7 +1189,7 @@ void GMSH_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     if( ( clearance.x < 0 || clearance.x != clearance.y ) && pad->GetShape() != PAD_SHAPE::CUSTOM )
     {
         PAD dummy( *pad );
-        dummy.SetSize( pad->GetSize() + clearance + clearance );
+        dummy.SetSize( pad->GetSize() + static_cast<wxSize>( clearance + clearance ) );
         dummy.TransformShapeWithClearanceToPolygon( aCornerBuffer, aLayer, 0, aMaxError,
                                                     aErrorLoc );
     }

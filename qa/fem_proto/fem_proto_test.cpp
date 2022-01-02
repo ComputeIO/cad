@@ -61,11 +61,11 @@ void runFEMProto( const BOARD* aBoard, std::string aNetname )
     if( footprint != nullptr )
     {
         std::cerr << "Footprint found: '" << footprint->GetReference() << "'" << std::endl;
-        const PAD* pad = footprint->FindPadByName( "1" );
+        const PAD* pad = footprint->FindPadByNumber( "1" );
         if( pad != nullptr )
         {
             int padRegionId = mesher.AddPadRegion( pad );
-            std::cerr << "  * Pad '" << pad->GetName() << "' will be on region: " << padRegionId
+            std::cerr << "  * Pad '" << pad->GetNumber() << "' will be on region: " << padRegionId
                       << std::endl;
         }
     }

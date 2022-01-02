@@ -75,7 +75,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::onNetSelect( wxCommandEvent& event )
         {
             m_padGrid->AppendRows( 1 );
             m_padGrid->SetCellValue( nbRow, 0, pad->GetParent()->GetReference() );
-            m_padGrid->SetCellValue( nbRow, 1, pad->GetName() );
+            m_padGrid->SetCellValue( nbRow, 1, pad->GetNumber() );
             m_padGrid->SetCellEditor( nbRow, 2,
                                       new wxGridCellChoiceEditor( 3, m_portTypes, false ) );
             m_padGrid->SetCellValue( nbRow, 2, "passive" );
@@ -112,7 +112,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
             continue;
         }
 
-        const PAD* pad = fp->FindPadByName( fieldPad );
+        const PAD* pad = fp->FindPadByNumber( fieldPad );
 
         if( pad == nullptr )
         {
@@ -235,7 +235,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
 
         m_resultGrid->AppendRows( 1 );
         m_resultGrid->SetCellValue( nbRow, 0, pad->GetParent()->GetReference() );
-        m_resultGrid->SetCellValue( nbRow, 1, pad->GetName() );
+        m_resultGrid->SetCellValue( nbRow, 1, pad->GetNumber() );
         m_resultGrid->SetCellValue( nbRow, 2, resultString );
 
         switch( resultValue->m_valueType )

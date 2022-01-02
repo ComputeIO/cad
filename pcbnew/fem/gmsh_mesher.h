@@ -148,7 +148,7 @@ private:
                         GMSH_MESHER_REGIONS&              aRegions );
 
     void GenerateDrill3D( int aRegionId, const GMSH_MESHER_STACKUP& aStackup, int aMaxError,
-                          PCB_LAYER_ID aLayerStart, PCB_LAYER_ID aLayerEnd, wxPoint aPosition,
+                          PCB_LAYER_ID aLayerStart, PCB_LAYER_ID aLayerEnd, VECTOR2I aPosition,
                           int aDrillSize, std::vector<std::pair<int, int>>& aFragments,
                           GMSH_MESHER_REGIONS& aRegions, std::map<int, int>& aRegionMapper );
 
@@ -157,7 +157,7 @@ private:
                                std::vector<std::pair<int, int>>& aFragments,
                                GMSH_MESHER_REGIONS&              aRegions );
 
-    void GenerateAir3D( const wxPoint aCenter, const wxSize aSize, const int aHeight,
+    void GenerateAir3D( const VECTOR2I aCenter, const VECTOR2I aSize, const int aHeight,
                         std::vector<std::pair<int, int>>& aFragments,
                         GMSH_MESHER_REGIONS&              aRegions );
 

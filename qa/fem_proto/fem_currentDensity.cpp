@@ -56,7 +56,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
 
     if( footprint1 != nullptr )
     {
-        const PAD* pad = footprint1->FindPadByName( "1" );
+        const PAD* pad = footprint1->FindPadByNumber( "1" );
         if( pad != nullptr )
         {
             netName = pad->GetNetname();
@@ -85,7 +85,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
 
     if( footprint2 != nullptr )
     {
-        const PAD* pad = footprint2->FindPadByName( "1" );
+        const PAD* pad = footprint2->FindPadByNumber( "1" );
         if( pad != nullptr )
         {
             if( netName != pad->GetNetname() )
@@ -117,7 +117,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
 
     if( footprint3 != nullptr )
     {
-        const PAD* pad = footprint3->FindPadByName( "1" );
+        const PAD* pad = footprint3->FindPadByNumber( "1" );
         if( pad != nullptr )
         {
             FEM_PORT_CONSTRAINT* constraint3 = new FEM_PORT_CONSTRAINT();
