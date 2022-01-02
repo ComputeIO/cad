@@ -178,8 +178,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
         PCB_BASE_EDIT_FRAME( aKiway, aParent, FRAME_PCB_EDITOR, _( "PCB Editor" ),
                              wxDefaultPosition, wxDefaultSize, KICAD_DEFAULT_DRAWFRAME_STYLE,
                              PCB_EDIT_FRAME_NAME ),
-        m_exportNetlistAction( nullptr ), m_findDialog( nullptr ),
-        m_syncingSchToPcbSelection( false )
+        m_exportNetlistAction( nullptr ), m_findDialog( nullptr )
 {
     m_maximizeByDefault = true;
     m_showBorderAndTitleBlock = true;   // true to display sheet references
@@ -188,6 +187,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_SelLayerBox = nullptr;
     m_show_layer_manager_tools = true;
     m_supportsAutoSave = true;
+    m_syncingSchToPcbSelection = false;
 
     // We don't know what state board was in when it was last saved, so we have to
     // assume dirty
