@@ -643,8 +643,8 @@ TOOL_ACTION EE_ACTIONS::generateBOM( "eeschema.EditorControl.generateBOM",
 
 TOOL_ACTION EE_ACTIONS::explicitCrossProbe( "eeschema.EditorControl.explicitCrossProbe",
         AS_GLOBAL, 0, "",
-        _( "Highlight on PCB with connections" ),
-        _( "Highlight corresponding items with connected nets in PCB editor" ),
+        _( "Select on PCB with connections" ),
+        _( "Select corresponding items with connected nets in PCB editor" ),
         BITMAPS::select_same_sheet );
 
 TOOL_ACTION EE_ACTIONS::toggleHiddenPins( "eeschema.EditorControl.showHiddenPins",
