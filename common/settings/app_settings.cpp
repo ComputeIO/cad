@@ -129,8 +129,8 @@ APP_SETTINGS_BASE::APP_SETTINGS_BASE( const std::string& aFilename, int aSchemaV
 
     addParamsForWindow( &m_Window, "window" );
 
-    m_params.emplace_back( new PARAM<bool>( "cross_probing.allow_multiple",
-            &m_CrossProbing.allow_multiple, true ) );
+    m_params.emplace_back( new PARAM<bool>( "cross_probing.on_selection",
+            &m_CrossProbing.on_selection, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "cross_probing.center_on_items",
             &m_CrossProbing.center_on_items, true ) );

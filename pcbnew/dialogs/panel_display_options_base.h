@@ -45,7 +45,7 @@ class PANEL_DISPLAY_OPTIONS_BASE : public RESETTABLE_PANEL
 		wxCheckBox* m_OptDisplayPadNoConn;
 		wxRadioBox* m_OptDisplayTracksClearance;
 		wxCheckBox* m_OptDisplayPadClearence;
-		wxCheckBox* m_checkCrossProbeAllowMultiple;
+		wxCheckBox* m_checkCrossProbeOnSelection;
 		wxCheckBox* m_checkCrossProbeCenter;
 		wxCheckBox* m_checkCrossProbeZoom;
 		wxCheckBox* m_checkCrossProbeAutoHighlight;

@@ -112,9 +112,9 @@ PANEL_EESCHEMA_DISPLAY_OPTIONS_BASE::PANEL_EESCHEMA_DISPLAY_OPTIONS_BASE( wxWind
 	wxStaticBoxSizer* sbSizer31;
 	sbSizer31 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Cross-probing") ), wxVERTICAL );
 
-	m_checkCrossProbeAllowMultiple = new wxCheckBox( sbSizer31->GetStaticBox(), wxID_ANY, _("Allow cross-probing multiple items"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_checkCrossProbeAllowMultiple->SetValue(true);
-	sbSizer31->Add( m_checkCrossProbeAllowMultiple, 0, wxALL, 5 );
+	m_checkCrossProbeOnSelection = new wxCheckBox( sbSizer31->GetStaticBox(), wxID_ANY, _("Cross-probe on selection"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_checkCrossProbeOnSelection->SetValue(true);
+	sbSizer31->Add( m_checkCrossProbeOnSelection, 0, wxALL, 5 );
 
 	m_checkCrossProbeCenter = new wxCheckBox( sbSizer31->GetStaticBox(), wxID_ANY, _("Center view on cross-probed items"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_checkCrossProbeCenter->SetValue(true);

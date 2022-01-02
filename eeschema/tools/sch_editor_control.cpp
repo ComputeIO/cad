@@ -672,23 +672,14 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
     if( m_probingPcbToSch )
         return;
 
+    if( !aForce && !m_frame->eeconfig()->m_CrossProbing.on_selection )
+        return;
+
     EE_SELECTION_TOOL*      selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
-    CROSS_PROBING_SETTINGS& crossProbingSettings = m_frame->eeconfig()->m_CrossProbing;
 
     EE_SELECTION& selection = aForce ? selTool->RequestSelection() : selTool->GetSelection();
 
-    std::deque<EDA_ITEM*> items;
-
-    if( crossProbingSettings.allow_multiple )
-    {
-        items = selection.GetItems();
-    }
-    else if( selection.Size() == 1 && selection.Front()->Type() != SCH_SHEET_T )
-    {
-        items = { selection.Front() };
-    }
-
-    m_frame->SendSelectItems( aForce, items );
+    m_frame->SendSelectItems( aForce, selection.GetItems() );
 }
 
 

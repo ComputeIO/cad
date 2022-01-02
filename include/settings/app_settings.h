@@ -29,7 +29,7 @@
  */
 struct CROSS_PROBING_SETTINGS
 {
-    bool allow_multiple;  ///< Synchronize the selection for multiple items too
+    bool on_selection;  ///< Synchronize the selection for multiple items too
     bool center_on_items; ///< Automatically pan to cross-probed items
     bool zoom_to_fit;     ///< Zoom to fit items (ignored if center_on_items is off)
     bool auto_highlight;  ///< Automatically turn on highlight mode in the target frame
