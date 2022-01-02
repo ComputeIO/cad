@@ -641,10 +641,10 @@ TOOL_ACTION EE_ACTIONS::generateBOM( "eeschema.EditorControl.generateBOM",
         _( "Generate BOM..." ), _( "Generate a bill of materials for the current schematic" ),
         BITMAPS::post_bom );
 
-TOOL_ACTION EE_ACTIONS::explicitCrossProbe( "eeschema.EditorControl.explicitCrossProbe",
+TOOL_ACTION EE_ACTIONS::selectOnPCB( "eeschema.EditorControl.selectOnPCB",
         AS_GLOBAL, 0, "",
-        _( "Select on PCB with connections" ),
-        _( "Select corresponding items with connected nets in PCB editor" ),
+        _( "Select on PCB" ),
+        _( "Select corresponding items in PCB editor" ),
         BITMAPS::select_same_sheet );
 
 TOOL_ACTION EE_ACTIONS::toggleHiddenPins( "eeschema.EditorControl.showHiddenPins",

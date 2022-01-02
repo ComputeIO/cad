@@ -214,7 +214,7 @@ bool EE_SELECTION_TOOL::Init()
     auto& menu = m_menu.GetMenu();
 
     menu.AddItem( EE_ACTIONS::enterSheet,         sheetSelection && EE_CONDITIONS::Idle, 1 );
-    menu.AddItem( EE_ACTIONS::explicitCrossProbe, crossProbingSelection && EE_CONDITIONS::Idle, 1 );
+    menu.AddItem( EE_ACTIONS::selectOnPCB,        crossProbingSelection && EE_CONDITIONS::Idle, 1 );
     menu.AddItem( EE_ACTIONS::leaveSheet,         belowRootSheetCondition, 1 );
 
     menu.AddSeparator( 100 );
