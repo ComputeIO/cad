@@ -260,43 +260,53 @@ bool FOOTPRINT_LIST_IMPL::joinWorkers()
         threads.emplace_back( [this, &queue_parsed]() {
             wxString nickname;
 
-            while( m_queue_out.pop( nickname ) && !m_cancelled )
+            try
             {
-                wxArrayString fpnames;
+                while( m_queue_out.pop( nickname ) && !m_cancelled )
+                {
+                    wxArrayString fpnames;
 
-                try
-                {
-                    m_lib_table->FootprintEnumerate( fpnames, nickname, false );
-                }
-                catch( const IO_ERROR& ioe )
-                {
-                    m_errors.move_push( std::make_unique<IO_ERROR>( ioe ) );
-                }
-                catch( const std::exception& se )
-                {
-                    // This is a round about way to do this, but who knows what THROW_IO_ERROR()
-                    // may be tricked out to do someday, keep it in the game.
                     try
                     {
-                        THROW_IO_ERROR( se.what() );
+                        m_lib_table->FootprintEnumerate( fpnames, nickname, false );
                     }
                     catch( const IO_ERROR& ioe )
                     {
+                        m_cancelled = true;
                         m_errors.move_push( std::make_unique<IO_ERROR>( ioe ) );
                     }
+                    catch( const std::exception& se )
+                    {
+                        // This is a round about way to do this, but who knows what THROW_IO_ERROR()
+                        // may be tricked out to do someday, keep it in the game.
+                        try
+                        {
+                            THROW_IO_ERROR( se.what() );
+                        }
+                        catch( const IO_ERROR& ioe )
+                        {
+                            m_errors.move_push( std::make_unique<IO_ERROR>( ioe ) );
+                        }
+                    }
+
+                    for( unsigned jj = 0; jj < fpnames.size() && !m_cancelled; ++jj )
+                    {
+                        wxString fpname = fpnames[jj];
+                        FOOTPRINT_INFO* fpinfo = new FOOTPRINT_INFO_IMPL( this, nickname, fpname );
+                        queue_parsed.move_push( std::unique_ptr<FOOTPRINT_INFO>( fpinfo ) );
+                    }
+
+                    if( m_progress_reporter )
+                        m_progress_reporter->AdvanceProgress();
+
+                    m_count_finished.fetch_add( 1 );
                 }
-
-                for( unsigned jj = 0; jj < fpnames.size() && !m_cancelled; ++jj )
-                {
-                    wxString fpname = fpnames[jj];
-                    FOOTPRINT_INFO* fpinfo = new FOOTPRINT_INFO_IMPL( this, nickname, fpname );
-                    queue_parsed.move_push( std::unique_ptr<FOOTPRINT_INFO>( fpinfo ) );
-                }
-
-                if( m_progress_reporter )
-                    m_progress_reporter->AdvanceProgress();
-
-                m_count_finished.fetch_add( 1 );
+            }
+            catch( const IO_ERROR& ioe )
+            {
+                m_cancelled = true;
+                m_errors.move_push( std::make_unique<IO_ERROR>( ioe ) );
+                throw;
             }
         } );
     }
