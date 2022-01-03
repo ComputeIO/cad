@@ -63,6 +63,7 @@ using namespace std::placeholders;
 #include <wx/event.h>
 #include <wx/timer.h>
 #include <wx/log.h>
+#include <profile.h>
 
 
 class SELECT_MENU : public ACTION_MENU
@@ -1101,7 +1102,7 @@ int PCB_SELECTION_TOOL::expandConnection( const TOOL_EVENT& aEvent )
 
     for( const EDA_ITEM* item : m_selection.GetItems() )
     {
-        if( dynamic_cast<const BOARD_CONNECTED_ITEM*>( item ) )
+        if( item->Type() == PCB_FOOTPRINT_T || BOARD_CONNECTED_ITEM::ClassOf( item ) )
             initialCount++;
     }
 
@@ -1110,20 +1111,31 @@ int PCB_SELECTION_TOOL::expandConnection( const TOOL_EVENT& aEvent )
 
     for( STOP_CONDITION stopCondition : { STOP_AT_JUNCTION, STOP_AT_PAD, STOP_NEVER } )
     {
-        // copy the selection, since we're going to iterate and modify
         std::deque<EDA_ITEM*> selectedItems = m_selection.GetItems();
 
         for( EDA_ITEM* item : selectedItems )
             item->ClearTempFlags();
 
+        std::vector<BOARD_CONNECTED_ITEM*> startItems;
+
         for( EDA_ITEM* item : selectedItems )
         {
-            PCB_TRACK* trackItem = dynamic_cast<PCB_TRACK*>( item );
+            if( item->Type() == PCB_FOOTPRINT_T )
+            {
+                FOOTPRINT* footprint = static_cast<FOOTPRINT*>( item );
 
-            // Track items marked SKIP_STRUCT have already been visited
-            if( trackItem && !( trackItem->GetFlags() & SKIP_STRUCT ) )
-                selectConnectedTracks( *trackItem, stopCondition );
+                for( PAD* pad : footprint->Pads() )
+                {
+                    startItems.push_back( pad );
+                }
+            }
+            else if( BOARD_CONNECTED_ITEM::ClassOf( item ) )
+            {
+                startItems.push_back( static_cast<BOARD_CONNECTED_ITEM*>( item ) );
+            }
         }
+
+        selectAllConnectedTracks( startItems, stopCondition );
 
         if( m_selection.GetItems().size() > initialCount )
             break;
@@ -1137,164 +1149,203 @@ int PCB_SELECTION_TOOL::expandConnection( const TOOL_EVENT& aEvent )
 }
 
 
-void PCB_SELECTION_TOOL::selectConnectedTracks( BOARD_CONNECTED_ITEM& aStartItem,
-                                                STOP_CONDITION aStopCondition )
+void PCB_SELECTION_TOOL::selectAllConnectedTracks(
+        const std::vector<BOARD_CONNECTED_ITEM*>& aStartItems, STOP_CONDITION aStopCondition )
 {
-    constexpr KICAD_T      types[] = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T, EOT };
-    constexpr PCB_LAYER_ID ALL_LAYERS = UNDEFINED_LAYER;
+    constexpr KICAD_T types[] = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T, EOT };
+    const LSET        allCuMask = LSET::AllCuMask();
 
     auto connectivity = board()->GetConnectivity();
-    auto connectedItems = connectivity->GetConnectedItems( &aStartItem, types, true );
 
     std::map<VECTOR2I, std::vector<PCB_TRACK*>> trackMap;
     std::map<VECTOR2I, PCB_VIA*>                viaMap;
     std::map<VECTOR2I, PAD*>                    padMap;
+    std::set<PAD*>                              startPadSet;
+    std::vector<BOARD_CONNECTED_ITEM*>          cleanupItems;
+    std::vector<std::pair<VECTOR2I, LSET>>      activePts;
 
-    // Build maps of connected items
-    for( BOARD_CONNECTED_ITEM* item : connectedItems )
+    for( BOARD_CONNECTED_ITEM* startItem : aStartItems )
     {
-        switch( item->Type() )
+        // Track starting pads
+        if( startItem->Type() == PCB_PAD_T )
+            startPadSet.insert( static_cast<PAD*>( startItem ) );
+    }
+
+    for( BOARD_CONNECTED_ITEM* startItem : aStartItems )
+    {
+        if( startItem->HasFlag( SKIP_STRUCT ) ) // Skip already visited items
+            continue;
+
+        std::vector<BOARD_CONNECTED_ITEM*> connectedItems =
+                connectivity->GetConnectedItems( startItem, types, true );
+
+        // Build maps of connected items
+        for( BOARD_CONNECTED_ITEM* item : connectedItems )
+        {
+            switch( item->Type() )
+            {
+            case PCB_ARC_T:
+            case PCB_TRACE_T:
+            {
+                PCB_TRACK* track = static_cast<PCB_TRACK*>( item );
+                trackMap[track->GetStart()].push_back( track );
+                trackMap[track->GetEnd()].push_back( track );
+                break;
+            }
+
+            case PCB_VIA_T:
+            {
+                PCB_VIA* via = static_cast<PCB_VIA*>( item );
+                viaMap[via->GetStart()] = via;
+                break;
+            }
+
+            case PCB_PAD_T:
+            {
+                PAD* pad = static_cast<PAD*>( item );
+                padMap[pad->GetPosition()] = pad;
+                break;
+            }
+
+            default: break;
+            }
+        }
+
+        // Set up the initial active points
+        switch( startItem->Type() )
         {
         case PCB_ARC_T:
         case PCB_TRACE_T:
         {
-            PCB_TRACK* track = static_cast<PCB_TRACK*>( item );
-            trackMap[ track->GetStart() ].push_back( track );
-            trackMap[ track->GetEnd() ].push_back( track );
+            PCB_TRACK* track = static_cast<PCB_TRACK*>( startItem );
+
+            activePts.push_back( { track->GetStart(), track->GetLayerSet() } );
+            activePts.push_back( { track->GetEnd(), track->GetLayerSet() } );
             break;
         }
 
         case PCB_VIA_T:
-        {
-            PCB_VIA* via = static_cast<PCB_VIA*>( item );
-            viaMap[ via->GetStart() ] = via;
+            activePts.push_back( { startItem->GetPosition(), startItem->GetLayerSet() } );
             break;
-        }
 
         case PCB_PAD_T:
-        {
-            PAD* pad = static_cast<PAD*>( item );
-            padMap[ pad->GetPosition() ] = pad;
+            activePts.push_back( { startItem->GetPosition(), startItem->GetLayerSet() } );
             break;
+
+        default: break;
         }
 
-        default:
-            break;
-        }
+        bool expand = true;
+        int  failSafe = 0;
 
-        item->ClearFlags( TEMP_SELECTED );
-    }
-
-    std::vector<std::pair<VECTOR2I, PCB_LAYER_ID>> activePts;
-
-    // Set up the initial active points
-    switch( aStartItem.Type() )
-    {
-    case PCB_ARC_T:
-    case PCB_TRACE_T:
-    {
-        PCB_TRACK* track = static_cast<PCB_TRACK*>( &aStartItem );
-
-        activePts.push_back( { track->GetStart(), track->GetLayer() } );
-        activePts.push_back( { track->GetEnd(), track->GetLayer() } );
-    }
-        break;
-
-    case PCB_VIA_T:
-        activePts.push_back( { aStartItem.GetPosition(), ALL_LAYERS } );
-        break;
-
-    case PCB_PAD_T:
-        activePts.push_back( { aStartItem.GetPosition(), ALL_LAYERS } );
-        break;
-
-    default:
-        break;
-    }
-
-    bool expand = true;
-    int  failSafe = 0;
-
-    // Iterative push from all active points
-    while( expand && failSafe++ < 100000 )
-    {
-        expand = false;
-
-        for( int i = activePts.size() - 1; i >= 0; --i )
+        // Iterative push from all active points
+        while( expand && failSafe++ < 100000 )
         {
-            VECTOR2I     pt = activePts[i].first;
-            PCB_LAYER_ID layer = activePts[i].second;
-            size_t       pt_count = 0;
+            expand = false;
 
-            for( PCB_TRACK* track : trackMap[pt] )
+            for( int i = activePts.size() - 1; i >= 0; --i )
             {
-                if( layer == ALL_LAYERS || layer == track->GetLayer() )
-                    pt_count++;
-            }
+                VECTOR2I pt = activePts[i].first;
+                LSET     layerSetCu = activePts[i].second & allCuMask;
 
-            if( aStopCondition == STOP_AT_JUNCTION )
-            {
-                if( pt_count > 2
-                        || ( viaMap.count( pt ) && layer != ALL_LAYERS )
-                        || ( padMap.count( pt ) && layer != ALL_LAYERS ) )
+                auto viaIt = viaMap.find( pt );
+                auto padIt = padMap.find( pt );
+
+                bool gotVia = ( viaIt != viaMap.end() )
+                              && ( layerSetCu & ( viaIt->second->GetLayerSet() ) ).any();
+
+                bool gotPad = ( padIt != padMap.end() )
+                              && ( layerSetCu & ( padIt->second->GetLayerSet() ) ).any();
+
+                bool gotNonStartPad =
+                        gotPad && ( startPadSet.find( padIt->second ) == startPadSet.end() );
+
+                if( aStopCondition == STOP_AT_JUNCTION )
                 {
-                    activePts.erase( activePts.begin() + i );
-                    continue;
+                    size_t pt_count = 0;
+
+                    for( PCB_TRACK* track : trackMap[pt] )
+                    {
+                        if( layerSetCu.Contains( track->GetLayer() ) )
+                            pt_count++;
+                    }
+
+                    if( pt_count > 2 || gotVia || gotNonStartPad )
+                    {
+                        activePts.erase( activePts.begin() + i );
+                        continue;
+                    }
                 }
-            }
-            else if( aStopCondition == STOP_AT_PAD )
-            {
-                if( padMap.count( pt ) )
+                else if( aStopCondition == STOP_AT_PAD )
                 {
-                    activePts.erase( activePts.begin() + i );
-                    continue;
+                    if( gotNonStartPad )
+                    {
+                        activePts.erase( activePts.begin() + i );
+                        continue;
+                    }
                 }
-            }
 
-            if( padMap.count( pt ) )
-            {
-                PAD* pad = padMap[ pt ];
-
-                if( !( pad->GetFlags() & TEMP_SELECTED ) )
+                if( gotPad )
                 {
-                    pad->SetFlags( TEMP_SELECTED );
-                    activePts.push_back( { pad->GetPosition(), ALL_LAYERS } );
-                    expand = true;
+                    PAD* pad = padIt->second;
+
+                    if( !pad->HasFlag( SKIP_STRUCT ) )
+                    {
+                        pad->SetFlags( SKIP_STRUCT );
+                        cleanupItems.push_back( pad );
+
+                        activePts.push_back( { pad->GetPosition(), pad->GetLayerSet() } );
+                        expand = true;
+                    }
                 }
-            }
 
-            for( PCB_TRACK* track : trackMap[ pt ] )
-            {
-                if( layer != ALL_LAYERS && track->GetLayer() != layer )
-                    continue;
-
-                if( !track->IsSelected() )
+                for( PCB_TRACK* track : trackMap[pt] )
                 {
-                    select( track );
+                    if( !layerSetCu.Contains( track->GetLayer() ) )
+                        continue;
 
-                    if( track->GetStart() == pt )
-                        activePts.push_back( { track->GetEnd(), track->GetLayer() } );
-                    else
-                        activePts.push_back( { track->GetStart(), track->GetLayer() } );
+                    if( !track->IsSelected() )
+                        select( track );
 
-                    expand = true;
+                    if( !track->HasFlag( SKIP_STRUCT ) )
+                    {
+                        track->SetFlags( SKIP_STRUCT );
+                        cleanupItems.push_back( track );
+
+                        if( track->GetStart() == pt )
+                            activePts.push_back( { track->GetEnd(), track->GetLayerSet() } );
+                        else
+                            activePts.push_back( { track->GetStart(), track->GetLayerSet() } );
+
+                        expand = true;
+                    }
                 }
-            }
 
-            if( viaMap.count( pt ) )
-            {
-                PCB_VIA* via = viaMap[ pt ];
-
-                if( !via->IsSelected() )
+                if( viaMap.count( pt ) )
                 {
-                    select( via );
-                    activePts.push_back( { via->GetPosition(), ALL_LAYERS } );
-                    expand = true;
-                }
-            }
+                    PCB_VIA* via = viaMap[pt];
 
-            activePts.erase( activePts.begin() + i );
+                    if( !via->IsSelected() )
+                        select( via );
+
+                    if( !via->HasFlag( SKIP_STRUCT ) )
+                    {
+                        via->SetFlags( SKIP_STRUCT );
+                        cleanupItems.push_back( via );
+
+                        activePts.push_back( { via->GetPosition(), via->GetLayerSet() } );
+                        expand = true;
+                    }
+                }
+
+                activePts.erase( activePts.begin() + i );
+            }
         }
+    }
+
+    for( BOARD_CONNECTED_ITEM* item : cleanupItems )
+    {
+        item->ClearFlags( SKIP_STRUCT );
     }
 }
 
@@ -1379,8 +1430,8 @@ void PCB_SELECTION_TOOL::selectAllItemsOnSheet( wxString& aSheetPath )
 void PCB_SELECTION_TOOL::selectConnections( const std::vector<BOARD_ITEM*>& aItems )
 {
     // Generate a list of all pads, and of all nets they belong to.
-    std::list<int>    netcodeList;
-    std::vector<PAD*> padList;
+    std::list<int>                     netcodeList;
+    std::vector<BOARD_CONNECTED_ITEM*> padList;
 
     for( BOARD_ITEM* item : aItems )
     {
@@ -1422,8 +1473,7 @@ void PCB_SELECTION_TOOL::selectConnections( const std::vector<BOARD_ITEM*>& aIte
     netcodeList.sort();
     netcodeList.unique();
 
-    for( PAD* pad : padList )
-        selectConnectedTracks( *pad, STOP_AT_PAD );
+    selectAllConnectedTracks( padList, STOP_AT_PAD );
 
     // now we need to find all footprints that are connected to each of these nets then we need
     // to determine if these footprints are in the list of footprints

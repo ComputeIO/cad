@@ -307,7 +307,8 @@ private:
      *
      * @param aStopCondition where to stop selecting more items
      */
-    void selectConnectedTracks( BOARD_CONNECTED_ITEM& aSourceItem, STOP_CONDITION aStopCondition );
+    void selectAllConnectedTracks( const std::vector<BOARD_CONNECTED_ITEM*>& aStartItems,
+                                   STOP_CONDITION                            aStopCondition );
 
     /**
      * Select all items with the given net code.
