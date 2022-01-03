@@ -1155,6 +1155,10 @@ void PCB_SELECTION_TOOL::selectAllConnectedTracks(
     constexpr KICAD_T types[] = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T, EOT };
     const LSET        allCuMask = LSET::AllCuMask();
 
+    PROF_TIMER refreshTimer;
+    double     refreshIntervalMs = 500; // Refresh display with this interval to indicate progress
+    int        lastSelectionSize = m_selection.GetSize();
+
     auto connectivity = board()->GetConnectivity();
 
     std::map<VECTOR2I, std::vector<PCB_TRACK*>> trackMap;
@@ -1339,6 +1343,18 @@ void PCB_SELECTION_TOOL::selectAllConnectedTracks(
                 }
 
                 activePts.erase( activePts.begin() + i );
+            }
+
+            // Refresh display for the feel of progress
+            if( refreshTimer.msecs() >= refreshIntervalMs )
+            {
+                if( m_selection.Size() != lastSelectionSize )
+                {
+                    m_frame->GetCanvas()->ForceRefresh();
+                    lastSelectionSize = m_selection.Size();
+                }
+
+                refreshTimer.Start();
             }
         }
     }
