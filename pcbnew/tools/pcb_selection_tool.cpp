@@ -1109,6 +1109,8 @@ int PCB_SELECTION_TOOL::expandConnection( const TOOL_EVENT& aEvent )
     if( initialCount == 0 )
         selectCursor( true, connectedItemFilter );
 
+    m_frame->SetStatusText( _( "Select/Expand Connection..." ) );
+
     for( STOP_CONDITION stopCondition : { STOP_AT_JUNCTION, STOP_AT_PAD, STOP_NEVER } )
     {
         std::deque<EDA_ITEM*> selectedItems = m_selection.GetItems();
@@ -1140,6 +1142,8 @@ int PCB_SELECTION_TOOL::expandConnection( const TOOL_EVENT& aEvent )
         if( m_selection.GetItems().size() > initialCount )
             break;
     }
+
+    m_frame->SetStatusText( wxEmptyString );
 
     // Inform other potentially interested tools
     if( m_selection.Size() > 0 )
