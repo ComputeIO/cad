@@ -110,9 +110,9 @@ bool EDIT_TOOL::Init()
                     if( getView()->IsLayerVisible( LAYER_SCHEMATIC_DRAWINGSHEET ) )
                     {
                         DS_PROXY_VIEW_ITEM* ds = frame()->GetCanvas()->GetDrawingSheet();
-                        VECTOR2D            cursor = getViewControls()->GetCursorPosition( false );
+                        VECTOR2I            cursorPos = getViewControls()->GetCursorPosition( false );
 
-                        if( ds && ds->HitTestDrawingSheetItems( getView(), cursor ) )
+                        if( ds && ds->HitTestDrawingSheetItems( getView(), cursorPos ) )
                             return true;
                     }
 
@@ -1378,7 +1378,7 @@ int EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
     else if( selection.Size() == 0 && getView()->IsLayerVisible( LAYER_DRAWINGSHEET ) )
     {
         DS_PROXY_VIEW_ITEM* ds = editFrame->GetCanvas()->GetDrawingSheet();
-        VECTOR2D            cursorPos = getViewControls()->GetCursorPosition( false );
+        VECTOR2I            cursorPos = getViewControls()->GetCursorPosition( false );
 
         if( ds && ds->HitTestDrawingSheetItems( getView(), cursorPos ) )
             m_toolMgr->RunAction( ACTIONS::pageSettings );
