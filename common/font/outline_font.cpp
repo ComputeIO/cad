@@ -293,21 +293,33 @@ VECTOR2I OUTLINE_FONT::GetLinesAsGlyphs( std::vector<std::unique_ptr<GLYPH>>& aG
 {
     wxArrayString         strings;
     std::vector<wxPoint>  positions;
-    int                   n;
+    int                   lineCount;
+    size_t                processedGlyphs = 0;
     VECTOR2I              ret;
     std::vector<VECTOR2D> boundingBoxes;
+    TEXT_ATTRIBUTES       attrs = aText->GetAttributes();
     TEXT_STYLE_FLAGS      textStyle = 0;
+
+    attrs.m_Mirrored = false;
 
     if( aText->IsItalic() )
         textStyle |= TEXT_STYLE::ITALIC;
 
-    getLinePositions( aText->GetShownText(), aText->GetTextPos(), strings, positions, n,
-                      boundingBoxes, aText->GetAttributes() );
+    getLinePositions( aText->GetShownText(), aText->GetTextPos(), strings, positions, lineCount,
+                      boundingBoxes, attrs );
 
-    for( int i = 0; i < n; i++ )
+    for( int i = 0; i < lineCount; i++ )
     {
-        ret = drawMarkup( nullptr, aGlyphs, UTF8( strings.Item( i ) ), positions[i],
-                          aText->GetTextSize(), aText->GetTextAngle(), textStyle );
+        ret = drawMarkup( nullptr, aGlyphs, UTF8( strings.Item( i ) ), positions[i], attrs.m_Size,
+                          attrs.m_Angle, textStyle );
+
+        for( size_t jj = processedGlyphs; jj < aGlyphs.size(); ++jj )
+        {
+            if( aText->IsMirrored() )
+                aGlyphs[jj]->Mirror( aText->GetTextPos() );
+        }
+
+        processedGlyphs = aGlyphs.size();
     }
 
     return ret;
@@ -403,7 +415,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBoundingBox,
                 VECTOR2D ptC( pt.x + cursor.x, pt.y + cursor.y );
                 wxPoint  scaledPtOrig( -ptC.x * scaleFactor.x, -ptC.y * scaleFactor.y );
                 wxPoint  scaledPt( scaledPtOrig );
-                RotatePoint( &scaledPt, aOrientation.AsRadians() );
+                RotatePoint( &scaledPt, aOrientation );
                 scaledPt.x += offset.x;
                 scaledPt.y += offset.y;
 

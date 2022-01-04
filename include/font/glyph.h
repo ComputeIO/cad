@@ -54,6 +54,10 @@ public:
             SHAPE_POLY_SET()
     {}
 
+    OUTLINE_GLYPH( const OUTLINE_GLYPH& aGlyph ) :
+            SHAPE_POLY_SET( aGlyph )
+    {}
+
     bool IsOutline() const override { return true; }
 
     BOX2D BoundingBox() override;
