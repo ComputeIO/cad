@@ -488,6 +488,7 @@ target_link_libraries( common
     gal
     scripting
     pybind11::embed
+    eval
     compoundfilereader
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
@@ -599,22 +600,53 @@ target_link_libraries( pcbcommon PUBLIC
 
 add_dependencies( pcbcommon delaunator )
 
-# The lemon grammar for the numeric evaluator
-generate_lemon_grammar(
-    common
-    libeval
-    libeval/numeric_evaluator.cpp
-    libeval/grammar.lemon
-    )
+########################################################
+#                numeric evaluator                     #
+########################################################
+# make lemon grammar file
+# get lemon executable path from module path list
+set(LEMON_EXE $<TARGET_FILE:lemon>)
+get_property(LEMON_TEMPLATE 
+    TARGET lemon 
+    PROPERTY lemon_template
+)
 
-# The lemon grammar for the expression compiler
-generate_lemon_grammar(
-    common
-    libeval_compiler
+#generate lemon files into build folder
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libeval)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libeval_compiler)
+
+add_custom_command(
+    COMMAND ${LEMON_EXE} -T${LEMON_TEMPLATE} -d${CMAKE_CURRENT_BINARY_DIR}/libeval -q ${CMAKE_CURRENT_SOURCE_DIR}/libeval/grammar.lemon
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/libeval/grammar.lemon
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libeval/grammar.h
+)
+add_custom_command(
+    COMMAND ${LEMON_EXE} -T${LEMON_TEMPLATE} -d${CMAKE_CURRENT_BINARY_DIR}/libeval_compiler -q ${CMAKE_CURRENT_SOURCE_DIR}/libeval_compiler/grammar.lemon 
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/libeval_compiler/grammar.lemon
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libeval_compiler/grammar.h
+)
+
+add_library(eval STATIC
+    # though unusual, for the sake of dependancy recognition
+    # these header files need to be included explicitly in 
+    # the library
+    ${CMAKE_CURRENT_BINARY_DIR}/libeval/grammar.h
+    ${CMAKE_CURRENT_BINARY_DIR}/libeval_compiler/grammar.h
+    libeval/numeric_evaluator.cpp 
     libeval_compiler/libeval_compiler.cpp
-    libeval_compiler/grammar.lemon
-    )
+)
 
+target_include_directories(eval PRIVATE 
+    ${CMAKE_CURRENT_BINARY_DIR} 
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(eval PRIVATE kimath)
+
+
+########################################################
+#                        lexer                         #
+########################################################
 # auto-generate stroke_params_lexer.h and stroke_params_keywords.cpp
 # Called twice one for common and one for gal, to ensure the files are created
 # on all devel tools ( Linux and msys2 )
