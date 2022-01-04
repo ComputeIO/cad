@@ -32,8 +32,8 @@
 message( STATUS "Creating linux metadata" )
 
 # Create the KiCad version strings
-include( ${CMAKE_MODULE_PATH}/KiCadVersion.cmake )
-include( ${CMAKE_MODULE_PATH}/KiCadFullVersion.cmake )
+include( ${KICAD_CMAKE_MODULE_DIR}/KiCadVersion.cmake )
+include( ${KICAD_CMAKE_MODULE_DIR}/KiCadFullVersion.cmake )
 
 # Create the date of the configure
 string( TIMESTAMP KICAD_CONFIG_TIMESTAMP "%Y-%m-%d" )

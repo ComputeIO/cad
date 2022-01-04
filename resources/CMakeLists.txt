@@ -3,7 +3,7 @@
 #################################################
 if( APPLE )
     #TODO Generate this at runtime as well
-    include( ${CMAKE_MODULE_PATH}/WritePlatformMetadata_macos.cmake )
+    include( ${KICAD_CMAKE_MODULE_DIR}/WritePlatformMetadata_macos.cmake )
 elseif( UNIX )
     # Add the command to configure the linux metainfo file with the version information
     add_custom_command(
@@ -11,9 +11,9 @@ elseif( UNIX )
         COMMAND ${CMAKE_COMMAND}
             -DSRC_PATH=${PROJECT_SOURCE_DIR}
             -DBUILD_PATH=${PROJECT_BINARY_DIR}
-            -DCMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/CMakeModules
-            -P ${CMAKE_MODULE_PATH}/BuildSteps/WritePlatformMetadata_linux.cmake
-        DEPENDS ${CMAKE_MODULE_PATH}/BuildSteps/WritePlatformMetadata_linux.cmake
+            -DKICAD_CMAKE_MODULE_DIR=${PROJECT_SOURCE_DIR}/CMakeModules
+            -P ${KICAD_CMAKE_MODULE_DIR}/BuildSteps/WritePlatformMetadata_linux.cmake
+        DEPENDS ${KICAD_CMAKE_MODULE_DIR}/BuildSteps/WritePlatformMetadata_linux.cmake
         COMMENT "Configuring Linux metainfo"
         )
 
