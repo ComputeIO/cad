@@ -204,7 +204,7 @@ DBG_MSG("wxWidgets_FIND_COMPONENTS : ${wxWidgets_FIND_COMPONENTS}")
 #
 # Get dir of this file which may reside in:
 # - CMAKE_MAKE_ROOT/Modules on CMake installation
-# - CMAKE_MODULE_PATH if user prefers his own specialized version
+# - KICAD_CMAKE_MODULE_DIR if user prefers his own specialized version
 set(wxWidgets_USE_FILE "")
 get_filename_component(
   wxWidgets_CURRENT_LIST_DIR ${CMAKE_CURRENT_LIST_FILE} PATH)

@@ -458,7 +458,7 @@ Packaging / building improvements:
   * CMake configuration files are now included in the Python package. Use
     ``pybind11.get_cmake_dir()`` or ``python -m pybind11 --cmakedir`` to get
     the directory with the CMake configuration files, or include the
-    site-packages location in your ``CMAKE_MODULE_PATH``. Or you can use the
+    site-packages location in your ``KICAD_CMAKE_MODULE_DIR``. Or you can use the
     new ``pybind11[global]`` extra when you install ``pybind11``, which
     installs the CMake files and headers into your base environment in the
     standard location.
