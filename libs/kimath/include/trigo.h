@@ -109,16 +109,26 @@ inline void RotatePoint( VECTOR2I& point, const VECTOR2I& centre, EDA_ANGLE angl
 /*
  * Calculate the new coord point point for a center rotation center and angle in (1/10 degree).
  */
-void RotatePoint( wxPoint *point, const wxPoint & centre, double angle );
+void RotatePoint( wxPoint* point, const wxPoint& centre, double angle );
 
-inline void RotatePoint( wxPoint *point, const wxPoint& centre, EDA_ANGLE angle )
+inline void RotatePoint( wxPoint* point, const wxPoint& centre, EDA_ANGLE angle )
 {
     RotatePoint( point, centre, angle.AsTenthsOfADegree() );
 }
 
-void RotatePoint( double *pX, double *pY, double angle );
+void RotatePoint( double* pX, double* pY, double angle );
 
-void RotatePoint( double *pX, double *pY, double cx, double cy, double angle );
+inline void RotatePoint( VECTOR2D& point, EDA_ANGLE angle )
+{
+    RotatePoint( &point.x, &point.y, angle.AsTenthsOfADegree() );
+}
+
+void RotatePoint( double* pX, double* pY, double cx, double cy, double angle );
+
+inline void RotatePoint( VECTOR2D& point, const VECTOR2D& aCenter, EDA_ANGLE angle )
+{
+    RotatePoint( &point.x, &point.y, aCenter.x, aCenter.y, angle.AsTenthsOfADegree() );
+}
 
 /**
  * Determine the center of an arc or circle given three points on its circumference.
