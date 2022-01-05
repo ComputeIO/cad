@@ -29,8 +29,8 @@ message( STATUS "Creating MacOS metadata" )
 
 # Create the KiCad version strings
 set( SRC_PATH ${PROJECT_SOURCE_DIR} )
-include( ${CMAKE_MODULE_PATH}/KiCadVersion.cmake )
-include( ${CMAKE_MODULE_PATH}/KiCadFullVersion.cmake )
+include( ${KICAD_CMAKE_MODULE_DIR}/KiCadVersion.cmake )
+include( ${KICAD_CMAKE_MODULE_DIR}/KiCadFullVersion.cmake )
 
 
 # Configure each plist file from the respurces directory and store it in the build directory

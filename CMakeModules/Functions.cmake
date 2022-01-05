@@ -40,13 +40,13 @@ function( make_lexer outputTarget inputFile outHeaderFile outCppFile enum )
             -DinputFile=${CMAKE_CURRENT_SOURCE_DIR}/${inputFile}
             -DoutHeaderFile=${CMAKE_CURRENT_BINARY_DIR}/${outHeaderFile}
             -DoutCppFile=${CMAKE_CURRENT_BINARY_DIR}/${outCppFile}
-            -P ${CMAKE_MODULE_PATH}/BuildSteps/TokenList2DsnLexer.cmake
+            -P ${KICAD_CMAKE_MODULE_DIR}/BuildSteps/TokenList2DsnLexer.cmake
         COMMENT "TokenList2DsnLexer.cmake creating:
            ${outHeaderFile} and
            ${outCppFile} from
            ${inputFile}"
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${inputFile}
-                ${CMAKE_MODULE_PATH}/BuildSteps/TokenList2DsnLexer.cmake
+                ${KICAD_CMAKE_MODULE_DIR}/BuildSteps/TokenList2DsnLexer.cmake
         )
 
     target_sources( ${outputTarget} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${outCppFile} )
@@ -135,13 +135,13 @@ function( translate_language LANG OUT_FILE)
     add_custom_command(
         OUTPUT ${OUT_FILE}
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/pofiles/${LANG}.po
-        COMMAND ${GETTEXT_MSGFMT_EXECUTABLE}
+        COMMAND ${GETTKICAD_CMAKE_MODULE_DIRABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/pofiles/${LANG}.po
                 -o ${OUT_FILE}
         COMMENT "Building translation library for ${LANG}"
         )
 
-    if( UNIX AND KICAD_I18N_UNIX_STRICT_PATH )
+    if( UNIX AND KICAD_I1KICAD_CMAKE_MODULE_DIRTH )
         install( FILES ${OUT_FILE}
                 DESTINATION ${KICAD_I18N_PATH}/${LANG}/LC_MESSAGES
                 COMPONENT resources )

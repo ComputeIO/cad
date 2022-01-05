@@ -158,7 +158,7 @@ if( APPLE )
         ${OSX_BUNDLE_OVERRIDE_PATHS}
 
         # do all the work
-        include( ${CMAKE_MODULE_PATH}/BundleUtilities.cmake )
+        include( ${KICAD_CMAKE_MODULE_DIR}/BundleUtilities.cmake )
 
         if ( ${PYTHON_FRAMEWORK_HELPER} )
             # This idea here is to repair anything that fixup_bundle doesn't handle
@@ -229,7 +229,7 @@ if( APPLE )
         move_to_main_bundle( \"pl_editor.app\" \"Page Layout Editor.app\" )
 
         if ( ${PYTHON_FRAMEWORK_HELPER} )
-            include( ${CMAKE_MODULE_PATH}/RefixupMacOS.cmake )
+            include( ${KICAD_CMAKE_MODULE_DIR}/RefixupMacOS.cmake )
             refix_kicad_bundle(${OSX_BUNDLE_INSTALL_DIR})
         endif( )
 
