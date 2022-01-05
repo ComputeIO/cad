@@ -50,7 +50,8 @@
 #include <i18n_utility.h>
 #include <geometry/shape_segment.h>
 #include <geometry/shape_compound.h>
-#include <font/font.h>
+#include <geometry/shape_simple.h>
+#include <font/outline_font.h>
 #include <geometry/shape_poly_set.h>
 
 #include <wx/debug.h>           // for wxASSERT
@@ -66,6 +67,14 @@ void addTextSegmToPoly( int x0, int y0, int xf, int yf, void* aData )
     TSEGM_2_POLY_PRMS* prm = static_cast<TSEGM_2_POLY_PRMS*>( aData );
     TransformOvalToPolygon( *prm->m_cornerBuffer, VECTOR2I( x0, y0 ), VECTOR2I( xf, yf ),
                             prm->m_textWidth, prm->m_error, ERROR_INSIDE );
+}
+
+
+void addTextSegmToShape( int x0, int y0, int xf, int yf, void* aData )
+{
+    TSEGM_2_SHAPE_PRMS* prm = static_cast<TSEGM_2_SHAPE_PRMS*>( aData );
+    prm->m_shape->AddShape( new SHAPE_SEGMENT( VECTOR2I( x0, y0 ), VECTOR2I( xf, yf ),
+                                               prm->m_penWidth ) );
 }
 
 
@@ -106,17 +115,48 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
 }
 
 
-EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
-        m_text( aText.m_text ),
-        m_attributes( aText.m_attributes ),
-        m_pos( aText.m_pos )
+EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText )
 {
-    cacheShownText();
+    m_text = aText.m_text;
+    m_shown_text = aText.m_shown_text;
+    m_shown_text_has_text_var_refs = aText.m_shown_text_has_text_var_refs;
+
+    m_attributes = aText.m_attributes;
+    m_pos = aText.m_pos;
+
+    m_render_cache_text = aText.m_render_cache_text;
+
+    for( const std::unique_ptr<KIFONT::GLYPH>& glyph : aText.m_render_cache )
+    {
+        KIFONT::OUTLINE_GLYPH* outline_glyph = static_cast<KIFONT::OUTLINE_GLYPH*>( glyph.get() );
+        m_render_cache.emplace_back( std::make_unique<KIFONT::OUTLINE_GLYPH>( *outline_glyph ) );
+    }
 }
 
 
 EDA_TEXT::~EDA_TEXT()
 {
+}
+
+
+EDA_TEXT& EDA_TEXT::operator=( const EDA_TEXT& aText )
+{
+    m_text = aText.m_text;
+    m_shown_text = aText.m_shown_text;
+    m_shown_text_has_text_var_refs = aText.m_shown_text_has_text_var_refs;
+
+    m_attributes = aText.m_attributes;
+    m_pos = aText.m_pos;
+
+    m_render_cache_text = aText.m_render_cache_text;
+
+    for( const std::unique_ptr<KIFONT::GLYPH>& glyph : aText.m_render_cache )
+    {
+        KIFONT::OUTLINE_GLYPH* outline_glyph = static_cast<KIFONT::OUTLINE_GLYPH*>( glyph.get() );
+        m_render_cache.emplace_back( std::make_unique<KIFONT::OUTLINE_GLYPH>( *outline_glyph ) );
+    }
+
+    return *this;
 }
 
 
@@ -132,6 +172,78 @@ void EDA_TEXT::CopyText( const EDA_TEXT& aSrc )
     m_text = aSrc.m_text;
     m_shown_text = aSrc.m_shown_text;
     m_shown_text_has_text_var_refs = aSrc.m_shown_text_has_text_var_refs;
+
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetTextThickness( int aWidth )
+{
+    m_attributes.m_StrokeWidth = aWidth;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetTextAngle( const EDA_ANGLE& aAngle )
+{
+    m_attributes.m_Angle = aAngle;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetItalic( bool aItalic )
+{
+    m_attributes.m_Italic = aItalic;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetBold( bool aBold )
+{
+    m_attributes.m_Bold = aBold;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetVisible( bool aVisible )
+{
+    m_attributes.m_Visible = aVisible;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetMirrored( bool isMirrored )
+{
+    m_attributes.m_Mirrored = isMirrored;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetMultilineAllowed( bool aAllow )
+{
+    m_attributes.m_Multiline = aAllow;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetHorizJustify( GR_TEXT_H_ALIGN_T aType )
+{
+    m_attributes.m_Halign = aType;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetVertJustify( GR_TEXT_V_ALIGN_T aType )
+{
+    m_attributes.m_Valign = aType;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetKeepUpright( bool aKeepUpright )
+{
+    m_attributes.m_KeepUpright = aKeepUpright;
+    m_render_cache.clear();
 }
 
 
@@ -139,6 +251,7 @@ void EDA_TEXT::SetAttributes( const EDA_TEXT& aSrc )
 {
     m_attributes = aSrc.m_attributes;
     m_pos = aSrc.m_pos;
+    m_render_cache.clear();
 }
 
 
@@ -147,6 +260,8 @@ void EDA_TEXT::SwapText( EDA_TEXT& aTradingPartner )
     std::swap( m_text, aTradingPartner.m_text );
     std::swap( m_shown_text, aTradingPartner.m_shown_text );
     std::swap( m_shown_text_has_text_var_refs, aTradingPartner.m_shown_text_has_text_var_refs );
+
+    m_render_cache.clear();
 }
 
 
@@ -154,6 +269,8 @@ void EDA_TEXT::SwapAttributes( EDA_TEXT& aTradingPartner )
 {
     std::swap( m_attributes, aTradingPartner.m_attributes );
     std::swap( m_pos, aTradingPartner.m_pos );
+
+    m_render_cache.clear();
 }
 
 
@@ -187,6 +304,78 @@ bool EDA_TEXT::Replace( const wxFindReplaceData& aSearchData )
 }
 
 
+void EDA_TEXT::SetFont( KIFONT::FONT* aFont )
+{
+    m_attributes.m_Font = aFont;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetLineSpacing( double aLineSpacing )
+{
+    m_attributes.m_LineSpacing = aLineSpacing;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetTextSize( const wxSize& aNewSize )
+{
+    m_attributes.m_Size = aNewSize;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetTextWidth( int aWidth )
+{
+    m_attributes.m_Size.x = aWidth;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetTextHeight( int aHeight )
+{
+    m_attributes.m_Size.y = aHeight;
+    m_render_cache.clear();
+}
+
+
+void EDA_TEXT::SetTextPos( const VECTOR2I& aPoint )
+{
+    Offset( VECTOR2I( aPoint.x - m_pos.x, aPoint.y - m_pos.y ) );
+}
+
+
+void EDA_TEXT::SetTextX( int aX )
+{
+    Offset( VECTOR2I( aX - m_pos.x, 0 ) );
+}
+
+
+void EDA_TEXT::SetTextY( int aY )
+{
+    Offset( VECTOR2I( 0, aY - m_pos.y ) );
+}
+
+
+void EDA_TEXT::Offset( const VECTOR2I& aOffset )
+{
+    m_pos += aOffset;
+
+    for( std::unique_ptr<KIFONT::GLYPH>& glyph : m_render_cache )
+    {
+        KIFONT::OUTLINE_GLYPH* outline_glyph = static_cast<KIFONT::OUTLINE_GLYPH*>( glyph.get() );
+        outline_glyph->Move( aOffset );
+    }
+}
+
+
+void EDA_TEXT::Empty()
+{
+    m_text.Empty();
+    m_render_cache.clear();
+}
+
+
 void EDA_TEXT::cacheShownText()
 {
     if( m_text.IsEmpty() || m_text == wxT( "~" ) )     // ~ is legacy empty-string token
@@ -199,6 +388,27 @@ void EDA_TEXT::cacheShownText()
         m_shown_text = UnescapeString( m_text );
         m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
     }
+
+    m_render_cache.clear();
+}
+
+
+std::vector<std::unique_ptr<KIFONT::GLYPH>>*
+EDA_TEXT::GetRenderCache( const wxString& forResolvedText ) const
+{
+    if( GetFont() && GetFont()->IsOutline() )
+    {
+        if( m_render_cache.empty() || m_render_cache_text != forResolvedText )
+        {
+            KIFONT::OUTLINE_FONT* font = static_cast<KIFONT::OUTLINE_FONT*>( GetFont() );
+            font->GetLinesAsGlyphs( m_render_cache, this );
+            m_render_cache_text = forResolvedText;
+        }
+
+        return &m_render_cache;
+    }
+
+    return nullptr;
 }
 
 
@@ -513,10 +723,19 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 
     aFormatter->Print( 0, " (font" );
 
+    if( GetFont() && !GetFont()->Name().IsEmpty() )
+        aFormatter->Print( 0, " (face \"%s\")", GetFont()->NameAsToken() );
+
     // Text size
     aFormatter->Print( 0, " (size %s %s)",
                        FormatInternalUnits( GetTextHeight() ).c_str(),
                        FormatInternalUnits( GetTextWidth() ).c_str() );
+
+    if( GetLineSpacing() != 1.0 )
+    {
+        aFormatter->Print( 0, " (line_spacing %s)",
+                           Double2Str( GetLineSpacing() ).c_str() );
+    }
 
     if( GetTextThickness() )
     {
@@ -557,67 +776,76 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 #endif
 }
 
-// Convert the text shape to a list of segment
-// each segment is stored as 2 VECTOR2Is: its starting point and its ending point
-// we are using GRText to create the segments and therefore a call-back function is needed
-
-// This is a call back function, used by GRText to put each segment in buffer
-static void addTextSegmToBuffer( int x0, int y0, int xf, int yf, void* aData )
-{
-    std::vector<VECTOR2I>* cornerBuffer = static_cast<std::vector<VECTOR2I>*>( aData );
-    cornerBuffer->push_back( VECTOR2I( x0, y0 ) );
-    cornerBuffer->push_back( VECTOR2I( xf, yf ) );
-}
-
-
-std::vector<VECTOR2I> EDA_TEXT::TransformToSegmentList() const
-{
-    std::vector<VECTOR2I> cornerBuffer;
-    wxSize size = GetTextSize();
-
-    if( IsMirrored() )
-        size.x = -size.x;
-
-    bool forceBold = true;
-    int  penWidth = 0;      // use max-width for bold text
-
-    COLOR4D color = COLOR4D::BLACK;  // not actually used, but needed by GRText
-
-    if( IsMultilineAllowed() )
-    {
-        wxArrayString strings_list;
-        wxStringSplit( GetShownText(), strings_list, wxChar('\n') );
-        std::vector<VECTOR2I> positions;
-        positions.reserve( strings_list.Count() );
-        GetLinePositions( positions, strings_list.Count() );
-
-        for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
-        {
-            wxString txt = strings_list.Item( ii );
-            GRText( nullptr, positions[ii], color, txt, GetDrawRotation(), size,
-                    GetDrawHorizJustify(), GetDrawVertJustify(), penWidth, IsItalic(), forceBold,
-                    GetFont(), addTextSegmToBuffer, &cornerBuffer );
-        }
-    }
-    else
-    {
-        GRText( nullptr, GetDrawPos(), color, GetShownText(), GetDrawRotation(), size,
-                GetDrawHorizJustify(), GetDrawVertJustify(), penWidth, IsItalic(), forceBold,
-                GetFont(), addTextSegmToBuffer, &cornerBuffer );
-    }
-
-    return cornerBuffer;
-}
-
 
 std::shared_ptr<SHAPE_COMPOUND> EDA_TEXT::GetEffectiveTextShape( ) const
 {
     std::shared_ptr<SHAPE_COMPOUND> shape = std::make_shared<SHAPE_COMPOUND>();
-    int                             penWidth = GetEffectiveTextPenWidth();
-    std::vector<VECTOR2I>           pts = TransformToSegmentList();
 
-    for( unsigned jj = 0; jj < pts.size(); jj += 2 )
-        shape->AddShape( new SHAPE_SEGMENT( pts[jj], pts[jj+1], penWidth ) );
+    if( GetFont() && GetFont()->IsOutline() )
+    {
+        // Make sure the cache is up-to-date before using it
+        (void) GetRenderCache( m_render_cache_text );
+
+        for( std::unique_ptr<KIFONT::GLYPH>& baseGlyph : m_render_cache )
+        {
+            KIFONT::OUTLINE_GLYPH* glyph = static_cast<KIFONT::OUTLINE_GLYPH*>( baseGlyph.get() );
+
+            glyph->CacheTriangulation();
+
+            for( unsigned int ii = 0; ii < glyph->TriangulatedPolyCount(); ++ii )
+            {
+                const SHAPE_POLY_SET::TRIANGULATED_POLYGON* tri = glyph->TriangulatedPolygon( ii );
+
+                for( size_t jj = 0; jj < tri->GetTriangleCount(); ++jj )
+                {
+                    VECTOR2I a, b, c;
+                    tri->GetTriangle( jj, a, b, c );
+                    SHAPE_SIMPLE* triShape = new SHAPE_SIMPLE;
+
+                    triShape->Append( a );
+                    triShape->Append( b );
+                    triShape->Append( c );
+
+                    shape->AddShape( triShape );
+                }
+            }
+        }
+    }
+    else
+    {
+        wxSize size = GetTextSize();
+        int    penWidth = GetEffectiveTextPenWidth();
+        bool   forceBold = true;
+
+        TSEGM_2_SHAPE_PRMS prms;
+        prms.m_penWidth = penWidth;
+        prms.m_shape = shape.get();
+
+        if( IsMirrored() )
+            size.x = -size.x;
+
+        if( IsMultilineAllowed() )
+        {
+            wxArrayString strings_list;
+            wxStringSplit( GetShownText(), strings_list, wxChar('\n') );
+            std::vector<VECTOR2I> positions;
+            positions.reserve( strings_list.Count() );
+            GetLinePositions( positions, strings_list.Count() );
+
+            for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
+            {
+                GRText( nullptr, positions[ii], COLOR4D::BLACK, strings_list.Item( ii ),
+                        GetDrawRotation(), size, GetDrawHorizJustify(), GetDrawVertJustify(),
+                        penWidth, IsItalic(), forceBold, GetFont(), addTextSegmToShape, &prms );
+            }
+        }
+        else
+        {
+            GRText( nullptr, GetDrawPos(), COLOR4D::BLACK, GetShownText(),
+                    GetDrawRotation(), size, GetDrawHorizJustify(), GetDrawVertJustify(),
+                    penWidth, IsItalic(), forceBold, GetFont(), addTextSegmToShape, &prms );
+        }
+    }
 
     return shape;
 }
@@ -719,7 +947,8 @@ static struct EDA_TEXT_DESC
         PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
         REGISTER_TYPE( EDA_TEXT );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, wxString>( _HKI( "Text" ),
-                    &EDA_TEXT::SetText, &EDA_TEXT::GetText ) );
+                                                               &EDA_TEXT::SetText,
+                                                               &EDA_TEXT::GetText ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Thickness" ),
                                                           &EDA_TEXT::SetTextThickness,
                                                           &EDA_TEXT::GetTextThickness,

@@ -53,6 +53,7 @@
 
 #include <advanced_config.h>
 #include <pcbnew_settings.h>
+#include <macros.h>
 
 #include "pns_kicad_iface.h"
 
@@ -1109,27 +1110,15 @@ bool PNS_KICAD_IFACE_BASE::syncTextItem( PNS::NODE* aWorld, EDA_TEXT* aText, PCB
     if( !IsCopperLayer( aLayer ) )
         return false;
 
-    int textWidth = aText->GetEffectiveTextPenWidth();
-    std::vector<VECTOR2I> textShape = aText->TransformToSegmentList();
+    std::unique_ptr<PNS::SOLID> solid = std::make_unique<PNS::SOLID>();
 
-    if( textShape.size() < 2 )
-        return false;
+    solid->SetLayer( aLayer );
+    solid->SetNet( -1 );
+    solid->SetParent( dynamic_cast<BOARD_ITEM*>( aText ) );
+    solid->SetShape( aText->GetEffectiveTextShape()->Clone() );
+    solid->SetRoutable( false );
 
-    for( size_t jj = 0; jj < textShape.size(); jj += 2 )
-    {
-        VECTOR2I start( textShape[jj] );
-        VECTOR2I end( textShape[jj+1] );
-        std::unique_ptr<PNS::SOLID> solid = std::make_unique<PNS::SOLID>();
-
-        solid->SetLayer( aLayer );
-        solid->SetNet( -1 );
-        solid->SetParent( dynamic_cast<BOARD_ITEM*>( aText ) );
-        solid->SetShape( new SHAPE_SEGMENT( start, end, textWidth ) );
-        solid->SetIsCompoundShapePrimitive();
-        solid->SetRoutable( false );
-
-        aWorld->Add( std::move( solid ) );
-    }
+    aWorld->Add( std::move( solid ) );
 
     return true;
 
