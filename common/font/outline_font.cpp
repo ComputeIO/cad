@@ -91,8 +91,11 @@ OUTLINE_FONT* OUTLINE_FONT::LoadFont( const wxString& aFontName, bool aBold, boo
 
 FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 {
-    m_faceScaler = m_faceSize * 64;
-    int subscriptFaceScaler = KiROUND( m_faceSize * 64 * SUBSCRIPT_SUPERSCRIPT_SIZE );
+    // FT_Set_Char_Size() gets character width and height specified in
+    // 1/64ths of a point
+    constexpr double char_size_scaler = 64;
+    m_faceScaler = KiROUND( m_faceSize * char_size_scaler );
+    m_subscriptFaceScaler = KiROUND( m_faceScaler * SUBSCRIPT_SUPERSCRIPT_SIZE );
 
     // TODO: check that going from wxString to char* with UTF-8
     // conversion for filename makes sense on any/all platforms
@@ -101,6 +104,12 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
     if( !e )
     {
         FT_Select_Charmap( m_face, FT_Encoding::FT_ENCODING_UNICODE );
+        // params:
+        // m_face = handle to face object
+        // 0 = char width in 1/64th of points ( 0 = same as char height )
+        // m_faceScaler = char height in 1/64th of points
+        // 0 = horizontal device resolution (default, 72dpi)
+        // 0 = vertical device resolution ( 0 = same as horizontal )
         FT_Set_Char_Size( m_face, 0, m_faceScaler, 0, 0 );
 
         e = FT_New_Face( m_freeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &m_subscriptFace );
@@ -270,7 +279,9 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
 
         if( aGlyphs )
         {
+            FT_Set_Char_Size( face, 0, m_faceScaler, GLYPH_RESOLUTION, 0 );
             FT_Load_Glyph( face, codepoint, FT_LOAD_NO_BITMAP );
+            FT_Set_Char_Size( face, 0, m_faceScaler, 0, 0 );
 
             FT_GlyphSlot faceGlyph = face->glyph;
 
