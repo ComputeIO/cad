@@ -929,10 +929,14 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
 
     for( SCH_ITEM* test : itemsOverlapping )
     {
-        if( test == aOriginalItem || test->IsSelected() || !test->CanConnect( aOriginalItem ) )
-            continue;
-
         KICAD_T testType = test->Type();
+
+        // Lines need tested for selection at both ends
+        if( test == aOriginalItem || ( testType != SCH_LINE_T && test->IsSelected() )
+            || !test->CanConnect( aOriginalItem ) )
+        {
+            continue;
+        }
 
         switch( testType )
         {
@@ -947,17 +951,31 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
 
             if( line->GetStartPoint() == aPoint )
             {
-                if( !line->HasFlag(TEMP_SELECTED ) )
-                    aList.push_back( line );
+                // It's possible to manually select one end of a line and get a drag
+                // connected other end, so we set the flag and then early exit the loop
+                // later if the other drag items like labels attached to the line have
+                // already been grabbed during the partial selection process.
+                line->SetFlags( STARTPOINT );
 
-                line->SetFlags(STARTPOINT | TEMP_SELECTED );
+                if( line->HasFlag( SELECTED ) || line->HasFlag( TEMP_SELECTED ) )
+                    continue;
+                else
+                {
+                    line->SetFlags( TEMP_SELECTED );
+                    aList.push_back( line );
+                }
             }
             else if( line->GetEndPoint() == aPoint )
             {
-                if( !line->HasFlag(TEMP_SELECTED ) )
-                    aList.push_back( line );
+                line->SetFlags( ENDPOINT );
 
-                line->SetFlags(ENDPOINT | TEMP_SELECTED );
+                if( line->HasFlag( SELECTED ) || line->HasFlag( TEMP_SELECTED ) )
+                    continue;
+                else
+                {
+                    line->SetFlags( TEMP_SELECTED );
+                    aList.push_back( line );
+                }
             }
             else
             {
