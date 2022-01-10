@@ -93,8 +93,8 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 {
     // FT_Set_Char_Size() gets character width and height specified in
     // 1/64ths of a point
-    constexpr double char_size_scaler = 64;
-    m_faceScaler = KiROUND( m_faceSize * char_size_scaler );
+    constexpr int char_size_scaler = 64;
+    m_faceScaler = m_faceSize * char_size_scaler;
     m_subscriptFaceScaler = KiROUND( m_faceScaler * SUBSCRIPT_SUPERSCRIPT_SIZE );
 
     // TODO: check that going from wxString to char* with UTF-8
