@@ -272,6 +272,10 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
     VECTOR2D topLeft( INT_MAX * 1.0, -INT_MAX * 1.0 );
     VECTOR2D topRight( -INT_MAX * 1.0, -INT_MAX * 1.0 );
 
+    // temporarily set higher glyph resolution so that
+    // FT_Load_Glyph() results are good enough for decomposing
+    FT_Set_Char_Size( face, 0, m_faceScaler, GLYPH_RESOLUTION, 0 );
+
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
         hb_glyph_position_t& pos = glyphPos[i];
@@ -279,9 +283,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
 
         if( aGlyphs )
         {
-            FT_Set_Char_Size( face, 0, m_faceScaler, GLYPH_RESOLUTION, 0 );
             FT_Load_Glyph( face, codepoint, FT_LOAD_NO_BITMAP );
-            FT_Set_Char_Size( face, 0, m_faceScaler, 0, 0 );
 
             FT_GlyphSlot faceGlyph = face->glyph;
 
@@ -359,6 +361,9 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
         cursor.x += pos.x_advance;
         cursor.y += pos.y_advance;
     }
+
+    // reset glyph resolution to default
+    FT_Set_Char_Size( face, 0, m_faceScaler, 0, 0 );
 
     if( IsOverbar( aTextStyle ) && aGlyphs )
     {
