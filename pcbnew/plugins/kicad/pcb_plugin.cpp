@@ -329,6 +329,39 @@ long long FP_CACHE::GetTimestamp( const wxString& aLibPath )
 }
 
 
+bool PCB_PLUGIN::board_item_cmp::operator() ( const BOARD_ITEM* a, const BOARD_ITEM* b ) const
+{
+    if( a->Type() != b->Type() )
+        return a->Type() < b->Type();
+
+    if( a->GetLayer() != b->GetLayer() )
+        return a->GetLayer() < b->GetLayer();
+
+    if( a->m_Uuid != b->m_Uuid )       // UUIDs *should* always be unique (for valid boards anyway)
+        return a->m_Uuid < b->m_Uuid;
+
+    return a < b;                      // But just in case; ptrs are guaranteed to be different
+}
+
+
+bool PCB_PLUGIN::tracks_cmp::operator() ( const PCB_TRACK* a, const PCB_TRACK* b ) const
+{
+    if( a->GetNetCode() != b->GetNetCode() )
+        return a->GetNetCode() < b->GetNetCode();
+
+    if( a->GetLayer() != b->GetLayer() )
+        return a->GetLayer() < b->GetLayer();
+
+    if( a->Type() != b->Type() )
+        return a->Type() < b->Type();
+
+    if( a->m_Uuid != b->m_Uuid )
+        return a->m_Uuid < b->m_Uuid;
+
+    return a < b;
+}
+
+
 void PCB_PLUGIN::Save( const wxString& aFileName, BOARD* aBoard, const PROPERTIES* aProperties )
 {
     LOCALE_IO   toggle;     // toggles on, then off, the C locale.
@@ -744,16 +777,16 @@ void PCB_PLUGIN::formatHeader( const BOARD* aBoard, int aNestLevel ) const
 
 void PCB_PLUGIN::format( const BOARD* aBoard, int aNestLevel ) const
 {
-    std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_footprints( aBoard->Footprints().begin(),
-                                                                  aBoard->Footprints().end() );
-    std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_drawings( aBoard->Drawings().begin(),
-                                                                aBoard->Drawings().end() );
-    std::set<PCB_TRACK*, PCB_TRACK::cmp_tracks> sorted_tracks( aBoard->Tracks().begin(),
-                                                               aBoard->Tracks().end() );
-    std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_zones( aBoard->Zones().begin(),
-                                                             aBoard->Zones().end() );
-    std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_groups( aBoard->Groups().begin(),
-                                                              aBoard->Groups().end() );
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_footprints( aBoard->Footprints().begin(),
+                                                                         aBoard->Footprints().end() );
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_drawings( aBoard->Drawings().begin(),
+                                                                       aBoard->Drawings().end() );
+    std::set<PCB_TRACK*, PCB_PLUGIN::tracks_cmp> sorted_tracks( aBoard->Tracks().begin(),
+                                                                aBoard->Tracks().end() );
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_zones( aBoard->Zones().begin(),
+                                                                    aBoard->Zones().end() );
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_groups( aBoard->Groups().begin(),
+                                                                     aBoard->Groups().end() );
     formatHeader( aBoard, aNestLevel );
 
     // Save the footprints.
@@ -1231,15 +1264,15 @@ void PCB_PLUGIN::format( const FOOTPRINT* aFootprint, int aNestLevel ) const
     Format( (BOARD_ITEM*) &aFootprint->Reference(), aNestLevel + 1 );
     Format( (BOARD_ITEM*) &aFootprint->Value(), aNestLevel + 1 );
 
-    std::set<PAD*, FOOTPRINT::cmp_pads> sorted_pads( aFootprint->Pads().begin(),
-                                                     aFootprint->Pads().end() );
-    std::set<BOARD_ITEM*, FOOTPRINT::cmp_drawings> sorted_drawings(
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_pads( aFootprint->Pads().begin(),
+                                                                   aFootprint->Pads().end() );
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_drawings(
             aFootprint->GraphicalItems().begin(),
             aFootprint->GraphicalItems().end() );
-    std::set<FP_ZONE*, FOOTPRINT::cmp_zones> sorted_zones( aFootprint->Zones().begin(),
-                                                           aFootprint->Zones().end() );
-    std::set<BOARD_ITEM*, PCB_GROUP::ptr_cmp> sorted_groups( aFootprint->Groups().begin(),
-                                                             aFootprint->Groups().end() );
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_zones( aFootprint->Zones().begin(),
+                                                                    aFootprint->Zones().end() );
+    std::set<BOARD_ITEM*, PCB_PLUGIN::board_item_cmp> sorted_groups( aFootprint->Groups().begin(),
+                                                                     aFootprint->Groups().end() );
 
     // Save drawing elements.
 
@@ -1247,7 +1280,7 @@ void PCB_PLUGIN::format( const FOOTPRINT* aFootprint, int aNestLevel ) const
         Format( gr, aNestLevel+1 );
 
     // Save pads.
-    for( PAD* pad : sorted_pads )
+    for( BOARD_ITEM* pad : sorted_pads )
         Format( pad, aNestLevel+1 );
 
     // Save zones.

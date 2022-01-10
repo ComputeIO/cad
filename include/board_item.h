@@ -299,11 +299,6 @@ public:
                                                        int aError, ERROR_LOC aErrorLoc,
                                                        bool ignoreLineWidth = false ) const;
 
-    struct ptr_cmp
-    {
-        bool operator() ( const BOARD_ITEM* a, const BOARD_ITEM* b ) const;
-    };
-
 protected:
     /**
      * Return a string (to be shown to the user) describing a layer mask. The BOARD is needed

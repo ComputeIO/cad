@@ -231,6 +231,22 @@ public:
 
     BOARD_ITEM* Parse( const wxString& aClipboardSourceInput );
 
+    /**
+     * Comparison operator to provide stable sorting of all items in board/footprint files.
+     */
+    struct board_item_cmp
+    {
+        bool operator() ( const BOARD_ITEM* a, const BOARD_ITEM* b ) const;
+    };
+
+    /**
+     * Comparison operator to provide stable sorting of PCB tracks in board files.
+     */
+    struct tracks_cmp
+    {
+        bool operator() ( const PCB_TRACK* a, const PCB_TRACK* b ) const;
+    };
+
 protected:
     void validateCache( const wxString& aLibraryPath, bool checkModified = true );
 

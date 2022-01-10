@@ -1000,24 +1000,6 @@ double PCB_ARC::GetArcAngleEnd() const
 }
 
 
-bool PCB_TRACK::cmp_tracks::operator() ( const PCB_TRACK* a, const PCB_TRACK* b ) const
-{
-    if( a->GetNetCode() != b->GetNetCode() )
-        return a->GetNetCode() < b->GetNetCode();
-
-    if( a->GetLayer() != b->GetLayer() )
-        return a->GetLayer() < b->GetLayer();
-
-    if( a->Type() != b->Type() )
-        return a->Type() < b->Type();
-
-    if( a->m_Uuid != b->m_Uuid )
-        return a->m_Uuid < b->m_Uuid;
-
-    return a < b;
-}
-
-
 std::shared_ptr<SHAPE> PCB_TRACK::GetEffectiveShape( PCB_LAYER_ID aLayer ) const
 {
     return std::make_shared<SHAPE_SEGMENT>( m_Start, m_End, m_Width );
