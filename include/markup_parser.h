@@ -81,13 +81,16 @@ struct prefixedSubscript : seq<subPrefix, subscript> {};
 
 struct prefixedOverbar : seq<tildePrefix, overbar> {};
 
-struct anyStringWithinBraces : plus<sor<utf8::not_one<'~', '$', '_', '^', '}'>>> {};
+struct anyStringWithinBraces : plus<sor<utf8::not_one<'~', '$', '_', '^', '}'>,
+                                        seq<not_at<subPrefix>, string<'_'>>,
+                                        seq<not_at<supPrefix>, string<'^'>>,
+                                        seq<not_at<tildePrefix>, string<'~'>>>> {};
 
-struct superscript : until<closeBrace, sor<variable, anyStringWithinBraces>> {};
+struct superscript : until<closeBrace, plus<sor<variable, anyStringWithinBraces>>> {};
 
-struct subscript : until<closeBrace, sor<variable, anyStringWithinBraces>> {};
+struct subscript : until<closeBrace, plus<sor<variable, anyStringWithinBraces>>> {};
 
-struct overbar : until<closeBrace, sor<variable, anyStringWithinBraces>> {};
+struct overbar : until<closeBrace, plus<sor<variable, anyStringWithinBraces>>> {};
 
 /**
  * Finally, the full grammar
