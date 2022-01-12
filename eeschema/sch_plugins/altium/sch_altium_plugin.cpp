@@ -609,6 +609,8 @@ void SCH_ALTIUM_PLUGIN::ParseComponent( int aIndex,
 
     symbol->SetUnit( elem.currentpartid );
 
+
+
     m_currentSheet->GetScreen()->Append( symbol );
 
     m_symbols.insert( { aIndex, symbol } );
@@ -2250,12 +2252,13 @@ void SCH_ALTIUM_PLUGIN::ParseDesignator( const std::map<wxString, wxString>& aPr
     SCH_SHEET_PATH sheetpath;
     m_rootSheet->LocatePathOfScreen( m_currentSheet->GetScreen(), &sheetpath );
 
-    symbol->SetRef( &sheetpath, elem.text );
+    // Annotate hates empty Ref and sometime schematic have component without Designator
+    symbol->SetRef( &sheetpath, elem.text.IsEmpty() ? "NO_REF?" : elem.text );
 
     SCH_FIELD* refField = symbol->GetField( REFERENCE_FIELD );
 
+    refField->SetVisible( !elem.text.IsEmpty() );
     refField->SetPosition( elem.location + m_sheetOffset );
-    refField->SetVisible( true );
     SetTextPositioning( refField, elem.justification, elem.orientation );
 }
 
