@@ -81,10 +81,7 @@ struct prefixedSubscript : seq<subPrefix, subscript> {};
 
 struct prefixedOverbar : seq<tildePrefix, overbar> {};
 
-struct anyStringWithinBraces : plus<sor<utf8::not_one<'~', '$', '_', '^', '}'>,
-                                        seq<not_at<subPrefix>, string<'_'>>,
-                                        seq<not_at<supPrefix>, string<'^'>>,
-                                        seq<not_at<tildePrefix>, string<'~'>>>> {};
+struct anyStringWithinBraces : plus<utf8::not_one<'}'>> {};
 
 struct superscript : until<closeBrace, plus<sor<variable, anyStringWithinBraces>>> {};
 
@@ -103,13 +100,13 @@ struct grammar : star<sor<variable,
 
 template <typename Rule>
 using selector = parse_tree::selector< Rule,
+                                       parse_tree::discard_empty::on<superscript,
+                                                                     subscript,
+                                                                     overbar>,
                                        parse_tree::store_content::on<varNamespaceName,
                                                                      varName,
                                                                      anyString,
-                                                                     anyStringWithinBraces>,
-                                       parse_tree::discard_empty::on<superscript,
-                                                                     subscript,
-                                                                     overbar>>;
+                                                                     anyStringWithinBraces>>;
 
 class MARKUP_PARSER
 {
