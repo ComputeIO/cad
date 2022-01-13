@@ -2252,8 +2252,9 @@ void SCH_ALTIUM_PLUGIN::ParseDesignator( const std::map<wxString, wxString>& aPr
     SCH_SHEET_PATH sheetpath;
     m_rootSheet->LocatePathOfScreen( m_currentSheet->GetScreen(), &sheetpath );
 
-    // Annotate hates empty Ref and sometime schematic have component without Designator
-    symbol->SetRef( &sheetpath, elem.text.IsEmpty() ? "NO_REF?" : elem.text );
+    // Graphics symbols have no reference. '#GRAPHIC' allows them to not have footprint associated.
+    // Note: not all unnamed imported symbols are necessarilly graphics.
+    symbol->SetRef( &sheetpath, elem.text.IsEmpty() ? "#GRAPHIC" : elem.text );
 
     SCH_FIELD* refField = symbol->GetField( REFERENCE_FIELD );
 
