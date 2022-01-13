@@ -137,7 +137,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
         }
         else
         {
-            m_thicknessValue->SetValue( "Error" );
+            m_thicknessValue->SetValue( _( "Error" ) );
         }
     }
     else if( m_currentRadio->GetValue() )
