@@ -906,7 +906,7 @@ void DIALOG_PAD_PROPERTIES::OnPadShapeSelection( wxCommandEvent& event )
 }
 
 
-void DIALOG_PAD_PROPERTIES::OnDrillShapeSelected( wxCommandEvent& event )
+void DIALOG_PAD_PROPERTIES::OnDrillShapeSelection( wxCommandEvent& event )
 {
     //enable or not m_holeYCtrl
     wxUpdateUIEvent dummyUI;

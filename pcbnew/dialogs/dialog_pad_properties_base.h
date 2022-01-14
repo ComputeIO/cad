@@ -249,7 +249,7 @@ class DIALOG_PAD_PROPERTIES_BASE : public DIALOG_SHIM
 		virtual void onCornerSizePercentChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onCornerRadiusChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void PadOrientEvent( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnDrillShapeSelected( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnDrillShapeSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOffsetCheckbox( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnPadToDieCheckbox( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSetCopperLayers( wxCommandEvent& event ) { event.Skip(); }
