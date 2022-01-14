@@ -114,7 +114,7 @@ template< typename T >
 int ALIGN_DISTRIBUTE_TOOL::selectTarget( ALIGNMENT_RECTS& aItems, ALIGNMENT_RECTS& aLocked,
                                          T aGetValue )
 {
-    wxPoint curPos = (wxPoint) getViewControls()->GetCursorPosition();
+    VECTOR2I cursorPos = getViewControls()->GetCursorPosition();
 
     // Prefer locked items to unlocked items.
     // Secondly, prefer items under the cursor to other items.
@@ -123,7 +123,7 @@ int ALIGN_DISTRIBUTE_TOOL::selectTarget( ALIGNMENT_RECTS& aItems, ALIGNMENT_RECT
     {
         for( const ALIGNMENT_RECT& item : aLocked )
         {
-            if( item.second.Contains( curPos ) )
+            if( item.second.Contains( cursorPos ) )
                 return aGetValue( item );
         }
 
@@ -132,7 +132,7 @@ int ALIGN_DISTRIBUTE_TOOL::selectTarget( ALIGNMENT_RECTS& aItems, ALIGNMENT_RECT
 
     for( const ALIGNMENT_RECT& item : aItems )
     {
-        if( item.second.Contains( curPos ) )
+        if( item.second.Contains( cursorPos ) )
             return aGetValue( item );
     }
 
@@ -227,7 +227,7 @@ int ALIGN_DISTRIBUTE_TOOL::AlignTop( const TOOL_EVENT& aEvent )
             item = item->GetParent();
 
         commit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( 0, difference ) );
+        item->Move( VECTOR2I( 0, difference ) );
     }
 
     commit.Push( _( "Align to top" ) );
@@ -272,7 +272,7 @@ int ALIGN_DISTRIBUTE_TOOL::AlignBottom( const TOOL_EVENT& aEvent )
             item = item->GetParent();
 
         commit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( 0, difference ) );
+        item->Move( VECTOR2I( 0, difference ) );
     }
 
     commit.Push( _( "Align to bottom" ) );
@@ -332,7 +332,7 @@ int ALIGN_DISTRIBUTE_TOOL::doAlignLeft()
             item = item->GetParent();
 
         commit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( difference, 0 ) );
+        item->Move( VECTOR2I( difference, 0 ) );
     }
 
     commit.Push( _( "Align to left" ) );
@@ -392,7 +392,7 @@ int ALIGN_DISTRIBUTE_TOOL::doAlignRight()
             item = item->GetParent();
 
         commit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( difference, 0 ) );
+        item->Move( VECTOR2I( difference, 0 ) );
     }
 
     commit.Push( _( "Align to right" ) );
@@ -437,7 +437,7 @@ int ALIGN_DISTRIBUTE_TOOL::AlignCenterX( const TOOL_EVENT& aEvent )
             item = item->GetParent();
 
         commit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( difference, 0 ) );
+        item->Move( VECTOR2I( difference, 0 ) );
     }
 
     commit.Push( _( "Align to middle" ) );
@@ -482,7 +482,7 @@ int ALIGN_DISTRIBUTE_TOOL::AlignCenterY( const TOOL_EVENT& aEvent )
             item = item->GetParent();
 
         commit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( 0, difference ) );
+        item->Move( VECTOR2I( 0, difference ) );
     }
 
     commit.Push( _( "Align to center" ) );
@@ -579,7 +579,7 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeGapsHorizontally( ALIGNMENT_RECTS& items
 
         int difference = targetX - i.second.GetX();
         aCommit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( difference, 0 ) );
+        item->Move( VECTOR2I( difference, 0 ) );
         targetX += ( i.second.GetWidth() + itemGap );
     }
 }
@@ -612,7 +612,7 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeCentersHorizontally( ALIGNMENT_RECTS &it
 
         int difference = targetX - i.second.GetCenter().x;
         aCommit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( difference, 0 ) );
+        item->Move( VECTOR2I( difference, 0 ) );
         targetX += ( itemGap );
     }
 }
@@ -706,7 +706,7 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeGapsVertically( ALIGNMENT_RECTS& itemsTo
 
         int difference = targetY - i.second.GetY();
         aCommit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( 0, difference ) );
+        item->Move( VECTOR2I( 0, difference ) );
         targetY += ( i.second.GetHeight() + itemGap );
     }
 }
@@ -739,7 +739,7 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeCentersVertically( ALIGNMENT_RECTS& item
 
         int difference = targetY - i.second.GetCenter().y;
         aCommit.Stage( item, CHT_MODIFY );
-        item->Move( wxPoint( 0, difference ) );
+        item->Move( VECTOR2I( 0, difference ) );
         targetY += ( itemGap );
     }
 }
