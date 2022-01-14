@@ -908,6 +908,10 @@ void DIALOG_PAD_PROPERTIES::OnPadShapeSelection( wxCommandEvent& event )
 
 void DIALOG_PAD_PROPERTIES::OnDrillShapeSelected( wxCommandEvent& event )
 {
+    //enable or not m_holeYCtrl
+    wxUpdateUIEvent dummyUI;
+    OnUpdateUI( dummyUI );
+
     transferDataToPad( m_dummyPad );
     redraw();
 }
