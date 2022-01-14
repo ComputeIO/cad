@@ -91,9 +91,26 @@ double SPARSELIZARD_SOLVER::computeVoltageDC( SPARSELIZARD_CONDUCTOR aConA,
 
 double SPARSELIZARD_SOLVER::computePotentialDC( SPARSELIZARD_CONDUCTOR aCon )
 {
-    port V;
-    V = aCon.primalPort;
-    return V.getvalue();
+    double result;
+    
+    if ( aCon.femPort != NULL )
+    {
+        if ( aCon.femPort->m_type == FEM_PORT_TYPE::PASSIVE )
+        {
+            result = m_v.integrate( aCon.regionID, 4 )
+                     / expression( 1 ).integrate( aCon.regionID, 4 );
+        }
+        else
+        {
+            result = aCon.primalPort.getvalue();
+        }
+    }
+    else
+    {
+        result = aCon.primalPort.getvalue();
+    }
+
+    return result;
 }
 
 double SPARSELIZARD_SOLVER::computeResistanceDC( SPARSELIZARD_CONDUCTOR aConA,
