@@ -170,6 +170,9 @@ private:
         return KiROUND( faceSize( aSize ) * m_subscriptSuperscriptSize );
     }
     int subscriptSize() const { return subscriptSize( m_faceSize ); }
+
+    static constexpr double m_subscriptVerticalOffset = -0.25;
+    static constexpr double m_superscriptVerticalOffset = 0.45;
 };
 
 } //namespace KIFONT

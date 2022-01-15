@@ -295,9 +295,9 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
                     topRight.y = std::max( topRight.y, pt.y );
 
                     if( IsSubscript( aTextStyle ) )
-                        pt.y -= 0.25 * scaler;
+                        pt.y += m_subscriptVerticalOffset * scaler;
                     else if( IsSuperscript( aTextStyle ) )
-                        pt.y += 0.45 * scaler;
+                        pt.y += m_superscriptVerticalOffset * scaler;
 
                     pt *= scaleFactor;
                     pt += aPosition;
