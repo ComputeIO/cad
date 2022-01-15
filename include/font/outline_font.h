@@ -171,8 +171,10 @@ private:
     }
     int subscriptSize() const { return subscriptSize( m_faceSize ); }
 
-    static constexpr double m_subscriptVerticalOffset = -0.25;
+    static constexpr double m_subscriptVerticalOffset   = -0.25;
     static constexpr double m_superscriptVerticalOffset = 0.45;
+    static constexpr double m_overbarOffset             = 0.16;
+    static constexpr double m_overbarHeightMultiplier   = 0.07;
 };
 
 } //namespace KIFONT

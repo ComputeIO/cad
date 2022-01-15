@@ -128,7 +128,9 @@ double OUTLINE_FONT::GetInterline( double aGlyphHeight, double aLineSpacing ) co
     if( GetFace()->units_per_EM )
         pitch = GetFace()->height / GetFace()->units_per_EM;
 
-    return ( aLineSpacing * aGlyphHeight * pitch * m_outlineFontSizeCompensation );
+    double interline = aLineSpacing * aGlyphHeight * pitch * m_outlineFontSizeCompensation;
+
+    return interline;
 }
 
 
@@ -226,13 +228,11 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
     VECTOR2D glyphSize = aSize;
     FT_Face  face = m_face;
     double   scaler = faceSize(); // m_faceScaler; // / OUTLINE_FONT_SIZE_COMPENSATION;
-    int      originalScaler = faceSize(); // m_faceScaler;
 
     if( IsSubscript( aTextStyle ) || IsSuperscript( aTextStyle ) )
     {
         face = m_subscriptFace;
         scaler = subscriptSize(); // scaler * m_subscriptSuperscriptSize;
-        originalScaler = subscriptSize(); // m_faceScaler * m_subscriptSuperscriptSize;
     }
 
     // set glyph resolution so that FT_Load_Glyph() results are good enough for decomposing
@@ -253,6 +253,13 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
     //const VECTOR2D scaleFactor( glyphSize.x / scaler, -glyphSize.y / scaler );
     VECTOR2D scaleFactor( glyphSize.x / scaler, -glyphSize.y / scaler );
     scaleFactor = scaleFactor * m_outlineFontSizeCompensation;
+#ifdef DEBUG
+    std::cerr << aText << " aSize " << aSize << " glyphSize " << glyphSize << " scaler " << scaler
+              << " faceSize() " << faceSize() << " subscriptSize() " << subscriptSize()
+              << ( IsSubscript( aTextStyle ) ? " SUB" : "" )
+              << ( IsSuperscript( aTextStyle ) ? " SUPER" : "" ) << " scaleFactor " << scaleFactor
+              << std::endl;
+#endif
     //const VECTOR2D scaleFactor( glyphSize.x, -glyphSize.y );
 
     VECTOR2I cursor( 0, 0 );
@@ -261,20 +268,16 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
 
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
-        int                  codepoint = glyphInfo[i].codepoint;
-
         if( aGlyphs )
         {
-            FT_Load_Glyph( face, codepoint, FT_LOAD_NO_BITMAP );
-
-            FT_GlyphSlot faceGlyph = face->glyph;
+            FT_Load_Glyph( face, glyphInfo[i].codepoint, FT_LOAD_NO_BITMAP );
 
             // contours is a collection of all outlines in the glyph;
             // example: glyph for 'o' generally contains 2 contours,
             // one for the glyph outline and one for the hole
             CONTOURS contours;
 
-            OUTLINE_DECOMPOSER decomposer( faceGlyph->outline );
+            OUTLINE_DECOMPOSER decomposer( face->glyph->outline );
             decomposer.OutlineToSegments( &contours );
 
             std::unique_ptr<OUTLINE_GLYPH> glyph = std::make_unique<OUTLINE_GLYPH>();
@@ -334,6 +337,10 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
                 }
             }
 
+            // FONT TODO we might not want to do Fracture() here;
+            // knockout text (eg. silkscreen labels with a background) will
+            // need to do that after the contours have been turned into holes
+            // and vice versa
             if( glyph->HasHoles() )
                 glyph->Fracture( SHAPE_POLY_SET::PM_FAST ); // FONT TODO verify aFastMode
 
@@ -350,8 +357,8 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
         topLeft *= scaleFactor;
         topRight *= scaleFactor;
 
-        topLeft.y -= aSize.y * 0.16;
-        topRight.y -= aSize.y * 0.16;
+        topLeft.y -= aSize.y * m_overbarOffset;
+        topRight.y -= aSize.y * m_overbarOffset;
 
         topLeft += aPosition;
         topRight += aPosition;
@@ -362,7 +369,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
             RotatePoint( topRight, aOrigin, aAngle );
         }
 
-        double         overbarHeight = aSize.y * 0.07;
+        double         overbarHeight = aSize.y * m_overbarHeightMultiplier;
         SHAPE_POLY_SET overbar;
 
         TransformOvalToPolygon( overbar, topLeft, topRight, overbarHeight, overbarHeight / 8,
