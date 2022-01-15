@@ -341,8 +341,8 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
         }
 
         hb_glyph_position_t& pos = glyphPos[i];
-        cursor.x += ( pos.x_advance * ( 72 / (double) GLYPH_RESOLUTION ) );
-        cursor.y += ( pos.y_advance * ( 72 / (double) GLYPH_RESOLUTION ) );
+        cursor.x += ( pos.x_advance * GLYPH_SIZE_SCALER );
+        cursor.y += ( pos.y_advance * GLYPH_SIZE_SCALER );
     }
 
     if( IsOverbar( aTextStyle ) && aGlyphs )
