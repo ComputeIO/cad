@@ -138,6 +138,17 @@ bool FEM_DESCRIPTOR::Run()
         PrintInfo();
     }
 
+    SHAPE_POLY_SET boardOutlinePolyset;
+    bool           needOutline = m_requiresAir || m_requiresDielectric;
+
+    if( needOutline
+        && !const_cast<BOARD*>( m_board )->GetBoardPolygonOutlines( boardOutlinePolyset ) )
+    {
+        m_reporter->Report( _( "This simulation needs the board oultine to be defined" ),
+                            RPT_SEVERITY_ERROR );
+        return false;
+    }
+
     switch( m_solver )
     {
     case FEM_SOLVER::SPARSELIZARD:

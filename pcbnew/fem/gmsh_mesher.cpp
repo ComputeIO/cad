@@ -62,12 +62,12 @@ std::vector<GMSH_MESHER_LAYER> GMSH_MESHER::AddDielectricRegions()
                 layerList.emplace_back( layer );
 
                 m_dielectric_regions.emplace_back( m_next_region_id++ );
+                std::clog << "DIELECTRIC LAYER " << layer.regionID << std::endl;
             }
             break;
         default: break;
         }
     }
-
     return layerList;
 }
 
@@ -231,7 +231,6 @@ void GMSH_MESHER::Load25DMesh()
     //std::cerr << "set order mesh" << std::endl;
     //gmsh::model::mesh::setOrder(2);
     std::cerr << "finish mesh (stored in 'kicad_pcb_25d.msh')" << std::endl;
-
     gmsh::write( "kicad_pcb_25d.msh" );
 }
 
@@ -287,6 +286,10 @@ void GMSH_MESHER::Load3DMesh()
                 GenerateDielectric3D( m_dielectric_regions.at( i ), boardOutlinePolyset, i, stackup,
                                       maxError, fragments, regions );
             }
+        }
+        else
+        {
+            std::clog << "Cannot get board outline" << std::endl;
         }
     }
 
@@ -347,8 +350,8 @@ void GMSH_MESHER::Load3DMesh()
     // generated 3d-mesh
     std::cerr << "generate mesh" << std::endl;
     gmsh::model::mesh::generate( 3 );
-    std::cerr << "refine mesh" << std::endl;
-    gmsh::model::mesh::refine();
+    //std::cerr << "refine mesh" << std::endl;
+    //gmsh::model::mesh::refine();
     //std::cerr << "set order mesh" << std::endl;
     //gmsh::model::mesh::setOrder(2);
     std::cerr << "finish mesh (stored in 'kicad_pcb_3d.msh')" << std::endl;
