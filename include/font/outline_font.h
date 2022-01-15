@@ -136,11 +136,40 @@ private:
     const int         m_faceSize;
     FT_Face           m_subscriptFace;
 
-    int               m_faceScaler;
-
     // cache for glyphs converted to straight segments
     // key is glyph index (FT_GlyphSlot field glyph_index)
     std::map<unsigned int, GLYPH_POINTS_LIST> m_contourCache;
+
+    // The height of the KiCad stroke font is the distance between stroke endpoints for a vertical
+    // line of cap-height.  So the cap-height of the font is actually stroke-width taller than its
+    // height.
+    // Outline fonts are normally scaled on full-height (including ascenders and descenders), so we
+    // need to compensate to keep them from being much smaller than their stroked counterparts.
+    static constexpr double m_outlineFontSizeCompensation = 1.4;
+
+    // FT_Set_Char_Size() gets character width and height specified in
+    // 1/64ths of a point
+    static constexpr int m_charSizeScaler = 64;
+
+    // The KiCad stroke font uses a subscript/superscript size ratio of 0.7.  This ratio is also
+    // commonly used in LaTeX, but fonts with designed-in subscript and superscript glyphs are more
+    // likely to use 0.58.
+    // For auto-generated subscript and superscript glyphs in outline fonts we split the difference
+    // with 0.64.
+    static constexpr double m_subscriptSuperscriptSize = 0.64;
+
+    int faceSize( int aSize ) const
+    {
+        return aSize * m_charSizeScaler * m_outlineFontSizeCompensation;
+    };
+    int faceSize() const { return faceSize( m_faceSize ); }
+
+    // also for superscripts
+    int subscriptSize( int aSize ) const
+    {
+        return KiROUND( faceSize( aSize ) * m_subscriptSuperscriptSize );
+    }
+    int subscriptSize() const { return subscriptSize( m_faceSize ); }
 };
 
 } //namespace KIFONT

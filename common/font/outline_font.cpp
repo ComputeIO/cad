@@ -41,21 +41,6 @@
 using namespace KIFONT;
 
 
-// The height of the KiCad stroke font is the distance between stroke endpoints for a vertical
-// line of cap-height.  So the cap-height of the font is actually stroke-width taller than its
-// height.
-// Outline fonts are normally scaled on full-height (including ascenders and descenders), so we
-// need to compensate to keep them from being much smaller than their stroked counterparts.
-constexpr double OUTLINE_FONT_SIZE_COMPENSATION = 1.4;
-
-// The KiCad stroke font uses a subscript/superscript size ratio of 0.7.  This ratio is also
-// commonly used in LaTeX, but fonts with designed-in subscript and superscript glyphs are more
-// likely to use 0.58.
-// For auto-generated subscript and superscript glyphs in outline fonts we split the difference
-// with 0.64.
-static constexpr double SUBSCRIPT_SUPERSCRIPT_SIZE = 0.64;
-
-
 FT_Library OUTLINE_FONT::m_freeType = nullptr;
 
 OUTLINE_FONT::OUTLINE_FONT() :
@@ -91,11 +76,6 @@ OUTLINE_FONT* OUTLINE_FONT::LoadFont( const wxString& aFontName, bool aBold, boo
 
 FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 {
-    // FT_Set_Char_Size() gets character width and height specified in
-    // 1/64ths of a point
-    constexpr int char_size_scaler = 64;
-    m_faceScaler = m_faceSize * char_size_scaler;
-
     // TODO: check that going from wxString to char* with UTF-8
     // conversion for filename makes sense on any/all platforms
     FT_Error e = FT_New_Face( m_freeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &m_face );
@@ -106,18 +86,17 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
         // params:
         // m_face = handle to face object
         // 0 = char width in 1/64th of points ( 0 = same as char height )
-        // m_faceScaler = char height in 1/64th of points
-        // 0 = horizontal device resolution (default, 72dpi)
+        // faceSize() = char height in 1/64th of points
+        // GLYPH_RESOLUTION = horizontal device resolution (288dpi, 4x default)
         // 0 = vertical device resolution ( 0 = same as horizontal )
-        FT_Set_Char_Size( m_face, 0, m_faceScaler, 0, 0 );
+        FT_Set_Char_Size( m_face, 0, faceSize(), GLYPH_RESOLUTION, 0 );
 
         e = FT_New_Face( m_freeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &m_subscriptFace );
 
         if( !e )
         {
             FT_Select_Charmap( m_subscriptFace, FT_Encoding::FT_ENCODING_UNICODE );
-            int subscriptFaceScaler = KiROUND( m_faceScaler * SUBSCRIPT_SUPERSCRIPT_SIZE );
-            FT_Set_Char_Size( m_subscriptFace, 0, subscriptFaceScaler, 0, 0 );
+            FT_Set_Char_Size( m_subscriptFace, 0, subscriptSize(), GLYPH_RESOLUTION, 0 );
         }
     }
 
@@ -134,7 +113,7 @@ double OUTLINE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
     // The overbar on actual text is positioned above the bounding box of the glyphs.  However,
     // that's expensive to calculate so we use an estimation here (as this is only used for
     // calculating bounding boxes).
-    return aGlyphHeight * OUTLINE_FONT_SIZE_COMPENSATION;
+    return aGlyphHeight * m_outlineFontSizeCompensation;
 }
 
 
@@ -149,7 +128,7 @@ double OUTLINE_FONT::GetInterline( double aGlyphHeight, double aLineSpacing ) co
     if( GetFace()->units_per_EM )
         pitch = GetFace()->height / GetFace()->units_per_EM;
 
-    return ( aLineSpacing * aGlyphHeight * pitch * OUTLINE_FONT_SIZE_COMPENSATION );
+    return ( aLineSpacing * aGlyphHeight * pitch * m_outlineFontSizeCompensation );
 }
 
 
@@ -244,46 +223,44 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
                                         bool aMirror, const VECTOR2I& aOrigin,
                                         TEXT_STYLE_FLAGS aTextStyle ) const
 {
-    hb_buffer_t* buf = hb_buffer_create();
-    hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
-
-    // guess direction, script, and language based on contents
-    hb_buffer_guess_segment_properties( buf );
-
-    unsigned int         glyphCount;
-    hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
-    hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
-    hb_font_t*           referencedFont;
-
     VECTOR2D glyphSize = aSize;
     FT_Face  face = m_face;
-    double   scaler = m_faceScaler / OUTLINE_FONT_SIZE_COMPENSATION;
-    int originalScaler = m_faceScaler;
+    double   scaler = faceSize(); // m_faceScaler; // / OUTLINE_FONT_SIZE_COMPENSATION;
+    int      originalScaler = faceSize(); // m_faceScaler;
 
     if( IsSubscript( aTextStyle ) || IsSuperscript( aTextStyle ) )
     {
         face = m_subscriptFace;
-        scaler = scaler * SUBSCRIPT_SUPERSCRIPT_SIZE;
-        originalScaler = m_faceScaler * SUBSCRIPT_SUPERSCRIPT_SIZE;
+        scaler = subscriptSize(); // scaler * m_subscriptSuperscriptSize;
+        originalScaler = subscriptSize(); // m_faceScaler * m_subscriptSuperscriptSize;
     }
 
-    referencedFont = hb_ft_font_create_referenced( face );
+    // set glyph resolution so that FT_Load_Glyph() results are good enough for decomposing
+    FT_Set_Char_Size( face, 0, scaler, GLYPH_RESOLUTION, 0 );
+
+    hb_buffer_t* buf = hb_buffer_create();
+    hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
+    hb_buffer_guess_segment_properties( buf ); // guess direction, script, and language based on contents
+
+    unsigned int         glyphCount;
+    hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
+    hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
+
+    hb_font_t* referencedFont = hb_ft_font_create_referenced( face );
     hb_ft_font_set_funcs( referencedFont );
     hb_shape( referencedFont, buf, nullptr, 0 );
 
-    const VECTOR2D scaleFactor( glyphSize.x / scaler, -glyphSize.y / scaler );
+    //const VECTOR2D scaleFactor( glyphSize.x / scaler, -glyphSize.y / scaler );
+    VECTOR2D scaleFactor( glyphSize.x / scaler, -glyphSize.y / scaler );
+    scaleFactor = scaleFactor * m_outlineFontSizeCompensation;
+    //const VECTOR2D scaleFactor( glyphSize.x, -glyphSize.y );
 
     VECTOR2I cursor( 0, 0 );
     VECTOR2D topLeft( INT_MAX * 1.0, -INT_MAX * 1.0 );
     VECTOR2D topRight( -INT_MAX * 1.0, -INT_MAX * 1.0 );
 
-    // temporarily set higher glyph resolution so that
-    // FT_Load_Glyph() results are good enough for decomposing
-    FT_Set_Char_Size( face, 0, scaler, GLYPH_RESOLUTION, 0 );
-
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
-        hb_glyph_position_t& pos = glyphPos[i];
         int                  codepoint = glyphInfo[i].codepoint;
 
         if( aGlyphs )
@@ -363,12 +340,10 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
             aGlyphs->push_back( std::move( glyph ) );
         }
 
-        cursor.x += pos.x_advance;
-        cursor.y += pos.y_advance;
+        hb_glyph_position_t& pos = glyphPos[i];
+        cursor.x += ( pos.x_advance * ( 72 / (double) GLYPH_RESOLUTION ) );
+        cursor.y += ( pos.y_advance * ( 72 / (double) GLYPH_RESOLUTION ) );
     }
-
-    // reset glyph resolution to default
-    FT_Set_Char_Size( face, 0, originalScaler, 0, 0 );
 
     if( IsOverbar( aTextStyle ) && aGlyphs )
     {
