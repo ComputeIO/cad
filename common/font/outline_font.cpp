@@ -258,9 +258,14 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
     VECTOR2D glyphSize = aSize;
     FT_Face  face = m_face;
     double   scaler = m_faceScaler / OUTLINE_FONT_SIZE_COMPENSATION;
+    int originalScaler = m_faceScaler;
 
     if( IsSubscript( aTextStyle ) || IsSuperscript( aTextStyle ) )
+    {
         face = m_subscriptFace;
+        scaler = scaler * SUBSCRIPT_SUPERSCRIPT_SIZE;
+        originalScaler = m_faceScaler * SUBSCRIPT_SUPERSCRIPT_SIZE;
+    }
 
     referencedFont = hb_ft_font_create_referenced( face );
     hb_ft_font_set_funcs( referencedFont );
@@ -274,7 +279,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
 
     // temporarily set higher glyph resolution so that
     // FT_Load_Glyph() results are good enough for decomposing
-    FT_Set_Char_Size( face, 0, m_faceScaler, GLYPH_RESOLUTION, 0 );
+    FT_Set_Char_Size( face, 0, scaler, GLYPH_RESOLUTION, 0 );
 
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
@@ -363,7 +368,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
     }
 
     // reset glyph resolution to default
-    FT_Set_Char_Size( face, 0, m_faceScaler, 0, 0 );
+    FT_Set_Char_Size( face, 0, originalScaler, 0, 0 );
 
     if( IsOverbar( aTextStyle ) && aGlyphs )
     {
