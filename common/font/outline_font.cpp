@@ -122,6 +122,10 @@ double OUTLINE_FONT::GetInterline( double aGlyphHeight, double aLineSpacing ) co
 
     double interline = aLineSpacing * aGlyphHeight * pitch * m_outlineFontSizeCompensation;
 
+    // FONT TODO this hack is an attempt to fix interline spacing by eyeballing it
+    static constexpr double interlineHackMultiplier = 1.2;
+    interline *= interlineHackMultiplier;
+
     return interline;
 }
 
@@ -243,14 +247,6 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
 
     VECTOR2D scaleFactor( glyphSize.x / faceSize(), -glyphSize.y / faceSize() );
     scaleFactor = scaleFactor * m_outlineFontSizeCompensation;
-#ifdef DEBUG
-    std::cerr << aText << " aSize " << aSize << " glyphSize " << glyphSize << " scaler " << scaler
-              << " faceSize() " << faceSize() << " subscriptSize() " << subscriptSize()
-              << ( IsSubscript( aTextStyle ) ? " SUB" : "" )
-              << ( IsSuperscript( aTextStyle ) ? " SUPER" : "" ) << " scaleFactor " << scaleFactor
-              << std::endl;
-#endif
-    //const VECTOR2D scaleFactor( glyphSize.x, -glyphSize.y );
 
     VECTOR2I cursor( 0, 0 );
     VECTOR2D topLeft( INT_MAX * 1.0, -INT_MAX * 1.0 );
