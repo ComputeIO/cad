@@ -90,14 +90,6 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
         // GLYPH_RESOLUTION = horizontal device resolution (288dpi, 4x default)
         // 0 = vertical device resolution ( 0 = same as horizontal )
         FT_Set_Char_Size( m_face, 0, faceSize(), GLYPH_RESOLUTION, 0 );
-
-        e = FT_New_Face( m_freeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &m_subscriptFace );
-
-        if( !e )
-        {
-            FT_Select_Charmap( m_subscriptFace, FT_Encoding::FT_ENCODING_UNICODE );
-            FT_Set_Char_Size( m_subscriptFace, 0, subscriptSize(), GLYPH_RESOLUTION, 0 );
-        }
     }
 
     return e;
@@ -227,12 +219,11 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
 {
     VECTOR2D glyphSize = aSize;
     FT_Face  face = m_face;
-    double   scaler = faceSize(); // m_faceScaler; // / OUTLINE_FONT_SIZE_COMPENSATION;
+    double   scaler = faceSize();
 
     if( IsSubscript( aTextStyle ) || IsSuperscript( aTextStyle ) )
     {
-        face = m_subscriptFace;
-        scaler = subscriptSize(); // scaler * m_subscriptSuperscriptSize;
+        scaler = subscriptSize();
     }
 
     // set glyph resolution so that FT_Load_Glyph() results are good enough for decomposing
@@ -250,8 +241,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsGlyphs( BOX2I* aBBox, std::vector<std::unique_pt
     hb_ft_font_set_funcs( referencedFont );
     hb_shape( referencedFont, buf, nullptr, 0 );
 
-    //const VECTOR2D scaleFactor( glyphSize.x / scaler, -glyphSize.y / scaler );
-    VECTOR2D scaleFactor( glyphSize.x / scaler, -glyphSize.y / scaler );
+    VECTOR2D scaleFactor( glyphSize.x / faceSize(), -glyphSize.y / faceSize() );
     scaleFactor = scaleFactor * m_outlineFontSizeCompensation;
 #ifdef DEBUG
     std::cerr << aText << " aSize " << aSize << " glyphSize " << glyphSize << " scaler " << scaler
@@ -404,9 +394,7 @@ void OUTLINE_FONT::RenderToOpenGLCanvas( KIGFX::OPENGL_GAL& aGal, const UTF8& aS
 {
     hb_buffer_t* buf = hb_buffer_create();
     hb_buffer_add_utf8( buf, aString.c_str(), -1, 0, -1 );
-
-    // guess direction, script, and language based on contents
-    hb_buffer_guess_segment_properties( buf );
+    hb_buffer_guess_segment_properties( buf ); // guess direction, script, and language based on contents
 
     unsigned int         glyphCount;
     hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );

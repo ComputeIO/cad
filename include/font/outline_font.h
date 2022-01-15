@@ -134,7 +134,6 @@ private:
     static FT_Library m_freeType;
     FT_Face           m_face;
     const int         m_faceSize;
-    FT_Face           m_subscriptFace;
 
     // cache for glyphs converted to straight segments
     // key is glyph index (FT_GlyphSlot field glyph_index)
