@@ -95,7 +95,6 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
     // 1/64ths of a point
     constexpr int char_size_scaler = 64;
     m_faceScaler = m_faceSize * char_size_scaler;
-    m_subscriptFaceScaler = KiROUND( m_faceScaler * SUBSCRIPT_SUPERSCRIPT_SIZE );
 
     // TODO: check that going from wxString to char* with UTF-8
     // conversion for filename makes sense on any/all platforms
@@ -117,6 +116,7 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
         if( !e )
         {
             FT_Select_Charmap( m_subscriptFace, FT_Encoding::FT_ENCODING_UNICODE );
+            int subscriptFaceScaler = KiROUND( m_faceScaler * SUBSCRIPT_SUPERSCRIPT_SIZE );
             FT_Set_Char_Size( m_subscriptFace, 0, subscriptFaceScaler, 0, 0 );
         }
     }
