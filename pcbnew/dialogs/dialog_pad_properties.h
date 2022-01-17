@@ -77,16 +77,16 @@ private:
     // event handlers:
     void OnInitDialog( wxInitDialogEvent& event ) override;
     void OnResize( wxSizeEvent& event );
-	void OnCancel( wxCommandEvent& event ) override;
+    void OnCancel( wxCommandEvent& event ) override;
     void OnUpdateUI( wxUpdateUIEvent& event ) override;
 
     void OnUpdateUINonCopperWarning( wxUpdateUIEvent& event ) override;
 
     void OnPadShapeSelection( wxCommandEvent& event ) override;
-    void OnDrillShapeSelected( wxCommandEvent& event ) override;
-	void onChangePadMode( wxCommandEvent& event ) override;
-	void OnOffsetCheckbox( wxCommandEvent& event ) override;
-	void OnPadToDieCheckbox( wxCommandEvent& event ) override;
+    void OnDrillShapeSelection( wxCommandEvent& event ) override;
+    void onChangePadMode( wxCommandEvent& event ) override;
+    void OnOffsetCheckbox( wxCommandEvent& event ) override;
+    void OnPadToDieCheckbox( wxCommandEvent& event ) override;
 
     void PadOrientEvent( wxCommandEvent& event ) override;
     void PadTypeSelected( wxCommandEvent& event ) override;
@@ -119,7 +119,7 @@ private:
     /// Called on a double click on the basic shapes list
     void onPrimitiveDClick( wxMouseEvent& event ) override;
     /// Called on selection/deselection of a basic shape
-	void OnPrimitiveSelection( wxListEvent& event ) override;
+    void OnPrimitiveSelection( wxListEvent& event ) override;
 
     /// Return the pad property currently selected
     PAD_PROP getSelectedProperty();
