@@ -682,6 +682,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
 
             break;
         }
+
         case PCB_FP_ZONE_T:
         {
             const SHAPE_POLY_SET* outline = static_cast<const FP_ZONE*>( aItem )->Outline();
