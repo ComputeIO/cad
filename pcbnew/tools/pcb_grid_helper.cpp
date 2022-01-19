@@ -692,7 +692,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
 
             for( auto iter = outline->CIterateWithHoles(); iter; iter++ )
             {
-                addAnchor( *iter, ALL, aItem );
+                addAnchor( *iter, CORNER, aItem );
                 lc.Append( *iter );
             }
 
