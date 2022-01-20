@@ -46,7 +46,7 @@ SCH_ITEM::SCH_ITEM( EDA_ITEM* aParent, KICAD_T aType ) :
     EDA_ITEM( aParent, aType )
 {
     m_layer              = LAYER_WIRE;   // It's only a default, in fact
-    m_fieldsAutoplaced   = FIELDS_AUTOPLACED_NO;
+    m_fieldsAutoplaced   = FIELDS_AUTOPLACED::NONE;
     m_connectivity_dirty = false;        // Item is unconnected until it is placed, so it's clean
 }
 

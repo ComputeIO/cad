@@ -87,7 +87,7 @@ void SCH_NO_CONNECT::ViewGetLayers( int aLayers[], int& aCount ) const
 
 void SCH_NO_CONNECT::GetEndPoints( std::vector< DANGLING_END_ITEM >& aItemList )
 {
-    DANGLING_END_ITEM item( NO_CONNECT_END, this, m_pos );
+    DANGLING_END_ITEM item( DANGLING_END::NO_CONNECT_END, this, m_pos );
     aItemList.push_back( item );
 }
 

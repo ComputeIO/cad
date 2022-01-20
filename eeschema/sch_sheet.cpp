@@ -588,7 +588,7 @@ void SCH_SHEET::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
         m_fields[ SHEETFILENAME ].SetTextAngle( ANGLE_HORIZONTAL );
     }
 
-    m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO;
+    m_fieldsAutoplaced = FIELDS_AUTOPLACED::AUTO;
 }
 
 
@@ -794,7 +794,7 @@ void SCH_SHEET::Rotate( const VECTOR2I& aCenter )
     for( SCH_SHEET_PIN* sheetPin : m_pins )
         sheetPin->Rotate( aCenter );
 
-    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED_AUTO )
+    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED::AUTO )
     {
         AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
     }
@@ -868,7 +868,7 @@ void SCH_SHEET::Resize( const wxSize& aSize )
     m_size = aSize;
 
     // Move the fields if we're in autoplace mode
-    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED_AUTO )
+    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED::AUTO )
         AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
 
     // Move the sheet labels according to the new sheet size.

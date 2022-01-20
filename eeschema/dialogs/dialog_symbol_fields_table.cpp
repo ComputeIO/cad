@@ -1151,7 +1151,7 @@ void DIALOG_SYMBOL_FIELDS_TABLE::OnTableCellClick( wxGridEvent& event )
             wxString path = refs[0].GetPath();
             wxString reference = refs[0].GetRef() + refs[0].GetRefNumber();
 
-            editor->FindSymbolAndItem( &path, &reference, true, HIGHLIGHT_SYMBOL, wxEmptyString );
+            editor->FindSymbolAndItem( &path, &reference, true, SCH_SEARCH::HIGHLIGHT_SYMBOL, wxEmptyString );
         }
     }
     else

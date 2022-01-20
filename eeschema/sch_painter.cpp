@@ -880,27 +880,27 @@ void SCH_PAINTER::draw( LIB_PIN *aPin, int aLayer )
     VECTOR2I p0;
     VECTOR2I dir;
     int len = aPin->GetLength();
-    int orient = aPin->GetOrientation();
+    DRAW_PIN_ORIENT orient = aPin->GetOrientation();
 
     switch( orient )
     {
-    case PIN_UP:
+    case DRAW_PIN_ORIENT::PIN_UP:
         p0 = VECTOR2I( pos.x, pos.y - len );
         dir = VECTOR2I( 0, 1 );
         break;
 
-    case PIN_DOWN:
+    case DRAW_PIN_ORIENT::PIN_DOWN:
         p0 = VECTOR2I( pos.x, pos.y + len );
         dir = VECTOR2I( 0, -1 );
         break;
 
-    case PIN_LEFT:
+    case DRAW_PIN_ORIENT::PIN_LEFT:
         p0 = VECTOR2I( pos.x - len, pos.y );
         dir = VECTOR2I( 1, 0 );
         break;
 
     default:
-    case PIN_RIGHT:
+    case DRAW_PIN_ORIENT::PIN_RIGHT:
         p0 = VECTOR2I( pos.x + len, pos.y );
         dir = VECTOR2I( -1, 0 );
         break;
@@ -1140,7 +1140,7 @@ void SCH_PAINTER::draw( LIB_PIN *aPin, int aLayer )
 
     switch( orient )
     {
-    case PIN_LEFT:
+    case DRAW_PIN_ORIENT::PIN_LEFT:
         if( size[INSIDE] )
         {
             drawText( INSIDE, pos + VECTOR2D( -insideOffset - len, 0 ),
@@ -1163,7 +1163,7 @@ void SCH_PAINTER::draw( LIB_PIN *aPin, int aLayer )
         }
         break;
 
-    case PIN_RIGHT:
+    case DRAW_PIN_ORIENT::PIN_RIGHT:
         if( size[INSIDE] )
         {
             drawText( INSIDE, pos + VECTOR2D( insideOffset + len, 0 ),
@@ -1186,7 +1186,7 @@ void SCH_PAINTER::draw( LIB_PIN *aPin, int aLayer )
         }
         break;
 
-    case PIN_DOWN:
+    case DRAW_PIN_ORIENT::PIN_DOWN:
         if( size[INSIDE] )
         {
             drawText( INSIDE, pos + VECTOR2D( 0, insideOffset + len ),
@@ -1209,7 +1209,7 @@ void SCH_PAINTER::draw( LIB_PIN *aPin, int aLayer )
         }
         break;
 
-    case PIN_UP:
+    case DRAW_PIN_ORIENT::PIN_UP:
         if( size[INSIDE] )
         {
             drawText( INSIDE, pos + VECTOR2D( 0, -insideOffset - len ),

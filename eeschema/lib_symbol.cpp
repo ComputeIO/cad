@@ -87,7 +87,7 @@ LIB_SYMBOL::LIB_SYMBOL( const wxString& aName, LIB_SYMBOL* aParent, SYMBOL_LIB* 
     m_lastModDate    = 0;
     m_unitCount      = 1;
     m_pinNameOffset  = Mils2iu( DEFAULT_PIN_NAME_OFFSET );
-    m_options        = ENTRY_NORMAL;
+    m_options        = LIB_ENTRY_OPTIONS::ENTRY_NORMAL;
     m_unitsLocked    = false;
     m_showPinNumbers = true;
     m_showPinNames   = true;
@@ -231,7 +231,7 @@ int LIB_SYMBOL::Compare( const LIB_SYMBOL& aRhs, LIB_ITEM::COMPARE_FLAGS aCompar
         return 1;
 
     if( m_options != aRhs.m_options )
-        return ( m_options == ENTRY_NORMAL ) ? -1 : 1;
+        return ( m_options == LIB_ENTRY_OPTIONS::ENTRY_NORMAL ) ? -1 : 1;
 
     if( m_unitCount != aRhs.m_unitCount )
         return m_unitCount - aRhs.m_unitCount;
@@ -457,36 +457,36 @@ const wxString LIB_SYMBOL::GetLibraryName() const
 bool LIB_SYMBOL::IsPower() const
 {
     if( LIB_SYMBOL_SPTR parent = m_parent.lock() )
-        return parent->m_options == ENTRY_POWER;
+        return parent->m_options == LIB_ENTRY_OPTIONS::ENTRY_POWER;
 
-    return m_options == ENTRY_POWER;
+    return m_options == LIB_ENTRY_OPTIONS::ENTRY_POWER;
 }
 
 
 void LIB_SYMBOL::SetPower()
 {
     if( LIB_SYMBOL_SPTR parent = m_parent.lock() )
-        parent->m_options = ENTRY_POWER;
+        parent->m_options = LIB_ENTRY_OPTIONS::ENTRY_POWER;
 
-    m_options = ENTRY_POWER;
+    m_options = LIB_ENTRY_OPTIONS::ENTRY_POWER;
 }
 
 
 bool LIB_SYMBOL::IsNormal() const
 {
     if( LIB_SYMBOL_SPTR parent = m_parent.lock() )
-        return parent->m_options == ENTRY_NORMAL;
+        return parent->m_options == LIB_ENTRY_OPTIONS::ENTRY_NORMAL;
 
-    return m_options == ENTRY_NORMAL;
+    return m_options == LIB_ENTRY_OPTIONS::ENTRY_NORMAL;
 }
 
 
 void LIB_SYMBOL::SetNormal()
 {
     if( LIB_SYMBOL_SPTR parent = m_parent.lock() )
-        parent->m_options = ENTRY_NORMAL;
+        parent->m_options = LIB_ENTRY_OPTIONS::ENTRY_NORMAL;
 
-    m_options = ENTRY_NORMAL;
+    m_options = LIB_ENTRY_OPTIONS::ENTRY_NORMAL;
 }
 
 

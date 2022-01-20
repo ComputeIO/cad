@@ -150,7 +150,7 @@ void SCH_SHEET_PIN::SetSide( SHEET_SIDE aEdge )
 }
 
 
-enum SHEET_SIDE SCH_SHEET_PIN::GetSide() const
+SHEET_SIDE SCH_SHEET_PIN::GetSide() const
 {
     return m_edge;
 }
@@ -323,7 +323,7 @@ void SCH_SHEET_PIN::CreateGraphicShape( const RENDER_SETTINGS* aSettings,
 
 void SCH_SHEET_PIN::GetEndPoints( std::vector<DANGLING_END_ITEM>& aItemList )
 {
-    DANGLING_END_ITEM item( SHEET_LABEL_END, this, GetTextPos() );
+    DANGLING_END_ITEM item( DANGLING_END::SHEET_LABEL_END, this, GetTextPos() );
     aItemList.push_back( item );
 }
 

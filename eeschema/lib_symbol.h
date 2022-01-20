@@ -49,7 +49,7 @@ typedef LIB_ITEMS_CONTAINER::ITEM_PTR_VECTOR LIB_ITEMS;
 
 
 /* values for member .m_options */
-enum LIBRENTRYOPTIONS
+enum class LIB_ENTRY_OPTIONS : int
 {
     ENTRY_NORMAL,   // Libentry is a standard symbol (real or alias)
     ENTRY_POWER     // Libentry is a power symbol
@@ -698,7 +698,7 @@ private:
 
     bool                m_includeInBom;
     bool                m_includeOnBoard;
-    LIBRENTRYOPTIONS    m_options;          ///< Special symbol features such as POWER or NORMAL.)
+    LIB_ENTRY_OPTIONS   m_options;          ///< Special symbol features such as POWER or NORMAL.)
 
     LIB_ITEMS_CONTAINER m_drawings;
 

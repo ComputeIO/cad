@@ -63,7 +63,7 @@ public:
  */
 std::ostream& operator<<( std::ostream& os, DANGLING_END_ITEM const& d )
 {
-    os << "DANGLING_END_ITEM[ type " << d.GetType() << " @(" << d.GetPosition().x << ", "
+    os << "DANGLING_END_ITEM[ type " << static_cast<int>(d.GetType()) << " @(" << d.GetPosition().x << ", "
        << d.GetPosition().y << "), item " << d.GetItem() << ", parent " << d.GetParent() << " ]";
     return os;
 }
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE( EndconnectionPoints )
         // Construct expected from the pin, not defs, as we need the pin address
         for( SCH_SHEET_PIN* pin : pins )
         {
-            expectedDangling.emplace_back( DANGLING_END_T::SHEET_LABEL_END, pin,
+            expectedDangling.emplace_back( DANGLING_END::SHEET_LABEL_END, pin,
                                            pin->GetPosition(), pin );
         }
 

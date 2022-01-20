@@ -66,11 +66,11 @@ class SCH_SHEET_LIST;
 class SCH_SEXPR_PARSER;
 class SCH_SEXPR_PLUGIN;
 
-enum SCH_LINE_TEST_T
+enum class SCH_LINE_TEST
 {
-    ENTIRE_LENGTH_T,
-    END_POINTS_ONLY_T,
-    EXCLUDE_END_POINTS_T
+    ENTIRE_LENGTH,
+    END_POINTS_ONLY,
+    EXCLUDE_END_POINTS
 };
 
 
@@ -418,16 +418,16 @@ public:
      *         found.
      */
     SCH_LINE* GetLine( const VECTOR2I& aPosition, int aAccuracy = 0, int aLayer = LAYER_NOTES,
-                       SCH_LINE_TEST_T aSearchType = ENTIRE_LENGTH_T ) const;
+                       SCH_LINE_TEST aSearchType = SCH_LINE_TEST::ENTIRE_LENGTH ) const;
 
     SCH_LINE* GetWire( const VECTOR2I& aPosition, int aAccuracy = 0,
-                       SCH_LINE_TEST_T aSearchType = ENTIRE_LENGTH_T ) const
+                       SCH_LINE_TEST aSearchType = SCH_LINE_TEST::ENTIRE_LENGTH ) const
     {
         return GetLine( aPosition, aAccuracy, LAYER_WIRE, aSearchType );
     }
 
     SCH_LINE* GetBus( const VECTOR2I& aPosition, int aAccuracy = 0,
-                      SCH_LINE_TEST_T aSearchType = ENTIRE_LENGTH_T ) const
+                      SCH_LINE_TEST aSearchType = SCH_LINE_TEST::ENTIRE_LENGTH ) const
     {
         return GetLine( aPosition, aAccuracy, LAYER_BUS, aSearchType );
     }
@@ -629,12 +629,12 @@ public:
      *
      * @param aMarkerType Type of markers to be deleted.
      */
-    void DeleteAllMarkers( enum MARKER_BASE::TYPEMARKER aMarkerType, bool aIncludeExclusions );
+    void DeleteAllMarkers( MARKER_BASE::TYPEMARKER aMarkerType, bool aIncludeExclusions );
 
     /**
      * Delete all markers of a particular type and error code.
      */
-    void DeleteMarkers( enum MARKER_BASE::TYPEMARKER aMarkerTyp, int aErrorCode,
+    void DeleteMarkers( MARKER_BASE::TYPEMARKER aMarkerTyp, int aErrorCode,
                         bool aIncludeExclusions = true );
 
     /**

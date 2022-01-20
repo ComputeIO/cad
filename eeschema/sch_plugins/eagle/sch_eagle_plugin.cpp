@@ -1908,10 +1908,10 @@ LIB_PIN* SCH_EAGLE_PLUGIN::loadPin( std::unique_ptr<LIB_SYMBOL>& aSymbol, wxXmlN
 
     switch( roti )
     {
-    case 0:   pin->SetOrientation( 'R' ); break;
-    case 90:  pin->SetOrientation( 'U' ); break;
-    case 180: pin->SetOrientation( 'L' ); break;
-    case 270: pin->SetOrientation( 'D' ); break;
+    case 0:   pin->SetOrientation( DRAW_PIN_ORIENT::PIN_RIGHT ); break;
+    case 90:  pin->SetOrientation( DRAW_PIN_ORIENT::PIN_UP );    break;
+    case 180: pin->SetOrientation( DRAW_PIN_ORIENT::PIN_LEFT );  break;
+    case 270: pin->SetOrientation( DRAW_PIN_ORIENT::PIN_DOWN );  break;
     default:  wxFAIL_MSG( wxString::Format( "Unhandled orientation (%d degrees).", roti ) );
     }
 
@@ -2963,10 +2963,18 @@ void SCH_EAGLE_PLUGIN::addImplicitConnections( SCH_SYMBOL* aSymbol, SCH_SCREEN* 
 
                     switch( pin->GetOrientation() )
                     {
-                    case PIN_LEFT:  netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );  break;
-                    case PIN_RIGHT: netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );   break;
-                    case PIN_UP:    netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );     break;
-                    case PIN_DOWN:  netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM ); break;
+                    case DRAW_PIN_ORIENT::PIN_LEFT:
+                        netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+                        break;
+                    case DRAW_PIN_ORIENT::PIN_RIGHT:
+                        netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+                        break;
+                    case DRAW_PIN_ORIENT::PIN_UP:
+                        netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );
+                        break;
+                    case DRAW_PIN_ORIENT::PIN_DOWN:
+                        netLabel->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+                        break;
                     }
 
                     aScreen->Append( netLabel );

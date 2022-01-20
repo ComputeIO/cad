@@ -601,8 +601,8 @@ void SCH_LINE::GetEndPoints( std::vector <DANGLING_END_ITEM>& aItemList )
 {
     if( IsConnectable() )
     {
-        aItemList.emplace_back( IsBus() ? BUS_END : WIRE_END, this, m_start );
-        aItemList.emplace_back( IsBus() ? BUS_END : WIRE_END, this, m_end );
+        aItemList.emplace_back( IsBus() ? DANGLING_END::BUS_END : DANGLING_END::WIRE_END, this, m_start );
+        aItemList.emplace_back( IsBus() ? DANGLING_END::BUS_END : DANGLING_END::WIRE_END, this, m_end );
     }
 }
 
@@ -622,8 +622,8 @@ bool SCH_LINE::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
             if( item.GetItem() == this )
                 continue;
 
-            if( ( IsWire() && item.GetType() != BUS_END && item.GetType() != BUS_ENTRY_END )
-                || ( IsBus() && item.GetType() != WIRE_END && item.GetType() != PIN_END ) )
+            if( ( IsWire() && item.GetType() != DANGLING_END::BUS_END && item.GetType() != DANGLING_END::BUS_ENTRY_END )
+                || ( IsBus() && item.GetType() != DANGLING_END::WIRE_END && item.GetType() != DANGLING_END::PIN_END ) )
             {
                 if( m_start == item.GetPosition() )
                     m_startIsDangling = false;

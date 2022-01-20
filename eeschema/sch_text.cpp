@@ -762,7 +762,7 @@ void SCH_LABEL_BASE::Rotate90( bool aClockwise )
 {
     SCH_TEXT::Rotate90( aClockwise );
 
-    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED_AUTO )
+    if( m_fieldsAutoplaced == FIELDS_AUTOPLACED::AUTO )
     {
         AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
     }
@@ -878,7 +878,7 @@ void SCH_LABEL_BASE::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
             accumulated += field.GetTextHeight() + margin;
     }
 
-    m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO;
+    m_fieldsAutoplaced = FIELDS_AUTOPLACED::AUTO;
 }
 
 
@@ -984,7 +984,7 @@ SEARCH_RESULT SCH_LABEL_BASE::Visit( INSPECTOR aInspector, void* testData,
 
 void SCH_LABEL_BASE::GetEndPoints( std::vector<DANGLING_END_ITEM>& aItemList )
 {
-    DANGLING_END_ITEM item( LABEL_END, this, GetTextPos() );
+    DANGLING_END_ITEM item( DANGLING_END::LABEL_END, this, GetTextPos() );
     aItemList.push_back( item );
 }
 
@@ -1126,25 +1126,25 @@ bool SCH_LABEL_BASE::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemL
 
         switch( item.GetType() )
         {
-        case PIN_END:
-        case LABEL_END:
-        case SHEET_LABEL_END:
-        case NO_CONNECT_END:
+        case DANGLING_END::PIN_END:
+        case DANGLING_END::LABEL_END:
+        case DANGLING_END::SHEET_LABEL_END:
+        case DANGLING_END::NO_CONNECT_END:
             if( GetTextPos() == item.GetPosition() )
             {
                 m_isDangling = false;
 
-                if( aPath && item.GetType() != PIN_END )
+                if( aPath && item.GetType() != DANGLING_END::PIN_END )
                     m_connected_items[ *aPath ].insert( static_cast<SCH_ITEM*>( item.GetItem() ) );
             }
 
             break;
 
-        case BUS_END:
+        case DANGLING_END::BUS_END:
             m_connectionType = CONNECTION_TYPE::BUS;
             KI_FALLTHROUGH;
 
-        case WIRE_END:
+        case DANGLING_END::WIRE_END:
         {
             DANGLING_END_ITEM& nextItem = aItemList[++ii];
 
@@ -1488,7 +1488,7 @@ void SCH_NETCLASS_FLAG::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
         origin -= field.GetTextHeight() + margin;
     }
 
-    m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO;
+    m_fieldsAutoplaced = FIELDS_AUTOPLACED::AUTO;
 }
 
 

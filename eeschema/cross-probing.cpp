@@ -41,7 +41,7 @@
 #include <wx/log.h>
 
 SCH_ITEM* SCH_EDITOR_CONTROL::FindSymbolAndItem( const wxString* aPath, const wxString* aReference,
-                                                 bool aSearchHierarchy, SCH_SEARCH_T aSearchType,
+                                                 bool aSearchHierarchy, SCH_SEARCH aSearchType,
                                                  const wxString& aSearchText )
 {
     SCH_SHEET_PATH* sheetWithSymbolFound = nullptr;
@@ -82,7 +82,7 @@ SCH_ITEM* SCH_EDITOR_CONTROL::FindSymbolAndItem( const wxString* aPath, const wx
                 symbol = candidate;
                 sheetWithSymbolFound = &sheet;
 
-                if( aSearchType == HIGHLIGHT_PIN )
+                if( aSearchType == SCH_SEARCH::HIGHLIGHT_PIN )
                 {
                     // temporary: will be changed if the pin is found.
                     pos = symbol->GetPosition();
@@ -254,7 +254,7 @@ SCH_ITEM* SCH_EDITOR_CONTROL::FindSymbolAndItem( const wxString* aPath, const wx
 
     if( symbol )
     {
-        if( aSearchType == HIGHLIGHT_PIN )
+        if( aSearchType == SCH_SEARCH::HIGHLIGHT_PIN )
         {
             if( foundItem )
                 msg.Printf( _( "%s pin %s found" ), displayRef, aSearchText );
@@ -345,7 +345,7 @@ void SCH_EDIT_FRAME::ExecuteRemoteCommand( const char* cmdline )
     if( idcmd == nullptr )    // Highlight symbol only (from CvPcb or Pcbnew)
     {
         // Highlight symbol part_ref, or clear Highlight, if part_ref is not existing
-        editor->FindSymbolAndItem( nullptr, &part_ref, true, HIGHLIGHT_SYMBOL, wxEmptyString );
+        editor->FindSymbolAndItem( nullptr, &part_ref, true, SCH_SEARCH::HIGHLIGHT_SYMBOL, wxEmptyString );
         return;
     }
 
@@ -360,21 +360,21 @@ void SCH_EDIT_FRAME::ExecuteRemoteCommand( const char* cmdline )
     {
         // Highlighting the reference itself isn't actually that useful, and it's harder to
         // see.  Highlight the parent and display the message.
-        editor->FindSymbolAndItem( nullptr, &part_ref, true, HIGHLIGHT_SYMBOL, msg );
+        editor->FindSymbolAndItem( nullptr, &part_ref, true, SCH_SEARCH::HIGHLIGHT_SYMBOL, msg );
     }
     else if( strcmp( idcmd, "$VAL:" ) == 0 )
     {
         // Highlighting the value itself isn't actually that useful, and it's harder to see.
         // Highlight the parent and display the message.
-        editor->FindSymbolAndItem( nullptr, &part_ref, true, HIGHLIGHT_SYMBOL, msg );
+        editor->FindSymbolAndItem( nullptr, &part_ref, true, SCH_SEARCH::HIGHLIGHT_SYMBOL, msg );
     }
     else if( strcmp( idcmd, "$PAD:" ) == 0 )
     {
-        editor->FindSymbolAndItem( nullptr, &part_ref, true, HIGHLIGHT_PIN, msg );
+        editor->FindSymbolAndItem( nullptr, &part_ref, true, SCH_SEARCH::HIGHLIGHT_PIN, msg );
     }
     else
     {
-        editor->FindSymbolAndItem( nullptr, &part_ref, true, HIGHLIGHT_SYMBOL, wxEmptyString );
+        editor->FindSymbolAndItem( nullptr, &part_ref, true, SCH_SEARCH::HIGHLIGHT_SYMBOL, wxEmptyString );
     }
 }
 
@@ -702,7 +702,7 @@ void SCH_EDIT_FRAME::KiwayMailIn( KIWAY_EXPRESS& mail )
         // TODO remove once real-time connectivity is a given
         if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
             // Ensure the netlist data is up to date:
-            RecalculateConnections( NO_CLEANUP );
+            RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
 
         exporter.Format( &formatter, GNL_ALL | GNL_OPT_KICAD );
 

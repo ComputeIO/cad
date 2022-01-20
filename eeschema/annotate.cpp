@@ -60,7 +60,7 @@ void SCH_EDIT_FRAME::mapExistingAnnotation( std::map<wxString, wxString>& aMap )
 }
 
 
-void SCH_EDIT_FRAME::DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool* aAppendUndo )
+void SCH_EDIT_FRAME::DeleteAnnotation( ANNOTATE_SCOPE aAnnotateScope, bool* aAppendUndo )
 {
     auto clearSymbolAnnotation =
         [&]( EDA_ITEM* aItem, SCH_SCREEN* aScreen, SCH_SHEET_PATH* aSheet )
@@ -84,20 +84,20 @@ void SCH_EDIT_FRAME::DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool* aA
 
     switch( aAnnotateScope )
     {
-    case ANNOTATE_ALL:
+    case ANNOTATE_SCOPE::ANNOTATE_ALL:
     {
         for( const SCH_SHEET_PATH& sheet : Schematic().GetSheets() )
             clearSheetAnnotation( sheet.LastScreen(), nullptr );
 
         break;
     }
-    case ANNOTATE_CURRENT_SHEET:
+    case ANNOTATE_SCOPE::ANNOTATE_CURRENT_SHEET:
     {
         clearSheetAnnotation( screen, &currentSheet );
         break;
     }
 
-    case ANNOTATE_SELECTION:
+    case ANNOTATE_SCOPE::ANNOTATE_SELECTION:
     {
         EE_SELECTION_TOOL* selTool = m_toolManager->GetTool<EE_SELECTION_TOOL>();
         EE_SELECTION&      selection = selTool->RequestSelection();
@@ -128,7 +128,7 @@ void SCH_EDIT_FRAME::DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool* aA
 }
 
 
-void SCH_EDIT_FRAME::AnnotateSymbols( ANNOTATE_SCOPE_T  aAnnotateScope,
+void SCH_EDIT_FRAME::AnnotateSymbols( ANNOTATE_SCOPE  aAnnotateScope,
                                       ANNOTATE_ORDER_T  aSortOption,
                                       ANNOTATE_ALGO_T   aAlgoOption,
                                       int               aStartNumber,
@@ -169,15 +169,15 @@ void SCH_EDIT_FRAME::AnnotateSymbols( ANNOTATE_SCOPE_T  aAnnotateScope,
     // Collect all the sets that must be annotated together.
     switch( aAnnotateScope )
     {
-    case ANNOTATE_ALL:
+    case ANNOTATE_SCOPE::ANNOTATE_ALL:
         sheets.GetMultiUnitSymbols( lockedSymbols );
         break;
 
-    case ANNOTATE_CURRENT_SHEET:
+    case ANNOTATE_SCOPE::ANNOTATE_CURRENT_SHEET:
         currentSheet.GetMultiUnitSymbols( lockedSymbols );
         break;
 
-    case ANNOTATE_SELECTION:
+    case ANNOTATE_SCOPE::ANNOTATE_SELECTION:
         selection.GetMultiUnitSymbols( lockedSymbols, currentSheet );
         break;
     }
@@ -195,15 +195,15 @@ void SCH_EDIT_FRAME::AnnotateSymbols( ANNOTATE_SCOPE_T  aAnnotateScope,
     // Build symbol list
     switch( aAnnotateScope )
     {
-    case ANNOTATE_ALL:
+    case ANNOTATE_SCOPE::ANNOTATE_ALL:
         sheets.GetSymbols( references );
         break;
 
-    case ANNOTATE_CURRENT_SHEET:
+    case ANNOTATE_SCOPE::ANNOTATE_CURRENT_SHEET:
         GetCurrentSheet().GetSymbols( references );
         break;
 
-    case ANNOTATE_SELECTION:
+    case ANNOTATE_SCOPE::ANNOTATE_SELECTION:
         selection.GetSymbols( references, currentSheet );
         break;
     }
@@ -213,7 +213,7 @@ void SCH_EDIT_FRAME::AnnotateSymbols( ANNOTATE_SCOPE_T  aAnnotateScope,
     // the full schematic)
     SCH_REFERENCE_LIST additionalRefs;
 
-    if( aAnnotateScope != ANNOTATE_ALL )
+    if( aAnnotateScope != ANNOTATE_SCOPE::ANNOTATE_ALL )
     {
         SCH_REFERENCE_LIST allRefs;
         sheets.GetSymbols( allRefs );
@@ -350,7 +350,7 @@ void SCH_EDIT_FRAME::AnnotateSymbols( ANNOTATE_SCOPE_T  aAnnotateScope,
 
 
 int SCH_EDIT_FRAME::CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler,
-                                   ANNOTATE_SCOPE_T         aAnnotateScope )
+                                   ANNOTATE_SCOPE         aAnnotateScope )
 {
     SCH_REFERENCE_LIST  referenceList;
     constexpr bool      includePowerSymbols = false;
@@ -358,15 +358,15 @@ int SCH_EDIT_FRAME::CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler,
     // Build the list of symbols
     switch( aAnnotateScope )
     {
-    case ANNOTATE_ALL:
+    case ANNOTATE_SCOPE::ANNOTATE_ALL:
         Schematic().GetSheets().GetSymbols( referenceList );
         break;
 
-    case ANNOTATE_CURRENT_SHEET:
+    case ANNOTATE_SCOPE::ANNOTATE_CURRENT_SHEET:
         GetCurrentSheet().GetSymbols( referenceList, includePowerSymbols );
         break;
 
-    case ANNOTATE_SELECTION:
+    case ANNOTATE_SCOPE::ANNOTATE_SELECTION:
         EE_SELECTION_TOOL* selTool = m_toolManager->GetTool<EE_SELECTION_TOOL>();
         EE_SELECTION&      selection = selTool->RequestSelection();
         selection.GetSymbols( referenceList, GetCurrentSheet(), includePowerSymbols );

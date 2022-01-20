@@ -78,7 +78,7 @@ enum SYMBOL_ORIENTATION_T
 
 
 /** Schematic annotation scope options. */
-enum ANNOTATE_SCOPE_T
+enum class ANNOTATE_SCOPE
 {
     ANNOTATE_ALL,           ///< Annotate the full schematic
     ANNOTATE_CURRENT_SHEET, ///< Annotate the current sheet
@@ -108,14 +108,14 @@ enum ANNOTATE_ALGO_T
 
 
 /// Schematic search type used by the socket link with Pcbnew
-enum SCH_SEARCH_T
+enum class SCH_SEARCH
 {
     HIGHLIGHT_PIN,
     HIGHLIGHT_SYMBOL
 };
 
 
-enum SCH_CLEANUP_FLAGS
+enum class SCH_CLEANUP_FLAGS
 {
     NO_CLEANUP,
     LOCAL_CLEANUP,
@@ -375,17 +375,17 @@ public:
     /**
      * Clear the current symbol annotation.
      *
-     * @param aCurrentSheetOnly Where to clear the annotation. See #ANNOTATE_SCOPE_T
+     * @param aCurrentSheetOnly Where to clear the annotation. See #ANNOTATE_SCOPE
      * @param appendUndo true to add the action to the previous undo list
      */
-    void DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool* appendUndo );
+    void DeleteAnnotation( ANNOTATE_SCOPE aAnnotateScope, bool* appendUndo );
 
     /**
      * Annotate the symbols in the schematic that are not currently annotated. Multi-unit symbols
      * are annotated together. E.g. if two symbols were R8A and R8B, they may become R3A and
      * R3B, but not R3A and R3C or R3C and R4D.
      *
-     * @param aAnnotateScope See #ANNOTATE_SCOPE_T
+     * @param aAnnotateScope See #ANNOTATE_SCOPE
      * @param aSortOption Define the annotation order.  See #ANNOTATE_ORDER_T.
      * @param aAlgoOption Define the annotation style.  See #ANNOTATE_ALGO_T.
      * @param aStartNumber The start number for non-sheet-based annotation styles.
@@ -401,7 +401,7 @@ public:
      * number * 100.  In other words the first sheet uses 100 to 199, the second sheet uses
      * 200 to 299, and so on.
      */
-    void AnnotateSymbols( ANNOTATE_SCOPE_T aAnnotateScope, ANNOTATE_ORDER_T aSortOption,
+    void AnnotateSymbols( ANNOTATE_SCOPE aAnnotateScope, ANNOTATE_ORDER_T aSortOption,
                           ANNOTATE_ALGO_T aAlgoOption, int aStartNumber, bool aResetAnnotation,
                           bool aRepairTimestamps, REPORTER& aReporter );
 
@@ -418,11 +418,11 @@ public:
      *
      * @return Number of annotation errors found.
      * @param aReporter A handler for error reporting.
-     * @param aAnnotateScope See #ANNOTATE_SCOPE_T Check the current sheet only if true.
+     * @param aAnnotateScope See #ANNOTATE_SCOPE Check the current sheet only if true.
      *                       Otherwise check the entire schematic.
      */
     int CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler,
-                       ANNOTATE_SCOPE_T         aAnnotateScope = ANNOTATE_ALL );
+                       ANNOTATE_SCOPE           aAnnotateScope = ANNOTATE_SCOPE::ANNOTATE_ALL );
 
     /**
      * Run a modal version of the annotate dialog for a specific purpose.

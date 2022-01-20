@@ -1521,7 +1521,7 @@ void SCH_SYMBOL::GetEndPoints( std::vector <DANGLING_END_ITEM>& aItemList )
         if( lib_pin->GetUnit() && m_unit && ( m_unit != lib_pin->GetUnit() ) )
             continue;
 
-        DANGLING_END_ITEM item( PIN_END, lib_pin, GetPinPhysicalPosition( lib_pin ), this );
+        DANGLING_END_ITEM item( DANGLING_END::PIN_END, lib_pin, GetPinPhysicalPosition( lib_pin ), this );
         aItemList.push_back( item );
     }
 }
@@ -1550,12 +1550,12 @@ bool SCH_SYMBOL::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
 
             switch( each_item.GetType() )
             {
-            case PIN_END:
-            case LABEL_END:
-            case SHEET_LABEL_END:
-            case WIRE_END:
-            case NO_CONNECT_END:
-            case JUNCTION_END:
+            case DANGLING_END::PIN_END:
+            case DANGLING_END::LABEL_END:
+            case DANGLING_END::SHEET_LABEL_END:
+            case DANGLING_END::WIRE_END:
+            case DANGLING_END::NO_CONNECT_END:
+            case DANGLING_END::JUNCTION_END:
 
                 if( pos == each_item.GetPosition() )
                     pin->SetIsDangling( false );

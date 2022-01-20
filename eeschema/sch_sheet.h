@@ -56,7 +56,7 @@ class SCH_SHEET : public SCH_ITEM
 public:
     SCH_SHEET( EDA_ITEM* aParent = nullptr, const VECTOR2I& aPos = VECTOR2I( 0, 0 ),
                wxSize aSize = wxSize( Mils2iu( MIN_SHEET_WIDTH ), Mils2iu( MIN_SHEET_HEIGHT ) ),
-               FIELDS_AUTOPLACED aAutoplaceFields = FIELDS_AUTOPLACED_AUTO );
+               FIELDS_AUTOPLACED aAutoplaceFields = FIELDS_AUTOPLACED::AUTO );
 
     /**
      * Copy \a aSheet into a new object.  All sheet pins are copied as is except and

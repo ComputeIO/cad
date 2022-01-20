@@ -128,7 +128,7 @@ GRAPHIC_PINSHAPE SCH_PIN::GetShape() const
 }
 
 
-int SCH_PIN::GetOrientation() const
+DRAW_PIN_ORIENT SCH_PIN::GetOrientation() const
 {
     return m_libPin->GetOrientation();
 }

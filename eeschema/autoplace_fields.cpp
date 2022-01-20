@@ -87,7 +87,7 @@ class AUTOPLACER
 public:
     typedef VECTOR2I  SIDE;
     static const SIDE SIDE_TOP, SIDE_BOTTOM, SIDE_LEFT, SIDE_RIGHT;
-    enum COLLISION { COLLIDE_NONE, COLLIDE_OBJECTS, COLLIDE_H_WIRES };
+    enum class COLLISION { COLLIDE_NONE, COLLIDE_OBJECTS, COLLIDE_H_WIRES };
 
     struct SIDE_AND_NPINS
     {
@@ -226,17 +226,17 @@ protected:
      */
     SIDE getPinSide( SCH_PIN* aPin )
     {
-        int pin_orient = aPin->GetLibPin()->PinDrawOrient( m_symbol->GetTransform() );
+        DRAW_PIN_ORIENT pin_orient = aPin->GetLibPin()->PinDrawOrient( m_symbol->GetTransform() );
 
         switch( pin_orient )
         {
-            case PIN_RIGHT: return SIDE_LEFT;
-            case PIN_LEFT:  return SIDE_RIGHT;
-            case PIN_UP:    return SIDE_BOTTOM;
-            case PIN_DOWN:  return SIDE_TOP;
-            default:
-                wxFAIL_MSG( "Invalid pin orientation" );
-                return SIDE_LEFT;
+        case DRAW_PIN_ORIENT::PIN_RIGHT: return SIDE_LEFT;
+        case DRAW_PIN_ORIENT::PIN_LEFT:  return SIDE_RIGHT;
+        case DRAW_PIN_ORIENT::PIN_UP:    return SIDE_BOTTOM;
+        case DRAW_PIN_ORIENT::PIN_DOWN:  return SIDE_TOP;
+        default:
+            wxFAIL_MSG( "Invalid pin orientation" );
+            return SIDE_LEFT;
         }
     }
 
@@ -403,7 +403,7 @@ protected:
 
             EDA_RECT box( fieldBoxPlacement( sideandpins ), m_fbox_size );
 
-            COLLISION collision = COLLIDE_NONE;
+            COLLISION collision = COLLISION::COLLIDE_NONE;
 
             for( SCH_ITEM* collider : filterCollisions( box ) )
             {
@@ -413,18 +413,18 @@ protected:
                 {
                     VECTOR2I start = line->GetStartPoint(), end = line->GetEndPoint();
 
-                    if( start.y == end.y && collision != COLLIDE_OBJECTS )
-                        collision = COLLIDE_H_WIRES;
+                    if( start.y == end.y && collision != COLLISION::COLLIDE_OBJECTS )
+                        collision = COLLISION::COLLIDE_H_WIRES;
                     else
-                        collision = COLLIDE_OBJECTS;
+                        collision = COLLISION::COLLIDE_OBJECTS;
                 }
                 else
                 {
-                    collision = COLLIDE_OBJECTS;
+                    collision = COLLISION::COLLIDE_OBJECTS;
                 }
             }
 
-            if( collision != COLLIDE_NONE )
+            if( collision != COLLISION::COLLIDE_NONE )
                 colliding.push_back( { side, collision } );
         }
 
@@ -488,8 +488,8 @@ protected:
         if( aAvoidCollisions )
         {
             std::vector<SIDE_AND_COLL> colliding_sides = getCollidingSides();
-            side = chooseSideFiltered( sides, colliding_sides, COLLIDE_OBJECTS, side );
-            side = chooseSideFiltered( sides, colliding_sides, COLLIDE_H_WIRES, side );
+            side = chooseSideFiltered( sides, colliding_sides, COLLISION::COLLIDE_OBJECTS, side );
+            side = chooseSideFiltered( sides, colliding_sides, COLLISION::COLLIDE_H_WIRES, side );
         }
 
         for( SIDE_AND_NPINS& each_side : sides | boost::adaptors::reversed )
@@ -729,5 +729,5 @@ void SCH_SYMBOL::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
 
     AUTOPLACER autoplacer( this, aScreen );
     autoplacer.DoAutoplace( aManual );
-    m_fieldsAutoplaced = ( aManual ? FIELDS_AUTOPLACED_MANUAL : FIELDS_AUTOPLACED_AUTO );
+    m_fieldsAutoplaced = ( aManual ? FIELDS_AUTOPLACED::MANUAL : FIELDS_AUTOPLACED::AUTO );
 }

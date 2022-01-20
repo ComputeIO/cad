@@ -247,20 +247,20 @@ int SCH_BUS_BUS_ENTRY::GetPenWidth() const
 
 void SCH_BUS_WIRE_ENTRY::GetEndPoints( std::vector< DANGLING_END_ITEM >& aItemList )
 {
-    DANGLING_END_ITEM item( WIRE_ENTRY_END, this, m_pos );
+    DANGLING_END_ITEM item( DANGLING_END::WIRE_ENTRY_END, this, m_pos );
     aItemList.push_back( item );
 
-    DANGLING_END_ITEM item1( WIRE_ENTRY_END, this, GetEnd() );
+    DANGLING_END_ITEM item1( DANGLING_END::WIRE_ENTRY_END, this, GetEnd() );
     aItemList.push_back( item1 );
 }
 
 
 void SCH_BUS_BUS_ENTRY::GetEndPoints( std::vector< DANGLING_END_ITEM >& aItemList )
 {
-    DANGLING_END_ITEM item( BUS_ENTRY_END, this, m_pos );
+    DANGLING_END_ITEM item( DANGLING_END::BUS_ENTRY_END, this, m_pos );
     aItemList.push_back( item );
 
-    DANGLING_END_ITEM item1( BUS_ENTRY_END, this, GetEnd() );
+    DANGLING_END_ITEM item1( DANGLING_END::BUS_ENTRY_END, this, GetEnd() );
     aItemList.push_back( item1 );
 }
 
@@ -333,7 +333,7 @@ bool SCH_BUS_WIRE_ENTRY::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aI
 
         switch( item.GetType() )
         {
-        case WIRE_END:
+        case DANGLING_END::WIRE_END:
             if( m_pos == item.GetPosition() )
                 has_wire[0] = true;
             else if( GetEnd() == item.GetPosition() )
@@ -341,7 +341,7 @@ bool SCH_BUS_WIRE_ENTRY::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aI
 
             break;
 
-        case BUS_END:
+        case DANGLING_END::BUS_END:
         {
             // The bus has created 2 DANGLING_END_ITEMs, one per end.
             DANGLING_END_ITEM& nextItem = aItemList[++ii];
@@ -388,7 +388,7 @@ bool SCH_BUS_BUS_ENTRY::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aIt
 
         switch( item.GetType() )
         {
-        case BUS_END:
+        case DANGLING_END::BUS_END:
         {
             // The bus has created 2 DANGLING_END_ITEMs, one per end.
             DANGLING_END_ITEM& nextItem = aItemList[++ii];

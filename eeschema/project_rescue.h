@@ -56,13 +56,6 @@ class SCH_SHEET_PATH;
 class SCHEMATIC;
 
 
-enum RESCUE_TYPE
-{
-    RESCUE_CONFLICT,
-    RESCUE_CASE,
-};
-
-
 class RESCUE_CANDIDATE
 {
 public:

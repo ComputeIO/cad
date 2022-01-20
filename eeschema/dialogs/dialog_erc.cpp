@@ -371,7 +371,7 @@ void DIALOG_ERC::testErc()
 
     // The connection graph has a whole set of ERC checks it can run
     AdvancePhase( _( "Checking conflicts..." ) );
-    m_parent->RecalculateConnections( NO_CLEANUP );
+    m_parent->RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
     sch->ConnectionGraph()->RunERC();
 
     // Test is all units of each multiunit symbol have the same footprint assigned.

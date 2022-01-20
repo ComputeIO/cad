@@ -658,7 +658,7 @@ void SCH_EDIT_FRAME::HardRedraw()
     for( std::pair<const wxString, LIB_SYMBOL*>& libSymbol : screen->GetLibSymbols() )
         libSymbol.second->ClearCaches();
 
-    RecalculateConnections( LOCAL_CLEANUP );
+    RecalculateConnections( SCH_CLEANUP_FLAGS::LOCAL_CLEANUP );
 
     FocusOnItem( nullptr );
 
@@ -883,7 +883,7 @@ void SCH_EDIT_FRAME::OnModify()
     GetScreen()->SetContentModified();
 
     if( ADVANCED_CFG::GetCfg().m_RealTimeConnectivity && CONNECTION_GRAPH::m_allowRealTime )
-        RecalculateConnections( NO_CLEANUP );
+        RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
     else
         GetScreen()->SetConnectivityDirty();
 
@@ -1283,7 +1283,7 @@ void SCH_EDIT_FRAME::AddItemToScreenAndUndoList( SCH_SCREEN* aScreen, SCH_ITEM* 
         // Update connectivity info for new item
         if( !aItem->IsMoving() )
         {
-            RecalculateConnections( LOCAL_CLEANUP );
+            RecalculateConnections( SCH_CLEANUP_FLAGS::LOCAL_CLEANUP );
 
             if( SCH_TEXT* textItem = dynamic_cast<SCH_TEXT*>( aItem ) )
                 inheritNetclass( GetCurrentSheet(), textItem );
@@ -1384,11 +1384,11 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
 #endif
 
     // Ensure schematic graph is accurate
-    if( aCleanupFlags == LOCAL_CLEANUP )
+    if( aCleanupFlags == SCH_CLEANUP_FLAGS::LOCAL_CLEANUP )
     {
         SchematicCleanUp( GetScreen() );
     }
-    else if( aCleanupFlags == GLOBAL_CLEANUP )
+    else if( aCleanupFlags == SCH_CLEANUP_FLAGS::GLOBAL_CLEANUP )
     {
         for( const SCH_SHEET_PATH& sheet : list )
             SchematicCleanUp( sheet.LastScreen() );

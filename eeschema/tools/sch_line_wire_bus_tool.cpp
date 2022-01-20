@@ -104,7 +104,7 @@ private:
         // TODO(JE) remove once real-time is enabled
         if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
         {
-            frame->RecalculateConnections( NO_CLEANUP );
+            frame->RecalculateConnections( SCH_CLEANUP_FLAGS::NO_CLEANUP );
 
             // Pick up the pointer again because it may have been changed by SchematicCleanUp
             selection = selTool->RequestSelection( busType );

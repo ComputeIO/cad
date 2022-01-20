@@ -86,12 +86,12 @@ const std::map<GRAPHIC_PINSHAPE, struct pinShapeStruct> pinShapes = {
 // clang-format on
 
 
-static const int pin_orientation_codes[] =
+static const DRAW_PIN_ORIENT pin_orientation_codes[] =
 {
-    PIN_RIGHT,
-    PIN_LEFT,
-    PIN_UP,
-    PIN_DOWN
+    DRAW_PIN_ORIENT::PIN_RIGHT,
+    DRAW_PIN_ORIENT::PIN_LEFT,
+    DRAW_PIN_ORIENT::PIN_UP,
+    DRAW_PIN_ORIENT::PIN_DOWN
 };
 
 
@@ -135,16 +135,16 @@ wxString PinOrientationName( unsigned aPinOrientationCode )
 }
 
 
-int PinOrientationCode( int index )
+DRAW_PIN_ORIENT PinOrientationCode( int index )
 {
     if( index >= 0 && index < (int) PIN_ORIENTATION_CNT )
         return pin_orientation_codes[ index ];
 
-    return PIN_RIGHT;
+    return DRAW_PIN_ORIENT::PIN_RIGHT;
 }
 
 
-int PinOrientationIndex( int code )
+int PinOrientationIndex( DRAW_PIN_ORIENT code )
 {
     size_t i;
 
