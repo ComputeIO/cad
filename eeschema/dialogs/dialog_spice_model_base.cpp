@@ -35,6 +35,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_pasType->Append( _("Resistor") );
 	m_pasType->Append( _("Capacitor") );
 	m_pasType->Append( _("Inductor") );
+	m_pasType->Append( _("Lossless transmission line") );
 	m_pasType->SetSelection( 0 );
 	fgSizer1->Add( m_pasType, 0, wxALL|wxEXPAND, 5 );
 

@@ -252,20 +252,25 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
     // Passive
     if( page == m_passive )
     {
-        if( !m_disabled->GetValue() && !m_passive->Validate() )
-            return false;
 
         switch( m_pasType->GetSelection() )
         {
         case 0: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_RESISTOR; break;
         case 1: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_CAPACITOR; break;
         case 2: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_INDUCTOR; break;
-
+        case 3: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_TLINE; break;
         default:
             wxASSERT_MSG( false, "Unhandled passive type" );
             return false;
             break;
         }
+
+        bool checkValue = m_fieldsTmp[SF_PRIMITIVE] == (char) SP_RESISTOR
+                          || m_fieldsTmp[SF_PRIMITIVE] == (char) SP_CAPACITOR
+                          || m_fieldsTmp[SF_PRIMITIVE] == (char) SP_INDUCTOR;
+
+        if( checkValue && !m_disabled->GetValue() && !m_passive->Validate() )
+            return false;
 
         m_fieldsTmp[SF_MODEL] = m_pasValue->GetValue();
     }
@@ -387,11 +392,13 @@ bool DIALOG_SPICE_MODEL::TransferDataToWindow()
         case SP_RESISTOR:
         case SP_CAPACITOR:
         case SP_INDUCTOR:
+        case SP_TLINE:
             m_notebook->SetSelection( m_notebook->FindPage( m_passive ) );
-            m_pasType->SetSelection( primitive == SP_RESISTOR ? 0
-                    : primitive == SP_CAPACITOR ? 1
-                    : primitive == SP_INDUCTOR ? 2
-                    : -1 );
+            m_pasType->SetSelection( primitive == SP_RESISTOR    ? 0
+                                     : primitive == SP_CAPACITOR ? 1
+                                     : primitive == SP_INDUCTOR  ? 2
+                                     : primitive == SP_TLINE     ? 3
+                                                                 : -1 );
             m_pasValue->SetValue( m_fieldsTmp[SF_MODEL] );
             break;
 
