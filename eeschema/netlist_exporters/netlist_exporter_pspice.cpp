@@ -418,7 +418,6 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
                         spiceItem2.m_pins.at( 3 ) = "0";
 
                         m_spiceItems.push_back( spiceItem2 );
-                        std::cout << "extra TLINE added " << std::endl;
                     }
                 }
             }
