@@ -41,6 +41,10 @@
 #include <cctype>
 #include <cstring>
 
+
+#define LTRA_NAME "KILTRAX"
+#define LTRA_PATTERN wxString( LTRA_NAME ) + "\n.model " + LTRA_NAME + " LTRA "
+
 // Helper function to shorten conditions
 static bool empty( const wxTextCtrl* aCtrl )
 {
@@ -566,7 +570,8 @@ bool DIALOG_SPICE_MODEL::parseLossyTline( const wxString& aModel )
     if( aModel.IsEmpty() )
         return false;
 
-    wxStringTokenizer tokenizer( aModel, " " );
+    wxString          model = aModel.SubString( wxString( LTRA_PATTERN ).size(), aModel.size() );
+    wxStringTokenizer tokenizer( model, " " );
 
     wxString extraParam = "";
 
@@ -576,31 +581,34 @@ bool DIALOG_SPICE_MODEL::parseLossyTline( const wxString& aModel )
         // process it in another branch
         wxString tkn = tokenizer.GetNextToken().Lower();
 
-        if( tkn.SubString( 0, 2 ) == "r=" )
+        if( tkn.SubString( 0, 1 ) == "r=" )
         {
             m_tlineLossyR->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
         }
-        else if( tkn.SubString( 0, 2 ) == "l=" )
+        else if( tkn.SubString( 0, 1 ) == "l=" )
         {
             m_tlineLossyL->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
         }
-        else if( tkn.SubString( 0, 2 ) == "c=" )
+        else if( tkn.SubString( 0, 1 ) == "c=" )
         {
             m_tlineLossyC->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
         }
-        else if( tkn.SubString( 0, 2 ) == "g=" )
+        else if( tkn.SubString( 0, 1 ) == "g=" )
         {
             m_tlineLossyG->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
         }
-        else if( tkn.SubString( 0, 4 ) == "len=" )
+        else if( tkn.SubString( 0, 3 ) == "len=" )
         {
             m_tlineLossyLen->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
         }
+
         else
         {
             extraParam += tkn + " ";
         }
     }
+    m_tlineLossyParams->SetValue( extraParam );
+
     return true;
 }
 
@@ -852,11 +860,9 @@ bool DIALOG_SPICE_MODEL::generateTlineLossless( wxString& aTarget )
     return true;
 }
 
-
 bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
 {
-    wxString result = "LTRAX\n";
-    result += ".model LTRAX LTRA ";
+    wxString result = LTRA_PATTERN;
 
     try
     {
@@ -872,8 +878,8 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     try
     {
         if( !empty( m_tlineLossyC ) )
-            result += wxString::Format(
-                    "c=%s ", SPICE_VALUE( m_tlineLossyR->GetValue() ).ToSpiceString() );
+            result += wxString::Format( "c=%s ",
+                                        SPICE_VALUE( m_tlineLossyC->GetValue() ).ToSpiceString() );
     }
     catch( ... )
     {
@@ -883,8 +889,8 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     try
     {
         if( !empty( m_tlineLossyL ) )
-            result += wxString::Format(
-                    "l=%s ", SPICE_VALUE( m_tlineLossyR->GetValue() ).ToSpiceString() );
+            result += wxString::Format( "l=%s ",
+                                        SPICE_VALUE( m_tlineLossyL->GetValue() ).ToSpiceString() );
     }
     catch( ... )
     {
@@ -896,17 +902,6 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
         if( !empty( m_tlineLossyG ) )
             result += wxString::Format(
                     "g=%s ", SPICE_VALUE( m_tlineLossyG->GetValue() ).ToSpiceString() );
-    }
-    catch( ... )
-    {
-        DisplayError( this, wxT( "Invalid conductance value" ) );
-        return false;
-    }
-    try
-    {
-        if( !empty( m_tlineLossyLen ) )
-            result += wxString::Format(
-                    "len=%s ", SPICE_VALUE( m_tlineLossyLen->GetValue() ).ToSpiceString() );
     }
     catch( ... )
     {
