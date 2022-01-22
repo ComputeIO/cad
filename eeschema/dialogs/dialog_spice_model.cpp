@@ -862,8 +862,8 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     try
     {
         if( !empty( m_tlineLossyR ) )
-            result += wxString::Format(
-                    "r=%s ", SPICE_VALUE( m_tlineLossyR->GetValue() ).ToSpiceString() );
+            result += wxString::Format( "r=%s ",
+                                        SPICE_VALUE( m_tlineLossyR->GetValue() ).ToSpiceString() );
     }
     catch( ... )
     {
@@ -895,8 +895,8 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     try
     {
         if( !empty( m_tlineLossyG ) )
-            result += wxString::Format(
-                    "g=%s ", SPICE_VALUE( m_tlineLossyG->GetValue() ).ToSpiceString() );
+            result += wxString::Format( "g=%s ",
+                                        SPICE_VALUE( m_tlineLossyG->GetValue() ).ToSpiceString() );
     }
     catch( ... )
     {

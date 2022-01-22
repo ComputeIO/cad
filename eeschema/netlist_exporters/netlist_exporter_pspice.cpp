@@ -318,9 +318,9 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
 
     m_netMap.clear();
 
-    int refNet = 0;
+    int         refNet = 0;
     const char* refNetString = "0";
-    m_netMap["GND"] = refNet;        // 0 is reserved for "GND"
+    m_netMap["GND"] = refNet; // 0 is reserved for "GND"
     int netIdx = 1;
 
     m_libraries.clear();
@@ -439,7 +439,8 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
                                {
                                    return a.Cmp( b ) < 0;
                                } );
-                    bool has_duplicate = std::adjacent_find( pins2.begin(), pins2.end() ) != pins2.end();
+                    bool has_duplicate =
+                            std::adjacent_find( pins2.begin(), pins2.end() ) != pins2.end();
 
                     if( !has_duplicate )
                     {

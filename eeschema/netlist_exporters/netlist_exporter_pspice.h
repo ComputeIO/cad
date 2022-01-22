@@ -49,21 +49,22 @@ enum SPICE_FIELD {
 };
 
 ///< Basic Spice component primitives
-enum SPICE_PRIMITIVE {
-    SP_UNKNOWN      = ' ',
-    SP_RESISTOR     = 'R',
-    SP_CAPACITOR    = 'C',
-    SP_INDUCTOR     = 'L',
-    SP_TLINE        = 'T',
-    SP_TLINE_LOSSY  = 'O',
-    SP_DIODE        = 'D',
-    SP_BJT          = 'Q',
-    SP_MOSFET       = 'M',
-    SP_JFET         = 'J',
-    SP_SUBCKT       = 'X',
-    SP_CODEMODEL    = 'A',
-    SP_VSOURCE      = 'V',
-    SP_ISOURCE      = 'I'
+enum SPICE_PRIMITIVE
+{
+    SP_UNKNOWN = ' ',
+    SP_RESISTOR = 'R',
+    SP_CAPACITOR = 'C',
+    SP_INDUCTOR = 'L',
+    SP_TLINE = 'T',
+    SP_TLINE_LOSSY = 'O',
+    SP_DIODE = 'D',
+    SP_BJT = 'Q',
+    SP_MOSFET = 'M',
+    SP_JFET = 'J',
+    SP_SUBCKT = 'X',
+    SP_CODEMODEL = 'A',
+    SP_VSOURCE = 'V',
+    SP_ISOURCE = 'I'
 };
 
 /// @todo add NET_ADJUST_INCLUDE_PATHS & NET_ADJUST_PASSIVE_VALS checkboxes in the netlist
