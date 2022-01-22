@@ -27,6 +27,7 @@
 #include <build_version.h>
 #include <confirm.h>
 
+#include <algorithm>
 #include <map>
 #include <search_stack.h>
 
@@ -406,32 +407,28 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
             if( spiceItem.m_primitive == SP_TLINE )
             {
                 std::vector<wxString> pins = spiceItem.m_pins;
+                std::vector<wxString> pins2 = pins;
+
 
                 if( pins.size() == 4 ) // A transmission line as 4 pins in ngspice
                 {
-                    std::vector< std::string > cpins;
-                    
-                    cpins.push_back(  pins.at(0).ToStdString());
-                    cpins.push_back(  pins.at(1).ToStdString());
-                    cpins.push_back(  pins.at(2).ToStdString());
-                    cpins.push_back(  pins.at(3).ToStdString());
 
-                    for ( auto p : cpins )
+                    for ( auto p : pins2 )
                     {
-                        std::cout << "Init : " << p << std::endl;
+                        std::cout << "init : " << p << std::endl;
                     }
-                    std::sort (cpins.begin(), cpins.end()); 
-                    for ( auto p : cpins )
+                    std::sort( pins2.begin(), pins2.end(),
+                                               [](wxString& a, wxString& b) {return a.compare(b);} );
+                    for ( auto p : pins2 )
                     {
-                        std::cout << "Sort : " << p << std::endl;
-                    }
-                    std::unique(cpins.begin(), cpins.end());  
-                    for ( auto p : cpins )
-                    {
-                        std::cout << "Unique : " << p << std::endl;
+                        std::cout << "sort : " << p << std::endl;
                     }
 
-                    if( cpins.size() == 4 )
+                    bool has_duplicate = std::adjacent_find( pins2.begin(), pins2.end() ) != pins2.end();
+
+                    std::cout << "Duplicate ? " << has_duplicate << std::endl;
+
+                    if( !has_duplicate )
                     {
                         SPICE_ITEM spiceItem2 = spiceItem;
                         spiceItem2.m_refName += "_kicad_pair";
