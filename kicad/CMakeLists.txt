@@ -43,7 +43,7 @@ if( WIN32 )
     endif()
 endif()
 
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     set( KICAD_RESOURCES kicad.icns kicad_doc.icns )
     set_source_files_properties( "${CMAKE_CURRENT_SOURCE_DIR}/kicad.icns" PROPERTIES
         MACOSX_PACKAGE_LOCATION Resources
@@ -56,7 +56,7 @@ if( APPLE )
     set( MACOSX_BUNDLE_NAME kicad )
 endif()
 
-add_executable( kicad WIN32 MACOSX_BUNDLE
+add_executable( kicad WIN32
     ${KICAD_SRCS}
     ${KICAD_EXTRA_SRCS}
     ${KICAD_RESOURCES}
@@ -72,9 +72,10 @@ if( UNIX )
         )
 endif()
 
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     set_target_properties( kicad PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_BINARY_DIR}/kicad/Info.plist
+        MACOSX_BUNDLE TRUE
         )
     target_link_libraries( kicad
         nlohmann_json
@@ -104,7 +105,7 @@ if( KICAD_WIN32_INSTALL_PDBS )
     install(FILES $<TARGET_PDB_FILE:kicad> DESTINATION ${KICAD_BIN})
 endif()
 
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     # "install( CODE ... )" will launch its own CMake, so no variables from
     # this CMake instance are accessible... use helper to transfer
     set( SCRIPTING_HELPER "1" )

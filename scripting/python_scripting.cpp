@@ -154,7 +154,7 @@ bool SCRIPTING::scriptingSetup()
         wxSetEnv( wxT( "PATH" ), kipython );
     }
   #endif
-#elif defined( __WXMAC__ )
+#elif defined( __MACOSX_APP__ )
 
     // Prevent Mac builds from generating JIT versions as this will break
     // the package signing

@@ -58,7 +58,7 @@ if( WIN32 )
     endif()
 endif()
 
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     # setup bundle
     set( PCB_CALCULATOR_RESOURCES pcb_calculator.icns )
     set_source_files_properties( "${CMAKE_CURRENT_SOURCE_DIR}/pcb_calculator.icns" PROPERTIES
@@ -69,7 +69,7 @@ if( APPLE )
     set( MACOSX_BUNDLE_NAME pcb_calculator )
 endif()
 
-add_executable( pcb_calculator WIN32 MACOSX_BUNDLE
+add_executable( pcb_calculator WIN32
     ${CMAKE_SOURCE_DIR}/common/single_top.cpp
     ${CMAKE_SOURCE_DIR}/common/pgm_base.cpp
     ${PCB_CALCULATOR_RESOURCES}
@@ -119,9 +119,10 @@ endif()
 add_dependencies( pcb_calculator pcb_calculator_kiface )
 
 # these 2 binaries are a matched set, keep them together
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     set_target_properties( pcb_calculator PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_BINARY_DIR}/pcb_calculator/Info.plist
+        MACOSX_BUNDLE TRUE
         )
 
     # puts binaries into the *.app bundle while linking

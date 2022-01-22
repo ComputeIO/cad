@@ -360,7 +360,7 @@ set_source_files_properties( sch_text.cpp
         OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/sch_text_help_md.h
     )
 
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     # setup bundle
     set( EESCHEMA_RESOURCES eeschema.icns eeschema_doc.icns )
     set_source_files_properties( "${CMAKE_CURRENT_SOURCE_DIR}/eeschema.icns" PROPERTIES
@@ -375,7 +375,7 @@ if( APPLE )
 endif()
 
 
-add_executable( eeschema WIN32 MACOSX_BUNDLE
+add_executable( eeschema WIN32
     ${CMAKE_SOURCE_DIR}/common/single_top.cpp
     ${CMAKE_SOURCE_DIR}/common/pgm_base.cpp
     ${EESCHEMA_RESOURCES}
@@ -459,9 +459,10 @@ if( MAKE_LINK_MAPS )
 endif()
 
 # these 2 binaries are a matched set, keep them together:
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     set_target_properties( eeschema PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_BINARY_DIR}/eeschema/Info.plist
+        MACOSX_BUNDLE TRUE
         )
 
     # puts binaries into the *.app bundle while linking
