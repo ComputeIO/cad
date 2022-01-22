@@ -297,6 +297,18 @@ wxString NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_S
     }
 }
 
+wxString modelLine( wxString aName, wxString aParams )
+{
+    wxString result;
+    result = aName;
+    result += "\n.model ";
+    result += aName;
+    result += " ";
+    result += aParams;
+
+    return result;
+}
+
 
 bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
 {
@@ -396,7 +408,15 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
                 }
             }
 
+            //Special case because we have a GUI to set a model.
+            if( spiceItem.m_primitive == SP_TLINE_LOSSY )
+            {
+                spiceItem.m_model =
+                        modelLine( "LTRA_" + spiceItem.m_refName, "LTRA " + spiceItem.m_model );
+            }
+
             m_spiceItems.push_back( spiceItem );
+
 
             //Special case for lossline transmission lines ( TXXXX )
             //From the ngspice doc:
@@ -404,7 +424,9 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
             // If all four nodes are distinct in the actual circuit, then two modes may be excited.
             // To simulate such a situation, two transmission-line elements are required.
 
-            if( spiceItem.m_primitive == SP_TLINE )
+            // This is apparently also needed for lossy lines
+
+            if( spiceItem.m_primitive == SP_TLINE || spiceItem.m_primitive == SP_TLINE_LOSSY )
             {
                 std::vector<wxString> pins = spiceItem.m_pins;
                 std::vector<wxString> pins2 = pins;

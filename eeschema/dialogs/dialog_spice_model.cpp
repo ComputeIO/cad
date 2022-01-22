@@ -41,10 +41,6 @@
 #include <cctype>
 #include <cstring>
 
-
-#define LTRA_NAME "KILTRAX"
-#define LTRA_PATTERN wxString( LTRA_NAME ) + "\n.model " + LTRA_NAME + " LTRA "
-
 // Helper function to shorten conditions
 static bool empty( const wxTextCtrl* aCtrl )
 {
@@ -570,8 +566,7 @@ bool DIALOG_SPICE_MODEL::parseLossyTline( const wxString& aModel )
     if( aModel.IsEmpty() )
         return false;
 
-    wxString          model = aModel.SubString( wxString( LTRA_PATTERN ).size(), aModel.size() );
-    wxStringTokenizer tokenizer( model, " " );
+    wxStringTokenizer tokenizer( aModel, " " );
 
     wxString extraParam = "";
 
@@ -862,7 +857,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossless( wxString& aTarget )
 
 bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
 {
-    wxString result = LTRA_PATTERN;
+    wxString result;
 
     try
     {
