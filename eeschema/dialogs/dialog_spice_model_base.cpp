@@ -958,7 +958,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_tlineLosslessImpedance = new wxTextCtrl( m_tlineLossless, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer1311->Add( m_tlineLosslessImpedance, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText26211111 = new wxStaticText( m_tlineLossless, wxID_ANY, _("ohms"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText26211111 = new wxStaticText( m_tlineLossless, wxID_ANY, _("Ohms"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText26211111->Wrap( -1 );
 	fgSizer1311->Add( m_staticText26211111, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
@@ -1028,7 +1028,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_tlineLossyR = new wxTextCtrl( m_tlineLossy, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer13111->Add( m_tlineLossyR, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText262111112 = new wxStaticText( m_tlineLossy, wxID_ANY, _("ohms / unit"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText262111112 = new wxStaticText( m_tlineLossy, wxID_ANY, _("Ohms / unit"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText262111112->Wrap( -1 );
 	fgSizer13111->Add( m_staticText262111112, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
@@ -1039,7 +1039,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_tlineLossyL = new wxTextCtrl( m_tlineLossy, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer13111->Add( m_tlineLossyL, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText2621111112 = new wxStaticText( m_tlineLossy, wxID_ANY, _("henry / unit"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText2621111112 = new wxStaticText( m_tlineLossy, wxID_ANY, _("Henry / unit"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText2621111112->Wrap( -1 );
 	fgSizer13111->Add( m_staticText2621111112, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
@@ -1050,7 +1050,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_tlineLossyC = new wxTextCtrl( m_tlineLossy, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer13111->Add( m_tlineLossyC, 1, wxALL|wxEXPAND, 5 );
 
-	m_staticText26211111111 = new wxStaticText( m_tlineLossy, wxID_ANY, _("farad / unit"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText26211111111 = new wxStaticText( m_tlineLossy, wxID_ANY, _("Farad / unit"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText26211111111->Wrap( -1 );
 	fgSizer13111->Add( m_staticText26211111111, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
@@ -1061,7 +1061,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_tlineLossyG = new wxTextCtrl( m_tlineLossy, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer13111->Add( m_tlineLossyG, 1, wxALL|wxEXPAND, 5 );
 
-	m_staticText262111111111 = new wxStaticText( m_tlineLossy, wxID_ANY, _("siemens / unit"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText262111111111 = new wxStaticText( m_tlineLossy, wxID_ANY, _("Siemens / unit"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText262111111111->Wrap( -1 );
 	fgSizer13111->Add( m_staticText262111111111, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 

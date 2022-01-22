@@ -11866,7 +11866,7 @@
                                                     <object class="notebookpage" expanded="1">
                                                         <property name="bitmap"></property>
                                                         <property name="label">Lossless</property>
-                                                        <property name="select">1</property>
+                                                        <property name="select">0</property>
                                                         <object class="wxPanel" expanded="1">
                                                             <property name="BottomDockable">1</property>
                                                             <property name="LeftDockable">1</property>
@@ -12103,7 +12103,7 @@
                                                                                 <property name="gripper">0</property>
                                                                                 <property name="hidden">0</property>
                                                                                 <property name="id">wxID_ANY</property>
-                                                                                <property name="label">ohms</property>
+                                                                                <property name="label">Ohms</property>
                                                                                 <property name="markup">0</property>
                                                                                 <property name="max_size"></property>
                                                                                 <property name="maximize_button">0</property>
@@ -12713,7 +12713,7 @@
                                                     <object class="notebookpage" expanded="1">
                                                         <property name="bitmap"></property>
                                                         <property name="label">Lossy</property>
-                                                        <property name="select">0</property>
+                                                        <property name="select">1</property>
                                                         <object class="wxPanel" expanded="1">
                                                             <property name="BottomDockable">1</property>
                                                             <property name="LeftDockable">1</property>
@@ -12950,7 +12950,7 @@
                                                                                 <property name="gripper">0</property>
                                                                                 <property name="hidden">0</property>
                                                                                 <property name="id">wxID_ANY</property>
-                                                                                <property name="label">ohms / unit</property>
+                                                                                <property name="label">Ohms / unit</property>
                                                                                 <property name="markup">0</property>
                                                                                 <property name="max_size"></property>
                                                                                 <property name="maximize_button">0</property>
@@ -13136,7 +13136,7 @@
                                                                                 <property name="gripper">0</property>
                                                                                 <property name="hidden">0</property>
                                                                                 <property name="id">wxID_ANY</property>
-                                                                                <property name="label">henry / unit</property>
+                                                                                <property name="label">Henry / unit</property>
                                                                                 <property name="markup">0</property>
                                                                                 <property name="max_size"></property>
                                                                                 <property name="maximize_button">0</property>
@@ -13322,7 +13322,7 @@
                                                                                 <property name="gripper">0</property>
                                                                                 <property name="hidden">0</property>
                                                                                 <property name="id">wxID_ANY</property>
-                                                                                <property name="label">farad / unit</property>
+                                                                                <property name="label">Farad / unit</property>
                                                                                 <property name="markup">0</property>
                                                                                 <property name="max_size"></property>
                                                                                 <property name="maximize_button">0</property>
@@ -13508,7 +13508,7 @@
                                                                                 <property name="gripper">0</property>
                                                                                 <property name="hidden">0</property>
                                                                                 <property name="id">wxID_ANY</property>
-                                                                                <property name="label">siemens / unit</property>
+                                                                                <property name="label">Siemens / unit</property>
                                                                                 <property name="markup">0</property>
                                                                                 <property name="max_size"></property>
                                                                                 <property name="maximize_button">0</property>
