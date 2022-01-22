@@ -412,21 +412,12 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
 
                 if( pins.size() == 4 ) // A transmission line as 4 pins in ngspice
                 {
-
-                    for ( auto p : pins2 )
-                    {
-                        std::cout << "init : " << p << std::endl;
-                    }
                     std::sort( pins2.begin(), pins2.end(),
-                                               [](wxString& a, wxString& b) {return a.compare(b);} );
-                    for ( auto p : pins2 )
-                    {
-                        std::cout << "sort : " << p << std::endl;
-                    }
-
+                               []( wxString& a, wxString& b ) -> bool
+                               {
+                                   return a.Cmp( b ) < 0;
+                               } );
                     bool has_duplicate = std::adjacent_find( pins2.begin(), pins2.end() ) != pins2.end();
-
-                    std::cout << "Duplicate ? " << has_duplicate << std::endl;
 
                     if( !has_duplicate )
                     {
