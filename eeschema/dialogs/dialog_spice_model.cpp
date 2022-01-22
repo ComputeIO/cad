@@ -800,7 +800,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossless( wxString& aTarget )
     }
     catch( ... )
     {
-        DisplayError( this, wxT( "Invalid Impedance value" ) );
+        DisplayError( this, _( "Invalid Impedance value" ) );
         return false;
     }
 
@@ -815,7 +815,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossless( wxString& aTarget )
         }
         catch( ... )
         {
-            DisplayError( this, wxT( "Invalid delay value" ) );
+            DisplayError( this, _( "Invalid delay value" ) );
             return false;
         }
     }
@@ -830,7 +830,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossless( wxString& aTarget )
         }
         catch( ... )
         {
-            DisplayError( this, wxT( "Invalid frequency value" ) );
+            DisplayError( this, _( "Invalid frequency value" ) );
             return false;
         }
         try
@@ -842,7 +842,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossless( wxString& aTarget )
         }
         catch( ... )
         {
-            DisplayError( this, wxT( "Invalid length in wavelength value" ) );
+            DisplayError( this, _( "Invalid length in wavelength value" ) );
             return false;
         }
     }
@@ -867,7 +867,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     }
     catch( ... )
     {
-        DisplayError( this, wxT( "Invalid resistance value" ) );
+        DisplayError( this, _( "Invalid resistance value" ) );
         return false;
     }
     try
@@ -878,7 +878,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     }
     catch( ... )
     {
-        DisplayError( this, wxT( "Invalid capacitance value" ) );
+        DisplayError( this, _( "Invalid capacitance value" ) );
         return false;
     }
     try
@@ -889,7 +889,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     }
     catch( ... )
     {
-        DisplayError( this, wxT( "Invalid inductance value" ) );
+        DisplayError( this, _( "Invalid inductance value" ) );
         return false;
     }
     try
@@ -900,7 +900,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     }
     catch( ... )
     {
-        DisplayError( this, wxT( "Invalid conductance value" ) );
+        DisplayError( this, _( "Invalid conductance value" ) );
         return false;
     }
     try
@@ -911,7 +911,7 @@ bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
     }
     catch( ... )
     {
-        DisplayError( this, wxT( "Invalid conductance value" ) );
+        DisplayError( this, _( "Invalid length value" ) );
         return false;
     }
 
