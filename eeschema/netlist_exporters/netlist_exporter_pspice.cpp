@@ -413,9 +413,9 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
                         SPICE_ITEM spiceItem2 = spiceItem;
                         spiceItem2.m_refName += "_kicad_pair";
                         spiceItem2.m_pins.at( 0 ) = pins.at( 1 );
-                        spiceItem2.m_pins.at( 1 ) = "0";
+                        spiceItem2.m_pins.at( 1 ) = m_netMap["GND"];
                         spiceItem2.m_pins.at( 2 ) = pins.at( 3 );
-                        spiceItem2.m_pins.at( 3 ) = "0";
+                        spiceItem2.m_pins.at( 3 ) = m_netMap["GND"];
 
                         m_spiceItems.push_back( spiceItem2 );
                     }
