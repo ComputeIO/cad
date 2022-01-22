@@ -304,7 +304,10 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
     std::set<wxString> refNames;       // Set of reference names, to check for duplication
 
     m_netMap.clear();
-    m_netMap["GND"] = 0;        // 0 is reserved for "GND"
+
+    int refNet = 0;
+    const char* refNetString = "0";
+    m_netMap["GND"] = refNet;        // 0 is reserved for "GND"
     int netIdx = 1;
 
     m_libraries.clear();
@@ -406,16 +409,36 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
 
                 if( pins.size() == 4 ) // A transmission line as 4 pins in ngspice
                 {
-                    if( ( pins.at( 0 ) != pins.at( 1 ) ) && ( pins.at( 0 ) != pins.at( 2 ) )
-                        && ( pins.at( 0 ) != pins.at( 3 ) ) && ( pins.at( 1 ) != pins.at( 2 ) )
-                        && ( pins.at( 1 ) != pins.at( 3 ) ) && ( pins.at( 2 ) != pins.at( 3 ) ) )
+                    std::vector< std::string > cpins;
+                    
+                    cpins.push_back(  pins.at(0).ToStdString());
+                    cpins.push_back(  pins.at(1).ToStdString());
+                    cpins.push_back(  pins.at(2).ToStdString());
+                    cpins.push_back(  pins.at(3).ToStdString());
+
+                    for ( auto p : cpins )
+                    {
+                        std::cout << "Init : " << p << std::endl;
+                    }
+                    std::sort (cpins.begin(), cpins.end()); 
+                    for ( auto p : cpins )
+                    {
+                        std::cout << "Sort : " << p << std::endl;
+                    }
+                    std::unique(cpins.begin(), cpins.end());  
+                    for ( auto p : cpins )
+                    {
+                        std::cout << "Unique : " << p << std::endl;
+                    }
+
+                    if( cpins.size() == 4 )
                     {
                         SPICE_ITEM spiceItem2 = spiceItem;
                         spiceItem2.m_refName += "_kicad_pair";
                         spiceItem2.m_pins.at( 0 ) = pins.at( 1 );
-                        spiceItem2.m_pins.at( 1 ) = m_netMap["GND"];
+                        spiceItem2.m_pins.at( 1 ) = refNetString;
                         spiceItem2.m_pins.at( 2 ) = pins.at( 3 );
-                        spiceItem2.m_pins.at( 3 ) = m_netMap["GND"];
+                        spiceItem2.m_pins.at( 3 ) = refNetString;
 
                         m_spiceItems.push_back( spiceItem2 );
                     }

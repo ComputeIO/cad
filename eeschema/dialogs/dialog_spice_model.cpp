@@ -314,6 +314,12 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
         }
         else if( subpage == m_tlineLossy )
         {
+            m_fieldsTmp[SF_PRIMITIVE] = (char) SP_TLINE_LOSSY;
+
+            if( !generateTlineLossy( model ) )
+                return false;
+
+            m_fieldsTmp[SF_MODEL] = model;
         }
         else
         {
@@ -425,6 +431,13 @@ bool DIALOG_SPICE_MODEL::TransferDataToWindow()
             m_tlineNotebook->SetSelection( m_tlineNotebook->FindPage( m_tlineLossless ) );
 
             if( !parseLosslessTline( m_fieldsTmp[SF_MODEL] ) )
+                return false;
+            break;
+        case SP_TLINE_LOSSY:
+            m_notebook->SetSelection( m_notebook->FindPage( m_tline ) );
+            m_tlineNotebook->SetSelection( m_tlineNotebook->FindPage( m_tlineLossy ) );
+
+            if( !parseLossyTline( m_fieldsTmp[SF_MODEL] ) )
                 return false;
             break;
         case SP_DIODE:
@@ -543,6 +556,49 @@ bool DIALOG_SPICE_MODEL::parseLosslessTline( const wxString& aModel )
         {
             m_tlineLosslessWavelength->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
             m_tlineLosslessDelayMode->SetSelection( 1 );
+        }
+    }
+    return true;
+}
+
+bool DIALOG_SPICE_MODEL::parseLossyTline( const wxString& aModel )
+{
+    if( aModel.IsEmpty() )
+        return false;
+
+    wxStringTokenizer tokenizer( aModel, " " );
+
+    wxString extraParam = "";
+
+    while( tokenizer.HasMoreTokens() )
+    {
+        // Get the next token now, so if any of the branches catches an exception, try to
+        // process it in another branch
+        wxString tkn = tokenizer.GetNextToken().Lower();
+
+        if( tkn.SubString( 0, 2 ) == "r=" )
+        {
+            m_tlineLossyR->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
+        }
+        else if( tkn.SubString( 0, 2 ) == "l=" )
+        {
+            m_tlineLossyL->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
+        }
+        else if( tkn.SubString( 0, 2 ) == "c=" )
+        {
+            m_tlineLossyC->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
+        }
+        else if( tkn.SubString( 0, 2 ) == "g=" )
+        {
+            m_tlineLossyG->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
+        }
+        else if( tkn.SubString( 0, 4 ) == "len=" )
+        {
+            m_tlineLossyLen->SetValue( tkn.AfterFirst( wxUniChar( '=' ) ) );
+        }
+        else
+        {
+            extraParam += tkn + " ";
         }
     }
     return true;
@@ -791,6 +847,85 @@ bool DIALOG_SPICE_MODEL::generateTlineLossless( wxString& aTarget )
     {
         return false;
     }
+
+    aTarget += result;
+    return true;
+}
+
+
+bool DIALOG_SPICE_MODEL::generateTlineLossy( wxString& aTarget )
+{
+    wxString result = "LTRAX\n";
+    result += ".model LTRAX LTRA ";
+
+    try
+    {
+        if( !empty( m_tlineLossyR ) )
+            result += wxString::Format(
+                    "r=%s ", SPICE_VALUE( m_tlineLossyR->GetValue() ).ToSpiceString() );
+    }
+    catch( ... )
+    {
+        DisplayError( this, wxT( "Invalid resistance value" ) );
+        return false;
+    }
+    try
+    {
+        if( !empty( m_tlineLossyC ) )
+            result += wxString::Format(
+                    "c=%s ", SPICE_VALUE( m_tlineLossyR->GetValue() ).ToSpiceString() );
+    }
+    catch( ... )
+    {
+        DisplayError( this, wxT( "Invalid capacitance value" ) );
+        return false;
+    }
+    try
+    {
+        if( !empty( m_tlineLossyL ) )
+            result += wxString::Format(
+                    "l=%s ", SPICE_VALUE( m_tlineLossyR->GetValue() ).ToSpiceString() );
+    }
+    catch( ... )
+    {
+        DisplayError( this, wxT( "Invalid inductance value" ) );
+        return false;
+    }
+    try
+    {
+        if( !empty( m_tlineLossyG ) )
+            result += wxString::Format(
+                    "g=%s ", SPICE_VALUE( m_tlineLossyG->GetValue() ).ToSpiceString() );
+    }
+    catch( ... )
+    {
+        DisplayError( this, wxT( "Invalid conductance value" ) );
+        return false;
+    }
+    try
+    {
+        if( !empty( m_tlineLossyLen ) )
+            result += wxString::Format(
+                    "len=%s ", SPICE_VALUE( m_tlineLossyLen->GetValue() ).ToSpiceString() );
+    }
+    catch( ... )
+    {
+        DisplayError( this, wxT( "Invalid conductance value" ) );
+        return false;
+    }
+    try
+    {
+        if( !empty( m_tlineLossyLen ) )
+            result += wxString::Format(
+                    "len=%s ", SPICE_VALUE( m_tlineLossyLen->GetValue() ).ToSpiceString() );
+    }
+    catch( ... )
+    {
+        DisplayError( this, wxT( "Invalid conductance value" ) );
+        return false;
+    }
+
+    result += m_tlineLossyParams->GetValue();
 
     aTarget += result;
     return true;
