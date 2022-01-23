@@ -958,9 +958,9 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_tlineLosslessImpedance = new wxTextCtrl( m_tlineLossless, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer1311->Add( m_tlineLosslessImpedance, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText26211111 = new wxStaticText( m_tlineLossless, wxIOhmD_ANY, _("ohm"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText26211111 = new wxStaticText( m_tlineLossless, wxID_ANY, _("ohm"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText26211111->Wrap( -1 );
-	fgSizer1311->Add( m_staticText26211111, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
+	fgSizer1311->Add( m_staticText26211111, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	m_staticText26711111 = new wxStaticText( m_tlineLossless, wxID_ANY, _("Propagation delay"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText26711111->Wrap( -1 );
