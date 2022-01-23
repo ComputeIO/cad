@@ -21,6 +21,7 @@
 #define PCB_CALCULATOR_FRAME_H_
 
 #include <calculator_panels/calculator_panel.h>
+#include <wx/treebook.h>
 #include <kiway_player.h>
 
 class wxMenuBar;
@@ -76,9 +77,8 @@ private:
     void SaveSettings( APP_SETTINGS_BASE* aCfg ) override;
 
 private:
-    wxMenuBar*  m_menubar;
-    wxNotebook* m_notebook;
     wxBoxSizer* m_mainSizer;
+    wxTreebook* m_treebook;
 
     int         m_lastNotebookPage;
 

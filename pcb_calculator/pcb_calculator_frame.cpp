@@ -60,36 +60,53 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     SetSizeHints( wxDefaultSize, wxDefaultSize );
 
-    m_menubar = new wxMenuBar( 0 );
-    SetMenuBar( m_menubar );
 
     m_mainSizer = new wxBoxSizer( wxVERTICAL );
-    m_notebook  = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 
-    m_mainSizer->Add( m_notebook, 1, wxEXPAND, 5 );
+
+    m_treebook = new wxTreebook( this, wxID_ANY );
+    m_treebook->SetFont( KIUI::GetControlFont( this ) );
+    m_mainSizer->Add( m_treebook, 1, wxEXPAND | wxLEFT | wxTOP, 0 );
+
 
     SetSizer( m_mainSizer );
+    //Centre( wxBOTH );
     Layout();
-    Centre( wxBOTH );
 
-    AddCalculator( new PANEL_REGULATOR( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+    m_treebook->AddPage( nullptr, _( "General system design" ) );
+    AddCalculator( new PANEL_REGULATOR( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                        wxTAB_TRAVERSAL ),
                    _( "Regulators" ) );
-    AddCalculator( new PANEL_ATTENUATORS( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _( "RF Attenuators" ) );
-    AddCalculator( new PANEL_E_SERIE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _( "E-Series" ) );
-    AddCalculator( new PANEL_COLOR_CODE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _( "Color Code" ) );
-    AddCalculator( new PANEL_TRANSLINE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _( "TransLine ") );
-    AddCalculator( new PANEL_VIA_SIZE( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _( "Via Size" ) );
-    AddCalculator( new PANEL_TRACK_WIDTH( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _( "Track Width" ) );
-    AddCalculator( new PANEL_ELECTRICAL_SPACING( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _( "Electrical Spacing" ) );
-    AddCalculator( new PANEL_BOARD_CLASS( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
-                   _("Board Classes") );
+
+    m_treebook->AddPage( nullptr, _( "Power, current and isolation" ) );
+    AddCalculator( new PANEL_ELECTRICAL_SPACING( m_treebook, wxID_ANY, wxDefaultPosition,
+                                                 wxDefaultSize, wxTAB_TRAVERSAL ),
+                                                 _( "Electrical Spacing" ) );
+    AddCalculator( new PANEL_VIA_SIZE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                       wxTAB_TRAVERSAL ),
+                                       _( "Via Size" ) );
+    AddCalculator( new PANEL_TRACK_WIDTH( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                          wxTAB_TRAVERSAL ),
+                                          _( "Track Width" ) );
+
+    m_treebook->AddPage( nullptr, _( "High speed" ) );
+    AddCalculator( new PANEL_ATTENUATORS( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                          wxTAB_TRAVERSAL ),
+                                          _( "RF Attenuators" ) );
+    AddCalculator( new PANEL_TRANSLINE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                        wxTAB_TRAVERSAL ),
+                                        _( "TransLine " ) );
+
+    m_treebook->AddPage( nullptr, _( "Memo" ) );
+    AddCalculator( new PANEL_E_SERIE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                      wxTAB_TRAVERSAL ),
+                                      _( "E-Series" ) );
+    AddCalculator( new PANEL_COLOR_CODE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                         wxTAB_TRAVERSAL ),
+                                         _( "Color Code" ) );
+    AddCalculator( new PANEL_BOARD_CLASS( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                                          wxTAB_TRAVERSAL ),
+                                          _( "Board Classes" ) );
 
     LoadSettings( config() );
 
@@ -140,7 +157,7 @@ void PCB_CALCULATOR_FRAME::AddCalculator( CALCULATOR_PANEL *aPanel, const wxStri
     m_panels.push_back( aPanel );
     m_panelTypes[ typeid( *aPanel ).hash_code() ] = aPanel;
 
-    m_notebook->AddPage( aPanel, panelUIName, false );
+    m_treebook->AddSubPage( aPanel, panelUIName );
 }
 
 
@@ -159,7 +176,7 @@ void PCB_CALCULATOR_FRAME::onThemeChanged( wxSysColourChangedEvent& aEvent )
 
 void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
 {
-    if( m_notebook->GetSelection() != m_lastNotebookPage )
+    if( m_treebook->GetSelection() != m_lastNotebookPage )
     {
         // Kick all the things that wxWidgets can't seem to redraw on its own.
         // This is getting seriously ridiculous....
@@ -202,8 +219,8 @@ void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
 
         // Until it's shown on screen the above won't work; but doing it anyway at least keeps
         // putting new OnUpdateUI events into the queue until it *is* shown on screen.
-        if( m_notebook->IsShownOnScreen() )
-            m_lastNotebookPage = m_notebook->GetSelection();
+        if( m_treebook->IsShownOnScreen() )
+            m_lastNotebookPage = m_treebook->GetSelection();
     }
 }
 
@@ -254,7 +271,7 @@ void PCB_CALCULATOR_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 
     PCB_CALCULATOR_SETTINGS* cfg = static_cast<PCB_CALCULATOR_SETTINGS*>( aCfg );
 
-    m_notebook->ChangeSelection( cfg->m_LastPage );
+    m_treebook->ChangeSelection( cfg->m_LastPage );
 
     for( auto& panel : m_panels )
         panel->LoadSettings( cfg );
@@ -273,7 +290,7 @@ void PCB_CALCULATOR_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 
     if( cfg )
     {
-        cfg->m_LastPage = m_notebook->GetSelection();
+        cfg->m_LastPage = m_treebook->GetSelection();
 
         for( auto& panel : m_panels )
             panel->SaveSettings( cfg );
