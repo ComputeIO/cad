@@ -263,8 +263,8 @@ class DIALOG_SPICE_MODEL_BASE : public DIALOG_SHIM
 		wxStaticText* m_staticText262111111112;
 		wxStaticText* m_staticText2671111111111;
 		wxTextCtrl* m_tlineLossyParams;
-		wxStaticLine* m_staticline21;
-		wxStaticText* m_staticText1812;
+		wxStaticLine* m_staticline211;
+		wxStaticText* m_staticText18121;
 		wxStaticLine* m_staticline2;
 		wxCheckBox* m_disabled;
 		wxCheckBox* m_nodeSeqCheck;

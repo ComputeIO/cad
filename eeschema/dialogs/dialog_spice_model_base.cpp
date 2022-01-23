@@ -939,14 +939,11 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 
 	m_tlineNotebook = new wxNotebook( sbSizer31->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_tlineLossless = new wxPanel( m_tlineNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxFlexGridSizer* fgSizer131;
-	fgSizer131 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer131->AddGrowableCol( 1 );
-	fgSizer131->SetFlexibleDirection( wxBOTH );
-	fgSizer131->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	wxBoxSizer* bSizer13;
+	bSizer13 = new wxBoxSizer( wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer1311;
-	fgSizer1311 = new wxFlexGridSizer( 4, 3, 0, 0 );
+	fgSizer1311 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer1311->AddGrowableCol( 1 );
 	fgSizer1311->SetFlexibleDirection( wxBOTH );
 	fgSizer1311->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
@@ -956,7 +953,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	fgSizer1311->Add( m_staticText2671111, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	m_tlineLosslessImpedance = new wxTextCtrl( m_tlineLossless, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer1311->Add( m_tlineLosslessImpedance, 0, wxALL|wxEXPAND, 5 );
+	fgSizer1311->Add( m_tlineLosslessImpedance, 1, wxALL|wxEXPAND, 5 );
 
 	m_staticText26211111 = new wxStaticText( m_tlineLossless, wxID_ANY, _("ohm"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText26211111->Wrap( -1 );
@@ -967,7 +964,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	fgSizer1311->Add( m_staticText26711111, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	m_tlineLosslessDelay = new wxTextCtrl( m_tlineLossless, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer1311->Add( m_tlineLosslessDelay, 0, wxALL, 5 );
+	fgSizer1311->Add( m_tlineLosslessDelay, 1, wxALL|wxEXPAND, 5 );
 
 	m_staticText262111111 = new wxStaticText( m_tlineLossless, wxID_ANY, _("s"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText262111111->Wrap( -1 );
@@ -978,7 +975,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	fgSizer1311->Add( m_staticText267111111, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	m_tlineLosslessFrequency = new wxTextCtrl( m_tlineLossless, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer1311->Add( m_tlineLosslessFrequency, 1, wxALL, 5 );
+	fgSizer1311->Add( m_tlineLosslessFrequency, 1, wxALL|wxEXPAND, 5 );
 
 	m_staticText2621111111 = new wxStaticText( m_tlineLossless, wxID_ANY, _("Hz"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText2621111111->Wrap( -1 );
@@ -989,36 +986,33 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	fgSizer1311->Add( m_staticText2671111111, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	m_tlineLosslessWavelength = new wxTextCtrl( m_tlineLossless, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer1311->Add( m_tlineLosslessWavelength, 1, wxALL, 5 );
+	fgSizer1311->Add( m_tlineLosslessWavelength, 1, wxALL|wxEXPAND, 5 );
 
 
 	fgSizer1311->Add( 0, 0, 1, wxEXPAND, 5 );
 
 
-	fgSizer131->Add( fgSizer1311, 100, wxEXPAND, 5 );
+	bSizer13->Add( fgSizer1311, 1, wxALL|wxEXPAND, 5 );
 
 	wxString m_tlineLosslessDelayModeChoices[] = { _("Use time delay"), _("Use frequency and number of wavelength") };
 	int m_tlineLosslessDelayModeNChoices = sizeof( m_tlineLosslessDelayModeChoices ) / sizeof( wxString );
 	m_tlineLosslessDelayMode = new wxRadioBox( m_tlineLossless, wxID_ANY, _("Delay / Electrical length"), wxDefaultPosition, wxDefaultSize, m_tlineLosslessDelayModeNChoices, m_tlineLosslessDelayModeChoices, 1, wxRA_SPECIFY_COLS );
 	m_tlineLosslessDelayMode->SetSelection( 0 );
-	fgSizer131->Add( m_tlineLosslessDelayMode, 0, wxALL, 5 );
+	bSizer13->Add( m_tlineLosslessDelayMode, 0, wxALL, 5 );
 
 
-	m_tlineLossless->SetSizer( fgSizer131 );
+	m_tlineLossless->SetSizer( bSizer13 );
 	m_tlineLossless->Layout();
-	fgSizer131->Fit( m_tlineLossless );
-	m_tlineNotebook->AddPage( m_tlineLossless, _("Lossless"), true );
+	bSizer13->Fit( m_tlineLossless );
+	m_tlineNotebook->AddPage( m_tlineLossless, _("Lossless"), false );
 	m_tlineLossy = new wxPanel( m_tlineNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
-	wxFlexGridSizer* fgSizer1312;
-	fgSizer1312 = new wxFlexGridSizer( 0, 1, 0, 0 );
-	fgSizer1312->AddGrowableCol( 1 );
-	fgSizer1312->SetFlexibleDirection( wxBOTH );
-	fgSizer1312->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	wxBoxSizer* bSizer12;
+	bSizer12 = new wxBoxSizer( wxVERTICAL );
 
 	wxFlexGridSizer* fgSizer13111;
 	fgSizer13111 = new wxFlexGridSizer( 0, 3, 0, 0 );
 	fgSizer13111->AddGrowableCol( 1 );
-	fgSizer13111->SetFlexibleDirection( wxBOTH );
+	fgSizer13111->SetFlexibleDirection( wxHORIZONTAL );
 	fgSizer13111->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
 	m_staticText26711112 = new wxStaticText( m_tlineLossy, wxID_ANY, _("Resistance per unit length"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -1084,22 +1078,22 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	fgSizer13111->Add( m_tlineLossyParams, 0, wxALL|wxEXPAND, 5 );
 
 
-	fgSizer1312->Add( fgSizer13111, 1, wxALL|wxEXPAND, 5 );
+	bSizer12->Add( fgSizer13111, 1, wxALL|wxEXPAND, 5 );
 
-	m_staticline21 = new wxStaticLine( m_tlineLossy, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
-	fgSizer1312->Add( m_staticline21, 0, wxEXPAND | wxALL, 5 );
+	m_staticline211 = new wxStaticLine( m_tlineLossy, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	bSizer12->Add( m_staticline211, 0, wxEXPAND | wxALL, 5 );
 
-	m_staticText1812 = new wxStaticText( m_tlineLossy, wxID_ANY, _("The following types of lines have been implemented so far:\n\n- RLC\n- RC\n- LC\n- RG\n\nAny other combination will yield erroneous results and should not be tried."), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText1812->Wrap( -1 );
-	fgSizer1312->Add( m_staticText1812, 0, wxALL|wxEXPAND, 5 );
+	m_staticText18121 = new wxStaticText( m_tlineLossy, wxID_ANY, _("The following types of lines have been implemented so far:\n\n- RLC\n- RC\n- LC\n- RG\n\nAny other combination will yield erroneous results and should not be tried."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText18121->Wrap( -1 );
+	bSizer12->Add( m_staticText18121, 0, wxALL, 5 );
 
 
-	m_tlineLossy->SetSizer( fgSizer1312 );
+	m_tlineLossy->SetSizer( bSizer12 );
 	m_tlineLossy->Layout();
-	fgSizer1312->Fit( m_tlineLossy );
+	bSizer12->Fit( m_tlineLossy );
 	m_tlineNotebook->AddPage( m_tlineLossy, _("Lossy"), false );
 
-	sbSizer31->Add( m_tlineNotebook, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
+	sbSizer31->Add( m_tlineNotebook, 1, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
 
 	bSizer42->Add( sbSizer31, 0, wxALL|wxEXPAND, 5 );
@@ -1147,7 +1141,6 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 
 	this->SetSizer( bSizer1 );
 	this->Layout();
-	bSizer1->Fit( this );
 
 	this->Centre( wxBOTH );
 
