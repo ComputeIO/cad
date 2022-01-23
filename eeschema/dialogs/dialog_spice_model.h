@@ -103,6 +103,16 @@ private:
     bool generateTlineLossy( wxString& aTarget );
 
     /**
+     * Generate a string to describe a transmission line model, basing on the current selection.
+     *
+     * If there are missing fields, it will not modify the target string.
+     *
+     * @param aTarget is the destination for the generated string.
+     * @return True if the string was saved successfully.
+     */
+    bool generateTlineCoax();
+
+    /**
      * Load a list of components (.model and .subckt) from a spice library file and add them to
      * a combo box.
      *
@@ -207,6 +217,30 @@ private:
     wxTextValidator m_notEmptyValidator;
 
     std::unique_ptr<SCINTILLA_TRICKS> m_scintillaTricks;
+
+private:
+    class COAX_MODEL
+    {
+    public:
+        COAX_MODEL( double aR, double aL, double aC )
+        {
+            R = aR;
+            L = aL;
+            C = aC;
+        };
+        double R;
+        double L;
+        double C;
+    };
+
+    /** Add a coax preset.
+     * 
+     * Doing it in a function to be sure that names / models won't get mixed
+     *
+     */
+    void AddCoaxPreset( wxString aName, COAX_MODEL aModel );
+
+    std::vector<COAX_MODEL> m_coaxModels;
 };
 
 #endif /* DIALOG_SPICE_MODEL_H */

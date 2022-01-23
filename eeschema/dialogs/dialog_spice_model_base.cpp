@@ -1092,6 +1092,55 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_tlineLossy->Layout();
 	bSizer12->Fit( m_tlineLossy );
 	m_tlineNotebook->AddPage( m_tlineLossy, _("Lossy"), false );
+	m_tlineCoax = new wxPanel( m_tlineNotebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	wxBoxSizer* bSizer121;
+	bSizer121 = new wxBoxSizer( wxVERTICAL );
+
+	wxFlexGridSizer* fgSizer131111;
+	fgSizer131111 = new wxFlexGridSizer( 0, 3, 0, 0 );
+	fgSizer131111->AddGrowableCol( 1 );
+	fgSizer131111->SetFlexibleDirection( wxHORIZONTAL );
+	fgSizer131111->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+
+	m_staticText267111121 = new wxStaticText( m_tlineCoax, wxID_ANY, _("Coaxial type"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText267111121->Wrap( -1 );
+	fgSizer131111->Add( m_staticText267111121, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
+
+	wxArrayString m_tlineCoaxModelChoices;
+	m_tlineCoaxModel = new wxChoice( m_tlineCoax, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_tlineCoaxModelChoices, 0 );
+	m_tlineCoaxModel->SetSelection( 0 );
+	fgSizer131111->Add( m_tlineCoaxModel, 0, wxALL|wxEXPAND, 5 );
+
+
+	fgSizer131111->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	m_staticText2671111121 = new wxStaticText( m_tlineCoax, wxID_ANY, _("Length"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText2671111121->Wrap( -1 );
+	fgSizer131111->Add( m_staticText2671111121, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
+
+	m_tlineCoaxLen = new wxTextCtrl( m_tlineCoax, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer131111->Add( m_tlineCoaxLen, 0, wxALL|wxEXPAND, 5 );
+
+	wxArrayString m_tlineCoaxUnitChoiceChoices;
+	m_tlineCoaxUnitChoice = new wxChoice( m_tlineCoax, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_tlineCoaxUnitChoiceChoices, 0 );
+	m_tlineCoaxUnitChoice->SetSelection( 0 );
+	fgSizer131111->Add( m_tlineCoaxUnitChoice, 0, wxALL, 5 );
+
+
+	bSizer121->Add( fgSizer131111, 1, wxALL|wxEXPAND, 5 );
+
+	m_staticline2111 = new wxStaticLine( m_tlineCoax, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	bSizer121->Add( m_staticline2111, 0, wxEXPAND | wxALL, 5 );
+
+	m_staticText181211 = new wxStaticText( m_tlineCoax, wxID_ANY, _("This wizard will generate a RLC model for a given coaxial cable.\nValues are typical but not standardized."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText181211->Wrap( -1 );
+	bSizer121->Add( m_staticText181211, 0, wxALL, 5 );
+
+
+	m_tlineCoax->SetSizer( bSizer121 );
+	m_tlineCoax->Layout();
+	bSizer121->Fit( m_tlineCoax );
+	m_tlineNotebook->AddPage( m_tlineCoax, _("Coax"), true );
 
 	sbSizer31->Add( m_tlineNotebook, 1, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
@@ -1141,6 +1190,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 
 	this->SetSizer( bSizer1 );
 	this->Layout();
+	bSizer1->Fit( this );
 
 	this->Centre( wxBOTH );
 

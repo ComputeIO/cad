@@ -133,6 +133,11 @@ DIALOG_SPICE_MODEL::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
     Init();
 }
 
+void DIALOG_SPICE_MODEL::AddCoaxPreset( wxString aName, COAX_MODEL aModel )
+{
+    m_tlineCoaxModel->Append( aName );
+    m_coaxModels.push_back( aModel );
+}
 
 void DIALOG_SPICE_MODEL::Init()
 {
@@ -239,6 +244,25 @@ void DIALOG_SPICE_MODEL::Init()
     m_scintillaTricks = std::make_unique<SCINTILLA_TRICKS>( m_libraryContents, wxT( "{}" ), false );
 
     Layout();
+
+
+    m_tlineCoaxUnitChoice->Append( "m" );
+    m_tlineCoaxUnitChoice->Append( "ft" );
+	m_tlineCoaxUnitChoice->SetSelection( 0 );
+
+    // Add Coax presets
+    // How to get a model from a datasheet:
+    //  - Usually Z0, C and R are given
+    //  - L = Z0*Z0*C
+    //  - store values in X/meters
+    //  - For R, add conductor and shield resistance
+
+    AddCoaxPreset( "RG-58",
+                   COAX_MODEL( 42.64e-3, 2.05e-7, 82e-12 ) ); //50 ohms - Capacitance from wikipedia
+    AddCoaxPreset( "RG-59",
+                   COAX_MODEL( 45.26e-3, 3.375e-7, 60e-12 ) ); //75 ohms - Capacitance from wikipedia
+
+	m_tlineCoaxModel->SetSelection( 0 );
 }
 
 
@@ -303,6 +327,16 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
         wxWindow* subpage = m_tlineNotebook->GetCurrentPage();
         wxString  model;
 
+        bool generatedLossy = false;
+
+        if( subpage == m_tlineCoax )
+        {
+            if( !generateTlineCoax() )
+                return false;
+
+            generatedLossy = true;
+        }
+
         if( subpage == m_tlineLossless )
         {
             m_fieldsTmp[SF_PRIMITIVE] = (char) SP_TLINE;
@@ -312,7 +346,7 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
 
             m_fieldsTmp[SF_MODEL] = model;
         }
-        else if( subpage == m_tlineLossy )
+        else if( subpage == m_tlineLossy || generatedLossy )
         {
             m_fieldsTmp[SF_PRIMITIVE] = (char) SP_TLINE_LOSSY;
 
@@ -321,7 +355,7 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
 
             m_fieldsTmp[SF_MODEL] = model;
         }
-        else
+        else if( !generatedLossy )
         {
             wxASSERT_MSG( false, "Unhandled transmission line type" );
         }
@@ -783,6 +817,52 @@ bool DIALOG_SPICE_MODEL::parsePowerSource( const wxString& aModel )
         // process it in another branch
         tkn = tokenizer.GetNextToken().Lower();
     }
+
+    return true;
+}
+
+
+bool DIALOG_SPICE_MODEL::generateTlineCoax()
+{
+    double length;
+
+    if( !m_tlineCoaxLen->GetValue().ToDouble( &length ) )
+        return false;
+
+    if( length <= 0 )
+        return false;
+
+
+    uint index = m_tlineCoaxModel->GetSelection();
+    if( ( m_coaxModels.size() - 1 < index ) || ( index < 0 ) )
+        return false;
+
+    COAX_MODEL model = m_coaxModels.at( index );
+
+    wxString stringValue;
+
+    // Feet to meter scaling
+    double lengthScaling = ( m_tlineCoaxUnitChoice->GetSelection() == 1 ) ? 0.3048 : 1;
+
+    stringValue = "";
+    stringValue << model.R * lengthScaling;
+    m_tlineLossyR->SetValue( stringValue );
+    stringValue = "";
+    stringValue << model.L * lengthScaling;
+    m_tlineLossyL->SetValue( stringValue );
+    stringValue = "";
+    stringValue << model.C * lengthScaling;
+    m_tlineLossyC->SetValue( stringValue );
+    stringValue = "";
+    stringValue << 0;
+    m_tlineLossyG->SetValue( stringValue );
+
+
+    stringValue = "";
+    stringValue << length;
+    m_tlineLossyLen->SetValue( stringValue );
+
+    m_tlineLossyParams->SetValue( "" );
 
     return true;
 }
