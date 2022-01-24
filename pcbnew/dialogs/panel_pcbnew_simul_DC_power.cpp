@@ -138,7 +138,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
             else
                 port->m_type = FEM_PORT_TYPE::PASSIVE;
 
-            constraint->m_value = -constraint->m_value;
+            constraint->m_value = constraint->m_value;
         }
         else if( fieldType == "source" )
         {
@@ -228,8 +228,15 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
 
         const PAD* pad = static_cast<const PAD*>( resultValue->GetPortA()->GetItem() );
         wxString   resultString;
+
         if( resultValue->m_valid )
-            resultString << resultValue->GetResult();
+        {
+            switch( resultValue->m_valueType )
+            {
+            case FEM_VALUE_TYPE::CURRENT: resultString << -resultValue->GetResult(); break;
+            default: resultString << resultValue->GetResult(); break;
+            }
+        }
         else
             resultString << "?";
 
