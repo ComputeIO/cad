@@ -248,7 +248,7 @@ void DIALOG_SPICE_MODEL::Init()
 
     m_tlineCoaxUnitChoice->Append( "m" );
     m_tlineCoaxUnitChoice->Append( "ft" );
-	m_tlineCoaxUnitChoice->SetSelection( 0 );
+    m_tlineCoaxUnitChoice->SetSelection( 0 );
 
     // Add Coax presets
     // How to get a model from a datasheet:
@@ -262,7 +262,7 @@ void DIALOG_SPICE_MODEL::Init()
     AddCoaxPreset( "RG-59",
                    COAX_MODEL( 45.26e-3, 3.375e-7, 60e-12 ) ); //75 ohms - Capacitance from wikipedia
 
-	m_tlineCoaxModel->SetSelection( 0 );
+    m_tlineCoaxModel->SetSelection( 0 );
 }
 
 
