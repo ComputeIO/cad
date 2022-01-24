@@ -205,7 +205,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
     descriptor->m_requiresDielectric = false;
     descriptor->m_simulateMagneticField = false;
     descriptor->m_simulateElectricField = true;
-    descriptor->m_requiresAir = true;
+    descriptor->m_requiresAir = false;
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
     descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
     descriptor->m_reporter = new STDOUT_REPORTER();
