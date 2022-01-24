@@ -27,6 +27,7 @@
 #include <wx/icon.h>
 #include <wx/button.h>
 #include <wx/panel.h>
+#include <../fem/gmsh_viewer.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -59,6 +60,8 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 		wxGrid* m_resultGrid;
 		wxButton* m_button1;
 
+		BasicGLPane * glPane;
+		
 		// Virtual event handlers, overide them in your derived class
 		virtual void onNetSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRun( wxCommandEvent& event ) { event.Skip(); }

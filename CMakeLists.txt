@@ -79,7 +79,7 @@ option( KICAD_INSTALL_DEMOS
 
 option( KICAD_BUILD_QA_TESTS
     "Build software Quality assurance unit tests (default ON)"
-    ON )
+    OFF )
 
 option( KICAD_SPARSELIZARD
     "Build tools and plugins related to Sparselizard (default OFF)"

@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "panel_pcbnew_simul_DC_power_base.h"
+#include "../fem/gmsh_viewer.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -89,6 +90,12 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	m_checkBox2211->Enable( false );
 
 	bSizer3->Add( m_checkBox2211, 0, wxALL, 5 );
+
+    int args[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, 0};
+
+
+    glPane = new BasicGLPane( (wxFrame*) this, args);
+    bSizer1->Add(glPane, 1, wxEXPAND);
 
 
 	bSizer1->Add( bSizer3, 0, 0, 5 );

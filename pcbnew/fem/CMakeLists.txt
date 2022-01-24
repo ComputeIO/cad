@@ -9,6 +9,7 @@ set( PCBNEW_FEM_SRCS
     sparselizard/sparselizard_solver.cpp
     sparselizard/sparselizard_mesher.cpp
     gmsh_mesher.cpp
+    gmsh_viewer.cpp
     )
 
 add_library( kicadfem STATIC ${PCBNEW_FEM_SRCS} )
