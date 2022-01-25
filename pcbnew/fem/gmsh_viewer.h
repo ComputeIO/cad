@@ -27,6 +27,10 @@
 
 #include "wx/wx.h"
 #include "wx/glcanvas.h"
+
+#include <gmsh/GmshGlobal.h>
+#include <gmsh/drawContext.h>
+
  
 class BasicGLPane : public wxGLCanvas
 {
@@ -56,5 +60,13 @@ public:
 	void keyReleased(wxKeyEvent& event);
     
 	DECLARE_EVENT_TABLE()
+
+	drawContext *getDrawContext(){ return _ctx; }
+
+ private:
+  	drawContext *_ctx;
+
+
+	
 };
 #endif

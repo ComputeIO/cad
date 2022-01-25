@@ -26,7 +26,16 @@
 #include "wx/wx.h"
 #include "wx/sizer.h"
 #include "wx/glcanvas.h"
- 
+#include <gmsh.h>
+#include <gmsh/GmshGlobal.h>
+#include <gmsh/GmshMessage.h>
+#include <gmsh/GModel.h>
+#include <gmsh/CommandLine.h>
+#include <gmsh/OpenFile.h>
+#include <gmsh/Context.h>
+
+
+
 // include OpenGL
 #ifdef __WXMAC__
 #include "OpenGL/glu.h"
@@ -68,14 +77,24 @@ GLint faces[6][4] = {  /* Vertex indices for the 6 faces of a cube. */
     {4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3} };
  
 
+class drawContextWx : public drawContextGlobal{
+ public:
+  void draw( drawContext* ctx)
+  {
+    ctx->draw3d();
+    ctx->draw2d();
+  }
+};
+
 
 BasicGLPane::BasicGLPane(wxFrame* parent, int* args) :
     wxGLCanvas(parent, wxID_ANY, args, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE)
 {
 	m_context = new wxGLContext(this);
+
     // prepare a simple cube to demonstrate 3D render
     // source: http://www.opengl.org/resources/code/samples/glut_examples/examples/cube.c
-	
+
     v[0][0] = v[1][0] = v[2][0] = v[3][0] = -1;
     v[4][0] = v[5][0] = v[6][0] = v[7][0] = 1;
     v[0][1] = v[1][1] = v[4][1] = v[5][1] = -1;
@@ -83,6 +102,30 @@ BasicGLPane::BasicGLPane(wxFrame* parent, int* args) :
     v[0][2] = v[3][2] = v[4][2] = v[7][2] = 1;
     v[1][2] = v[2][2] = v[5][2] = v[6][2] = -1;    
 
+	// gmsh
+	int argc = 2;
+	char* argv[]= { "gmsh", "/home/fabien/kicad-git/potential.pos" } ;
+	//gmsh::GmshInitialize( argc , argv );*
+
+	new GModel();
+	GmshInitialize(argc, argv, true);
+	//gmsh::add( "/home/fabien/kicad-git/currentDensity.pos" );
+
+	OpenProject(GModel::current()->getFileName());
+
+	for(unsigned int i = 1; i < CTX::instance()->files.size(); i++){
+		if(CTX::instance()->files[i] == "-new"){
+			GModel::current()->setVisibility(0);
+			new GModel();
+		}
+		else
+			MergeFile(CTX::instance()->files[i]);
+	}
+
+
+	_ctx = new drawContext();
+	
+	drawContext::setGlobal( new drawContextWx );
     // To avoid flashing on MSW
     SetBackgroundStyle(wxBG_STYLE_CUSTOM);
 }
@@ -103,7 +146,7 @@ void BasicGLPane::resized(wxSizeEvent& evt)
 void BasicGLPane::prepare3DViewport(int topleft_x, int topleft_y, int bottomrigth_x, int bottomrigth_y)
 {
 	
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black Background
+    glClearColor(0.2f, 0.1f, 0.2f, 1.0f); // Black Background
     glClearDepth(1.0f);	// Depth Buffer Setup
     glEnable(GL_DEPTH_TEST); // Enables Depth Testing
     glDepthFunc(GL_LEQUAL); // The Type Of Depth Testing To Do
@@ -158,7 +201,7 @@ void BasicGLPane::render( wxPaintEvent& evt )
     
     wxGLCanvas::SetCurrent(*m_context);
     wxPaintDC(this); // only to be used in paint events. use wxClientDC to paint outside the paint event
-	
+	/*
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
     // ------------- draw some 2D ----------------
@@ -185,12 +228,12 @@ void BasicGLPane::render( wxPaintEvent& evt )
     
     // ------------- draw some 3D ----------------
     prepare3DViewport(getWidth()/2,0,getWidth(), getHeight());
-    glLoadIdentity();
-	
+    glLoadIdentity();*/
+	/*
     glColor4f(0,0,1,1);
     glTranslatef(0,0,-5);
     glRotatef(50.0f, 0.0f, 1.0f, 0.0f);
-    
+    */
     glColor4f(1, 0, 0, 1);
     for (int i = 0; i < 6; i++)
     {
@@ -202,6 +245,16 @@ void BasicGLPane::render( wxPaintEvent& evt )
         glVertex3fv(&v[faces[i][0]][0]);
         glEnd();
     }
+
+	_ctx->viewport[2] = this->getWidth();
+	_ctx->viewport[3] = this->getHeight();
+
+	glViewport(_ctx->viewport[0], _ctx->viewport[1],
+				_ctx->viewport[2], _ctx->viewport[3]);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	_ctx->draw3d();
+	_ctx->draw2d();
+
     
     glFlush();
     SwapBuffers();
