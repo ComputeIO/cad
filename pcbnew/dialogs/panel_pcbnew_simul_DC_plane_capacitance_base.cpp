@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version May 14 2021)
+// C++ code generated with wxFormBuilder (version 3.10.0-4761b0c5)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -19,7 +19,7 @@ PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE_BASE::PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACI
 
 	m_staticText3111 = new wxStaticText( this, wxID_ANY, wxT("Electrical"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText3111->Wrap( -1 );
-	m_staticText3111->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
+	m_staticText3111->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
 	bSizer32->Add( m_staticText3111, 0, wxALL, 5 );
 
@@ -54,17 +54,22 @@ PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE_BASE::PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACI
 	bSizer32->Add( bSizer21, 1, wxEXPAND, 5 );
 
 
-	bSizer1->Add( bSizer32, 1, wxEXPAND, 5 );
+	bSizer1->Add( bSizer32, 0, wxEXPAND, 5 );
 
 	m_staticline11 = new wxStaticLine( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
 	bSizer1->Add( m_staticline11, 0, wxEXPAND | wxALL, 5 );
+
+	m_3DviewerSizer = new wxBoxSizer( wxVERTICAL );
+
+
+	bSizer1->Add( m_3DviewerSizer, 1, wxEXPAND, 5 );
 
 	wxBoxSizer* bSizer31;
 	bSizer31 = new wxBoxSizer( wxVERTICAL );
 
 	m_staticText31 = new wxStaticText( this, wxID_ANY, wxT("Outputs"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText31->Wrap( -1 );
-	m_staticText31->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
+	m_staticText31->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
 	bSizer31->Add( m_staticText31, 0, wxALL, 5 );
 
@@ -100,28 +105,22 @@ PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE_BASE::PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACI
 
 	m_staticText311 = new wxStaticText( this, wxID_ANY, wxT("Results"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText311->Wrap( -1 );
-	m_staticText311->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
+	m_staticText311->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
 	bSizer311->Add( m_staticText311, 0, wxALL, 5 );
 
-	wxBoxSizer* bSizer411;
-	bSizer411 = new wxBoxSizer( wxHORIZONTAL );
-
 	m_resultText = new wxStaticText( this, wxID_ANY, wxT("Run simulation for capacitance"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_resultText->Wrap( -1 );
-	bSizer411->Add( m_resultText, 0, wxALL, 5 );
+	bSizer311->Add( m_resultText, 0, wxALL, 5 );
 
-
-	bSizer311->Add( bSizer411, 1, wxEXPAND, 5 );
+	m_button1 = new wxButton( this, wxID_ANY, wxT("Run"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer311->Add( m_button1, 0, wxALL, 5 );
 
 
 	bSizer31->Add( bSizer311, 1, wxEXPAND, 5 );
 
 
 	bSizer1->Add( bSizer31, 0, wxEXPAND, 5 );
-
-	m_button1 = new wxButton( this, wxID_ANY, wxT("Run"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer1->Add( m_button1, 0, wxALL, 5 );
 
 
 	this->SetSizer( bSizer1 );

@@ -32,13 +32,13 @@
 #include <gmsh/drawContext.h>
 
  
-class BasicGLPane : public wxGLCanvas
+class GMSH_VIEWER_WX : public wxGLCanvas
 {
     wxGLContext*	m_context;
 
 public:
-	BasicGLPane(wxFrame* parent, int* args);
-	virtual ~BasicGLPane();
+	GMSH_VIEWER_WX(wxFrame* parent, int* args);
+	virtual ~GMSH_VIEWER_WX();
     
 	void resized(wxSizeEvent& evt);
     

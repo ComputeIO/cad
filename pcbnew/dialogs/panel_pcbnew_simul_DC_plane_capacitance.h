@@ -34,6 +34,7 @@
 #include <pcb_view.h>
 #include <pcbnew_id.h>
 #include <widgets/paged_dialog.h>
+#include "../fem/gmsh_viewer.h"
 
 class BOARD;
 class BOARD_DESIGN_SETTINGS;
@@ -47,7 +48,10 @@ private:
     PCB_EDIT_FRAME* m_frame;
     BOARD*          m_board;
 
-public:
+protected:
+    //wxBoxSizer* m_3DviewerSizer;
+    GMSH_VIEWER_WX* m_3Dviewer;
+
 public:
     PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame );
     ~PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE(){};

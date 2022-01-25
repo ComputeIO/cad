@@ -27,6 +27,7 @@
 #include <pcb_edit_frame.h>
 #include <widgets/paged_dialog.h>
 #include <wx/treebook.h>
+#include "../fem/gmsh_viewer.h"
 
 #ifdef KICAD_SPARSELIZARD // we are in a different compilation unit. Thus, this hack
 #include "fem/common/fem_descriptor.h"
@@ -44,6 +45,12 @@ PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE
         m_net1ComboBox->Append( it->GetNetname() );
         m_net2ComboBox->Append( it->GetNetname() );
     }
+    int args[] = {WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, 0};
+    
+    m_3Dviewer = new GMSH_VIEWER_WX( (wxFrame*) this, args  );
+    m_3DviewerSizer->Add( m_3Dviewer, 1, wxEXPAND );
+
+	//this->Layout();
 }
 
 void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )

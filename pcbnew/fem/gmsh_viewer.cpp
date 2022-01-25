@@ -45,29 +45,29 @@
 #include <GL/gl.h>
 #endif
 
-BEGIN_EVENT_TABLE(BasicGLPane, wxGLCanvas)
-EVT_MOTION(BasicGLPane::mouseMoved)
-EVT_LEFT_DOWN(BasicGLPane::mouseDown)
-EVT_LEFT_UP(BasicGLPane::mouseReleased)
-EVT_RIGHT_DOWN(BasicGLPane::rightClick)
-EVT_LEAVE_WINDOW(BasicGLPane::mouseLeftWindow)
-EVT_SIZE(BasicGLPane::resized)
-EVT_KEY_DOWN(BasicGLPane::keyPressed)
-EVT_KEY_UP(BasicGLPane::keyReleased)
-EVT_MOUSEWHEEL(BasicGLPane::mouseWheelMoved)
-EVT_PAINT(BasicGLPane::render)
+BEGIN_EVENT_TABLE(GMSH_VIEWER_WX, wxGLCanvas)
+EVT_MOTION(GMSH_VIEWER_WX::mouseMoved)
+EVT_LEFT_DOWN(GMSH_VIEWER_WX::mouseDown)
+EVT_LEFT_UP(GMSH_VIEWER_WX::mouseReleased)
+EVT_RIGHT_DOWN(GMSH_VIEWER_WX::rightClick)
+EVT_LEAVE_WINDOW(GMSH_VIEWER_WX::mouseLeftWindow)
+EVT_SIZE(GMSH_VIEWER_WX::resized)
+EVT_KEY_DOWN(GMSH_VIEWER_WX::keyPressed)
+EVT_KEY_UP(GMSH_VIEWER_WX::keyReleased)
+EVT_MOUSEWHEEL(GMSH_VIEWER_WX::mouseWheelMoved)
+EVT_PAINT(GMSH_VIEWER_WX::render)
 END_EVENT_TABLE()
  
  
 // some useful events to use
-void BasicGLPane::mouseMoved(wxMouseEvent& event) {}
-void BasicGLPane::mouseDown(wxMouseEvent& event) {}
-void BasicGLPane::mouseWheelMoved(wxMouseEvent& event) {}
-void BasicGLPane::mouseReleased(wxMouseEvent& event) {}
-void BasicGLPane::rightClick(wxMouseEvent& event) {}
-void BasicGLPane::mouseLeftWindow(wxMouseEvent& event) {}
-void BasicGLPane::keyPressed(wxKeyEvent& event) {}
-void BasicGLPane::keyReleased(wxKeyEvent& event) {}
+void GMSH_VIEWER_WX::mouseMoved(wxMouseEvent& event) {}
+void GMSH_VIEWER_WX::mouseDown(wxMouseEvent& event) {}
+void GMSH_VIEWER_WX::mouseWheelMoved(wxMouseEvent& event) {}
+void GMSH_VIEWER_WX::mouseReleased(wxMouseEvent& event) {}
+void GMSH_VIEWER_WX::rightClick(wxMouseEvent& event) {}
+void GMSH_VIEWER_WX::mouseLeftWindow(wxMouseEvent& event) {}
+void GMSH_VIEWER_WX::keyPressed(wxKeyEvent& event) {}
+void GMSH_VIEWER_WX::keyReleased(wxKeyEvent& event) {}
  
 // Vertices and faces of a simple cube to demonstrate 3D render
 // source: http://www.opengl.org/resources/code/samples/glut_examples/examples/cube.c
@@ -87,7 +87,7 @@ class drawContextWx : public drawContextGlobal{
 };
 
 
-BasicGLPane::BasicGLPane(wxFrame* parent, int* args) :
+GMSH_VIEWER_WX::GMSH_VIEWER_WX(wxFrame* parent, int* args) :
     wxGLCanvas(parent, wxID_ANY, args, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE)
 {
 	m_context = new wxGLContext(this);
@@ -130,12 +130,12 @@ BasicGLPane::BasicGLPane(wxFrame* parent, int* args) :
     SetBackgroundStyle(wxBG_STYLE_CUSTOM);
 }
  
-BasicGLPane::~BasicGLPane()
+GMSH_VIEWER_WX::~GMSH_VIEWER_WX()
 {
 	delete m_context;
 }
 
-void BasicGLPane::resized(wxSizeEvent& evt)
+void GMSH_VIEWER_WX::resized(wxSizeEvent& evt)
 {
 //	wxGLCanvas::OnSize(evt);
 	
@@ -143,7 +143,7 @@ void BasicGLPane::resized(wxSizeEvent& evt)
 }
  
 /** Inits the OpenGL viewport for drawing in 3D. */
-void BasicGLPane::prepare3DViewport(int topleft_x, int topleft_y, int bottomrigth_x, int bottomrigth_y)
+void GMSH_VIEWER_WX::prepare3DViewport(int topleft_x, int topleft_y, int bottomrigth_x, int bottomrigth_y)
 {
 	
     glClearColor(0.2f, 0.1f, 0.2f, 1.0f); // Black Background
@@ -166,7 +166,7 @@ void BasicGLPane::prepare3DViewport(int topleft_x, int topleft_y, int bottomrigt
 }
  
 /** Inits the OpenGL viewport for drawing in 2D. */
-void BasicGLPane::prepare2DViewport(int topleft_x, int topleft_y, int bottomrigth_x, int bottomrigth_y)
+void GMSH_VIEWER_WX::prepare2DViewport(int topleft_x, int topleft_y, int bottomrigth_x, int bottomrigth_y)
 {
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black Background
     glEnable(GL_TEXTURE_2D);   // textures
@@ -184,18 +184,18 @@ void BasicGLPane::prepare2DViewport(int topleft_x, int topleft_y, int bottomrigt
     glLoadIdentity();
 }
  
-int BasicGLPane::getWidth()
+int GMSH_VIEWER_WX::getWidth()
 {
     return GetSize().x;
 }
  
-int BasicGLPane::getHeight()
+int GMSH_VIEWER_WX::getHeight()
 {
     return GetSize().y;
 }
  
  
-void BasicGLPane::render( wxPaintEvent& evt )
+void GMSH_VIEWER_WX::render( wxPaintEvent& evt )
 {
     if(!IsShown()) return;
     
