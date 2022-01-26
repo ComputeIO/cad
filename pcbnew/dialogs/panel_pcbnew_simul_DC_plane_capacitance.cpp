@@ -148,6 +148,5 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     wxPaintEvent evt;
     m_3Dviewer->render( evt );
     m_3Dviewer->Finalize();
-    //m_3Dviewer->Finalize();
 #endif
 }

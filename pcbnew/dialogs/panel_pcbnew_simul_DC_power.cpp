@@ -41,19 +41,25 @@ PANEL_PCBNEW_SIMUL_DC_POWER::PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG*   aParen
     m_frame = aFrame;
     m_board = aFrame->GetBoard();
 
-  for (auto it = m_board->BeginNets(); it!=m_board->EndNets(); ++it)
-  {
-      m_netComboBox->Append( it->GetNetname() );
-  }
+    for( auto it = m_board->BeginNets(); it != m_board->EndNets(); ++it )
+    {
+        m_netComboBox->Append( it->GetNetname() );
+    }
 
-  m_padGrid->SetColLabelValue( 0, "Component" );
-  m_padGrid->SetColLabelValue( 1, "Pad" );
-  m_padGrid->SetColLabelValue( 2, "Type" );
-  m_padGrid->SetColLabelValue( 3, "Value" );
-  m_padGrid->SetColLabelValue( 4, "Unit" );
+    m_padGrid->SetColLabelValue( 0, "Component" );
+    m_padGrid->SetColLabelValue( 1, "Pad" );
+    m_padGrid->SetColLabelValue( 2, "Type" );
+    m_padGrid->SetColLabelValue( 3, "Value" );
+    m_padGrid->SetColLabelValue( 4, "Unit" );
 
-  m_padGrid->DeleteRows( 0, m_padGrid->GetNumberRows() );
-  m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
+    m_padGrid->DeleteRows( 0, m_padGrid->GetNumberRows() );
+    m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
+
+    int args[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, 0 };
+
+    m_3Dviewer = new GMSH_VIEWER_WX( (wxFrame*) this, args );
+    m_3DviewerSizer->Add( m_3Dviewer, 1, wxEXPAND );
+    m_3Dviewer->ClearAllViews();
 }
 
 void PANEL_PCBNEW_SIMUL_DC_POWER::onNetSelect( wxCommandEvent& event )
@@ -257,5 +263,15 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
         m_resultGrid->SetReadOnly( nbRow, 3 );
         nbRow++;
     }
+    // The simulation finalize() gmsh, so we have to re-enable it.
+    // Could we run them in separate processes ?
+    m_3Dviewer->Initialize();
+    m_3Dviewer->ClearAllViews();
+    m_3Dviewer->Open( "potential.pos" );
+    m_3Dviewer->Initialize();
+    // Force the picture to render
+    wxPaintEvent evt;
+    m_3Dviewer->render( evt );
+    m_3Dviewer->Finalize();
 #endif
 }

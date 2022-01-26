@@ -34,6 +34,7 @@
 #include <pcb_view.h>
 #include <pcbnew_id.h>
 #include <widgets/paged_dialog.h>
+#include "../fem/gmsh_viewer.h"
 
 class BOARD;
 class BOARD_DESIGN_SETTINGS;
@@ -65,6 +66,9 @@ private:
 
     void onChangeOutlineOpt( wxCommandEvent& event ) override;
 */
+protected:
+    //wxBoxSizer* m_3DviewerSizer;
+    GMSH_VIEWER_WX* m_3Dviewer;
 };
 
 #endif //PANEL_PCBNEW_SIMUL_DC_POWER_H
