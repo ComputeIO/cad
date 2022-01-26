@@ -109,32 +109,13 @@ GMSH_VIEWER_WX::GMSH_VIEWER_WX(wxFrame* parent, int* args) :
     wxGLCanvas(parent, wxID_ANY, args, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE)
 {
 	m_context = new wxGLContext(this);
-	// gmsh
-    int   argc = 1;
-    char* argv[] = { "gmsh" };
 
-    new GModel();
-    gmsh::initialize( argc, argv );
-
-
-    OpenProject(GModel::current()->getFileName());
-
-
-    for( unsigned int i = 1; i < CTX::instance()->files.size(); i++ )
-    {
-        if( CTX::instance()->files[i] == "-new" )
-        {
-            GModel::current()->setVisibility(0);
-			new GModel();
-        }
-        else
-			MergeFile(CTX::instance()->files[i]);
-    }
-    Open( "Efield.pos" );
+    Initialize();
 
     _ctx = new drawContext();
-	
-	drawContext::setGlobal( new drawContextWx );
+
+    drawContext::setGlobal( new drawContextWx );
+
     // To avoid flashing on MSW
     SetBackgroundStyle(wxBG_STYLE_CUSTOM);
 }
@@ -168,11 +149,14 @@ void GMSH_VIEWER_WX::render( wxPaintEvent& evt )
     if(!IsShown()) return;
     
     wxGLCanvas::SetCurrent(*m_context);
+
+
     //wxPaintDC(this); // only to be used in paint events. use wxClientDC to paint outside the paint event
 
+    // Maybe we could use gmsh::graphics::draw()
+    // That could allow us to remove _ctx, the only reason the DENABLE_PRIVATE_API option is on.
 
-
-	_ctx->viewport[2] = this->getWidth();
+    _ctx->viewport[2] = this->getWidth();
 	_ctx->viewport[3] = this->getHeight();
 
 	glViewport(_ctx->viewport[0], _ctx->viewport[1],
@@ -180,7 +164,8 @@ void GMSH_VIEWER_WX::render( wxPaintEvent& evt )
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	_ctx->draw3d();
 	_ctx->draw2d();
-    
+
+
     glFlush();
     SwapBuffers();
 }
