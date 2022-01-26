@@ -49,8 +49,8 @@ PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE
     
     m_3Dviewer = new GMSH_VIEWER_WX( (wxFrame*) this, args  );
     m_3DviewerSizer->Add( m_3Dviewer, 1, wxEXPAND );
-
-	//this->Layout();
+    m_3Dviewer->ClearAllViews();
+    //this->Layout();
 }
 
 void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
@@ -137,5 +137,17 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     m_resultText->SetLabel( "Simulated capacitance is "
                             + std::to_string( r_capacitance->m_value * 10e9 ) + "nF" );
 
+    // The simulation finalize() gmsh, so we have to re-enable it.
+    // Could we run them in separate processes ?
+    m_3Dviewer->Initialize();
+    m_3Dviewer->ClearAllViews();
+    m_3Dviewer->Open( "potential.pos" );
+    m_3Dviewer->Open( "Efield.pos" );
+    m_3Dviewer->Initialize();
+    // Force the picture to render
+    wxPaintEvent evt;
+    m_3Dviewer->render( evt );
+    m_3Dviewer->Finalize();
+    //m_3Dviewer->Finalize();
 #endif
 }

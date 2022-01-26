@@ -79,33 +79,60 @@ class drawContextWx : public drawContextGlobal{
   }
 };
 
+void GMSH_VIEWER_WX::ClearAllViews()
+{
+    std::vector<int> tags;
+    gmsh::view::getTags( tags );
+
+    for( int tag : tags )
+    {
+        gmsh::view::remove( tag );
+    }
+}
+
+void GMSH_VIEWER_WX::Open( std::string aFile )
+{
+    gmsh::open( aFile );
+}
+
+void GMSH_VIEWER_WX::Initialize()
+{
+    gmsh::initialize();
+}
+
+void GMSH_VIEWER_WX::Finalize()
+{
+    gmsh::finalize();
+}
 
 GMSH_VIEWER_WX::GMSH_VIEWER_WX(wxFrame* parent, int* args) :
     wxGLCanvas(parent, wxID_ANY, args, wxDefaultPosition, wxDefaultSize, wxFULL_REPAINT_ON_RESIZE)
 {
 	m_context = new wxGLContext(this);
 	// gmsh
-	int argc = 2;
-	char* argv[]= { "gmsh", "/home/fabien/kicad-git/potential.pos" } ;
-	//gmsh::GmshInitialize( argc , argv );*
+    int   argc = 1;
+    char* argv[] = { "gmsh" };
 
-	new GModel();
-	GmshInitialize(argc, argv, true);
-	//gmsh::add( "/home/fabien/kicad-git/currentDensity.pos" );
+    new GModel();
+    gmsh::initialize( argc, argv );
 
-	OpenProject(GModel::current()->getFileName());
 
-	for(unsigned int i = 1; i < CTX::instance()->files.size(); i++){
-		if(CTX::instance()->files[i] == "-new"){
-			GModel::current()->setVisibility(0);
+    OpenProject(GModel::current()->getFileName());
+
+
+    for( unsigned int i = 1; i < CTX::instance()->files.size(); i++ )
+    {
+        if( CTX::instance()->files[i] == "-new" )
+        {
+            GModel::current()->setVisibility(0);
 			new GModel();
-		}
-		else
+        }
+        else
 			MergeFile(CTX::instance()->files[i]);
-	}
+    }
+    Open( "Efield.pos" );
 
-
-	_ctx = new drawContext();
+    _ctx = new drawContext();
 	
 	drawContext::setGlobal( new drawContextWx );
     // To avoid flashing on MSW
@@ -143,14 +170,7 @@ void GMSH_VIEWER_WX::render( wxPaintEvent& evt )
     wxGLCanvas::SetCurrent(*m_context);
     //wxPaintDC(this); // only to be used in paint events. use wxClientDC to paint outside the paint event
 
-    std::vector<std::string> names;
-    gmsh::model::list( names );
 
-    std::cout << "list models " << std::endl;
-    for ( std::string  str : names )
-    {
-        std::cout << "Model: "<< str << std::endl;
-    }
 
 	_ctx->viewport[2] = this->getWidth();
 	_ctx->viewport[3] = this->getHeight();
@@ -160,7 +180,6 @@ void GMSH_VIEWER_WX::render( wxPaintEvent& evt )
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	_ctx->draw3d();
 	_ctx->draw2d();
-
     
     glFlush();
     SwapBuffers();

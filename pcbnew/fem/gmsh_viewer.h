@@ -27,6 +27,7 @@
 
 #include "wx/wx.h"
 #include "wx/glcanvas.h"
+#include "wx/string.h"
 
 #include <gmsh/GmshGlobal.h>
 #include <gmsh/drawContext.h>
@@ -46,8 +47,12 @@ public:
 	int getHeight();
     
 	void render(wxPaintEvent& evt);
-    
-	// events
+    void Initialize();
+    void Finalize();
+    void ClearAllViews();
+    void Open( std::string aFile );
+
+    // events
 	void mouseMoved(wxMouseEvent& event);
 	void mouseDown(wxMouseEvent& event);
 	void mouseWheelMoved(wxMouseEvent& event);
