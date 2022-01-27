@@ -19,7 +19,7 @@
  */
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
-#include <wx/notebook.h>
+#include <wx/treebook.h>
 #include <wx/sizer.h>
 
 #include <typeinfo>
@@ -70,43 +70,39 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
 
     SetSizer( m_mainSizer );
-    //Centre( wxBOTH );
     Layout();
+    Centre( wxBOTH );
 
     m_treebook->AddPage( nullptr, _( "General system design" ) );
-    AddCalculator( new PANEL_REGULATOR( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                        wxTAB_TRAVERSAL ),
+
+    AddCalculator( new PANEL_REGULATOR( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
                    _( "Regulators" ) );
 
     m_treebook->AddPage( nullptr, _( "Power, current and isolation" ) );
-    AddCalculator( new PANEL_ELECTRICAL_SPACING( m_treebook, wxID_ANY, wxDefaultPosition,
-                                                 wxDefaultSize, wxTAB_TRAVERSAL ),
-                                                 _( "Electrical Spacing" ) );
-    AddCalculator( new PANEL_VIA_SIZE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                       wxTAB_TRAVERSAL ),
-                                       _( "Via Size" ) );
-    AddCalculator( new PANEL_TRACK_WIDTH( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                          wxTAB_TRAVERSAL ),
-                                          _( "Track Width" ) );
+
+    AddCalculator( new PANEL_ELECTRICAL_SPACING( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Electrical Spacing" ) );
+    AddCalculator( new PANEL_VIA_SIZE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Via Size" ) );
+    AddCalculator( new PANEL_TRACK_WIDTH( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Track Width" ) );
 
     m_treebook->AddPage( nullptr, _( "High speed" ) );
-    AddCalculator( new PANEL_ATTENUATORS( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                          wxTAB_TRAVERSAL ),
-                                          _( "RF Attenuators" ) );
-    AddCalculator( new PANEL_TRANSLINE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                        wxTAB_TRAVERSAL ),
-                                        _( "TransLine " ) );
+
+
+    AddCalculator( new PANEL_ATTENUATORS( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "RF Attenuators" ) );
+    AddCalculator( new PANEL_TRANSLINE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "TransLine ") );
 
     m_treebook->AddPage( nullptr, _( "Memo" ) );
-    AddCalculator( new PANEL_E_SERIE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                      wxTAB_TRAVERSAL ),
-                                      _( "E-Series" ) );
-    AddCalculator( new PANEL_COLOR_CODE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                         wxTAB_TRAVERSAL ),
-                                         _( "Color Code" ) );
-    AddCalculator( new PANEL_BOARD_CLASS( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                          wxTAB_TRAVERSAL ),
-                                          _( "Board Classes" ) );
+
+    AddCalculator( new PANEL_E_SERIE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "E-Series" ) );
+    AddCalculator( new PANEL_COLOR_CODE( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _( "Color Code" ) );
+    AddCalculator( new PANEL_BOARD_CLASS( m_treebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL ),
+                   _("Board Classes") );
 
     LoadSettings( config() );
 

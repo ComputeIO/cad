@@ -21,11 +21,9 @@
 #define PCB_CALCULATOR_FRAME_H_
 
 #include <calculator_panels/calculator_panel.h>
-#include <wx/treebook.h>
 #include <kiway_player.h>
 
-class wxMenuBar;
-class wxNotebook;
+class wxTreebook;
 class wxBoxSizer;
 
 class APP_SETTINGS_BASE;
