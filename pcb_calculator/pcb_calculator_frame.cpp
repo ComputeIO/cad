@@ -136,16 +136,33 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     Bind( wxEVT_SYS_COLOUR_CHANGED,
           wxSysColourChangedEventHandler( PCB_CALCULATOR_FRAME::onThemeChanged ), this );
+    
+    m_treebook->Connect( wxEVT_COMMAND_TREEBOOK_PAGE_CHANGED, wxTreebookEventHandler(
+                         PCB_CALCULATOR_FRAME::OnPageChanged  ), NULL, this );    
 }
 
 
 PCB_CALCULATOR_FRAME::~PCB_CALCULATOR_FRAME()
 {
+    m_treebook->Disconnect( wxEVT_COMMAND_TREEBOOK_PAGE_CHANGED, wxTreebookEventHandler(
+                            PCB_CALCULATOR_FRAME::OnPageChanged ), NULL, this );
     // This needed for OSX: avoids further OnDraw processing after this destructor and before
     // the native window is destroyed
     this->Freeze();
 }
 
+void PCB_CALCULATOR_FRAME::OnPageChanged ( wxTreebookEvent& aEvent )
+{
+    int page = aEvent.GetSelection();
+    
+    // If the selected page is a top level page
+    if ( m_treebook->GetPageParent( page ) == wxNOT_FOUND )
+    {
+        m_treebook->ExpandNode( page );
+        // Select the first child
+        m_treebook->ChangeSelection( page + 1 );
+    }
+}
 
 void PCB_CALCULATOR_FRAME::AddCalculator( CALCULATOR_PANEL *aPanel, const wxString& panelUIName )
 {
