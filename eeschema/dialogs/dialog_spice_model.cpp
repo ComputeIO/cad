@@ -41,6 +41,16 @@
 #include <cctype>
 #include <cstring>
 
+#define METER_TO_FEET 0.3048 //Exact
+
+// Must start at 0, and must be continuous
+enum class SELECT_UNIT_LENGTH
+{
+    M = 0,
+    FT,
+    NB_UNITS
+};
+
 // Helper function to shorten conditions
 static bool empty( const wxTextCtrl* aCtrl )
 {
@@ -245,9 +255,16 @@ void DIALOG_SPICE_MODEL::Init()
 
     Layout();
 
+    for( int j = 0; j < static_cast<int>( SELECT_UNIT_LENGTH::NB_UNITS ); j++ )
+    {
+        switch( static_cast<SELECT_UNIT_LENGTH>( j ) )
+        {
+        case SELECT_UNIT_LENGTH::M: m_tlineCoaxUnitChoice->Append( _( "m" ) ); break;
+        case SELECT_UNIT_LENGTH::FT: m_tlineCoaxUnitChoice->Append( _( "ft" ) ); break;
+        default: m_tlineCoaxUnitChoice->Append( _( "???" ) ); break;
+        }
+    }
 
-    m_tlineCoaxUnitChoice->Append( "m" );
-    m_tlineCoaxUnitChoice->Append( "ft" );
     m_tlineCoaxUnitChoice->SetSelection( 0 );
 
     // Add Coax presets
@@ -841,8 +858,15 @@ bool DIALOG_SPICE_MODEL::generateTlineCoax()
 
     wxString stringValue;
 
-    // Feet to meter scaling
-    double lengthScaling = ( m_tlineCoaxUnitChoice->GetSelection() == 1 ) ? 0.3048 : 1;
+
+    double lengthScaling = 0;
+
+    switch( static_cast<SELECT_UNIT_LENGTH>( m_tlineCoaxUnitChoice->GetSelection() ) )
+    {
+    case SELECT_UNIT_LENGTH::M: lengthScaling = 1; break;
+    case SELECT_UNIT_LENGTH::FT: lengthScaling = METER_TO_FEET; break;
+    default: return false;
+    }
 
     stringValue = "";
     stringValue << model.R * lengthScaling;
