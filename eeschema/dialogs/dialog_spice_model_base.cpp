@@ -1132,7 +1132,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_staticline2111 = new wxStaticLine( m_tlineCoax, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
 	bSizer121->Add( m_staticline2111, 0, wxEXPAND | wxALL, 5 );
 
-	m_staticText181211 = new wxStaticText( m_tlineCoax, wxID_ANY, _("This wizard will generate a RLC model for a given coaxial cable.\nValues are typical but not standardized."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText181211 = new wxStaticText( m_tlineCoax, wxID_ANY, _("This wizard will generate a RLC model for a given coaxial cable."), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText181211->Wrap( -1 );
 	bSizer121->Add( m_staticText181211, 0, wxALL, 5 );
 

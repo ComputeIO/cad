@@ -829,7 +829,7 @@ bool DIALOG_SPICE_MODEL::generateTlineCoax()
     if( !m_tlineCoaxLen->GetValue().ToDouble( &length ) )
         return false;
 
-    if( length <= 0 )
+    if( length <= 0.0 )
         return false;
 
 
