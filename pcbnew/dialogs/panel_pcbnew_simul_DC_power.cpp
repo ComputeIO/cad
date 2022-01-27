@@ -29,6 +29,7 @@
 #include <pcb_edit_frame.h>
 #include <widgets/paged_dialog.h>
 #include <wx/treebook.h>
+#include "wx_html_report_box.h"
 
 #ifdef KICAD_SPARSELIZARD // we are in a different compilation unit. Thus, this hack
 #include "fem/common/fem_descriptor.h"
@@ -54,6 +55,10 @@ PANEL_PCBNEW_SIMUL_DC_POWER::PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG*   aParen
 
     m_padGrid->DeleteRows( 0, m_padGrid->GetNumberRows() );
     m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
+
+
+    m_padGrid->AutoSizeColumns();
+    m_resultGrid->AutoSizeColumns();
 
     int args[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 16, 0 };
 
@@ -95,12 +100,17 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::onNetSelect( wxCommandEvent& event )
     }
     m_padGrid->EnableCellEditControl( true );
     m_padGrid->ShowCellEditControl();
+
+    m_padGrid->AutoSizeColumns();
 }
 
 void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
 {
 #ifdef KICAD_SPARSELIZARD // we are in a different compilation unit. Thus, this hack
+    m_SimulReportHTML->Clear();
+
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, m_board );
+
     m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
 
     for( int i = 0; i < m_padGrid->GetNumberRows(); i++ )
@@ -214,7 +224,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
     descriptor->m_requiresAir = false;
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
     descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
-    descriptor->m_reporter = new STDOUT_REPORTER();
+    descriptor->m_reporter = m_SimulReportHTML;
 
     descriptor->Run();
 
@@ -263,6 +273,9 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
         m_resultGrid->SetReadOnly( nbRow, 3 );
         nbRow++;
     }
+
+    m_resultGrid->AutoSizeColumns();
+    //this->Layout();
     // The simulation finalize() gmsh, so we have to re-enable it.
     // Could we run them in separate processes ?
     m_3Dviewer->Initialize();
@@ -273,5 +286,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
     wxPaintEvent evt;
     m_3Dviewer->render( evt );
     m_3Dviewer->Finalize();
+
+    m_SimulReportHTML->Flush();
 #endif
 }

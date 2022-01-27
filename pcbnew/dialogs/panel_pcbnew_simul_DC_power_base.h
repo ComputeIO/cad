@@ -9,6 +9,8 @@
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
+class WX_HTML_REPORT_BOX;
+
 #include <wx/string.h>
 #include <wx/stattext.h>
 #include <wx/gdicmn.h>
@@ -23,6 +25,7 @@
 #include <wx/radiobox.h>
 #include <wx/checkbox.h>
 #include <wx/filepicker.h>
+#include <wx/html/htmlwin.h>
 #include <wx/button.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -40,27 +43,24 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 	private:
 
 	protected:
-		wxScrolledWindow* m_scrolledWindow2;
-		wxStaticText* m_staticText3111;
 		wxStaticText* m_staticText312;
 		wxComboBox* m_netComboBox;
 		wxStaticText* m_staticText1111;
 		wxScrolledWindow* m_scrolledWindow1;
 		wxGrid* m_padGrid;
-		wxStaticLine* m_staticline111;
-		wxBoxSizer* m_3DviewerSizer;
 		wxStaticLine* m_staticline11;
+		wxScrolledWindow* m_scrolledWindow3;
+		wxGrid* m_resultGrid;
 		wxRadioBox* m_radioBox1;
 		wxCheckBox* m_checkBox2211;
-		wxStaticText* m_staticText31;
 		wxCheckBox* m_mapPotential;
 		wxCheckBox* m_mapCurrentDensity;
 		wxCheckBox* m_mapPowerDensity;
 		wxCheckBox* m_textReport;
 		wxStaticText* m_staticText12;
 		wxDirPickerCtrl* m_dirPicker11;
-		wxScrolledWindow* m_scrolledWindow3;
-		wxGrid* m_resultGrid;
+		wxBoxSizer* m_3DviewerSizer;
+		WX_HTML_REPORT_BOX* m_SimulReportHTML;
 		wxButton* m_button1;
 
 		// Virtual event handlers, override them in your derived class
