@@ -152,6 +152,20 @@ option( KICAD_STEP_EXPORT_LIB
     "Build and use kicad2step as a library, meant for debugging"
     OFF )
 
+option( KICAD_USE_3DCONNEXION
+    "Build KiCad with support for 3Dconnexion devices"
+    ON )
+
+if( KICAD_USE_3DCONNEXION )
+    if( WIN32 )
+        add_definitions( -DKICAD_USE_3DCONNEXION )
+    elseif( APPLE )
+        add_definitions( -DKICAD_USE_3DCONNEXION )
+    else()
+        remove_definitions( -DKICAD_USE_3DCONNEXION )
+    endif()
+endif()
+
 # Global setting: exports are explicit
 set( CMAKE_CXX_VISIBILITY_PRESET "hidden" )
 set( CMAKE_VISIBILITY_INLINES_HIDDEN ON )
