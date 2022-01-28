@@ -1823,8 +1823,23 @@ void PCB_SELECTION_TOOL::FindItem( BOARD_ITEM* aItem )
 
     if( aItem )
     {
-        select( aItem );
-        m_frame->FocusOnLocation( aItem->GetPosition() );
+        switch( aItem->Type() )
+        {
+        case PCB_NETINFO_T:
+        {
+            int netCode = static_cast<NETINFO_ITEM*>( aItem )->GetNetCode();
+
+            if( netCode > 0 )
+            {
+                selectAllItemsOnNet( netCode, true );
+                // We don't have a position for a net to focus on, yet.
+            }
+            break;
+        }
+        default:
+            select( aItem );
+            m_frame->FocusOnLocation( aItem->GetPosition() );
+        }
 
         // Inform other potentially interested tools
         m_toolMgr->ProcessEvent( EVENTS::SelectedEvent );
@@ -2539,6 +2554,13 @@ void PCB_SELECTION_TOOL::select( BOARD_ITEM* aItem )
         return;
 
     if( aItem->Type() == PCB_PAD_T )
+    {
+        FOOTPRINT* footprint = static_cast<FOOTPRINT*>( aItem->GetParent() );
+
+        if( m_selection.Contains( footprint ) )
+            return;
+    }
+    if( aItem->Type() == PCB_NETINFO_T )
     {
         FOOTPRINT* footprint = static_cast<FOOTPRINT*>( aItem->GetParent() );
 

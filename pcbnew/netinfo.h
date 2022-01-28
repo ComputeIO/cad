@@ -167,6 +167,8 @@ public:
         return m_parent;
     }
 
+    bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override;
+
 private:
     friend class NETINFO_LIST;
 
