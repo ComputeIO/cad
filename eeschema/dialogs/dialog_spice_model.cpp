@@ -1489,6 +1489,12 @@ void DIALOG_SPICE_MODEL::onRandomSourceType( wxCommandEvent& event )
     }
 }
 
+void DIALOG_SPICE_MODEL::OnApplyCoax( wxCommandEvent& event )
+{
+    generateTlineCoax();
+    m_tlineNotebook->SetSelection( m_tlineNotebook->FindPage( m_tlineLossy ) );
+}
+
 
 SPICE_PRIMITIVE DIALOG_SPICE_MODEL::MODEL::parseModelType( const wxString& aValue )
 {

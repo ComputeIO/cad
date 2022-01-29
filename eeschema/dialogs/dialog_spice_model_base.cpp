@@ -1127,6 +1127,12 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	fgSizer131111->Add( m_tlineCoaxUnitChoice, 0, wxALL, 5 );
 
 
+	fgSizer131111->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	ApplyCoax = new wxButton( m_tlineCoax, wxID_ANY, _("Apply"), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer131111->Add( ApplyCoax, 0, wxALIGN_RIGHT|wxALL, 5 );
+
+
 	bSizer121->Add( fgSizer131111, 1, wxALL|wxEXPAND, 5 );
 
 	m_staticline2111 = new wxStaticLine( m_tlineCoax, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
@@ -1203,6 +1209,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_pwlAddButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onPwlAdd ), NULL, this );
 	m_pwlRemoveBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onPwlRemove ), NULL, this );
 	m_rnType->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onRandomSourceType ), NULL, this );
+	ApplyCoax->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::OnApplyCoax ), NULL, this );
 }
 
 DIALOG_SPICE_MODEL_BASE::~DIALOG_SPICE_MODEL_BASE()
@@ -1216,5 +1223,6 @@ DIALOG_SPICE_MODEL_BASE::~DIALOG_SPICE_MODEL_BASE()
 	m_pwlAddButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onPwlAdd ), NULL, this );
 	m_pwlRemoveBtn->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onPwlRemove ), NULL, this );
 	m_rnType->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onRandomSourceType ), NULL, this );
+	ApplyCoax->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::OnApplyCoax ), NULL, this );
 
 }

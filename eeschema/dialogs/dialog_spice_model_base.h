@@ -271,6 +271,7 @@ class DIALOG_SPICE_MODEL_BASE : public DIALOG_SHIM
 		wxStaticText* m_staticText2671111121;
 		wxTextCtrl* m_tlineCoaxLen;
 		wxChoice* m_tlineCoaxUnitChoice;
+		wxButton* ApplyCoax;
 		wxStaticLine* m_staticline2111;
 		wxStaticText* m_staticText181211;
 		wxStaticLine* m_staticline2;
@@ -290,6 +291,7 @@ class DIALOG_SPICE_MODEL_BASE : public DIALOG_SHIM
 		virtual void onPwlAdd( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onPwlRemove( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRandomSourceType( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnApplyCoax( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

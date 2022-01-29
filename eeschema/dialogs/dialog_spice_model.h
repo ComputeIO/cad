@@ -177,6 +177,7 @@ private:
     void onPwlRemove( wxCommandEvent& event ) override;
     void onRandomSourceType( wxCommandEvent& event ) override;
     void onTypeSelected( wxCommandEvent& event ) override;
+    void OnApplyCoax( wxCommandEvent& event ) override;
 
     ///< Edited symbol
     SCH_SYMBOL& m_symbol;
