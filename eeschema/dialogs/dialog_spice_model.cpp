@@ -850,7 +850,7 @@ bool DIALOG_SPICE_MODEL::generateTlineCoax()
         return false;
 
 
-    uint index = m_tlineCoaxModel->GetSelection();
+    int index = m_tlineCoaxModel->GetSelection();
     if( ( m_coaxModels.size() - 1 < index ) || ( index < 0 ) )
         return false;
 
