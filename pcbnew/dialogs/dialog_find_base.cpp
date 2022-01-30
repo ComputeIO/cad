@@ -75,7 +75,7 @@ DIALOG_FIND_BASE::DIALOG_FIND_BASE( wxWindow* parent, wxWindowID id, const wxStr
 	m_includeMarkers->SetValue(true);
 	sizerInclude->Add( m_includeMarkers, 0, wxALL, 5 );
 
-	m_includeNets = new wxCheckBox( this, wxID_ANY, _("Search for net names"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_includeNets = new wxCheckBox( this, wxID_ANY, _("Search net names"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_includeNets->SetValue(true);
 	sizerInclude->Add( m_includeNets, 0, wxALL, 5 );
 
