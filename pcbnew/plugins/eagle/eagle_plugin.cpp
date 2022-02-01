@@ -1572,6 +1572,7 @@ void EAGLE_PLUGIN::orientFPText( FOOTPRINT* aFootprint, const EELEMENT& e, FP_TE
         // Even though size and ratio are both optional, I am not seeing
         // a case where ratio is present but size is not.
         double  ratio = 8;
+
         if( a.ratio )
             ratio = *a.ratio;
 
