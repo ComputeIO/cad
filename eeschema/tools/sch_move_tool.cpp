@@ -911,14 +911,24 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
 {
     EE_RTREE&         items = m_frame->GetScreen()->Items();
     EE_RTREE::EE_TYPE itemsOverlappingRTree = items.Overlapping( aOriginalItem->GetBoundingBox() );
-    std::vector<SCH_ITEM*> itemsOverlapping;
+    std::vector<SCH_ITEM*> itemsConnectable;
     bool              ptHasUnselectedJunction = false;
     SCH_LINE*         newWire = nullptr;
 
     for( SCH_ITEM* item : itemsOverlappingRTree )
-        itemsOverlapping.push_back( item );
+    {
+        // Skip ourselves, skip already selected items (but not lines, they need both ends tested)
+        // and skip unconnectable items
+        if( item == aOriginalItem || ( item->Type() != SCH_LINE_T && item->IsSelected() )
+            || !item->CanConnect( aOriginalItem ) )
+        {
+            continue;
+        }
 
-    for( SCH_ITEM* item : itemsOverlapping )
+        itemsConnectable.push_back( item );
+    }
+
+    for( SCH_ITEM* item : itemsConnectable )
     {
         if( item->Type() == SCH_JUNCTION_T && item->IsConnected( aPoint ) && !item->IsSelected() )
         {
@@ -927,16 +937,9 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
         }
     }
 
-    for( SCH_ITEM* test : itemsOverlapping )
+    for( SCH_ITEM* test : itemsConnectable )
     {
         KICAD_T testType = test->Type();
-
-        // Lines need tested for selection at both ends
-        if( test == aOriginalItem || ( testType != SCH_LINE_T && test->IsSelected() )
-            || !test->CanConnect( aOriginalItem ) )
-        {
-            continue;
-        }
 
         switch( testType )
         {
