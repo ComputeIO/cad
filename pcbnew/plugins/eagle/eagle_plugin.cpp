@@ -1212,7 +1212,12 @@ void EAGLE_PLUGIN::loadElements( wxXmlNode* aElements )
         // netlisting, which requires parts to have non-digit + digit
         // annotation.  If the reference begins with a number, we prepend
         // 'UNK' (unknown) for the symbol designator.
-        if( reference.find_first_not_of( "0123456789" ) == wxString::npos )
+        if( reference.find_first_not_of( "0123456789" ) != 0 )
+            reference.Prepend( "UNK" );
+
+        // EAGLE allows designator to start with # but that is used in KiCad
+        // for symbols which do not have a footprint
+        if( reference.find_first_not_of( "#" ) != 0 )
             reference.Prepend( "UNK" );
 
         // reference must end with a number but EAGLE does not enforce this
