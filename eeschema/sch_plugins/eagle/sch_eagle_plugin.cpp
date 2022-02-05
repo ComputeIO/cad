@@ -1351,6 +1351,10 @@ void SCH_EAGLE_PLUGIN::loadInstance( wxXmlNode* aInstanceNode )
     // with a hash character to mute netlist updater complaints
     wxString reference = package.IsEmpty() ? '#' + einstance.part : einstance.part;
 
+    // reference must end with a number but EAGLE does not enforce this
+    if( reference.find_last_not_of( "0123456789" ) == (reference.Length()-1) )
+        reference.Append( "0" );
+
     // EAGLE allows references to be single digits.  This breaks KiCad netlisting, which requires
     // parts to have non-digit + digit annotation.  If the reference begins with a number,
     // we prepend 'UNK' (unknown) for the symbol designator
