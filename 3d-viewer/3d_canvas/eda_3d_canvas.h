@@ -308,6 +308,9 @@ private:
      *  more information.
      */
     static const wxChar* m_logTrace;
+    //TO BE DELETED
+    void OnMouseMoveCamera( wxMouseEvent& event );
+    void OnMouseWheelCamera( wxMouseEvent& event, bool aPan );
 };
 
 

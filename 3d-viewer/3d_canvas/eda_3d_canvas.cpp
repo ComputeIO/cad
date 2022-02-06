@@ -587,67 +587,9 @@ void EDA_3D_CANVAS::OnEraseBackground( wxEraseEvent& event )
 
 void EDA_3D_CANVAS::OnMouseWheel( wxMouseEvent& event )
 {
-    bool mouseActivity = false;
-
     wxLogTrace( m_logTrace, wxT( "EDA_3D_CANVAS::OnMouseWheel" ) );
 
-    if( m_camera_is_moving )
-        return;
-
-    float delta_move = m_delta_move_step_factor * m_camera.GetZoom();
-
-    if( m_boardAdapter.m_MousewheelPanning )
-        delta_move *= 0.01f * event.GetWheelRotation();
-    else if( event.GetWheelRotation() < 0 )
-        delta_move = -delta_move;
-
-    // mousewheel_panning enabled:
-    //      wheel           -> pan;
-    //      wheel + shift   -> horizontal scrolling;
-    //      wheel + ctrl    -> zooming;
-    // mousewheel_panning disabled:
-    //      wheel + shift   -> vertical scrolling;
-    //      wheel + ctrl    -> horizontal scrolling;
-    //      wheel           -> zooming.
-
-    if( m_boardAdapter.m_MousewheelPanning && !event.ControlDown() )
-    {
-        if( event.GetWheelAxis() == wxMOUSE_WHEEL_HORIZONTAL || event.ShiftDown() )
-            m_camera.Pan( SFVEC3F( -delta_move, 0.0f, 0.0f ) );
-        else
-            m_camera.Pan( SFVEC3F( 0.0f, -delta_move, 0.0f ) );
-
-        mouseActivity = true;
-    }
-    else if( event.ShiftDown() && !m_boardAdapter.m_MousewheelPanning )
-    {
-        m_camera.Pan( SFVEC3F( 0.0f, -delta_move, 0.0f ) );
-        mouseActivity = true;
-    }
-    else if( event.ControlDown() && !m_boardAdapter.m_MousewheelPanning )
-    {
-        m_camera.Pan( SFVEC3F( delta_move, 0.0f, 0.0f ) );
-        mouseActivity = true;
-    }
-    else
-    {
-        mouseActivity = m_camera.Zoom( event.GetWheelRotation() > 0 ? 1.1f : 1/1.1f );
-    }
-
-    // If it results on a camera movement
-    if( mouseActivity )
-    {
-        DisplayStatus();
-        Request_refresh();
-
-        m_mouse_is_moving = true;
-        m_mouse_was_moved = true;
-
-        restart_editingTimeOut_Timer();
-    }
-
-    // Update the cursor current mouse position on the camera
-    m_camera.SetCurMousePosition( GetNativePosition( event.GetPosition() ) );
+    OnMouseWheelCamera( event, m_boardAdapter.m_MousewheelPanning );
 }
 
 
@@ -675,31 +617,7 @@ void EDA_3D_CANVAS::OnMagnify( wxMouseEvent& event )
 void EDA_3D_CANVAS::OnMouseMove( wxMouseEvent& event )
 {
     //wxLogTrace( m_logTrace, wxT( "EDA_3D_CANVAS::OnMouseMove" ) );
-
-    if( m_camera_is_moving )
-        return;
-
-    const wxSize&  nativeWinSize  = GetNativePixelSize();
-    const wxPoint& nativePosition = GetNativePosition( event.GetPosition() );
-
-    m_camera.SetCurWindowSize( nativeWinSize );
-
-    if( event.Dragging() )
-    {
-        if( event.LeftIsDown() )            // Drag
-            m_camera.Drag( nativePosition );
-        else if( event.MiddleIsDown() )     // Pan
-            m_camera.Pan( nativePosition );
-
-        m_mouse_is_moving = true;
-        m_mouse_was_moved = true;
-
-        // orientation has changed, redraw mesh
-        DisplayStatus();
-        Request_refresh();
-    }
-
-    m_camera.SetCurMousePosition( nativePosition );
+    OnMouseMoveCamera( event );
 
     if( !event.Dragging() && m_boardAdapter.m_Cfg->m_Render.engine == RENDER_ENGINE::OPENGL )
     {
@@ -1145,4 +1063,95 @@ RAY EDA_3D_CANVAS::getRayAtCurrentMousePosition()
     mouseRay.Init( rayOrigin, rayDir );
 
     return mouseRay;
+}
+
+
+void EDA_3D_CANVAS::OnMouseMoveCamera( wxMouseEvent& event )
+{
+    if( m_camera_is_moving )
+        return;
+
+    const wxSize&  nativeWinSize = GetNativePixelSize();
+    const wxPoint& nativePosition = GetNativePosition( event.GetPosition() );
+
+    m_camera.SetCurWindowSize( nativeWinSize );
+
+    if( event.Dragging() )
+    {
+        if( event.LeftIsDown() ) // Drag
+            m_camera.Drag( nativePosition );
+        else if( event.MiddleIsDown() ) // Pan
+            m_camera.Pan( nativePosition );
+
+        m_mouse_is_moving = true;
+        m_mouse_was_moved = true;
+
+        // orientation has changed, redraw mesh
+        DisplayStatus();
+        Request_refresh();
+    }
+    m_camera.SetCurMousePosition( nativePosition );
+}
+
+void EDA_3D_CANVAS::OnMouseWheelCamera( wxMouseEvent& event, bool aPan )
+{
+    bool mouseActivity = false;
+
+    if( m_camera_is_moving )
+        return;
+
+    float delta_move = m_delta_move_step_factor * m_camera.GetZoom();
+
+    if( aPan )
+        delta_move *= 0.01f * event.GetWheelRotation();
+    else if( event.GetWheelRotation() < 0 )
+        delta_move = -delta_move;
+
+    // mousewheel_panning enabled:
+    //      wheel           -> pan;
+    //      wheel + shift   -> horizontal scrolling;
+    //      wheel + ctrl    -> zooming;
+    // mousewheel_panning disabled:
+    //      wheel + shift   -> vertical scrolling;
+    //      wheel + ctrl    -> horizontal scrolling;
+    //      wheel           -> zooming.
+
+    if( aPan && !event.ControlDown() )
+    {
+        if( event.GetWheelAxis() == wxMOUSE_WHEEL_HORIZONTAL || event.ShiftDown() )
+            m_camera.Pan( SFVEC3F( -delta_move, 0.0f, 0.0f ) );
+        else
+            m_camera.Pan( SFVEC3F( 0.0f, -delta_move, 0.0f ) );
+
+        mouseActivity = true;
+    }
+    else if( event.ShiftDown() && !aPan )
+    {
+        m_camera.Pan( SFVEC3F( 0.0f, -delta_move, 0.0f ) );
+        mouseActivity = true;
+    }
+    else if( event.ControlDown() && !aPan )
+    {
+        m_camera.Pan( SFVEC3F( delta_move, 0.0f, 0.0f ) );
+        mouseActivity = true;
+    }
+    else
+    {
+        mouseActivity = m_camera.Zoom( event.GetWheelRotation() > 0 ? 1.1f : 1 / 1.1f );
+    }
+
+    // If it results on a camera movement
+    if( mouseActivity )
+    {
+        DisplayStatus();
+        Request_refresh();
+
+        m_mouse_is_moving = true;
+        m_mouse_was_moved = true;
+
+        restart_editingTimeOut_Timer();
+    }
+
+    // Update the cursor current mouse position on the camera
+    m_camera.SetCurMousePosition( GetNativePosition( event.GetPosition() ) );
 }
