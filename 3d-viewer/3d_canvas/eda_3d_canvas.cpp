@@ -55,8 +55,6 @@
  */
 const wxChar* EDA_3D_CANVAS::m_logTrace = wxT( "KI_TRACE_EDA_3D_CANVAS" );
 
-const float EDA_3D_CANVAS::m_delta_move_step_factor = 0.7f;
-
 
 // A custom event, used to call DoRePaint during an idle time
 wxDEFINE_EVENT( wxEVT_REFRESH_CUSTOM_COMMAND, wxEvent);
@@ -90,24 +88,20 @@ END_EVENT_TABLE()
 EDA_3D_CANVAS::EDA_3D_CANVAS( wxWindow* aParent, const int* aAttribList,
                               BOARD_ADAPTER& aBoardAdapter, CAMERA& aCamera,
                               S3D_CACHE* a3DCachePointer )
-        : HIDPI_GL_CANVAS( aParent, wxID_ANY, aAttribList, wxDefaultPosition, wxDefaultSize,
-                           wxFULL_REPAINT_ON_RESIZE ),
+        : HIDPI_GL_3D_CANVAS( aCamera, aParent, wxID_ANY, aAttribList, wxDefaultPosition, wxDefaultSize,
+                              wxFULL_REPAINT_ON_RESIZE ),
           m_eventDispatcher( nullptr ),
           m_parentStatusBar( nullptr ),
           m_parentInfoBar( nullptr ),
           m_glRC( nullptr ),
           m_is_opengl_initialized( false ),
           m_is_opengl_version_supported( true ),
-          m_mouse_is_moving( false ),
-          m_mouse_was_moved( false ),
-          m_camera_is_moving( false ),
           m_render_pivot( false ),
           m_camera_moving_speed( 1.0f ),
           m_strtime_camera_movement( 0 ),
           m_animation_enabled( true ),
           m_moving_speed_multiplier( 3 ),
           m_boardAdapter( aBoardAdapter ),
-          m_camera( aCamera ),
           m_3d_render( nullptr ),
           m_opengl_supports_raytracing( true ),
           m_render_raytracing_was_requested( false ),
@@ -590,6 +584,13 @@ void EDA_3D_CANVAS::OnMouseWheel( wxMouseEvent& event )
     wxLogTrace( m_logTrace, wxT( "EDA_3D_CANVAS::OnMouseWheel" ) );
 
     OnMouseWheelCamera( event, m_boardAdapter.m_MousewheelPanning );
+
+    if( m_mouse_was_moved )
+    {
+        DisplayStatus();
+        Request_refresh();
+        restart_editingTimeOut_Timer();
+    }
 }
 
 
@@ -618,6 +619,13 @@ void EDA_3D_CANVAS::OnMouseMove( wxMouseEvent& event )
 {
     //wxLogTrace( m_logTrace, wxT( "EDA_3D_CANVAS::OnMouseMove" ) );
     OnMouseMoveCamera( event );
+
+    if( m_mouse_was_moved )
+    {
+        DisplayStatus();
+        Request_refresh();
+        restart_editingTimeOut_Timer();
+    }
 
     if( !event.Dragging() && m_boardAdapter.m_Cfg->m_Render.engine == RENDER_ENGINE::OPENGL )
     {
@@ -1063,95 +1071,4 @@ RAY EDA_3D_CANVAS::getRayAtCurrentMousePosition()
     mouseRay.Init( rayOrigin, rayDir );
 
     return mouseRay;
-}
-
-
-void EDA_3D_CANVAS::OnMouseMoveCamera( wxMouseEvent& event )
-{
-    if( m_camera_is_moving )
-        return;
-
-    const wxSize&  nativeWinSize = GetNativePixelSize();
-    const wxPoint& nativePosition = GetNativePosition( event.GetPosition() );
-
-    m_camera.SetCurWindowSize( nativeWinSize );
-
-    if( event.Dragging() )
-    {
-        if( event.LeftIsDown() ) // Drag
-            m_camera.Drag( nativePosition );
-        else if( event.MiddleIsDown() ) // Pan
-            m_camera.Pan( nativePosition );
-
-        m_mouse_is_moving = true;
-        m_mouse_was_moved = true;
-
-        // orientation has changed, redraw mesh
-        DisplayStatus();
-        Request_refresh();
-    }
-    m_camera.SetCurMousePosition( nativePosition );
-}
-
-void EDA_3D_CANVAS::OnMouseWheelCamera( wxMouseEvent& event, bool aPan )
-{
-    bool mouseActivity = false;
-
-    if( m_camera_is_moving )
-        return;
-
-    float delta_move = m_delta_move_step_factor * m_camera.GetZoom();
-
-    if( aPan )
-        delta_move *= 0.01f * event.GetWheelRotation();
-    else if( event.GetWheelRotation() < 0 )
-        delta_move = -delta_move;
-
-    // mousewheel_panning enabled:
-    //      wheel           -> pan;
-    //      wheel + shift   -> horizontal scrolling;
-    //      wheel + ctrl    -> zooming;
-    // mousewheel_panning disabled:
-    //      wheel + shift   -> vertical scrolling;
-    //      wheel + ctrl    -> horizontal scrolling;
-    //      wheel           -> zooming.
-
-    if( aPan && !event.ControlDown() )
-    {
-        if( event.GetWheelAxis() == wxMOUSE_WHEEL_HORIZONTAL || event.ShiftDown() )
-            m_camera.Pan( SFVEC3F( -delta_move, 0.0f, 0.0f ) );
-        else
-            m_camera.Pan( SFVEC3F( 0.0f, -delta_move, 0.0f ) );
-
-        mouseActivity = true;
-    }
-    else if( event.ShiftDown() && !aPan )
-    {
-        m_camera.Pan( SFVEC3F( 0.0f, -delta_move, 0.0f ) );
-        mouseActivity = true;
-    }
-    else if( event.ControlDown() && !aPan )
-    {
-        m_camera.Pan( SFVEC3F( delta_move, 0.0f, 0.0f ) );
-        mouseActivity = true;
-    }
-    else
-    {
-        mouseActivity = m_camera.Zoom( event.GetWheelRotation() > 0 ? 1.1f : 1 / 1.1f );
-    }
-
-    // If it results on a camera movement
-    if( mouseActivity )
-    {
-        DisplayStatus();
-        Request_refresh();
-
-        m_mouse_is_moving = true;
-        m_mouse_was_moved = true;
-
-        restart_editingTimeOut_Timer();
-    }
-
-    // Update the cursor current mouse position on the camera
-    m_camera.SetCurMousePosition( GetNativePosition( event.GetPosition() ) );
 }
