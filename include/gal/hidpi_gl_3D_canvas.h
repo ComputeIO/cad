@@ -70,4 +70,4 @@ public:
 };
 
 
-#endif // EDA_3D_CANVAS_H
+#endif // HIDPI_GL_3D_CANVAS_H
