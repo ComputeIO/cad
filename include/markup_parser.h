@@ -94,7 +94,7 @@ struct anything : sor< anyString,
                        superscript,
                        overbar > {};
 
-struct grammar : until< eof, anything > {};
+struct grammar : until< tao::pegtl::eof, anything > {};
 
 template <typename Rule>
 using selector = parse_tree::selector< Rule,
