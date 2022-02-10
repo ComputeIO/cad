@@ -400,16 +400,12 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                     if( m_isDrag && cfg->m_Drawing.hv_lines_only && line
                         && ( line->HasFlag( STARTPOINT ) != line->HasFlag( ENDPOINT ) ) )
                     {
-                        if( ( EDA_ANGLE( splitDelta ).IsParallelTo( line->Angle() ) )
-                            && line->GetLength() != 0 )
-                        {
-                            // If the move is the same angle as this line, leave the unselected end alone,
-                            // we can drag orthogonally by moving the selected end along the same line
-                        }
-                        // OK, the line's unselected end has to move with the connected end to
-                        // maintain orthogonality, we need to either drag some connected line that is the same
-                        // angle as the move or add two lines to make a 90 degree connection
-                        else
+                        // If the move is not the same angle as this move,  then we need to do something
+                        // special with the unselected end to maintain orthogonality. Either drag some
+                        // connected line that is the same angle as the move or add two lines to make
+                        // a 90 degree connection
+                        if( !( EDA_ANGLE( splitDelta ).IsParallelTo( line->Angle() ) )
+                            || ( line->GetLength() == 0 ) )
                         {
                             VECTOR2I unselectedEnd = line->HasFlag( STARTPOINT )
                                                              ? line->GetEndPoint()
