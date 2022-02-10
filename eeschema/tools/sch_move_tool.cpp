@@ -416,6 +416,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                             // Look for pre-existing lines we can drag with us instead of creating new ones
                             bool      foundAttachment = false;
+                            bool      foundJunction = false;
                             SCH_LINE* foundLine = nullptr;
                             for( EDA_ITEM* cItem : m_lineConnectionCache[line] )
                             {
@@ -438,6 +439,8 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                     if( foundLine == nullptr && cLine->GetLength() == 0 )
                                         foundLine = cLine;
                                 }
+                                else if( cItem->Type() == SCH_JUNCTION_T )
+                                    foundJunction = true;
                             }
 
                             // Ok... what if our original line is length zero from moving in its direction,
@@ -454,6 +457,23 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                              .IsParallelTo( line->GetStoredAngle() ) ) )
                             {
                                 preferOriginalLine = true;
+                            }
+                            // If we have found an attachment, but not a line, we want to check if it's
+                            // a junction. These are special-cased and get a single line added instead of a
+                            // 90-degree bend.
+                            else if( !foundLine && foundJunction )
+                            {
+                                // Create a new wire ending at the unselected end
+                                foundLine = new SCH_LINE( unselectedEnd, line->GetLayer() );
+                                foundLine->SetFlags( IS_NEW );
+                                m_frame->AddToScreen( foundLine, m_frame->GetScreen() );
+                                m_newDragLines.insert( foundLine );
+
+                                // We just broke off of the existing items, so replace all of them with our new
+                                // end connection.
+                                m_lineConnectionCache[foundLine] = m_lineConnectionCache[line];
+                                m_lineConnectionCache[line].clear();
+                                m_lineConnectionCache[line].emplace_back( foundLine );
                             }
 
                             // We want to drag our found line if it's in the same angle as the move or zero length,
