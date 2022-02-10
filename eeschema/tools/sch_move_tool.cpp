@@ -421,7 +421,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             // Look for pre-existing lines we can drag with us instead of creating new ones
                             bool      foundAttachment = false;
                             SCH_LINE* foundLine = nullptr;
-                            for( auto cItem : m_lineConnectionCache[line] )
+                            for( EDA_ITEM* cItem : m_lineConnectionCache[line] )
                             {
                                 foundAttachment = true;
 
@@ -451,6 +451,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             // If we are moving in original direction, we should lengthen the original
                             // drag wire. Otherwise we should lengthen the new wire.
                             bool preferOriginalLine = false;
+
                             if( foundLine && ( foundLine->GetLength() == 0 )
                                 && ( line->GetLength() == 0 )
                                 && ( EDA_ANGLE( splitDelta )
@@ -486,19 +487,25 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                                 updateItem( foundLine, true );
 
+
+                                SCH_LINE* bendLine = nullptr;
+
+                                if( ( m_lineConnectionCache.count( foundLine ) == 1 )
+                                    && ( m_lineConnectionCache[foundLine][0]->Type()
+                                         == SCH_LINE_T ) )
+                                {
+                                    bendLine = static_cast<SCH_LINE*>(
+                                            m_lineConnectionCache[foundLine][0] );
+                                }
+
                                 // Remerge segments we've created if this is a segment that we've added
                                 // whose only other connection is also an added segment
-                                if( foundLine->HasFlag( IS_NEW ) && foundLine->GetLength() == 0
-                                    && m_lineConnectionCache.count( foundLine ) == 1
-                                    && m_lineConnectionCache[foundLine][0]->HasFlag( IS_NEW )
-                                    && m_lineConnectionCache[foundLine][0]->Type() == SCH_LINE_T )
+                                //
+                                // bendLine is first added segment at the original attachment point,
+                                // foundLine is the orthogonal line between bendLine and this line
+                                if( foundLine->HasFlag( IS_NEW ) && ( foundLine->GetLength() == 0 )
+                                    && ( bendLine != nullptr ) && bendLine->HasFlag( IS_NEW ) )
                                 {
-                                    //bendLine is first added segment at the original attachment point,
-                                    //foundLine is the orthogonal line between bendLine and this line
-                                    SCH_LINE* bendLine = static_cast<SCH_LINE*>(
-                                            m_lineConnectionCache[foundLine][0] );
-
-                                    fflush( stdout );
                                     if( line->HasFlag( STARTPOINT ) )
                                         line->SetEndPoint( bendLine->GetEndPoint() );
                                     else
