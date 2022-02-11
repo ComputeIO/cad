@@ -32,6 +32,8 @@
 #include <wx/filename.h>
 #include <wx/dir.h>
 
+#include <array>
+
 #include <pgm_base.h>
 #include <confirm.h>
 #include <core/arraydim.h>
@@ -134,7 +136,7 @@ int ExecuteFile( const wxString& aEditorName, const wxString& aFileName, wxProce
     if( wxFileExists( fullEditorName ) )
     {
         int i = 0;
-        const wchar_t* args[4];
+        auto args = std::array<const wchar_t*, 4>{};
 
         args[i++] = fullEditorName.wc_str();
 
@@ -146,7 +148,7 @@ int ExecuteFile( const wxString& aEditorName, const wxString& aFileName, wxProce
 
         args[i] = nullptr;
 
-        return wxExecute( const_cast<wchar_t**>( args ), wxEXEC_ASYNC, aCallback );
+        return wxExecute( *args.data(), wxEXEC_ASYNC, aCallback );
     }
 
     wxString msg;
@@ -174,13 +176,13 @@ bool OpenPDF( const wxString& file )
     }
     else
     {
-        const wchar_t* args[3];
+        auto args = std::array<const wchar_t*, 3>{};
 
         args[0] = Pgm().GetPdfBrowserName().wc_str();
         args[1] = filename.wc_str();
         args[2] = nullptr;
 
-        if( wxExecute( const_cast<wchar_t**>( args ) ) == -1 )
+        if( wxExecute( *args.data() ) == -1 )
         {
             msg.Printf( _( "Problem while running the PDF viewer '%s'." ), args[0] );
             DisplayError( nullptr, msg );

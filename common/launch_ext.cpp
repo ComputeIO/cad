@@ -18,6 +18,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <array>
 #include <launch_ext.h>
 #include <wx/utils.h>
 
@@ -26,8 +27,8 @@ bool LaunchExternal( const wxString& aPath )
 {
 #ifdef __WXMAC__
 
-    const wchar_t* args[] = { L"open", aPath.wc_str(), nullptr };
-    return wxExecute( const_cast<wchar_t**>( args ) ) != -1;
+    const auto args = std::array<const wchar_t*, 3>{ L"open", aPath.wc_str(), nullptr };
+    return wxExecute( *args.data() ) != -1;
 
 #elif defined( __WXGTK__ ) && !wxCHECK_VERSION( 3, 1, 1 )
     // On Unix systems `wxLaunchDefaultApplication()` before wxWidgets 3.1.1 mistakenly uses
@@ -39,12 +40,9 @@ bool LaunchExternal( const wxString& aPath )
 
     if( wxGetEnv( "PATH", &PATH ) && wxFindFileInPath( &xdg_open, PATH, "xdg-open" ) )
     {
-        const char* argv[3];
-        argv[0] = xdg_open.fn_str();
-        argv[1] = aPath.fn_str();
-        argv[2] = nullptr;
+        const auto args = std::array<const char*, 3>{ xdg_open.fn_str(), aPath.fn_str(), nullptr };
 
-        if( wxExecute( const_cast<char**>( argv ) ) )
+        if( wxExecute( *args.data() ) )
             return true;
     }
 
