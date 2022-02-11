@@ -310,6 +310,7 @@ if( KICAD_SPICE )
         dialogs/dialog_spice_model_base.cpp
         sim/ngspice_helpers.cpp
         sim/ngspice.cpp
+        sim/ngspice_devices.cpp
         sim/sim_panel_base.cpp
         sim/sim_plot_colors.cpp
         sim/sim_plot_frame.cpp

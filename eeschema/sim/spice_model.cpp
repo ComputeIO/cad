@@ -220,12 +220,12 @@ void SPICE_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
             {
                 SPICE_VALUE value( node->string() );
 
-                if( !SetParamValue( paramName, value ) )
+                /*if( !SetParamValue( paramName, value ) )
                 {
                     m_params.clear();
                     throw KI_PARAM_ERROR( wxString::Format( _( "Unknown parameter \"%s\"" ),
                                                             paramName ) );
-                }
+                }*/
             }
             catch( KI_PARAM_ERROR& e )
             {
@@ -244,7 +244,7 @@ wxString SPICE_MODEL::generateParamValuePairs()
 {
     wxString result = "";
 
-    for( auto it = GetParams().cbegin(); it != GetParams().cend(); it++ )
+    /*for( auto it = GetParams().cbegin(); it != GetParams().cend(); it++ )
     {
         result += it->first;
         result += "=";
@@ -252,7 +252,7 @@ wxString SPICE_MODEL::generateParamValuePairs()
 
         if( std::next( it ) != GetParams().cend() )
             result += " ";
-    }
+    }*/
 
     return result;
 }

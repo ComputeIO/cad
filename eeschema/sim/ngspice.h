@@ -47,6 +47,29 @@ class wxDynamicLibrary;
 class NGSPICE : public SPICE_SIMULATOR
 {
 public:
+    enum class PARAM_DIR
+    {
+        IN,
+        OUT,
+        INOUT
+    };
+
+    struct PARAM_INFO
+    {
+        unsigned int id;
+        PARAM_DIR dir;
+        wxString description;
+    };
+
+    struct DEVICE_INFO
+    {
+        wxString description;
+        std::map<wxString, PARAM_INFO> modelParams;
+        std::map<wxString, PARAM_INFO> instanceParams;
+    };
+
+    static const std::map<wxString, DEVICE_INFO> DevicesInfo;
+
     NGSPICE();
     virtual ~NGSPICE();
 

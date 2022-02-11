@@ -174,110 +174,76 @@ public:
     };
 
     static TYPE_INFO TypeInfo( TYPE aType )
-    {
+    { 
         switch( aType )
-        {
-        case TYPE::NONE:                    return {DEVICE_TYPE::NONE,       "",  0,  "",                ""};
+        { 
+        case TYPE::NONE:                    return { DEVICE_TYPE::NONE,       "",  0,  "",                "" };
 
-        case TYPE::RESISTOR_IDEAL:          return {DEVICE_TYPE::RESISTOR,   "R", 0,  "IDEAL",           "Ideal model"};
-        case TYPE::RESISTOR_SEMICONDUCTOR:  return {DEVICE_TYPE::RESISTOR,   "R", 0,  "SEMICONDUCTOR",   "Semiconductor model"};
+        case TYPE::RESISTOR_IDEAL:          return { DEVICE_TYPE::RESISTOR,   "R", 0,  "IDEAL",           "Ideal model" };
+        case TYPE::RESISTOR_SEMICONDUCTOR:  return { DEVICE_TYPE::RESISTOR,   "R", 0,  "SEMICONDUCTOR",   "Semiconductor model" };
 
-        case TYPE::CAPACITOR_IDEAL:         return {DEVICE_TYPE::CAPACITOR,  "C", 0,  "IDEAL",           "Ideal model"};
-        case TYPE::CAPACITOR_SEMICONDUCTOR: return {DEVICE_TYPE::CAPACITOR,  "C", 0,  "SEMICONDUCTOR",   "Semiconductor model"};
+        case TYPE::CAPACITOR_IDEAL:         return { DEVICE_TYPE::CAPACITOR,  "C", 0,  "IDEAL",           "Ideal model" };
+        case TYPE::CAPACITOR_SEMICONDUCTOR: return { DEVICE_TYPE::CAPACITOR,  "C", 0,  "SEMICONDUCTOR",   "Semiconductor model" };
 
-        case TYPE::INDUCTOR_IDEAL:          return {DEVICE_TYPE::INDUCTOR,   "L", 0,  "IDEAL",           "Ideal model"};
-        case TYPE::INDUCTOR_IDEAL_COIL:     return {DEVICE_TYPE::INDUCTOR,   "L", 0,  "LOSSLESS_COIL",   "Lossless coil model"};
+        case TYPE::INDUCTOR_IDEAL:          return { DEVICE_TYPE::INDUCTOR,   "L", 0,  "IDEAL",           "Ideal model" };
+        case TYPE::INDUCTOR_IDEAL_COIL:     return { DEVICE_TYPE::INDUCTOR,   "L", 0,  "LOSSLESS_COIL",   "Lossless coil model" };
     
-        case TYPE::TLINE_LOSSY:             return {DEVICE_TYPE::TLINE,      "O", 0,  "LOSSY",           "Lossy model"};
-        case TYPE::TLINE_LOSSLESS:          return {DEVICE_TYPE::TLINE,      "T", 0,  "LOSSLESS",        "Lossless model"};
-        case TYPE::TLINE_DISTRIBUTED_RC:    return {DEVICE_TYPE::TLINE,      "U", 0,  "DISTRIBUTED_RC",  "Uniformly distributed RC model"};
-        case TYPE::TLINE_KSPICE_LOSSY:      return {DEVICE_TYPE::TLINE,      "Y", 0,  "KSPICE_LOSSY",    "KSPICE lossy model"};
+        case TYPE::TLINE_LOSSY:             return { DEVICE_TYPE::TLINE,      "O", 0,  "LOSSY",           "Lossy model" };
+        case TYPE::TLINE_LOSSLESS:          return { DEVICE_TYPE::TLINE,      "T", 0,  "LOSSLESS",        "Lossless model" };
+        case TYPE::TLINE_DISTRIBUTED_RC:    return { DEVICE_TYPE::TLINE,      "U", 0,  "DISTRIBUTED_RC",  "Uniformly distributed RC model" };
+        case TYPE::TLINE_KSPICE_LOSSY:      return { DEVICE_TYPE::TLINE,      "Y", 0,  "KSPICE_LOSSY",    "KSPICE lossy model" };
 
-        case TYPE::DIODE:                   return {DEVICE_TYPE::DIODE,      "D", 0,  "",                ""};
+        case TYPE::DIODE:                   return { DEVICE_TYPE::DIODE,      "D", 0,  "",                "" };
         
-        case TYPE::BJT_GUMMEL_POON:         return {DEVICE_TYPE::BJT,        "Q", 1,  "GUMMEL_POON",     "Gummel-Poon model"};
-        case TYPE::BJT_VBIC:                return {DEVICE_TYPE::BJT,        "Q", 4,  "VBIC",            "VBIC model"};
-        case TYPE::BJT_MEXTRAM:             return {DEVICE_TYPE::BJT,        "Q", 6,  "MEXTRAM",         "MEXTRAM model"};
-        case TYPE::BJT_HICUM_L0:            return {DEVICE_TYPE::BJT,        "Q", 7,  "HICUM_L0",        "HICUM Level 0 model"};
-        case TYPE::BJT_HICUM_L2:            return {DEVICE_TYPE::BJT,        "Q", 8,  "HICUM_L2",        "HICUM Level 2 model"};
+        case TYPE::BJT_GUMMEL_POON:         return { DEVICE_TYPE::BJT,        "Q", 1,  "GUMMEL_POON",     "Gummel-Poon model" };
+        case TYPE::BJT_VBIC:                return { DEVICE_TYPE::BJT,        "Q", 4,  "VBIC",            "VBIC model" };
+        case TYPE::BJT_MEXTRAM:             return { DEVICE_TYPE::BJT,        "Q", 6,  "MEXTRAM",         "MEXTRAM model" };
+        case TYPE::BJT_HICUM_L0:            return { DEVICE_TYPE::BJT,        "Q", 7,  "HICUM_L0",        "HICUM Level 0 model" };
+        case TYPE::BJT_HICUM_L2:            return { DEVICE_TYPE::BJT,        "Q", 8,  "HICUM_L2",        "HICUM Level 2 model" };
 
-        case TYPE::JFET_SHICHMAN_HODGES:    return {DEVICE_TYPE::JFET,       "J", 1,  "SHICHMAN_HODGES", "Shichman-Hodges model"};
-        case TYPE::JFET_PARKER_SKELLERN:    return {DEVICE_TYPE::JFET,       "J", 2,  "PARKER_SKELLERN", "Parker-Skellern model"};
+        case TYPE::JFET_SHICHMAN_HODGES:    return { DEVICE_TYPE::JFET,       "J", 1,  "SHICHMAN_HODGES", "Shichman-Hodges model" };
+        case TYPE::JFET_PARKER_SKELLERN:    return { DEVICE_TYPE::JFET,       "J", 2,  "PARKER_SKELLERN", "Parker-Skellern model" };
 
-        case TYPE::MESFET_STATZ:            return {DEVICE_TYPE::MESFET,     "Z", 1,  "STATZ",           "Statz model"};
-        case TYPE::MESFET_YTTERDAL:         return {DEVICE_TYPE::MESFET,     "Z", 2,  "YTTERDAL",        "Ytterdal model"};
-        case TYPE::MESFET_HFET1:            return {DEVICE_TYPE::MESFET,     "Z", 5,  "HFET1",           "HFET1 model"};
-        case TYPE::MESFET_HFET2:            return {DEVICE_TYPE::MESFET,     "Z", 6,  "HFET2",           "HFET2 model"};
+        case TYPE::MESFET_STATZ:            return { DEVICE_TYPE::MESFET,     "Z", 1,  "STATZ",           "Statz model" };
+        case TYPE::MESFET_YTTERDAL:         return { DEVICE_TYPE::MESFET,     "Z", 2,  "YTTERDAL",        "Ytterdal model" };
+        case TYPE::MESFET_HFET1:            return { DEVICE_TYPE::MESFET,     "Z", 5,  "HFET1",           "HFET1 model" };
+        case TYPE::MESFET_HFET2:            return { DEVICE_TYPE::MESFET,     "Z", 6,  "HFET2",           "HFET2 model" };
 
-        case TYPE::MOSFET_MOS1:             return {DEVICE_TYPE::MOSFET,     "M", 1,  "MOS1",            "Classical quadratic model (MOS1)"};
-        case TYPE::MOSFET_MOS2:             return {DEVICE_TYPE::MOSFET,     "M", 2,  "MOS2",            "Grove-Frohman model (MOS2)"};
-        case TYPE::MOSFET_MOS3:             return {DEVICE_TYPE::MOSFET,     "M", 3,  "MOS3",            "MOS3 model"};
-        case TYPE::MOSFET_BSIM1:            return {DEVICE_TYPE::MOSFET,     "M", 4,  "BSIM1",           "BSIM1 model"};
-        case TYPE::MOSFET_BSIM2:            return {DEVICE_TYPE::MOSFET,     "M", 5,  "BSIM2",           "BSIM2 model"};
-        case TYPE::MOSFET_MOS6:             return {DEVICE_TYPE::MOSFET,     "M", 6,  "MOS6",            "MOS6 model"};
-        case TYPE::MOSFET_BSIM3:            return {DEVICE_TYPE::MOSFET,     "M", 8,  "BSIM3",           "BSIM3 model"};
-        case TYPE::MOSFET_MOS9:             return {DEVICE_TYPE::MOSFET,     "M", 9,  "MOS9",            "MOS9 model"};
-        case TYPE::MOSFET_B4SOI:            return {DEVICE_TYPE::MOSFET,     "M", 10, "B4SOI",           "BSIM4 SOI model (B4SOI)"};
-        case TYPE::MOSFET_BSIM4:            return {DEVICE_TYPE::MOSFET,     "M", 14, "BSIM4",           "BSIM4 model"};
-        //case TYPE::MOSFET_EKV2_6:           return {DEVICE_TYPE::MOSFET,     "M", 44, "EKV2.6",          "EKV2.6 model"};
-        //case TYPE::MOSFET_PSP:              return {DEVICE_TYPE::MOSFET,     "M", 45, "PSP",             "PSP model"};
-        case TYPE::MOSFET_B3SOIFD:          return {DEVICE_TYPE::MOSFET,     "M", 55, "B3SOIFD",         "B3SOIFD (BSIM3 fully depleted SOI) model"};
-        case TYPE::MOSFET_B3SOIDD:          return {DEVICE_TYPE::MOSFET,     "M", 56, "B3SOIDD",         "B3SOIDD (BSIM3 SOI, both fully and partially depleted) model"};
-        case TYPE::MOSFET_B3SOIPD:          return {DEVICE_TYPE::MOSFET,     "M", 57, "B3SOIPD",         "B3SOIPD (BSIM3 partially depleted SOI) model"};
-        //case TYPE::MOSFET_STAG:             return {DEVICE_TYPE::MOSFET,     "M", 60, "STAG",            "STAG model"};
-        case TYPE::MOSFET_HISIM2:           return {DEVICE_TYPE::MOSFET,     "M", 68, "HiSIM2",          "HiSIM2 model"};
-        case TYPE::MOSFET_HISIM_HV:         return {DEVICE_TYPE::MOSFET,     "M", 73, "HiSIM_HV",        "HiSIM_HV model"};
+        case TYPE::MOSFET_MOS1:             return { DEVICE_TYPE::MOSFET,     "M", 1,  "MOS1",            "Classical quadratic model (MOS1)" };
+        case TYPE::MOSFET_MOS2:             return { DEVICE_TYPE::MOSFET,     "M", 2,  "MOS2",            "Grove-Frohman model (MOS2)" };
+        case TYPE::MOSFET_MOS3:             return { DEVICE_TYPE::MOSFET,     "M", 3,  "MOS3",            "MOS3 model" };
+        case TYPE::MOSFET_BSIM1:            return { DEVICE_TYPE::MOSFET,     "M", 4,  "BSIM1",           "BSIM1 model" };
+        case TYPE::MOSFET_BSIM2:            return { DEVICE_TYPE::MOSFET,     "M", 5,  "BSIM2",           "BSIM2 model" };
+        case TYPE::MOSFET_MOS6:             return { DEVICE_TYPE::MOSFET,     "M", 6,  "MOS6",            "MOS6 model" };
+        case TYPE::MOSFET_BSIM3:            return { DEVICE_TYPE::MOSFET,     "M", 8,  "BSIM3",           "BSIM3 model" };
+        case TYPE::MOSFET_MOS9:             return { DEVICE_TYPE::MOSFET,     "M", 9,  "MOS9",            "MOS9 model" };
+        case TYPE::MOSFET_B4SOI:            return { DEVICE_TYPE::MOSFET,     "M", 10, "B4SOI",           "BSIM4 SOI model (B4SOI)" };
+        case TYPE::MOSFET_BSIM4:            return { DEVICE_TYPE::MOSFET,     "M", 14, "BSIM4",           "BSIM4 model" };
+        //case TYPE::MOSFET_EKV2_6:           return { DEVICE_TYPE::MOSFET,     "M", 44, "EKV2.6",          "EKV2.6 model" };
+        //case TYPE::MOSFET_PSP:              return { DEVICE_TYPE::MOSFET,     "M", 45, "PSP",             "PSP model" };
+        case TYPE::MOSFET_B3SOIFD:          return { DEVICE_TYPE::MOSFET,     "M", 55, "B3SOIFD",         "B3SOIFD (BSIM3 fully depleted SOI) model" };
+        case TYPE::MOSFET_B3SOIDD:          return { DEVICE_TYPE::MOSFET,     "M", 56, "B3SOIDD",         "B3SOIDD (BSIM3 SOI, both fully and partially depleted) model" };
+        case TYPE::MOSFET_B3SOIPD:          return { DEVICE_TYPE::MOSFET,     "M", 57, "B3SOIPD",         "B3SOIPD (BSIM3 partially depleted SOI) model" };
+        //case TYPE::MOSFET_STAG:             return { DEVICE_TYPE::MOSFET,     "M", 60, "STAG",            "STAG model" };
+        case TYPE::MOSFET_HISIM2:           return { DEVICE_TYPE::MOSFET,     "M", 68, "HiSIM2",          "HiSIM2 model" };
+        case TYPE::MOSFET_HISIM_HV:         return { DEVICE_TYPE::MOSFET,     "M", 73, "HiSIM_HV",        "HiSIM_HV model" };
 
-        case TYPE::VSOURCE:                 return {DEVICE_TYPE::VSOURCE,    "V", 0,  "",                ""};
-        case TYPE::ISOURCE:                 return {DEVICE_TYPE::ISOURCE,    "V", 0,  "",                ""};
+        case TYPE::VSOURCE:                 return { DEVICE_TYPE::VSOURCE,    "V", 0,  "",                "" };
+        case TYPE::ISOURCE:                 return { DEVICE_TYPE::ISOURCE,    "V", 0,  "",                "" };
 
-        case TYPE::SUBCIRCUIT:              return {DEVICE_TYPE::SUBCIRCUIT, "X", 0,  "",                ""};
-        case TYPE::CODEMODEL:               return {DEVICE_TYPE::CODEMODEL,  "A", 0,  "",                ""};
-        case TYPE::RAWSPICE:                return {DEVICE_TYPE::RAWSPICE,   "",  0,  "",                ""};
+        case TYPE::SUBCIRCUIT:              return { DEVICE_TYPE::SUBCIRCUIT, "X", 0,  "",                "" };
+        case TYPE::CODEMODEL:               return { DEVICE_TYPE::CODEMODEL,  "A", 0,  "",                "" };
+        case TYPE::RAWSPICE:                return { DEVICE_TYPE::RAWSPICE,   "",  0,  "",                "" };
 
         case TYPE::_ENUM_END:               break;
-        }
+         }
 
         wxFAIL;
-        return {};
-    }
+        return {  };
+     }
 
     template <typename T>
     static TYPE ReadTypeFromFields( const std::vector<T>* aFields );
-
-
-    struct PARAM_INFO
-    {
-        wxString description;
-        wxString unit;
-        double defaultValue;
-        double exampleValue;
-    };
-
-    static std::map<wxString, PARAM_INFO> ParamInfo( TYPE aType )
-    {
-        switch( aType )
-        {
-        case TYPE::DIODE:
-            return {
-        }
-    }
-
-    static std::map<wxString, std::vector<wxString>> ParamAliases( TYPE aType )
-    {
-        switch( aType )
-        {
-        /*case TYPE::DIODE:
-            return {{"JS", "IS"},
-                    {"IKF", "IK"},
-                    {"CJ0", "CJO"},
-                    {"CJSW", "CJP"},
-                    {"MJ", "M"},
-                    {"PB", "VJ"},
-                    {"TREF", "TNOM"}};*/
-
-        }
-    }
 
 
     SPICE_MODEL( TYPE aType );
@@ -295,21 +261,8 @@ public:
 
 
     wxString GetFile() { return m_file; }
-    void SetFile( const wxString& aFile )
-    {
-        m_file = aFile;
-    }
+    void SetFile( const wxString& aFile ) { m_file = aFile; }
 
-    const std::map<wxString, PARAM>& GetParams() { return m_params; }
-    bool SetParamValue( wxString paramName, SPICE_VALUE aValue )
-    {
-        if( !m_params.count( paramName ) )
-            return false;
-
-        m_params.at( paramName ).value = aValue;
-
-        return true;
-    }
 
 private:
     TYPE m_type;
