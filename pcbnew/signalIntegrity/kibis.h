@@ -64,15 +64,15 @@ enum class KIBIS_ACCURACY
 class KIBIS_FILE
 {
 public:
-    wxString m_fileName;
+    std::string m_fileName;
     double   m_fileRev;
     double   m_ibisVersion;
 
-    wxString m_date;
-    wxString m_source;
-    wxString m_notes;
-    wxString m_disclaimer;
-    wxString m_copyright;
+    std::string m_date;
+    std::string m_source;
+    std::string m_notes;
+    std::string m_disclaimer;
+    std::string m_copyright;
 };
 
 class KIBIS_ANY
@@ -85,8 +85,8 @@ public:
 class KIBIS_MODEL : public KIBIS_ANY
 {
 public:
-    wxString        m_name;
-    wxString        m_description;
+    std::string        m_name;
+    std::string        m_description;
     IBIS_MODEL_TYPE m_type = IBIS_MODEL_TYPE::UNDEFINED;
     /* The Polarity, Enable, Vinl, Vinh, Vmeas, Cref, Rref, and Vref subparameters are optional. */
     /* the default values of Vinl = 0.8 V and Vinh = 2.0 V are assumed. */
@@ -124,11 +124,11 @@ public:
     bool HasGNDClamp();
     bool HasPOWERClamp();
 
-    wxString SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+    std::string SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
     //private:
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
-    wxString generateSquareWave( wxString aNode1, wxString aNode2,
+    std::string generateSquareWave( std::string aNode1, std::string aNode2,
                                  KIBIS_WAVEFORM_RECTANGULAR*             aWave,
                                  std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                  IBIS_CORNER                             aCorner );
@@ -140,11 +140,11 @@ public:
     /** @brief Name of the pin
      *  Examples : "VCC", "GPIOA", "CLK", etc...
      */
-    wxString m_signalName;
+    std::string m_signalName;
     /** @brief Pin Number
      * Examples : 1, 2, 3 ( or for BGA ), A1, A2, A3, etc...
      */
-    wxString m_pinNumber;
+    std::string m_pinNumber;
 
     /** @brief Resistance from die to pin */
     TypMinMaxValue R_pin;
@@ -157,40 +157,40 @@ public:
 
     std::vector<KIBIS_MODEL*> m_models;
 
-    bool     writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
+    bool     writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
                                KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType );
-    bool     writeSpiceDevice( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
+    bool     writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
     void     getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
                                 KIBIS_WAVEFORM_TYPE aWaveType, IBIS_CORNER aSupply );
-    wxString getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+    std::string getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                  KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
-    wxString getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
+    std::string getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
                                   std::pair<IbisWaveform*, IbisWaveform*> aPair1,
                                   std::pair<IbisWaveform*, IbisWaveform*> aPair2,
                                   KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
                                   IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
-    wxString KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+    std::string KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                          KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType, IBIS_CORNER aSupply,
                          IBIS_CORNER aSpeed, int index );
-    wxString addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex );
-    void     getKuKdFromFile( wxString* aSimul );
+    std::string addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex );
+    void     getKuKdFromFile( std::string* aSimul );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY
 {
 public:
     /** @brief Name of the component */
-    wxString m_name;
+    std::string m_name;
     /** @brief Name of the manufacturer */
-    wxString m_manufacturer;
+    std::string m_manufacturer;
 
     std::vector<KIBIS_PIN*> m_pins;
 
-    KIBIS_PIN* getPin( wxString aPinNumber );
+    KIBIS_PIN* getPin( std::string aPinNumber );
 };
 
 bool KibisFromFile( std::string aFileName, std::vector<KIBIS_COMPONENT*>* aDest );

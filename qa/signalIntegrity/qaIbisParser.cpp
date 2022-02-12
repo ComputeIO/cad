@@ -24,10 +24,15 @@ int main( void )
 
     KIBIS_PIN* pin1 = comp->getPin( "11" );
     KIBIS_PIN* pin2 = comp->getPin( "2" );
-    wxString*  tmp1 = new wxString();
-    wxString*  tmp2 = new wxString();
-    wxString*  tmp3 = new wxString();
-    wxString*  tmp4 = new wxString();
+
+    std::cout << "pin1 name: " << pin1->m_signalName << std::endl;
+    std::cout << "pin2 name: " << pin2->m_signalName << std::endl;
+    std::cout << "pin1 model length: " << pin1->m_models.size()<< std::endl;
+    std::cout << "pin2 model length: " << pin2->m_models.size()<< std::endl;
+    std::string*  tmp1 = new std::string();
+    std::string*  tmp2 = new std::string();
+    std::string*  tmp3 = new std::string();
+    std::string*  tmp4 = new std::string();
 
     KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
     wave->m_ton = 12e-9;
@@ -35,10 +40,12 @@ int main( void )
     wave->m_cycles = 5;
 
     std::cout << "WAVEFORM TYPE IN QA: " << wave->GetType() << std::endl;
+    std::cout << pin2->m_models.at(0)->m_name << std::endl;
     pin2->writeSpiceDevice( tmp4, "device_typ", pin2->m_models.at( 0 ), IBIS_CORNER::TYP,
                             IBIS_CORNER::TYP );
     pin1->writeSpiceDriver( tmp1, "driver_typ", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
                             IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave, wave->GetType() );
+    return 0;
     pin1->writeSpiceDriver( tmp2, "driver_min", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
                             IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave,
                             KIBIS_WAVEFORM_TYPE::NONE );

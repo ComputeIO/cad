@@ -79,12 +79,12 @@ class IbisHeader
 public:
     double   m_ibisVersion = -1;
     double   m_fileRevision = -1;
-    wxString m_fileName;
-    wxString m_source;
-    wxString m_date;
-    wxString m_notes;
-    wxString m_disclaimer;
-    wxString m_copyright;
+    std::string m_fileName;
+    std::string m_source;
+    std::string m_date;
+    std::string m_notes;
+    std::string m_disclaimer;
+    std::string m_copyright;
 
     bool Check();
 };
@@ -111,9 +111,9 @@ public:
 class IbisComponentPin
 {
 public:
-    wxString m_pinName;
-    wxString m_signalName;
-    wxString m_modelName;
+    std::string m_pinName;
+    std::string m_signalName;
+    std::string m_modelName;
     double   m_Rpin = std::nan( NAN_NA );
     double   m_Lpin = std::nan( NAN_NA );
     double   m_Cpin = std::nan( NAN_NA );
@@ -131,12 +131,12 @@ public:
 class IbisComponentPinMapping
 {
 public:
-    wxString m_pinName;
-    wxString m_PDref;
-    wxString m_PUref;
-    wxString m_GNDClampRef;
-    wxString m_POWERClampRef;
-    wxString m_extRef;
+    std::string m_pinName;
+    std::string m_PDref;
+    std::string m_PUref;
+    std::string m_GNDClampRef;
+    std::string m_POWERClampRef;
+    std::string m_extRef;
 
     bool m_virtual;
 };
@@ -144,8 +144,8 @@ public:
 class IbisDiffPinEntry
 {
 public:
-    wxString       pinA;
-    wxString       pinB;
+    std::string       pinA;
+    std::string       pinB;
     double         Vdiff = 0.2; // ignored for input
     TypMinMaxValue tdelay;      // ignored for outputs
 };
@@ -159,14 +159,14 @@ public:
 class IbisComponent
 {
 public:
-    wxString                             m_name = "";
-    wxString                             m_manufacturer = "";
+    std::string                             m_name = "";
+    std::string                             m_manufacturer = "";
     IbisComponentPackage                 m_package;
     std::vector<IbisComponentPin>        m_pins;
     std::vector<IbisComponentPinMapping> m_pinMappings;
-    wxString                             m_packageModel;
-    wxString                             m_busLabel;
-    wxString                             m_dieSupplyPads;
+    std::string                             m_packageModel;
+    std::string                             m_busLabel;
+    std::string                             m_dieSupplyPads;
     IbisDiffPin                          m_diffPin;
 
     bool Check();
@@ -176,14 +176,14 @@ public:
 class IbisModelSelectorEntry
 {
 public:
-    wxString m_modelName;
-    wxString m_modelDescription;
+    std::string m_modelName;
+    std::string m_modelDescription;
 };
 
 class IbisModelSelector
 {
 public:
-    wxString                            m_name;
+    std::string                            m_name;
     std::vector<IbisModelSelectorEntry> m_models;
 
     bool Check();
@@ -204,7 +204,7 @@ public:
 
     bool Check();
     double   InterpolatedI( double aV, IBIS_CORNER aCorner );
-    wxString Spice( int aN, wxString aPort1, wxString aPort2, wxString aModelName,
+    std::string Spice( int aN, std::string aPort1, std::string aPort2, std::string aModelName,
                     IBIS_CORNER aCorner );
 
 private:
@@ -317,7 +317,7 @@ enum class IBIS_MODEL_POLARITY
 class IbisModel
 {
 public:
-    wxString        m_name;
+    std::string        m_name;
     IBIS_MODEL_TYPE m_type = IBIS_MODEL_TYPE::UNDEFINED;
     /* The Polarity, Enable, Vinl, Vinh, Vmeas, Cref, Rref, and Vref subparameters are optional. */
     /* the default values of Vinl = 0.8 V and Vinh = 2.0 V are assumed. */
@@ -357,12 +357,12 @@ public:
 class IbisPackageModel
 {
 public:
-    wxString              m_name;
-    wxString              m_manufacturer;
-    wxString              m_OEM;
-    wxString              m_description;
+    std::string              m_name;
+    std::string              m_manufacturer;
+    std::string              m_OEM;
+    std::string              m_description;
     int                   m_numberOfPins;
-    std::vector<wxString> m_pins;
+    std::vector<std::string> m_pins;
 
     IBIS_MATRIX* m_resistanceMatrix;
     IBIS_MATRIX* m_capacitanceMatrix;
@@ -439,16 +439,16 @@ public:
 
 
     bool parseFile( std::string aFileName, IbisFile* );
-    bool parseHeader( wxString );
-    bool parseComponent( wxString );
-    bool parseModelSelector( wxString );
-    bool parseModel( wxString );
-    bool parsePackageModel( wxString );
-    bool parsePackageModelModelData( wxString );
-    bool parseDouble( double* aDest, wxString aStr, bool aAllowModifiers = false );
+    bool parseHeader( std::string );
+    bool parseComponent( std::string );
+    bool parseModelSelector( std::string );
+    bool parseModel( std::string );
+    bool parsePackageModel( std::string );
+    bool parsePackageModelModelData( std::string );
+    bool parseDouble( double* aDest, std::string aStr, bool aAllowModifiers = false );
 
 private:
-    wxString* m_continuingString;
+    std::string* m_continuingString;
 
 
     bool onNewLine(); // Gets rid of comments ( except on a comment character change command...)
@@ -458,27 +458,27 @@ private:
     void      skipWhitespaces();
     bool      checkEndofLine(); // To be used when there cannot be any character left on the line
     bool      isLineEmptyFromCursor();
-    wxString* getKeyword();
+    std::string* getKeyword();
     bool      readInt( int* aDest );
     bool      readDouble( double* aDest );
-    bool      readWord( wxString* );
-    bool      readDvdt( wxString, dvdt* );
+    bool      readWord( std::string* );
+    bool      readDvdt( std::string, dvdt* );
     bool      readMatrix( IBIS_MATRIX** );
-    bool      readMatrixBanded( wxString, IBIS_MATRIX_BANDED* );
-    bool      readMatrixFull( wxString, IBIS_MATRIX_FULL* );
-    bool      readMatrixSparse( wxString, IBIS_MATRIX_SPARSE* );
+    bool      readMatrixBanded( std::string, IBIS_MATRIX_BANDED* );
+    bool      readMatrixFull( std::string, IBIS_MATRIX_FULL* );
+    bool      readMatrixSparse( std::string, IBIS_MATRIX_SPARSE* );
     bool      readRampdvdt( dvdtTypMinMax* aDest );
     bool      readRamp();
     bool      readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
-    bool      readString( wxString* );
-    bool      StoreString( wxString* aDest, bool aMultiline );
-    std::vector<wxString> ReadTableLine();
+    bool      readString( std::string* );
+    bool      StoreString( std::string* aDest, bool aMultiline );
+    std::vector<std::string> ReadTableLine();
 
-    bool readNumericSubparam( wxString aSubparam, double* aDest );
+    bool readNumericSubparam( std::string aSubparam, double* aDest );
     bool readIVtableEntry( IVtable* aTable );
     bool readVTtableEntry( VTtable* aTable );
     bool readTypMinMaxValue( TypMinMaxValue* aDest );
-    bool readTypMinMaxValueSubparam( wxString aSubparam, TypMinMaxValue* aDest );
+    bool readTypMinMaxValueSubparam( std::string aSubparam, TypMinMaxValue* aDest );
     //bool ReadDieSupplyPads();
 
     bool readPackage();
@@ -491,12 +491,16 @@ private:
 
 
     bool ChangeCommentChar();
-    bool changeContext( wxString aKeyword );
+    bool changeContext( std::string aKeyword );
 
     IBIS_PARSER_CONTINUE m_continue = IBIS_PARSER_CONTINUE::NONE;
     IBIS_PARSER_CONTEXT  m_context = IBIS_PARSER_CONTEXT::HEADER;
 
     REPORTER* m_reporter = new STDOUT_REPORTER();
+
+    // To be removed
+    void ibisReport( std::string aMsg, SEVERITY aSeverity=RPT_SEVERITY_INFO );
+    bool ibisToDouble( std::string aString, double* aDest );
 };
 
 #endif

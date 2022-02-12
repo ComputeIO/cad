@@ -37,13 +37,13 @@ bool convertKibisModel( IbisParser* aParser, IbisModel* aSource, KIBIS_MODEL* aD
         aDest->m_name = aSource->m_name;
         aDest->m_type = aSource->m_type;
 
-        aDest->m_description = wxString( "No description available." );
+        aDest->m_description = std::string( "No description available." );
 
         for( IbisModelSelector modelSelector : aParser->m_ibisFile->m_modelSelectors )
         {
             for( IbisModelSelectorEntry entry : modelSelector.m_models )
             {
-                if( entry.m_modelName == aDest->m_name )
+                if( !strcmp( entry.m_modelName.c_str(), aDest->m_name.c_str() ) )
                 {
                     aDest->m_description = entry.m_modelDescription;
                 }
@@ -93,9 +93,9 @@ bool convertKibisComponent( IbisParser* aParser, std::vector<KIBIS_MODEL*> aMode
 
     aDest->m_name = aSource->m_name;
     aDest->m_manufacturer = aSource->m_manufacturer;
-    wxString m_name;
+    std::string m_name;
     /** @brief Name of the manufacturer */
-    wxString m_manufacturer;
+    std::string m_manufacturer;
 
     std::vector<KIBIS_PIN*> m_pins;
     for( IbisComponentPin iPin : aSource->m_pins )
@@ -138,11 +138,11 @@ bool convertKibisComponent( IbisParser* aParser, std::vector<KIBIS_MODEL*> aMode
         }
 
         bool                  modelSelected = false;
-        std::vector<wxString> listOfModels;
+        std::vector<std::string> listOfModels;
 
         for( IbisModelSelector modelSelector : aParser->m_ibisFile->m_modelSelectors )
         {
-            if( modelSelector.m_name == iPin.m_modelName )
+            if( !strcmp( modelSelector.m_name.c_str(), iPin.m_modelName.c_str() ) )
             {
                 for( IbisModelSelectorEntry model : modelSelector.m_models )
                 {
@@ -157,11 +157,11 @@ bool convertKibisComponent( IbisParser* aParser, std::vector<KIBIS_MODEL*> aMode
             listOfModels.push_back( iPin.m_modelName );
         }
 
-        for( wxString modelName : listOfModels )
+        for( std::string modelName : listOfModels )
         {
             for( KIBIS_MODEL* model : aModels )
             {
-                if( model->m_name == modelName )
+                if( !strcmp( model->m_name.c_str(), modelName.c_str() ) )
                 {
                     kPin->m_models.push_back( model );
                 }
@@ -185,9 +185,9 @@ bool convertKibisAll( IbisParser* aParser, std::vector<KIBIS_COMPONENT*>* aDest 
     std::vector<KIBIS_MODEL*>     kModels;
     std::vector<KIBIS_COMPONENT*> kComponents;
 
-    //
     for( IbisModel iModel : aParser->m_ibisFile->m_models )
     {
+        std::cout << "CONVERT: model" << std::endl;
         KIBIS_MODEL* kModel = new KIBIS_MODEL();
         kModel->m_file = kFile;
         status &= convertKibisModel( aParser, &iModel, kModel );
@@ -198,6 +198,7 @@ bool convertKibisAll( IbisParser* aParser, std::vector<KIBIS_COMPONENT*>* aDest 
     {
         KIBIS_COMPONENT* kComponent = new KIBIS_COMPONENT();
         kComponent->m_file = kFile;
+        std::cout << "Number of models: " << kModels.size() << std::endl;
         status &= convertKibisComponent( aParser, kModels, &iComponent, kComponent );
         kComponents.push_back( kComponent );
     }

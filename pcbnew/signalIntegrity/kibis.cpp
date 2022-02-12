@@ -1,5 +1,13 @@
 #include "kibis.h"
 #include "ibis2kibis.h"
+#include <sstream>
+
+std::string doubleToString( double aNumber )
+{
+    std::ostringstream ss;
+    ss << aNumber;
+    return ss.str();
+}
 
 IBIS_CORNER ReverseLogic( IBIS_CORNER aIn )
 {
@@ -27,7 +35,7 @@ bool KibisFromFile( std::string aFileName, std::vector<KIBIS_COMPONENT*>* aDest 
 }
 
 
-KIBIS_PIN* KIBIS_COMPONENT::getPin( wxString aPinNumber )
+KIBIS_PIN* KIBIS_COMPONENT::getPin( std::string aPinNumber )
 {
     for( KIBIS_PIN* pin : m_pins )
     {
@@ -75,13 +83,13 @@ std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs(
     return pairs;
 }
 
-wxString KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
-    wxString result;
+    std::string result;
 
     result = "\n";
     result += "CCPOMP DIE GND ";
-    result << m_C_comp.value[ReverseLogic( aSpeed )];
+    result += doubleToString( m_C_comp.value[ReverseLogic( aSpeed )] );
     result += "\n";
     result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
     result += m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode", aSupply );
@@ -151,12 +159,12 @@ bool KIBIS_MODEL::HasPOWERClamp()
     return m_POWERClamp.m_entries.size() > 0;
 }
 
-wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2,
+std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNode2,
                                           KIBIS_WAVEFORM_RECTANGULAR*             aWave,
                                           std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                           IBIS_CORNER                             aSupply )
 {
-    wxString simul;
+    std::string simul;
 
     IbisWaveform risingWF = TrimWaveform( aPair.first );
     IbisWaveform fallingWF = TrimWaveform( aPair.second );
@@ -175,18 +183,18 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2,
     for( int i = 0; i < aWave->m_cycles; i++ )
     {
         simul += "Vrise";
-        simul << i;
-        simul << " rise";
-        simul << i;
-        simul << " ";
-        simul << aNode2;
+        simul += std::to_string( i );
+        simul += " rise";
+        simul += std::to_string( i );
+        simul += " ";
+        simul += aNode2;
         simul += " pwl ( ";
 
         for( auto entry : risingWF.m_table.m_entries )
         {
-            simul << entry.t + i * ( aWave->m_ton + aWave->m_toff );
+            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) );
             simul += " ";
-            simul << entry.V.value[aSupply];
+            simul += doubleToString( entry.V.value[aSupply] );
             simul += " ";
         }
         simul += ")\n";
@@ -195,18 +203,18 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2,
     for( int i = 0; i < aWave->m_cycles; i++ )
     {
         simul += "Vfall";
-        simul << i;
-        simul << " fall";
-        simul << i;
-        simul << " ";
-        simul << aNode2;
+        simul += std::to_string( i );
+        simul += " fall";
+        simul += std::to_string( i );
+        simul += " ";
+        simul += aNode2;
         simul += " pwl ( ";
 
         for( auto entry : fallingWF.m_table.m_entries )
         {
-            simul << entry.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton;
+            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton );
             simul += " ";
-            simul << entry.V.value[aSupply];
+            simul += doubleToString( entry.V.value[aSupply] );
             simul += " ";
         }
         simul += ")\n";
@@ -221,44 +229,44 @@ wxString KIBIS_MODEL::generateSquareWave( wxString aNode1, wxString aNode2,
     for( int i = 0; i < aWave->m_cycles; i++ )
     {
         simul += " v( rise";
-        simul << i;
+        simul += std::to_string( i );
         simul += " ) + v( fall";
-        simul << i;
+        simul += std::to_string( i );
         simul += ") ";
         simul += "+";
     }
-    simul << aPair.first->m_table.m_entries.at( 0 ).V.value[aSupply]; // Add DC bias
+    simul += doubleToString( aPair.first->m_table.m_entries.at( 0 ).V.value[aSupply] ); // Add DC bias
 
     simul += ")\n";
     return simul;
 }
 
-wxString KIBIS_PIN::addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex )
+std::string KIBIS_PIN::addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex )
 {
-    wxString simul;
+    std::string simul;
 
-    wxString GC_GND = "GC_GND";
-    wxString PC_PWR = "PC_PWR";
-    wxString PU_PWR = "PU_PWR";
-    wxString PD_GND = "PD_GND";
-    wxString DIE = "DIE";
+    std::string GC_GND = "GC_GND";
+    std::string PC_PWR = "PC_PWR";
+    std::string PU_PWR = "PU_PWR";
+    std::string PD_GND = "PD_GND";
+    std::string DIE = "DIE";
 
-    GC_GND << aIndex;
-    PC_PWR << aIndex;
-    PU_PWR << aIndex;
-    PD_GND << aIndex;
-    DIE << aIndex;
+    GC_GND += std::to_string( aIndex );
+    PC_PWR += std::to_string( aIndex );
+    PU_PWR += std::to_string( aIndex );
+    PD_GND += std::to_string( aIndex );
+    DIE += std::to_string( aIndex );
 
 
-    wxString GC = "GC";
-    wxString PC = "PC";
-    wxString PU = "PU";
-    wxString PD = "PD";
+    std::string GC = "GC";
+    std::string PC = "PC";
+    std::string PU = "PU";
+    std::string PD = "PD";
 
-    GC << aIndex;
-    PC << aIndex;
-    PU << aIndex;
-    PD << aIndex;
+    GC += std::to_string( aIndex );
+    PC += std::to_string( aIndex );
+    PU += std::to_string( aIndex );
+    PD += std::to_string( aIndex );
 
     if( aModel->HasGNDClamp() )
     {
@@ -280,7 +288,7 @@ wxString KIBIS_PIN::addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex
     return simul;
 }
 
-void KIBIS_PIN::getKuKdFromFile( wxString* aSimul )
+void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
 {
     // @TODO
     // that's not the best way to do, but ¯\_(ツ)_/¯
@@ -347,18 +355,18 @@ void KIBIS_PIN::getKuKdFromFile( wxString* aSimul )
     m_t = t;
 }
 
-wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                 KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
                                 IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int index )
 {
-    wxString simul = "";
+    std::string simul = "";
 
     simul += "*THIS IS NOT A VALID SPICE MODEL.\n";
     simul += "*This part is intended to be executed by Kibis internally.\n";
     simul += "*You should not be able to read this.\n\n";
 
     simul += ".SUBCKT DRIVER";
-    simul << index;
+    simul += std::to_string( index );
     simul += " POWER GND OUT \n"; // 1: POWER, 2:GND, 3:OUT
 
     if( ( aPair.first->m_R_dut == 0 ) && ( aPair.first->m_L_dut == 0 )
@@ -389,7 +397,7 @@ wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, Ib
 
     simul += "\n";
     simul += "CCPOMP 2 GND ";
-    simul << aModel->m_C_comp.value[aSpeed]; //@TODO: Check the corner ?
+    simul += doubleToString( aModel->m_C_comp.value[aSpeed] ); //@TODO: Check the corner ?
     simul += "\n";
     switch( aWaveType )
     {
@@ -406,12 +414,12 @@ wxString KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, Ib
     return simul;
 }
 
-wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
+std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
                                         std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                         KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
                                         IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
-    wxString simul = "";
+    std::string simul = "";
 
     if( aWaveType == KIBIS_WAVEFORM_TYPE::NONE )
     {
@@ -430,20 +438,20 @@ wxString KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
-        simul << aModel->m_voltageRange.value[aSupply];
+        simul += doubleToString( aModel->m_voltageRange.value[aSupply] );
         simul += "\n";
         //simul += "Vpin x1.DIE 0 1 \n"
         simul += "Lfixture 1 4 ";
-        simul << aPair.first->m_L_fixture;
+        simul += doubleToString( aPair.first->m_L_fixture );
         simul += "\n";
         simul += "Rfixture 4 5 ";
-        simul << aPair.first->m_R_fixture;
+        simul += doubleToString( aPair.first->m_R_fixture );
         simul += "\n";
         simul += "Cfixture 4 0 ";
-        simul << aPair.first->m_C_fixture;
+        simul += doubleToString( aPair.first->m_C_fixture );
         simul += "\n";
         simul += "Vfixture 5 0 ";
-        simul << aPair.first->m_V_fixture;
+        simul += doubleToString( aPair.first->m_V_fixture );
         simul += "\n";
         simul += "VmeasIout x1.2 x1.DIE0 0\n";
         simul += "VmeasPD 0 x1.PD_GND0 0\n";
@@ -537,13 +545,13 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
 }
 
 
-wxString KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
+std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
                                          std::pair<IbisWaveform*, IbisWaveform*> aPair1,
                                          std::pair<IbisWaveform*, IbisWaveform*> aPair2,
                                          KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
                                          IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
-    wxString simul = "";
+    std::string simul = "";
 
     if( aWaveType == KIBIS_WAVEFORM_TYPE::NONE )
     {
@@ -563,20 +571,20 @@ wxString KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                           
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
-        simul << aModel->m_voltageRange.value[aSupply];
+        simul += doubleToString( aModel->m_voltageRange.value[aSupply] );
         simul += "\n";
         //simul += "Vpin x1.DIE 0 1 \n"
         simul += "Lfixture0 1 4 ";
-        simul << aPair1.first->m_L_fixture;
+        simul += doubleToString( aPair1.first->m_L_fixture );
         simul += "\n";
         simul += "Rfixture0 4 5 ";
-        simul << aPair1.first->m_R_fixture;
+        simul += doubleToString( aPair1.first->m_R_fixture );
         simul += "\n";
         simul += "Cfixture0 4 0 ";
-        simul << aPair1.first->m_C_fixture;
+        simul += doubleToString( aPair1.first->m_C_fixture );
         simul += "\n";
         simul += "Vfixture0 5 0 ";
-        simul << aPair1.first->m_V_fixture;
+        simul += doubleToString( aPair1.first->m_V_fixture );
         simul += "\n";
         simul += "VmeasIout0 x1.2 x1.DIE0 0\n";
         simul += "VmeasPD0 0 x1.PD_GND0 0\n";
@@ -588,16 +596,16 @@ wxString KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                           
         simul += "\n x2 3 0 7 DRIVER1 \n";
         //simul += "Vpin x1.DIE 0 1 \n"
         simul += "Lfixture1 7 8 ";
-        simul << aPair2.first->m_L_fixture;
+        simul += doubleToString( aPair2.first->m_L_fixture );
         simul += "\n";
         simul += "Rfixture1 8 9 ";
-        simul << aPair2.first->m_R_fixture;
+        simul += doubleToString( aPair2.first->m_R_fixture );
         simul += "\n";
         simul += "Cfixture1 8 0 ";
-        simul << aPair2.first->m_C_fixture;
+        simul += doubleToString( aPair2.first->m_C_fixture );
         simul += "\n";
         simul += "Vfixture1 9 0 ";
-        simul << aPair2.first->m_V_fixture;
+        simul += doubleToString( aPair2.first->m_V_fixture );
         simul += "\n";
         simul += "VmeasIout1 x2.2 x2.DIE0 0\n";
         simul += "VmeasPD1 0 x2.PD_GND0 0\n";
@@ -660,7 +668,7 @@ wxString KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                           
     return simul;
 }
 
-bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
+bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                   IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
                                   KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType )
 {
@@ -681,8 +689,8 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
     case IBIS_MODEL_TYPE::IO_ECL:
     case IBIS_MODEL_TYPE::THREE_STATE_ECL:
     {
-        wxString result;
-        wxString tmp;
+        std::string result;
+        std::string tmp;
 
         result += "\n";
         result = "*Driver model generated by Kicad using Ibis data. ";
@@ -692,13 +700,13 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
         result += "\n";
 
         result += "RPIN 1 OUT ";
-        result << R_pin.value[ReverseLogic( aSpeed )];
+        result += doubleToString( R_pin.value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "LPIN DIE 1 ";
-        result << L_pin.value[ReverseLogic( aSpeed )];
+        result += doubleToString( L_pin.value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "CPIN OUT GND ";
-        result << C_pin.value[ReverseLogic( aSpeed )];
+        result += doubleToString( C_pin.value[ReverseLogic( aSpeed )] );
         result += "\n";
 
 
@@ -734,9 +742,9 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
         result += "Vku KU GND pwl ( ";
         for( int i = 0; i < m_t.size(); i++ )
         {
-            result << m_t.at( i );
+            result += doubleToString( m_t.at( i ) );
             result += " ";
-            result << m_Ku.at( i );
+            result += doubleToString( m_Ku.at( i ) );
             result += " ";
         }
         result += ") \n";
@@ -745,9 +753,9 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
         result += "Vkd KD GND pwl ( ";
         for( int i = 0; i < m_t.size(); i++ )
         {
-            result << m_t.at( i );
+            result += doubleToString( m_t.at( i ) );
             result += " ";
-            result << m_Kd.at( i );
+            result += doubleToString( m_Kd.at( i ) );
             result += " ";
         }
 
@@ -769,7 +777,7 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, wxString aName, KIBIS_MODEL* 
 }
 
 
-bool KIBIS_PIN::writeSpiceDevice( wxString* aDest, wxString aName, KIBIS_MODEL* aModel,
+bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                   IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
     bool status = true;
@@ -783,8 +791,8 @@ bool KIBIS_PIN::writeSpiceDevice( wxString* aDest, wxString aName, KIBIS_MODEL* 
     case IBIS_MODEL_TYPE::IO_OPEN_SOURCE:
     case IBIS_MODEL_TYPE::IO_ECL:
     {
-        wxString result;
-        wxString tmp;
+        std::string result;
+        std::string tmp;
 
         result += "\n";
         result = "*Device model generated by Kicad using Ibis data. ";
@@ -794,13 +802,13 @@ bool KIBIS_PIN::writeSpiceDevice( wxString* aDest, wxString aName, KIBIS_MODEL* 
         result += "\n";
 
         result += "RPIN 1 OUT ";
-        result << R_pin.value[ReverseLogic( aSpeed )];
+        result += doubleToString( R_pin.value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "LPIN DIE 1 ";
-        result << L_pin.value[ReverseLogic( aSpeed )];
+        result += doubleToString( L_pin.value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "CPIN OUT GND ";
-        result << C_pin.value[ReverseLogic( aSpeed )];
+        result += doubleToString( C_pin.value[ReverseLogic( aSpeed )] );
         result += "\n";
 
 
