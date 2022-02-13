@@ -45,7 +45,6 @@ int main( void )
                             IBIS_CORNER::TYP );
     pin1->writeSpiceDriver( tmp1, "driver_typ", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
                             IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave, wave->GetType() );
-    return 0;
     pin1->writeSpiceDriver( tmp2, "driver_min", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
                             IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave,
                             KIBIS_WAVEFORM_TYPE::NONE );

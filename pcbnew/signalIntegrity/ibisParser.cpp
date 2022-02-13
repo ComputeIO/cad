@@ -1,5 +1,5 @@
 #include "ibisParser.h"
-
+#include <sstream>
 /** To be removed
  *  We want to remove the wxString dependency if this files is to get into ngspice.
  *  KiCad reporter class uses wxString.
@@ -13,6 +13,15 @@ void IbisParser::ibisReport( std::string aMsg, SEVERITY aSeverity )
 
 bool IbisParser::ibisToDouble( std::string aString, double* aDest )
 {
+    //Apparently stod does not check if there is an alpha character at the end.
+    //This would prevent us for getting m,u,n,k,... modifiers
+    for ( char c: aString )
+    {
+        if ( ! ( ( ( c >= '0' ) && ( c <= '9' ) ) || c == '.' || c== 'e' || c== '+' || c=='-' ) )
+        {
+            return false;
+        }
+    }
     try
     {
         *aDest = std::stod( aString );
@@ -260,6 +269,14 @@ bool IbisModelSelector::Check()
     return true;
 }
 
+std::string doubleToStringParser( double aNumber )
+{
+    std::ostringstream ss;
+    ss.setf( std::ios_base::scientific, std::ios_base::floatfield );
+    ss << aNumber;
+    return ss.str();
+}
+
 std::string IVtable::Spice( int aN, std::string aPort1, std::string aPort2, std::string aModelName,
                          IBIS_CORNER aCorner )
 {
@@ -286,13 +303,13 @@ std::string IVtable::Spice( int aN, std::string aPort1, std::string aPort2, std:
         result += " pwl(\n+ x_array=[";
         for( auto entry : m_entries )
         {
-            result += std::to_string( entry.V );
+            result += doubleToStringParser( entry.V );
             result += " ";
         }
         result += "]\n+ y_array=[";
         for( auto entry : m_entries )
         {
-            result += std::to_string( entry.I.value[aCorner] );
+            result += doubleToStringParser( entry.I.value[aCorner] );
             result += " ";
         }
         result += "]\n+ input_domain=0.05 fraction=TRUE)\n\n";
@@ -1124,7 +1141,6 @@ bool IbisParser::StoreString( std::string* aDest, bool aMultiline )
     skipWhitespaces();
 
     readString( aDest );
-    std::cout << "string to store: "  << *aDest;
 
     m_continue = aMultiline ? IBIS_PARSER_CONTINUE::STRING : IBIS_PARSER_CONTINUE::NONE;
     m_continuingString = aDest;
@@ -2122,9 +2138,8 @@ bool IbisParser::readModel()
                 ;
             else if( readNumericSubparam( std::string( "Vmeas" ), &( m_currentModel->m_vmeas ) ) )
                 ;
-            else if( readTypMinMaxValueSubparam( std::string( "C_comp" ),
-                                                 &( m_currentModel->m_C_comp ) ) )
-                ;
+            else if( readTypMinMaxValueSubparam( std::string( "C_comp" ), &( m_currentModel->m_C_comp ) ) )
+                ; 
             else
             {
                 status = false;
@@ -2260,7 +2275,6 @@ std::vector<std::string> IbisParser::ReadTableLine()
 bool IbisParser::readPackage()
 {
     bool status = true;
-    std::cout << "readPackage..." << std::endl;
 
     std::vector<std::string> fields;
 

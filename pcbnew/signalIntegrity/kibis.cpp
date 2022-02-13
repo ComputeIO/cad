@@ -5,6 +5,7 @@
 std::string doubleToString( double aNumber )
 {
     std::ostringstream ss;
+    ss.setf( std::ios_base::scientific, std::ios_base::floatfield );
     ss << aNumber;
     return ss.str();
 }
@@ -27,7 +28,7 @@ bool KibisFromFile( std::string aFileName, std::vector<KIBIS_COMPONENT*>* aDest 
 {
     IbisParser* parser = new IbisParser();
     IbisFile*   file = new IbisFile();
-    parser->m_parrot = true;
+    parser->m_parrot = false;
     parser->parseFile( aFileName, file );
     convertKibisAll( parser, aDest );
 
@@ -348,6 +349,9 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     {
         std::cerr << "ERROR : I asked for file creation, but I cannot find it" << std::endl;
     }
+    std::remove( "temp_input.spice" );
+    std::remove( "temp_output.spice" );
+
     // @TODO : this is the end of the dirty code
 
     m_Ku = ku;
@@ -490,11 +494,11 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
         simul += ".control run \n";
         simul += "set filetype=ascii\n";
         simul += "run \n";
-        simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
-                 "v(x1.POWER2)\n";
-        simul += "plot v(KU) v(KD)\n";
+        //simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
+        //         "v(x1.POWER2)\n";
+        //simul += "plot v(KU) v(KD)\n";
         simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-        //simul += "quit\n";
+        simul += "quit\n";
         simul += ".endc \n";
         simul += ".end \n";
 
