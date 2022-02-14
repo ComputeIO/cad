@@ -411,7 +411,8 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                 if( splitDelta == VECTOR2I( 0, 0 ) )
                     continue;
 
-                for( EDA_ITEM* item : selection.GetItemsSortedByTypeAndXY() )
+                for( EDA_ITEM* item :
+                     selection.GetItemsSortedByTypeAndXY( ( delta.x >= 0 ), ( delta.y >= 0 ) ) )
                 {
                     // Don't double move pins, fields, etc.
                     if( item->GetParent() && item->GetParent()->IsSelected() )
@@ -620,7 +621,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                 int          yLength = abs( unselectedEnd.y - selectedEnd.y );
                                 int          xMove = ( xLength - ( xBendCount * grid.GetGrid().x ) )
                                             * sign( selectedEnd.x - unselectedEnd.x );
-                                int yMove = ( yLength - ( yBendCount * grid.GetGrid().y ) )
+                                int          yMove = ( yLength - ( yBendCount * grid.GetGrid().y ) )
                                             * sign( selectedEnd.y - unselectedEnd.y );
 
                                 // Create a new wire ending at the unselected end, we'll
