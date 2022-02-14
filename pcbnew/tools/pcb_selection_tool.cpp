@@ -2560,13 +2560,6 @@ void PCB_SELECTION_TOOL::select( BOARD_ITEM* aItem )
         if( m_selection.Contains( footprint ) )
             return;
     }
-    if( aItem->Type() == PCB_NETINFO_T )
-    {
-        FOOTPRINT* footprint = static_cast<FOOTPRINT*>( aItem->GetParent() );
-
-        if( m_selection.Contains( footprint ) )
-            return;
-    }
 
     highlight( aItem, SELECTED, &m_selection );
 }
