@@ -311,8 +311,6 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( item ) )
         {
-            ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
-            oldBuffer->PushItem( picker );
             commit.Added( item );
         }
     }
@@ -321,8 +319,6 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( item ) )
         {
-            ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
-            oldBuffer->PushItem( picker );
             commit.Added( item );
         }
     }
@@ -331,8 +327,6 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( item ) )
         {
-            ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
-            oldBuffer->PushItem( picker );
             commit.Added( item );
         }
     }
@@ -341,21 +335,11 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( zone ) )
         {
-            ITEM_PICKER picker( nullptr, zone, UNDO_REDO::NEWITEM );
-            oldBuffer->PushItem( picker );
             commit.Added( zone );
         }
     }
 
-    if( oldBuffer->GetCount() )
-    {
-        OnModify();
-        PushCommandToUndoList( oldBuffer );
-    }
-    else
-    {
-        delete oldBuffer;
-    }
+    delete oldBuffer;
 
     commit.Push( _( "Apply action script" ) );
     ActivateGalCanvas();
