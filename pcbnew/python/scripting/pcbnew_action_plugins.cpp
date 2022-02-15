@@ -274,6 +274,9 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
         wxASSERT( oldBuffer );
     }
 
+    // Try do discover what was modified
+    PICKED_ITEMS_LIST deletedItemsList;
+
     // The list of existing items after running the action script
     std::set<BOARD_ITEM*> currItemList;
 
@@ -297,13 +300,22 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     for( unsigned int i = 0; i < oldBuffer->GetCount(); i++ )
     {
         BOARD_ITEM* item = (BOARD_ITEM*) oldBuffer->GetPickedItem( i );
+        ITEM_PICKER picker( nullptr, item, UNDO_REDO::DELETED );
 
         wxASSERT( item );
 
         if( currItemList.find( item ) == currItemList.end() )
         {
+            deletedItemsList.PushItem( picker );
             commit.Removed( item );
         }
+    }
+
+    // Mark deleted elements in undolist
+
+    for( unsigned int i = 0; i < deletedItemsList.GetCount(); i++ )
+    {
+        oldBuffer->PushItem( deletedItemsList.GetItemWrapper( i ) );
     }
 
     // Find new footprints
@@ -311,6 +323,8 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( item ) )
         {
+            ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
+            oldBuffer->PushItem( picker );
             commit.Added( item );
         }
     }
@@ -319,6 +333,8 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( item ) )
         {
+            ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
+            oldBuffer->PushItem( picker );
             commit.Added( item );
         }
     }
@@ -327,6 +343,8 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( item ) )
         {
+            ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
+            oldBuffer->PushItem( picker );
             commit.Added( item );
         }
     }
@@ -335,11 +353,22 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     {
         if( !oldBuffer->ContainsItem( zone ) )
         {
+            ITEM_PICKER picker( nullptr, zone, UNDO_REDO::NEWITEM );
+            oldBuffer->PushItem( picker );
             commit.Added( zone );
         }
     }
 
-    delete oldBuffer;
+
+    if( oldBuffer->GetCount() )
+    {
+        OnModify();
+        PushCommandToUndoList( oldBuffer );
+    }
+    else
+    {
+        delete oldBuffer;
+    }
 
     commit.Push( _( "Apply action script" ) );
     ActivateGalCanvas();
