@@ -213,11 +213,6 @@ public:
         return true;
     }
 
-    struct cmp_tracks
-    {
-        bool operator()( const PCB_TRACK* aFirst, const PCB_TRACK* aSecond ) const;
-    };
-
 #if defined (DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
 
