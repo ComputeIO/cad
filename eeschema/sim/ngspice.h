@@ -58,6 +58,8 @@ public:
     {
         unsigned int id;
         PARAM_DIR dir;
+        wxString defaultValueOfVariant1;
+        wxString defaultValueOfVariant2;
         wxString description;
     };
 
@@ -66,6 +68,8 @@ public:
     struct MODEL_INFO
     {
         wxString name;
+        wxString variant1;
+        wxString variant2;
         wxString description;
         std::map<wxString, PARAM_INFO> modelParams;
         std::map<wxString, PARAM_INFO> instanceParams;
