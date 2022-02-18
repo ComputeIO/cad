@@ -61,14 +61,15 @@ public:
         wxString description;
     };
 
-    struct DEVICE_INFO
+    enum class MODEL_TYPE; // Defined in ngspice_devices.cpp.
+
+    struct MODEL_INFO
     {
+        wxString name;
         wxString description;
         std::map<wxString, PARAM_INFO> modelParams;
         std::map<wxString, PARAM_INFO> instanceParams;
     };
-
-    static const std::map<wxString, DEVICE_INFO> DevicesInfo;
 
     NGSPICE();
     virtual ~NGSPICE();
@@ -114,6 +115,8 @@ public:
 
     ///< @copydoc SPICE_SIMULATOR::GetPhasePlot()
     std::vector<double> GetPhasePlot( const std::string& aName, int aMaxLen = -1 ) override final;
+
+    MODEL_INFO GetModelInfo( MODEL_TYPE aDeviceType );
 
     std::vector<std::string> GetSettingCommands() const override final;
 

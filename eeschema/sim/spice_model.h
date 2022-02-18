@@ -30,6 +30,7 @@
 #include <enum_vector.h>
 #include <sch_field.h>
 #include <lib_field.h>
+#include <sim/ngspice.h>
 #include <sim/spice_value.h>
 #include <wx/string.h>
 
@@ -125,9 +126,9 @@ public:
 
         BJT_GUMMEL_POON,
         BJT_VBIC,
-        BJT_MEXTRAM,
+        //BJT_MEXTRAM,
         BJT_HICUM_L2,
-        BJT_HICUM_L0,
+        //BJT_HICUM_L0,
 
         JFET_SHICHMAN_HODGES,
         JFET_PARKER_SKELLERN,
@@ -152,7 +153,7 @@ public:
         MOSFET_B3SOIFD,
         MOSFET_B3SOIDD,
         MOSFET_B3SOIPD,
-        MOSFET_STAG,
+        //MOSFET_STAG,
         MOSFET_HISIM2,
         MOSFET_HISIM_HV,
 
@@ -167,6 +168,7 @@ public:
     struct TYPE_INFO
     {
         DEVICE_TYPE deviceType;
+        //NGSPICE::MODEL_TYPE ngspiceModelType;
         wxString ngspicePrimitive;
         unsigned int ngspiceLevel;
         wxString fieldValue;
@@ -197,9 +199,9 @@ public:
         
         case TYPE::BJT_GUMMEL_POON:         return { DEVICE_TYPE::BJT,        "Q", 1,  "GUMMEL_POON",     "Gummel-Poon model" };
         case TYPE::BJT_VBIC:                return { DEVICE_TYPE::BJT,        "Q", 4,  "VBIC",            "VBIC model" };
-        case TYPE::BJT_MEXTRAM:             return { DEVICE_TYPE::BJT,        "Q", 6,  "MEXTRAM",         "MEXTRAM model" };
-        case TYPE::BJT_HICUM_L0:            return { DEVICE_TYPE::BJT,        "Q", 7,  "HICUM_L0",        "HICUM Level 0 model" };
+        //case TYPE::BJT_MEXTRAM:             return { DEVICE_TYPE::BJT,        "Q", 6,  "MEXTRAM",         "MEXTRAM model" };
         case TYPE::BJT_HICUM_L2:            return { DEVICE_TYPE::BJT,        "Q", 8,  "HICUM_L2",        "HICUM Level 2 model" };
+        //case TYPE::BJT_HICUM_L0:            return { DEVICE_TYPE::BJT,        "Q", 7,  "HICUM_L0",        "HICUM Level 0 model" };
 
         case TYPE::JFET_SHICHMAN_HODGES:    return { DEVICE_TYPE::JFET,       "J", 1,  "SHICHMAN_HODGES", "Shichman-Hodges model" };
         case TYPE::JFET_PARKER_SKELLERN:    return { DEVICE_TYPE::JFET,       "J", 2,  "PARKER_SKELLERN", "Parker-Skellern model" };
