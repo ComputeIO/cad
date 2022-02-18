@@ -526,6 +526,7 @@ PCB_DIM_ALIGNED::PCB_DIM_ALIGNED( BOARD_ITEM* aParent, KICAD_T aType ) :
 {
     // To preserve look of old dimensions, initialize extension height based on default arrow length
     m_extensionHeight = static_cast<int>( m_arrowLength * s_arrowAngle.Sin() );
+    m_text.SetTextAngle( EDA_ANGLE( 0, DEGREES_T ) );
 }
 
 
