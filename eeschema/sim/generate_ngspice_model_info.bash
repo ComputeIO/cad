@@ -92,7 +92,8 @@ END
                                    model_version
     do
         if [ -n "$model_name" ]; then
-            run_ngspice "" "devhelp $model_name" | while read -r name sep description; do
+            # Print model description.
+            run_ngspice "" "devhelp -type $model_name" | while read -r name sep description; do
                 if [ "$sep" = "-" ]; then
                     echo -n "    case NGSPICE::MODEL_TYPE::${model_name^^}:"
                     echo -n " return { \"$name\","
@@ -113,10 +114,12 @@ END
                 fi
             done
 
-            run_ngspice "" "devhelp $model_name" | while read -r param_id \
-                                                                 param_name \
-                                                                 param_dir \
-                                                                 param_description
+            # Print model parameter ID, name, direction, type, and description.
+            run_ngspice "" "devhelp -type $model_name" | while read -r param_id \
+                                                                       param_name \
+                                                                       param_dir \
+                                                                       param_type \
+                                                                       param_description
             do
                 if [ "$param_id" = "Model" ] && [ "$param_name" = "Parameters" ]; then
                     echo "        // Model parameters"
@@ -131,7 +134,9 @@ END
                     && [ -n "$param_description" ]
                 then
                     echo -n "            { \"${param_name,,}\","
-                    echo -n " { $param_id, NGSPICE::PARAM_DIR::${param_dir^^},"
+                    echo -n " { $param_id,"
+                    echo -n " NGSPICE::PARAM_DIR::${param_dir^^},"
+                    echo -n " NGSPICE::PARAM_TYPE::${param_type^^},"
 
                     for model_type in "$model_type1" "$model_type2"; do
                         if [ "$model_type" = "-" ]; then
@@ -161,8 +166,8 @@ END
 END
                         )
 
-                        wasmodelline=0
-                        wasechoed=0
+                        was_model_line=0
+                        was_echoed=0
                         
                         # Don't use a pipe here because it creates a subshell, which prevents the
                         # changes to `wasmodelline` from being propagated upwards. Bash is cursed.
@@ -174,21 +179,21 @@ END
                             lowercase_name=${name,,}
                             lowercase_param_name=${param_name,,}
 
-                            if [ "$wasmodelline" = 0 ] && [ "$lowercase_name" = "model" ]; then
-                                wasmodelline=1
-                            elif [ "$wasmodelline" = 1 ] \
+                            if [ "$was_model_line" = 0 ] && [ "$lowercase_name" = "model" ]; then
+                                was_model_line=1
+                            elif [ "$was_model_line" = 1 ] \
                                 && [ "$lowercase_name" = "${lowercase_param_name:0:11}" ]
                             then
                                 if [ "$value" = "?????????" ]; then
                                     value=""
                                 fi
 
-                                wasechoed=1
+                                was_echoed=1
                                 echo -n " \"$value\","
                             fi
                         done < <(run_ngspice "$netlist" "$control")
 
-                        if [ "$wasechoed" = 0 ]; then
+                        if [ "$was_echoed" = 0 ]; then
                             echo ""
                             echo "Error! Default value not found."
                             exit 1

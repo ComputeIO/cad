@@ -54,10 +54,31 @@ public:
         INOUT
     };
 
+    enum class PARAM_TYPE
+    {
+        FLAG,
+        INTEGER,
+        REAL,
+        COMPLEX,
+        NODE,
+        INSTANCE,
+        STRING,
+        PARSETREE,
+        VECTOR,
+        FLAGVEC,
+        INTVEC,
+        REALVEC,
+        CPLXVEC,
+        NODEVEC,
+        INSTVEC,
+        STRINGVEC
+    };
+
     struct PARAM_INFO
     {
         unsigned int id;
         PARAM_DIR dir;
+        PARAM_TYPE type;
         wxString defaultValueOfVariant1;
         wxString defaultValueOfVariant2;
         wxString description;
