@@ -43,13 +43,13 @@ int main( void )
     std::cout << pin2->m_models.at(0)->m_name << std::endl;
     pin2->writeSpiceDevice( tmp4, "device_typ", pin2->m_models.at( 0 ), IBIS_CORNER::TYP,
                             IBIS_CORNER::TYP );
-    pin1->writeSpiceDriver( tmp1, "driver_typ", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
+    pin1->writeSpiceDriver( tmp1, "driver_typ", pin1->m_models.at( 0 ), IBIS_CORNER::TYP,
                             IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave, wave->GetType() );
-    pin1->writeSpiceDriver( tmp2, "driver_min", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
-                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave,
+    pin1->writeSpiceDriver( tmp2, "driver_min", pin1->m_models.at( 0 ), IBIS_CORNER::MIN,
+                            IBIS_CORNER::MIN, KIBIS_ACCURACY::LEVEL_1, wave,
                             KIBIS_WAVEFORM_TYPE::NONE );
     pin1->writeSpiceDriver( tmp3, "driver_max", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
-                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_2, wave,
+                            IBIS_CORNER::MAX, KIBIS_ACCURACY::LEVEL_2, wave,
                             KIBIS_WAVEFORM_TYPE::NONE );
 
     wxTextFile file( "output.sp" );
@@ -67,25 +67,13 @@ int main( void )
     file.AddLine( *tmp4 );
 
     wxString simul = "";
-    simul += "\n x1 3 0 1 driver_typ \n";
-    simul += "\n x2 3 0 4 driver_min \n";
-    simul += "\n x3 3 0 5 driver_max \n";
-    simul += "\n x4 3 0 6 device_typ \n";
-    simul += "\n x5 3 0 6 device_typ \n";
-    simul += "\n x6 3 0 6 device_typ \n";
-    simul += "\n x7 3 0 6 device_typ \n";
-    //simul += "Cload 1 0 100p\n";
-    simul += "VPOWER 3 0 1.8\n";
-    //simul += "R0 1 0 1000\n";
-    //simul += "R1 4 0 1000\n";
-    //simul += "R2 5 0 1000\n";
-    simul += "R3 1 4 10\n";
-    simul += "R4 1 6 10\n";
+    simul += "\n x1 OUT_1 0 DIE_1 driver_typ \n";
+    simul += "R1 OUT_1 GND 1 00\n";
     simul += ".tran 0.1n 40n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
-    simul += "plot v(1) v(4) v(6) \n";
+    simul += "plot v(OUT_1) v(DIE_1) \n";
     //simul += "plot v(x1.KU) v(x1.KD) v(1) v(x1.DIEBUFF) \n";
     simul += ".endc \n";
     simul += ".end \n";
