@@ -79,6 +79,7 @@ public:
         unsigned int id;
         PARAM_DIR dir;
         PARAM_TYPE type;
+        wxString unit;
         wxString defaultValueOfVariant1;
         wxString defaultValueOfVariant2;
         wxString description;

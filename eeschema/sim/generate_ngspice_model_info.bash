@@ -47,6 +47,135 @@ END
 )
 
 
+UNITS=$(cat << END
+    %/deg C
+        exponent alternative
+
+    -
+        exponent
+
+    ohm/m
+        sheet resistance
+        resistance per unit length
+
+    ohm
+        resistance
+        resistor model default value
+
+    F/m^2
+        cap per area
+    
+    F/m
+        capacitance per meter
+        overlap cap
+        capacitance per unit length
+        capacitance grading coefficient per unit length
+
+    F
+        capacitance
+        cap\.
+    
+    H
+        inductance
+
+    1/W
+        coef of thermal current reduction
+
+    sqrt V
+        bulk effect coefficient 1
+        bulk threshold parameter
+
+    1/V
+        channel length modulation
+        vgs dependence on mobility
+
+    V/cm
+        Crit. field for mob. degradation
+
+    V
+        voltage
+        potential
+    
+    A/V^2
+        transconductance parameter
+
+    A/m^2
+        current density
+
+    A/m
+        current per unit length
+
+    A
+        current
+
+    ohm/deg C^2
+        second order temp. coefficient
+
+    ohm/deg C
+        first order temp. coefficient
+
+    1/deg C^2
+        grading coefficient 1st temp. coeff
+
+    1/deg C
+        grading coefficient 2nd temp. coeff
+
+    deg C/W
+        thermal resistance
+
+    deg C
+        temperature
+
+    eV
+        energy
+    
+    cm^2/V^2 s
+        VBS dependence on muz
+        VBS dependence on mus
+        VDS dependence on mus
+
+    cm^2/V s
+        zero field mobility
+        surface mobility
+
+    um/V^2
+        VDS depence of u1
+    
+    um
+        .* in um
+    
+    1/cm^3
+        substrate doping
+
+    1/cm^2
+        surface state density
+        fast surface state density
+
+    m/s
+        velocity
+
+    m
+        length
+        width
+        thickness
+        narrowing of
+        shortening of
+
+    C
+        epi charge parameter
+
+    s
+        time
+
+    deg
+        excess phase
+
+    -
+        .*
+END
+)
+
+
 run_ngspice()
 {
     ngspice -n 2>/dev/null << END
@@ -98,23 +227,20 @@ END
                     echo -n "    case NGSPICE::MODEL_TYPE::${model_name^^}:"
                     echo -n " return { \"$name\","
 
-                    if [ "$model_type1" != "-" ]; then
-                        echo -n " \"$model_type1\","
-                    else
-                        echo -n " \"\","
-                    fi
-
-                    if [ "$model_type2" != "-" ]; then
-                        echo -n " \"$model_type1\","
-                    else
-                        echo -n " \"\","
-                    fi
+                    for model_type in "$model_type1" "$model_type2"; do
+                        if [ "$model_type" != "-" ]; then
+                            echo -n " \"$model_type\","
+                        else
+                            echo -n " \"\","
+                        fi
+                    done
 
                     echo " \"$description\","
                 fi
             done
 
-            # Print model parameter ID, name, direction, type, and description.
+
+            # Print model parameter ID, name, direction, type, unit, and description.
             run_ngspice "" "devhelp -type $model_name" | while read -r param_id \
                                                                        param_name \
                                                                        param_dir \
@@ -129,14 +255,38 @@ END
                     echo "        // Instance parameters"
                     echo "        {"
                 elif [ "$param_id" -eq "$param_id" ] 2>/dev/null \
-                    && [ -n "$param_name" ] \
-                    && [ -n "$param_dir" ] \
-                    && [ -n "$param_description" ]
+                &&   [ -n "$param_name" ] \
+                &&   [ -n "$param_dir" ] \
+                &&   [ -n "$param_description" ]
                 then
                     echo -n "            { \"${param_name,,}\","
                     echo -n " { $param_id,"
                     echo -n " NGSPICE::PARAM_DIR::${param_dir^^},"
                     echo -n " NGSPICE::PARAM_TYPE::${param_type^^},"
+
+
+                    unit=""
+
+                    # Non-reals are unlikely to have units.
+                    if [ "$param_type" = "real" ]; then
+                        # Don't use a pipe here because it creates a subshell, as it prevents the
+                        # changes to the variables from propagating upwards. Bash is cursed.
+                        while read -r pattern; do
+                            if [ "$unit" = "" ]; then
+                                unit="$pattern"
+                            elif [ -z "$pattern" ]; then
+                                unit=""
+                            elif grep -iE "$pattern" <<< "$param_description" >/dev/null; then
+                                break
+                            fi
+                        done <<< "$UNITS"
+                    fi
+
+                    if [ "$unit" = "-" ]; then
+                        unit=""
+                    fi
+
+                    echo -n " \"$unit\","
 
                     for model_type in "$model_type1" "$model_type2"; do
                         if [ "$model_type" = "-" ]; then
@@ -144,6 +294,8 @@ END
                             continue
                         fi
 
+                        # For a given primitive, Ngspice determines the device model to be used
+                        # from two parameters: "level" and "version".
                         params=""
 
                         if [ "$model_level" != 0 ]; then
@@ -169,8 +321,7 @@ END
                         was_model_line=0
                         was_echoed=0
                         
-                        # Don't use a pipe here because it creates a subshell, which prevents the
-                        # changes to `wasmodelline` from being propagated upwards. Bash is cursed.
+                        # Don't use a pipe here either.
                         while read -r name value; do
                             # Ngspice displays only the first 11 characters of the variable name.
                             # We also convert to lowercase because a few parameter names have
@@ -184,7 +335,9 @@ END
                             elif [ "$was_model_line" = 1 ] \
                                 && [ "$lowercase_name" = "${lowercase_param_name:0:11}" ]
                             then
-                                if [ "$value" = "?????????" ]; then
+                                if [ "$value" = "<<NAN, error = 7>>" ]; then
+                                    value="NaN"
+                                elif [ "$value" = "?????????" ]; then
                                     value=""
                                 fi
 
