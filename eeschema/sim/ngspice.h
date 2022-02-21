@@ -27,7 +27,7 @@
 #ifndef NGSPICE_H
 #define NGSPICE_H
 
-#include "spice_simulator.h"
+#include <sim/spice_simulator.h>
 
 #include <wx/dynlib.h>
 #include <ngspice/sharedspice.h>
@@ -74,6 +74,7 @@ public:
         STRINGVEC
     };
 
+    // May be moved to the SPICE_MODEL class later.
     struct PARAM_INFO
     {
         unsigned int id;
@@ -87,6 +88,7 @@ public:
 
     enum class MODEL_TYPE; // Defined in ngspice_devices.cpp.
 
+    // May be moved to the SPICE_MODEL class later.
     struct MODEL_INFO
     {
         wxString name;
@@ -96,6 +98,8 @@ public:
         std::map<wxString, PARAM_INFO> modelParams;
         std::map<wxString, PARAM_INFO> instanceParams;
     };
+
+    static MODEL_INFO GetModelInfo( MODEL_TYPE aDeviceType );
 
     NGSPICE();
     virtual ~NGSPICE();
@@ -141,8 +145,6 @@ public:
 
     ///< @copydoc SPICE_SIMULATOR::GetPhasePlot()
     std::vector<double> GetPhasePlot( const std::string& aName, int aMaxLen = -1 ) override final;
-
-    MODEL_INFO GetModelInfo( MODEL_TYPE aDeviceType );
 
     std::vector<std::string> GetSettingCommands() const override final;
 
@@ -210,5 +212,7 @@ private:
     ///< Current netlist
     std::string m_netlist;
 };
+
+#include <sim/ngspice_models.h>
 
 #endif /* NGSPICE_H */

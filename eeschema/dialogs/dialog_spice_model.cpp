@@ -131,9 +131,45 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
         }
     }
 
-    //m_typeChoice->SetSelection( static_cast<int>( m_curModelType ) );
+    NGSPICE::MODEL_TYPE ngspiceModelType = SPICE_MODEL::TypeInfo( m_curModelType ).ngspiceModelType;
+    NGSPICE::MODEL_INFO ngspiceModelInfo = NGSPICE::GetModelInfo( ngspiceModelType );
 
     m_paramGrid->ClearRows();
+    m_paramGrid->AppendRows( static_cast<int>( ngspiceModelInfo.modelParams.size() 
+                                               + ngspiceModelInfo.instanceParams.size() ) );
+
+    int row = 0;
+
+    for( const auto& [paramName, paramInfo] : ngspiceModelInfo.modelParams )
+    {
+        m_paramGrid->SetReadOnly( row,  COLUMN::DESCRIPTION );
+        m_paramGrid->SetCellValue( row, COLUMN::DESCRIPTION, paramInfo.description );
+
+        m_paramGrid->SetReadOnly( row,  COLUMN::NAME );
+        m_paramGrid->SetCellValue( row, COLUMN::NAME, paramName );
+
+        m_paramGrid->SetReadOnly( row,  COLUMN::UNIT );
+        m_paramGrid->SetCellValue( row, COLUMN::UNIT, paramInfo.unit );
+
+        row++;
+    }
+
+    for( const auto& [paramName, paramInfo] : ngspiceModelInfo.instanceParams )
+    {
+        m_paramGrid->SetReadOnly( row,  COLUMN::DESCRIPTION );
+        m_paramGrid->SetCellValue( row, COLUMN::DESCRIPTION, paramInfo.description );
+
+        m_paramGrid->SetReadOnly( row,  COLUMN::NAME );
+        m_paramGrid->SetCellValue( row, COLUMN::NAME, paramName );
+
+        m_paramGrid->SetReadOnly( row,  COLUMN::UNIT );
+        m_paramGrid->SetCellValue( row, COLUMN::UNIT, paramInfo.unit );
+
+        row++;
+    }
+
+
+    //m_typeChoice->SetSelection( static_cast<int>( m_curModelType ) );
 
     //if( m_model.Get
 
