@@ -74,13 +74,31 @@ public:
         STRINGVEC
     };
 
+    struct PARAM_FLAGS
+    {
+        bool redundant = false;
+        bool principal = false;
+        bool ac = false;
+        bool acOnly = false;
+        bool noise = false;
+        bool nonsense = false;
+
+        bool setQuery = false;
+        bool orQuery = false;
+        bool chkQuery = false;
+
+        bool uninteresting = false;
+    };
+
+
     // May be moved to the SPICE_MODEL class later.
     struct PARAM_INFO
     {
         unsigned int id;
         PARAM_DIR dir;
         PARAM_TYPE type;
-        wxString unit;
+        PARAM_FLAGS flags;
+        wxString unit; // Derived, not extracted from Ngspice.
         wxString defaultValueOfVariant1;
         wxString defaultValueOfVariant2;
         wxString description;

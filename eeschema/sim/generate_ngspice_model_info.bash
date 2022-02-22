@@ -60,6 +60,7 @@ UNITS=$(cat << END
 
     ohm
         resistance
+        impedance
         resistor model default value
 
     F/m^2
@@ -166,6 +167,10 @@ UNITS=$(cat << END
 
     s
         time
+        delay
+
+    Hz
+        frequency
 
     deg
         excess phase
@@ -219,6 +224,33 @@ echo_head()
 {
     echo_head
 
+    echo "static auto U()    { NGSPICE::PARAM_FLAGS p; p.uninteresting=true; return p; }"
+    echo "static auto UR()   { NGSPICE::PARAM_FLAGS p; p.uninteresting=true; p.redundant=true; return p; }"
+    echo "static auto P()    { NGSPICE::PARAM_FLAGS p; p.principal=true; return p; }"
+    echo "static auto PR()   { NGSPICE::PARAM_FLAGS p; p.principal=true; p.redundant=true; return p; }"
+    echo "static auto A()    { NGSPICE::PARAM_FLAGS p; p.ac=true; return p; }"
+    echo "static auto AR()   { NGSPICE::PARAM_FLAGS p; p.ac=true; p.redundant=true; return p; }"
+    echo "static auto AU()   { NGSPICE::PARAM_FLAGS p; p.ac=true; p.uninteresting=true; return p; }"
+    echo "static auto AP()   { NGSPICE::PARAM_FLAGS p; p.ac=true; p.principal=true; return p; }"
+    echo "static auto APR()  { NGSPICE::PARAM_FLAGS p; p.ac=true; p.principal=true; p.redundant=true; return p; }"
+    echo "static auto AA()   { NGSPICE::PARAM_FLAGS p; p.acOnly=true; return p; }"
+    echo "static auto AAU()  { NGSPICE::PARAM_FLAGS p; p.acOnly=true; p.uninteresting=true; return p; }"
+    echo "static auto PAA()  { NGSPICE::PARAM_FLAGS p; p.acOnly=true; p.principal=true; return p; }"
+    echo "static auto N()    { NGSPICE::PARAM_FLAGS p; p.noise=true; return p; }"
+    echo "static auto R()    { NGSPICE::PARAM_FLAGS p; p.redundant=true; return p; }"
+    echo "static auto X()    { NGSPICE::PARAM_FLAGS p; p.nonsense=true; return p; }"
+    echo "static auto XR()   { NGSPICE::PARAM_FLAGS p; p.nonsense=true; p.redundant=true; return p; }"
+    echo "static auto XU()   { NGSPICE::PARAM_FLAGS p; p.nonsense=true; p.uninteresting=true; return p; }"
+    echo "static auto Q()    { NGSPICE::PARAM_FLAGS p; p.setQuery=true; return p; }"
+    echo "static auto QR()   { NGSPICE::PARAM_FLAGS p; p.setQuery=true; p.redundant=true; return p; }"
+    echo "static auto QU()   { NGSPICE::PARAM_FLAGS p; p.setQuery=true; p.uninteresting=true; return p; }"
+    echo "static auto Z()    { NGSPICE::PARAM_FLAGS p; p.chkQuery=true; return p; }"
+    echo "static auto ZR()   { NGSPICE::PARAM_FLAGS p; p.chkQuery=true; p.redundant=true; return p; }"
+    echo "static auto ZU()   { NGSPICE::PARAM_FLAGS p; p.chkQuery=true; p.uninteresting=true; return p; }"
+    echo "static auto QO()   { NGSPICE::PARAM_FLAGS p; p.orQuery=true; return p; }"
+    echo "static auto QOR()  { NGSPICE::PARAM_FLAGS p; p.orQuery=true; p.redundant=true; return p; }"
+    echo ""
+
     echo "NGSPICE::MODEL_INFO NGSPICE::GetModelInfo( NGSPICE::MODEL_TYPE aType )"
     echo "{"
     echo "    switch( aType )"
@@ -236,7 +268,10 @@ echo_head()
     do
         if [ -n "$model_name" ]; then
             # Print model description.
-            run_ngspice "" "devhelp -type $model_name" | while read -r name sep description; do
+            run_ngspice "" "devhelp -type -flags $model_name" | while read -r name \
+                                                                              sep \
+                                                                              description
+            do
                 if [ "$sep" = "-" ]; then
                     echo -n "    case NGSPICE::MODEL_TYPE::${model_name^^}:"
                     echo -n " return { \"$name\","
@@ -255,11 +290,12 @@ echo_head()
 
 
             # Print model parameter ID, name, direction, type, unit, and description.
-            run_ngspice "" "devhelp -type $model_name" | while read -r param_id \
-                                                                       param_name \
-                                                                       param_dir \
-                                                                       param_type \
-                                                                       param_description
+            run_ngspice "" "devhelp -type -flags $model_name" | while read -r param_id \
+                                                                              param_name \
+                                                                              param_dir \
+                                                                              param_type \
+                                                                              param_flags \
+                                                                              param_description
             do
                 if [ "$param_id" = "Model" ] && [ "$param_name" = "Parameters" ]; then
                     echo "        // Model parameters"
@@ -278,12 +314,17 @@ echo_head()
                     echo -n " NGSPICE::PARAM_DIR::${param_dir^^},"
                     echo -n " NGSPICE::PARAM_TYPE::${param_type^^},"
 
+                    if [ "$param_flags" != "-" ]; then
+                        echo -n " $param_flags(), "
+                    else
+                        echo -n " {}, "
+                    fi
 
                     unit=""
 
                     # Non-reals are unlikely to have units.
                     if [ "$param_type" = "real" ]; then
-                        # Don't use a pipe here because it creates a subshell, as it prevents the
+                        # Don't use a pipe here because it creates a subshell, preventing the
                         # changes to the variables from propagating upwards. Bash is cursed.
                         while read -r pattern; do
                             if [ "$unit" = "" ]; then

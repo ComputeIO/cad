@@ -135,17 +135,20 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     NGSPICE::MODEL_INFO ngspiceModelInfo = NGSPICE::GetModelInfo( ngspiceModelType );
 
     m_paramGrid->ClearRows();
-    m_paramGrid->AppendRows( static_cast<int>( ngspiceModelInfo.modelParams.size() 
-                                               + ngspiceModelInfo.instanceParams.size() ) );
 
     int row = 0;
 
     for( const auto& [paramName, paramInfo] : ngspiceModelInfo.modelParams )
     {
-        m_paramGrid->SetReadOnly( row,  COLUMN::DESCRIPTION );
+        if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT || paramInfo.flags.redundant )
+            continue;
+
+        m_paramGrid->AppendRows();
+
+        m_paramGrid->SetReadOnly( row, COLUMN::DESCRIPTION );
         m_paramGrid->SetCellValue( row, COLUMN::DESCRIPTION, paramInfo.description );
 
-        m_paramGrid->SetReadOnly( row,  COLUMN::NAME );
+        m_paramGrid->SetReadOnly( row, COLUMN::NAME );
         m_paramGrid->SetCellValue( row, COLUMN::NAME, paramName );
 
         m_paramGrid->SetReadOnly( row,  COLUMN::UNIT );
@@ -156,34 +159,22 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
 
     for( const auto& [paramName, paramInfo] : ngspiceModelInfo.instanceParams )
     {
-        m_paramGrid->SetReadOnly( row,  COLUMN::DESCRIPTION );
+        if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT || paramInfo.flags.redundant )
+            continue;
+
+        m_paramGrid->AppendRows();
+
+        m_paramGrid->SetReadOnly( row, COLUMN::DESCRIPTION );
         m_paramGrid->SetCellValue( row, COLUMN::DESCRIPTION, paramInfo.description );
 
-        m_paramGrid->SetReadOnly( row,  COLUMN::NAME );
+        m_paramGrid->SetReadOnly( row, COLUMN::NAME );
         m_paramGrid->SetCellValue( row, COLUMN::NAME, paramName );
 
-        m_paramGrid->SetReadOnly( row,  COLUMN::UNIT );
+        m_paramGrid->SetReadOnly( row, COLUMN::UNIT );
         m_paramGrid->SetCellValue( row, COLUMN::UNIT, paramInfo.unit );
 
         row++;
     }
-
-
-    //m_typeChoice->SetSelection( static_cast<int>( m_curModelType ) );
-
-    //if( m_model.Get
-
-    /*if( m_model.GetSubtype() != SPICE_MODEL::SUBTYPE::NONE )
-    {
-        m_paramGrid->AppendRows( 1 );
-
-        m_paramGrid->SetReadOnly( 0, COLUMN::DESCRIPTION );
-        m_paramGrid->SetReadOnly( 0, COLUMN::NAME );
-        m_paramGrid->SetReadOnly( 0, COLUMN::UNIT );
-
-        m_paramGrid->SetCellValue( 0, COLUMN::VALUE,
-                                   SPICE_MODEL::SubtypeInfo( m_model.GetSubtype() ).description );
-    }*/
 }
 
 
