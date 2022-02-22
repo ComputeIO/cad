@@ -270,7 +270,7 @@ public:
 
     inline EDA_ANGLE Normalize90()
     {
-        while( m_value < -90.0 )
+        while( m_value <= -90.0 )
             m_value += 180.0;
 
         while( m_value > 90.0 )
