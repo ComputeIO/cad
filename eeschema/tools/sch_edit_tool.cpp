@@ -445,7 +445,6 @@ int SCH_EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
     int       principalItemCount = 0;  // User-selected items (as opposed to connected wires)
     wxPoint   rotPoint;
     bool      moving = false;
-    bool      connections = false;
 
     for( unsigned ii = 0; ii < selection.GetSize(); ii++ )
     {
@@ -579,7 +578,6 @@ int SCH_EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
             break;
         }
 
-        connections = head->IsConnectable();
         m_frame->UpdateItem( head, false, true );
     }
     else
@@ -658,7 +656,6 @@ int SCH_EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
             }
         }
 
-        connections |= item->IsConnectable();
         m_frame->UpdateItem( item, false, true );
         updateItem( item, true );
     }
@@ -674,8 +671,8 @@ int SCH_EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
         if( selection.IsHover() )
             m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
 
-        if( connections )
-            m_frame->TestDanglingEnds();
+        m_frame->RecalculateConnections( LOCAL_CLEANUP );
+        m_frame->TestDanglingEnds();
 
         m_frame->OnModify();
     }
