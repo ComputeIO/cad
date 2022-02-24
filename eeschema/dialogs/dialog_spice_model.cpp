@@ -35,7 +35,8 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
                                            std::vector<T>* aFields )
     : DIALOG_SPICE_MODEL_BASE( aParent ),
       m_symbol( aSymbol ),
-      m_fields( aFields )
+      m_fields( aFields ),
+      m_firstCategory( nullptr )
 {
     try
     {
@@ -69,6 +70,9 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
 
     for( SPICE_MODEL::DEVICE_TYPE deviceType : SPICE_MODEL::DEVICE_TYPE_ITERATOR() )
         m_deviceTypeChoice->Append( SPICE_MODEL::DeviceTypeInfo( deviceType ).description );
+
+    m_paramGrid = m_paramGridMgr->AddPage();
+
 
     m_scintillaTricks = std::make_unique<SCINTILLA_TRICKS>( m_codePreview, wxT( "{}" ), false );
 
@@ -131,50 +135,48 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
         }
     }
 
+
+    // This wxPropertyGridManager stuff has to be here because it crashes in the constructor.
+
+    m_paramGridMgr->SetColumnCount( static_cast<int>( COLUMN::END_ ) );
+
+    m_paramGridMgr->SetColumnTitle( static_cast<int>( COLUMN::UNIT ), "Unit" );
+    m_paramGridMgr->SetColumnTitle( static_cast<int>( COLUMN::DEFAULT ), "Default" );
+    m_paramGridMgr->SetColumnTitle( static_cast<int>( COLUMN::TYPE ), "Type" );
+
+    m_paramGridMgr->ShowHeader();
+
+
     NGSPICE::MODEL_TYPE ngspiceModelType = SPICE_MODEL::TypeInfo( m_curModelType ).ngspiceModelType;
     NGSPICE::MODEL_INFO ngspiceModelInfo = NGSPICE::GetModelInfo( ngspiceModelType );
 
-    m_paramGrid->ClearRows();
+    m_paramGrid->Clear();
 
-    int row = 0;
+    m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "Limiting Values" ) );
+    m_paramGrid->HideProperty( "Limiting Values" );
+
+    m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
+    m_paramGrid->HideProperty( "DC" );
+
+    m_paramGrid->Append( new wxPropertyCategory( "Temperature" ) );
+    m_paramGrid->HideProperty( "Temperature" );
+
+    m_paramGrid->Append( new wxPropertyCategory( "Noise" ) );
+    m_paramGrid->HideProperty( "Noise" );
+
+    m_paramGrid->Append( new wxPropertyCategory( "Advanced" ) );
+    m_paramGrid->HideProperty( "Advanced" );
+
+    m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
+    m_paramGrid->HideProperty( "Flags" );
 
     for( const auto& [paramName, paramInfo] : ngspiceModelInfo.modelParams )
-    {
-        if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT || paramInfo.flags.redundant )
-            continue;
-
-        m_paramGrid->AppendRows();
-
-        m_paramGrid->SetReadOnly( row, COLUMN::DESCRIPTION );
-        m_paramGrid->SetCellValue( row, COLUMN::DESCRIPTION, paramInfo.description );
-
-        m_paramGrid->SetReadOnly( row, COLUMN::NAME );
-        m_paramGrid->SetCellValue( row, COLUMN::NAME, paramName );
-
-        m_paramGrid->SetReadOnly( row,  COLUMN::UNIT );
-        m_paramGrid->SetCellValue( row, COLUMN::UNIT, paramInfo.unit );
-
-        row++;
-    }
+        addParamPropertyIfRelevant( paramName, paramInfo );
 
     for( const auto& [paramName, paramInfo] : ngspiceModelInfo.instanceParams )
-    {
-        if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT || paramInfo.flags.redundant )
-            continue;
+        addParamPropertyIfRelevant( paramName, paramInfo );
 
-        m_paramGrid->AppendRows();
-
-        m_paramGrid->SetReadOnly( row, COLUMN::DESCRIPTION );
-        m_paramGrid->SetCellValue( row, COLUMN::DESCRIPTION, paramInfo.description );
-
-        m_paramGrid->SetReadOnly( row, COLUMN::NAME );
-        m_paramGrid->SetCellValue( row, COLUMN::NAME, paramName );
-
-        m_paramGrid->SetReadOnly( row, COLUMN::UNIT );
-        m_paramGrid->SetCellValue( row, COLUMN::UNIT, paramInfo.unit );
-
-        row++;
-    }
+    m_paramGrid->CollapseAll();
 }
 
 
@@ -213,9 +215,110 @@ void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
 }
 
 
-template <typename T>
-void DIALOG_SPICE_MODEL<T>::onGridCellChange( wxGridEvent& aEvent )
-{
+//template <typename T>
+//void DIALOG_SPICE_MODEL<T>::onGridCellChange( wxGridEvent& aEvent )
+//{
     /*updateModel();
     updateWidgets();*/
+//}
+
+template <typename T>
+void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const wxString& paramName,
+                                                        const NGSPICE::PARAM_INFO& paramInfo )
+{
+    if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT || paramInfo.flags.redundant )
+        return;
+
+    switch( paramInfo.category )
+    {
+    case NGSPICE::PARAM_CATEGORY::LIMITING:
+        m_paramGrid->HideProperty( "Limiting Values", false );
+        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::DC:
+        m_paramGrid->HideProperty( "DC", false );
+        m_paramGrid->AppendIn( "DC", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::TEMPERATURE:
+        m_paramGrid->HideProperty( "Temperature", false );
+        m_paramGrid->AppendIn( "Temperature", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::NOISE:
+        m_paramGrid->HideProperty( "Noise", false );
+        m_paramGrid->AppendIn( "Noise", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::ADVANCED:
+        m_paramGrid->HideProperty( "Advanced", false );
+        m_paramGrid->AppendIn( "Advanced", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::FLAGS:
+        m_paramGrid->HideProperty( "Flags", false );
+        m_paramGrid->AppendIn( "Flags", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    default:
+        //m_paramGrid->AppendIn( nullptr, newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->Insert( m_firstCategory, newParamProperty( paramName, paramInfo ) );
+        //m_paramGrid->Append( newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::INITIAL_CONDITIONS:
+    case NGSPICE::PARAM_CATEGORY::SUPERFLUOUS:
+        return;
+    }
+}
+
+template <typename T>
+wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const wxString& paramName,
+                                                       const NGSPICE::PARAM_INFO& paramInfo ) const
+{
+    wxString paramDescription = wxString::Format( "%s (%s)", paramInfo.description, paramName );
+    wxPGProperty* prop = nullptr;
+
+    switch( paramInfo.type )
+    {
+    case NGSPICE::PARAM_TYPE::INTEGER: prop = new wxIntProperty( paramDescription );    break;
+    case NGSPICE::PARAM_TYPE::REAL:    prop = new wxFloatProperty( paramDescription );  break;
+
+    case NGSPICE::PARAM_TYPE::FLAG:
+        prop = new wxBoolProperty( paramDescription );
+        prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
+        break;
+
+    default:                           prop = new wxStringProperty( paramDescription ); break;
+    }
+
+    prop->SetAttribute( wxPG_ATTR_UNITS, paramInfo.unit );
+    prop->SetCell( 3, paramInfo.defaultValueOfVariant1 );
+
+    wxString typeStr;
+
+    switch( paramInfo.type )
+    {
+    case NGSPICE::PARAM_TYPE::FLAG:      typeStr = wxString( "Bool"            ); break;
+    case NGSPICE::PARAM_TYPE::INTEGER:   typeStr = wxString( "Integer"         ); break;
+    case NGSPICE::PARAM_TYPE::REAL:      typeStr = wxString( "Float"           ); break;
+    case NGSPICE::PARAM_TYPE::COMPLEX:   typeStr = wxString( "Complex"         ); break;
+    case NGSPICE::PARAM_TYPE::NODE:      typeStr = wxString( "Node"            ); break;
+    case NGSPICE::PARAM_TYPE::INSTANCE:  typeStr = wxString( "Instance"        ); break;
+    case NGSPICE::PARAM_TYPE::STRING:    typeStr = wxString( "String"          ); break;
+    case NGSPICE::PARAM_TYPE::PARSETREE: typeStr = wxString( "Parsetree"       ); break;
+    case NGSPICE::PARAM_TYPE::VECTOR:    typeStr = wxString( "Vector"          ); break;
+    case NGSPICE::PARAM_TYPE::FLAGVEC:   typeStr = wxString( "Bool Vector"     ); break;
+    case NGSPICE::PARAM_TYPE::INTVEC:    typeStr = wxString( "Int Vector"      ); break;
+    case NGSPICE::PARAM_TYPE::REALVEC:   typeStr = wxString( "Float Vector"    ); break;
+    case NGSPICE::PARAM_TYPE::CPLXVEC:   typeStr = wxString( "Complex Vector"  ); break;
+    case NGSPICE::PARAM_TYPE::NODEVEC:   typeStr = wxString( "Node Vector"     ); break;
+    case NGSPICE::PARAM_TYPE::INSTVEC:   typeStr = wxString( "Instance Vector" ); break;
+    case NGSPICE::PARAM_TYPE::STRINGVEC: typeStr = wxString( "String Vector"   ); break;
+    }
+
+    prop->SetCell( static_cast<int>( COLUMN::TYPE ), typeStr );
+
+    return prop;
 }

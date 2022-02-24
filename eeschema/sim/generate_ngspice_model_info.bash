@@ -53,10 +53,18 @@ UNITS=$(cat << END
 
     -
         exponent
+        normalized length
 
     ohm/m
         sheet resistance
+        resistance per meter
+        resistance per metre
+        resistance per length
         resistance per unit length
+
+    /ohm m
+        conductance per meter
+        conductance per metre
 
     ohm
         resistance
@@ -68,13 +76,21 @@ UNITS=$(cat << END
     
     F/m
         capacitance per meter
+        capacitance per metre
         overlap cap
+        capacitance per length
         capacitance per unit length
         capacitance grading coefficient per unit length
 
     F
         capacitance
         cap\.
+    
+    H/m
+        inductance per meter
+        inductance per metre
+        inductance per length
+        inductance per unit length
     
     H
         inductance
@@ -91,7 +107,7 @@ UNITS=$(cat << END
         vgs dependence on mobility
 
     V/cm
-        Crit. field for mob. degradation
+        Crit\. field for mob\. degradation
 
     V
         voltage
@@ -104,22 +120,25 @@ UNITS=$(cat << END
         current density
 
     A/m
+        current per meter
+        current per metre
+        current per length
         current per unit length
 
     A
         current
 
     ohm/deg C^2
-        second order temp. coefficient
+        second order temp\. coefficient
 
     ohm/deg C
-        first order temp. coefficient
+        first order temp\. coefficient
 
     1/deg C^2
-        grading coefficient 1st temp. coeff
+        grading coefficient 1st temp\. coeff
 
     1/deg C
-        grading coefficient 2nd temp. coeff
+        grading coefficient 2nd temp\. coeff
 
     deg C/W
         thermal resistance
@@ -217,13 +236,14 @@ echo_head()
     done
 
     echo "};"
-    echo ""
 
 } > $(dirname "$0")/ngspice_models.h
 
 {
     echo_head
 
+    echo "// We cannot use designated initializers until we upgrade to C++20 (we're C++17 now),"
+    echo "// so we do this instead."
     echo "static auto U()    { NGSPICE::PARAM_FLAGS p; p.uninteresting=true; return p; }"
     echo "static auto UR()   { NGSPICE::PARAM_FLAGS p; p.uninteresting=true; p.redundant=true; return p; }"
     echo "static auto P()    { NGSPICE::PARAM_FLAGS p; p.principal=true; return p; }"
@@ -288,6 +308,7 @@ echo_head()
                 fi
             done
 
+            is_instance_param=0
 
             # Print model parameter ID, name, direction, type, unit, and description.
             run_ngspice "" "devhelp -type -flags $model_name" | while read -r param_id \
@@ -304,6 +325,7 @@ echo_head()
                     echo "        },"
                     echo "        // Instance parameters"
                     echo "        {"
+                    is_instance_param=1
                 elif [ "$param_id" -eq "$param_id" ] 2>/dev/null \
                 &&   [ -n "$param_name" ] \
                 &&   [ -n "$param_dir" ] \
@@ -315,15 +337,19 @@ echo_head()
                     echo -n " NGSPICE::PARAM_TYPE::${param_type^^},"
 
                     if [ "$param_flags" != "-" ]; then
-                        echo -n " $param_flags(), "
+                        echo -n " $param_flags(),"
                     else
-                        echo -n " {}, "
+                        echo -n " {},"
                     fi
+
 
                     unit=""
 
                     # Non-reals are unlikely to have units.
                     if [ "$param_type" = "real" ]; then
+                        # Simple finite state machine to read the UNITS string line by line.
+                        # Maybe an if-elif-else statement would have been better?
+
                         # Don't use a pipe here because it creates a subshell, preventing the
                         # changes to the variables from propagating upwards. Bash is cursed.
                         while read -r pattern; do
@@ -342,6 +368,64 @@ echo_head()
                     fi
 
                     echo -n " \"$unit\","
+
+
+                    category=""
+
+                    if   [[ "$model_name" = "capacitor" && "$param_description" = "Capacitor model" ]] \
+                    ||   [[ "$model_name" = "inductor" && "$param_description" = "Inductor model" ]] \
+                    ||   [[ "$model_name" = "ltra" && "$param_name" = "ltra" ]] \
+                    ||   [[ "$model_name" = "urc" && "$param_name" = "urc" ]] \
+                    ||   [[ "$model_name" = "transline" && "$param_name" = "txl" ]] \
+                    ||   [[ "$model_name" = "transline" && "$param_name" = "pos_node" ]] \
+                    ||   [[ "$model_name" = "transline" && "$param_name" = "neg_node" ]]
+                    then
+                        category="SUPERFLUOUS"
+                    elif [[ "$model_name" = "ltra" && "$param_name" = "compactrel" ]] \
+                    ||   [[ "$model_name" = "ltra" && "$param_name" = "compactabs" ]] \
+                    ||   [[ "$model_name" = "urc" && "$param_name" = "n" ]] \
+                    ||   [[ "$model_name" = "urc" && "$param_name" = "isperl" ]] \
+                    ||   [[ "$model_name" = "urc" && "$param_name" = "rsperl" ]] \
+                    ||   [[ "$model_name" = "urc" && "$param_name" = "compactrel" ]] \
+                    ||   [[ "$model_name" = "urc" && "$param_name" = "compactabs" ]]
+                    then
+                        category="ADVANCED"
+                    elif [ "$param_type" = "flag" ]; then
+                        category="FLAGS"
+                    elif grep -iE "initial condition" <<< "$param_description" >/dev/null \
+                    ||   grep -iE "initial voltage" <<< "$param_description" >/dev/null \
+                    ||   grep -iE "initial current" <<< "$param_description" >/dev/null
+                    then
+                        category="INITIAL_CONDITIONS"
+                    elif [ "$model_name" = "ltra" ] \
+                    ||   [ "$model_name" = "tranline" ] \
+                    ||   [ "$model_name" = "urc" ] \
+                    ||   [ "$model_name" = "transline" ] \
+                    ||   [ "$param_name" = "resistance" ] \
+                    ||   [ "$param_name" = "capacitance" ] \
+                    ||   [ "$param_name" = "inductance" ]
+                    then
+                        category="PRINCIPAL"
+                    elif grep -iE "_max$" <<< "$param_name" >/dev/null; then
+                        if [ "$is_instance_param" = 0 ]; then
+                            category="LIMITING"
+                        # Discard the instance parameters.
+                        else
+                            category="SUPERFLUOUS"
+                        fi
+                    elif grep -iE "temperature" <<< "$param_description" >/dev/null \
+                    ||   grep -iE "temp\. coeff" <<< "$param_description" >/dev/null \
+                    ||   grep -iE "thermal resistance" <<< "$param_description" >/dev/null
+                    then
+                        category="TEMPERATURE"
+                    elif grep -iE "noise" <<< "$param_description" >/dev/null; then
+                        category="NOISE"
+                    else
+                        category="DC"
+                    fi
+
+                    echo -n " NGSPICE::PARAM_CATEGORY::$category,"
+
 
                     for model_type in "$model_type1" "$model_type2"; do
                         if [ "$model_type" = "-" ]; then
@@ -376,7 +460,7 @@ END
                         was_model_line=0
                         was_echoed=0
                         
-                        # Don't use a pipe here either.
+                        # Again don't use a pipe.
                         while read -r name value; do
                             # Ngspice displays only the first 11 characters of the variable name.
                             # We also convert to lowercase because a few parameter names have

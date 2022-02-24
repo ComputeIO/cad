@@ -74,6 +74,21 @@ public:
         STRINGVEC
     };
 
+    enum class PARAM_CATEGORY
+    {
+        PRINCIPAL,
+        LIMITING,
+        DC,
+        CAPACITANCE,
+        TEMPERATURE,
+        NOISE,
+        GEOMETRY,
+        ADVANCED,
+        FLAGS,
+        INITIAL_CONDITIONS,
+        SUPERFLUOUS
+    };
+
     struct PARAM_FLAGS
     {
         bool redundant = false;
@@ -90,7 +105,6 @@ public:
         bool uninteresting = false;
     };
 
-
     // May be moved to the SPICE_MODEL class later.
     struct PARAM_INFO
     {
@@ -99,10 +113,12 @@ public:
         PARAM_TYPE type;
         PARAM_FLAGS flags;
         wxString unit; // Derived, not extracted from Ngspice.
+        PARAM_CATEGORY category;
         wxString defaultValueOfVariant1;
         wxString defaultValueOfVariant2;
         wxString description;
     };
+
 
     enum class MODEL_TYPE; // Defined in ngspice_devices.cpp.
 
@@ -116,6 +132,7 @@ public:
         std::map<wxString, PARAM_INFO> modelParams;
         std::map<wxString, PARAM_INFO> instanceParams;
     };
+
 
     static MODEL_INFO GetModelInfo( MODEL_TYPE aDeviceType );
 
