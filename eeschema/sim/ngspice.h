@@ -31,6 +31,7 @@
 
 #include <wx/dynlib.h>
 #include <ngspice/sharedspice.h>
+#include <enum_vector.h>
 
 // We have an issue here where NGSPICE incorrectly used bool for years
 // and defined it to be int when in C-mode.  We cannot adjust the function
@@ -120,7 +121,42 @@ public:
     };
 
 
-    enum class MODEL_TYPE; // Defined in ngspice_devices.cpp.
+    DEFINE_ENUM_CLASS_WITH_ITERATOR( MODEL_TYPE,
+        NONE,
+        RESISTOR,
+        CAPACITOR,
+        INDUCTOR,
+        LTRA,
+        TRANLINE,
+        URC,
+        TRANSLINE,
+        DIODE,
+        BJT,
+        VBIC,
+        HICUM2,
+        JFET,
+        JFET2,
+        MES,
+        MESA,
+        HFET1,
+        HFET2,
+        MOS1,
+        MOS2,
+        MOS3,
+        BSIM1,
+        BSIM2,
+        MOS6,
+        BSIM3,
+        MOS9,
+        B4SOI,
+        BSIM4,
+        B3SOIFD,
+        B3SOIDD,
+        B3SOIPD,
+        HISIM2,
+        HISIMHV1,
+        HISIMHV2
+    )
 
     // May be moved to the SPICE_MODEL class later.
     struct MODEL_INFO
@@ -247,7 +283,5 @@ private:
     ///< Current netlist
     std::string m_netlist;
 };
-
-#include <sim/ngspice_models.h>
 
 #endif /* NGSPICE_H */
