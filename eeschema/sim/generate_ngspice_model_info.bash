@@ -199,6 +199,99 @@ UNITS=$(cat << END
 END
 )
 
+category()
+{
+    model_name="$1"
+    param_name="$2"
+    param_flags="$3"
+    param_description="$4"
+    is_instance_param="$5"
+
+    if [ "$param_type" = "flag" ]; then
+        echo "FLAGS"
+    elif [[ "$model_name" = "resistor" && "$param_description" = "Resistor model default value" ]] \
+    ||   [[ "$model_name" = "resistor" && "$param_description" = "Default device length" ]] \
+    ||   [[ "$model_name" = "resistor" && "$param_name" = "defw" ]] \
+    ||   [[ "$model_name" = "resistor" && "$param_name" = "defl" ]] \
+    ||   [[ "$model_name" = "resistor" && "$param_name" = "narrow" ]] \
+    ||   [[ "$model_name" = "resistor" && "$param_name" = "short" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_description" = "Capacitor model" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_description" = "Model capacitance" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "defw" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "defl" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "narrow" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "short" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "del" ]] \
+    ||   [[ "$model_name" = "inductor" && "$param_description" = "Inductor model" ]] \
+    ||   [[ "$model_name" = "ltra" && "$param_name" = "ltra" ]] \
+    ||   [[ "$model_name" = "urc" && "$param_name" = "urc" ]] \
+    ||   [[ "$model_name" = "transline" && "$param_description" = "Length of line" ]] \
+    ||   [[ "$model_name" = "transline" && "$param_name" = "txl" ]] \
+    ||   [[ "$model_name" = "transline" && "$param_name" = "pos_node" ]] \
+    ||   [[ "$model_name" = "transline" && "$param_name" = "neg_node" ]] \
+    ||   grep -iE "R" <<< "$param_flags" >/dev/null
+    then
+        echo "SUPERFLUOUS"
+    elif grep -iE "initial condition" <<< "$param_description" >/dev/null \
+    ||   grep -iE "initial voltage" <<< "$param_description" >/dev/null \
+    ||   grep -iE "initial current" <<< "$param_description" >/dev/null
+    then
+        echo "INITIAL_CONDITIONS"
+    elif [[ "$model_name" = "ltra" && "$param_name" = "compactrel" ]] \
+    ||   [[ "$model_name" = "ltra" && "$param_name" = "compactabs" ]] \
+    ||   [[ "$model_name" = "urc" && "$param_name" = "n" ]] \
+    ||   [[ "$model_name" = "urc" && "$param_name" = "isperl" ]] \
+    ||   [[ "$model_name" = "urc" && "$param_name" = "rsperl" ]] \
+    ||   [[ "$model_name" = "urc" && "$param_name" = "compactrel" ]] \
+    ||   [[ "$model_name" = "urc" && "$param_name" = "compactabs" ]]
+    then
+        echo "ADVANCED"
+    elif [ "$model_name" = "ltra" ] \
+    ||   [ "$model_name" = "tranline" ] \
+    ||   [ "$model_name" = "urc" ] \
+    ||   [ "$model_name" = "transline" ] \
+    ||   [ "$param_name" = "resistance" ] \
+    ||   [ "$param_name" = "capacitance" ] \
+    ||   [ "$param_name" = "inductance" ] # We make possibly bad exceptions for some instance parameters here.
+    then
+        echo "PRINCIPAL"
+    elif [ "$is_instance_param" = 1 ]; then
+        if [[ "$param_name" = "l" || "$param_name" = "w" || "$param_name" = "m" ]]; then
+            echo "GEOMETRY"
+        else
+            # Discard the instance parameters.
+            echo "SUPERFLUOUS"
+        fi
+    elif grep -iE "_max$" <<< "$param_name" >/dev/null; then
+        if [ "$is_instance_param" = 0 ]; then
+            echo "LIMITING"
+        else
+            # Discard the instance parameters.
+            echo "SUPERFLUOUS"
+        fi
+    elif [[ "$model_name" = "resistor" && "$param_name" = "rsh" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "di" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "thick" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "cj" ]] \
+    ||   [[ "$model_name" = "capacitor" && "$param_name" = "cjsw" ]]
+    then
+        echo "GEOMETRY"
+    elif grep -iE "temperature" <<< "$param_description" >/dev/null \
+    ||   grep -iE "temp\. coeff" <<< "$param_description" >/dev/null \
+    ||   grep -iE "thermal resistance" <<< "$param_description" >/dev/null
+    then
+        echo "TEMPERATURE"
+    elif grep -iE "noise" <<< "$param_description" >/dev/null; then
+        echo "NOISE"
+    else
+        if [ "$is_instance_param" = 0 ]; then
+            echo "DC"
+        else
+            echo "SUPERFLUOUS"
+        fi
+    fi
+}
+
 
 run_ngspice()
 {
@@ -368,63 +461,7 @@ echo_head()
                     fi
 
                     echo -n " \"$unit\","
-
-
-                    category=""
-
-                    if   [[ "$model_name" = "capacitor" && "$param_description" = "Capacitor model" ]] \
-                    ||   [[ "$model_name" = "inductor" && "$param_description" = "Inductor model" ]] \
-                    ||   [[ "$model_name" = "ltra" && "$param_name" = "ltra" ]] \
-                    ||   [[ "$model_name" = "urc" && "$param_name" = "urc" ]] \
-                    ||   [[ "$model_name" = "transline" && "$param_name" = "txl" ]] \
-                    ||   [[ "$model_name" = "transline" && "$param_name" = "pos_node" ]] \
-                    ||   [[ "$model_name" = "transline" && "$param_name" = "neg_node" ]]
-                    then
-                        category="SUPERFLUOUS"
-                    elif [[ "$model_name" = "ltra" && "$param_name" = "compactrel" ]] \
-                    ||   [[ "$model_name" = "ltra" && "$param_name" = "compactabs" ]] \
-                    ||   [[ "$model_name" = "urc" && "$param_name" = "n" ]] \
-                    ||   [[ "$model_name" = "urc" && "$param_name" = "isperl" ]] \
-                    ||   [[ "$model_name" = "urc" && "$param_name" = "rsperl" ]] \
-                    ||   [[ "$model_name" = "urc" && "$param_name" = "compactrel" ]] \
-                    ||   [[ "$model_name" = "urc" && "$param_name" = "compactabs" ]]
-                    then
-                        category="ADVANCED"
-                    elif [ "$param_type" = "flag" ]; then
-                        category="FLAGS"
-                    elif grep -iE "initial condition" <<< "$param_description" >/dev/null \
-                    ||   grep -iE "initial voltage" <<< "$param_description" >/dev/null \
-                    ||   grep -iE "initial current" <<< "$param_description" >/dev/null
-                    then
-                        category="INITIAL_CONDITIONS"
-                    elif [ "$model_name" = "ltra" ] \
-                    ||   [ "$model_name" = "tranline" ] \
-                    ||   [ "$model_name" = "urc" ] \
-                    ||   [ "$model_name" = "transline" ] \
-                    ||   [ "$param_name" = "resistance" ] \
-                    ||   [ "$param_name" = "capacitance" ] \
-                    ||   [ "$param_name" = "inductance" ]
-                    then
-                        category="PRINCIPAL"
-                    elif grep -iE "_max$" <<< "$param_name" >/dev/null; then
-                        if [ "$is_instance_param" = 0 ]; then
-                            category="LIMITING"
-                        # Discard the instance parameters.
-                        else
-                            category="SUPERFLUOUS"
-                        fi
-                    elif grep -iE "temperature" <<< "$param_description" >/dev/null \
-                    ||   grep -iE "temp\. coeff" <<< "$param_description" >/dev/null \
-                    ||   grep -iE "thermal resistance" <<< "$param_description" >/dev/null
-                    then
-                        category="TEMPERATURE"
-                    elif grep -iE "noise" <<< "$param_description" >/dev/null; then
-                        category="NOISE"
-                    else
-                        category="DC"
-                    fi
-
-                    echo -n " NGSPICE::PARAM_CATEGORY::$category,"
+                    echo -n " NGSPICE::PARAM_CATEGORY::"$(category "$model_name" "$param_name" "$param_flags" "$param_description" "$is_instance_param")","
 
 
                     for model_type in "$model_type1" "$model_type2"; do

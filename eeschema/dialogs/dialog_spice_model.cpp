@@ -164,6 +164,9 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGrid->Append( new wxPropertyCategory( "Noise" ) );
     m_paramGrid->HideProperty( "Noise" );
 
+    m_paramGrid->Append( new wxPropertyCategory( "Geometry" ) );
+    m_paramGrid->HideProperty( "Geometry" );
+
     m_paramGrid->Append( new wxPropertyCategory( "Advanced" ) );
     m_paramGrid->HideProperty( "Advanced" );
 
@@ -249,6 +252,11 @@ void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const wxString& paramNam
     case NGSPICE::PARAM_CATEGORY::NOISE:
         m_paramGrid->HideProperty( "Noise", false );
         m_paramGrid->AppendIn( "Noise", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::GEOMETRY:
+        m_paramGrid->HideProperty( "Geometry", false );
+        m_paramGrid->AppendIn( "Geometry", newParamProperty( paramName, paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::ADVANCED:
