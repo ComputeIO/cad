@@ -32,10 +32,10 @@ BOOST_AUTO_TEST_CASE( Models )
     // Count the total number of model and instance parameters for each model so that there will be
     // an error if someone accidentally removes a parameter.
 
-    for( NGSPICE::SPICE_MODEL::TYPE type : NGSPICE::MODEL_TYPE_ITERATOR() )
+    for( NGSPICE::MODEL_TYPE type : NGSPICE::MODEL_TYPE_ITERATOR() )
     {
-        unsigned int modelParamCount = NGSPICE::GetModelInfo( type ).modelParams.size();
-        unsigned int instanceParamCount = NGSPICE::GetModelInfo( type ).instanceParams.size();
+        unsigned int modelParamCount = NGSPICE::ModelInfo( type ).modelParams.size();
+        unsigned int instanceParamCount = NGSPICE::ModelInfo( type ).instanceParams.size();
         
         switch( type )
         {
@@ -207,6 +207,12 @@ BOOST_AUTO_TEST_CASE( Models )
             BOOST_CHECK_EQUAL( modelParamCount, 630 );
             BOOST_CHECK_EQUAL( instanceParamCount, 68 );
             break;
+        
+        default:
+            BOOST_FAIL( wxString::Format(
+                        "Unhandled type: %d "
+                        "(if you created a new type you need to handle it in this switch statement)",
+                        type ) );
         }
     }
 }

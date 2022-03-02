@@ -78,12 +78,13 @@ public:
     enum class PARAM_CATEGORY
     {
         PRINCIPAL,
-        LIMITING,
         DC,
         CAPACITANCE,
         TEMPERATURE,
         NOISE,
+        DISTRIBUTED_QUANTITIES,
         GEOMETRY,
+        LIMITING_VALUES,
         ADVANCED,
         FLAGS,
         INITIAL_CONDITIONS,
@@ -92,7 +93,7 @@ public:
 
     struct PARAM_FLAGS
     {
-        bool redundant = false;
+        /*bool redundant = false;
         bool principal = false;
         bool ac = false;
         bool acOnly = false;
@@ -103,7 +104,7 @@ public:
         bool orQuery = false;
         bool chkQuery = false;
 
-        bool uninteresting = false;
+        bool uninteresting = false;*/
     };
 
     // May be moved to the SPICE_MODEL class later.
@@ -170,7 +171,7 @@ public:
     };
 
 
-    static MODEL_INFO GetModelInfo( MODEL_TYPE aDeviceType );
+    static MODEL_INFO ModelInfo( MODEL_TYPE aType );
 
     NGSPICE();
     virtual ~NGSPICE();

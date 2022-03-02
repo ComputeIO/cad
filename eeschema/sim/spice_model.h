@@ -42,13 +42,6 @@ public:
     static constexpr auto FILE_FIELD = "Model_File";
     static constexpr auto PARAMS_FIELD = "Model_Params";
 
-    /*struct PARAM
-    {
-        SPICE_VALUE value;
-        wxString description;
-        wxString unit;
-    };*/
-
 
     DEFINE_ENUM_CLASS_WITH_ITERATOR( DEVICE_TYPE, 
         NONE,
@@ -78,33 +71,6 @@ public:
         wxString description;
     };
 
-    static DEVICE_TYPE_INFO DeviceTypeInfo( DEVICE_TYPE aDeviceType )
-    {
-        switch( aDeviceType )
-        {
-        case DEVICE_TYPE::NONE:       return {"",           ""};
-        case DEVICE_TYPE::RESISTOR:   return {"RESISTOR",   "Resistor"};
-        case DEVICE_TYPE::CAPACITOR:  return {"CAPACITOR",  "Capacitor"};
-        case DEVICE_TYPE::INDUCTOR:   return {"INDUCTOR",   "Inductor"};
-        case DEVICE_TYPE::TLINE:      return {"TLINE",      "Transmission Line"};
-        case DEVICE_TYPE::DIODE:      return {"DIODE",      "Diode"};
-        case DEVICE_TYPE::BJT:        return {"BJT",        "BJT"};
-        case DEVICE_TYPE::JFET:       return {"JFET",       "JFET"};
-        case DEVICE_TYPE::MOSFET:     return {"MOSFET",     "MOSFET"};
-        case DEVICE_TYPE::MESFET:     return {"MESFET",     "MESFET"};
-        case DEVICE_TYPE::VSOURCE:    return {"VSOURCE",    "Voltage Source"};
-        case DEVICE_TYPE::ISOURCE:    return {"ISOURCE",    "Current Source"};
-        case DEVICE_TYPE::SUBCIRCUIT: return {"SUBCIRCUIT", "Subcircuit"};
-        case DEVICE_TYPE::CODEMODEL:  return {"CODEMODEL",  "Code Model"};
-        case DEVICE_TYPE::RAWSPICE:   return {"RAWSPICE",   "Raw Spice Element"};
-        case DEVICE_TYPE::_ENUM_END:  break;
-        }
-
-        wxFAIL;
-        return {};
-    }
-
-
     DEFINE_ENUM_CLASS_WITH_ITERATOR( TYPE,
         NONE,
 
@@ -115,7 +81,7 @@ public:
         CAPACITOR_ADVANCED,
 
         INDUCTOR_IDEAL,
-        INDUCTOR_IDEAL_COIL,
+        INDUCTOR_LOSSLESS_COIL,
 
         TLINE_LOSSY,
         TLINE_LOSSLESS,
@@ -170,79 +136,15 @@ public:
     {
         DEVICE_TYPE deviceType;
         NGSPICE::MODEL_TYPE ngspiceModelType;
+        bool secondVariant;
         wxString fieldValue;
         wxString description;
     };
 
-    static TYPE_INFO TypeInfo( TYPE aType )
-    { 
-        switch( aType )
-        { 
-        case TYPE::NONE:                 return { DEVICE_TYPE::NONE,       NGSPICE::MODEL_TYPE::NONE,      "",                ""                                                             };
 
-        case TYPE::RESISTOR_IDEAL:       return { DEVICE_TYPE::RESISTOR,   NGSPICE::MODEL_TYPE::NONE,      "IDEAL",           "Ideal model"                                                  };
-        case TYPE::RESISTOR_ADVANCED:    return { DEVICE_TYPE::RESISTOR,   NGSPICE::MODEL_TYPE::RESISTOR,  "ADVANCED",        "Advanced model"                                               };
-
-        case TYPE::CAPACITOR_IDEAL:      return { DEVICE_TYPE::CAPACITOR,  NGSPICE::MODEL_TYPE::NONE,      "IDEAL",           "Ideal model"                                                  };
-        case TYPE::CAPACITOR_ADVANCED:   return { DEVICE_TYPE::CAPACITOR,  NGSPICE::MODEL_TYPE::CAPACITOR, "ADVANCED",        "Advanced model"                                               };
-
-        case TYPE::INDUCTOR_IDEAL:       return { DEVICE_TYPE::INDUCTOR,   NGSPICE::MODEL_TYPE::NONE,      "IDEAL",           "Ideal model"                                                  };
-        case TYPE::INDUCTOR_IDEAL_COIL:  return { DEVICE_TYPE::INDUCTOR,   NGSPICE::MODEL_TYPE::INDUCTOR,  "LOSSLESS_COIL",   "Lossless coil model"                                          };
-    
-        case TYPE::TLINE_LOSSY:          return { DEVICE_TYPE::TLINE,      NGSPICE::MODEL_TYPE::LTRA,      "LOSSY",           "Lossy model"                                                  };
-        case TYPE::TLINE_LOSSLESS:       return { DEVICE_TYPE::TLINE,      NGSPICE::MODEL_TYPE::TRANLINE,  "LOSSLESS",        "Lossless model"                                               };
-        case TYPE::TLINE_DISTRIBUTED_RC: return { DEVICE_TYPE::TLINE,      NGSPICE::MODEL_TYPE::URC,       "DISTRIBUTED_RC",  "Uniformly distributed RC model"                               };
-        case TYPE::TLINE_KSPICE_LOSSY:   return { DEVICE_TYPE::TLINE,      NGSPICE::MODEL_TYPE::TRANSLINE, "KSPICE_LOSSY",    "KSPICE lossy model"                                           };
-
-        case TYPE::DIODE:                return { DEVICE_TYPE::DIODE,      NGSPICE::MODEL_TYPE::DIODE,     "",                ""                                                             };
-        
-        case TYPE::BJT_GUMMEL_POON:      return { DEVICE_TYPE::BJT,        NGSPICE::MODEL_TYPE::BJT,       "GUMMEL_POON",     "Gummel-Poon model"                                            };
-        case TYPE::BJT_VBIC:             return { DEVICE_TYPE::BJT,        NGSPICE::MODEL_TYPE::VBIC,      "VBIC",            "VBIC model"                                                   };
-        //case TYPE::BJT_MEXTRAM:             return { DEVICE_TYPE::BJT,        "Q", 6,  "MEXTRAM",         "MEXTRAM model" };
-        case TYPE::BJT_HICUM_L2:         return { DEVICE_TYPE::BJT,        NGSPICE::MODEL_TYPE::HICUM2,    "HICUM_L2",        "HICUM Level 2 model"                                          };
-        //case TYPE::BJT_HICUM_L0:            return { DEVICE_TYPE::BJT,        "Q", 7,  "HICUM_L0",        "HICUM Level 0 model" };
-
-        case TYPE::JFET_SHICHMAN_HODGES: return { DEVICE_TYPE::JFET,       NGSPICE::MODEL_TYPE::JFET,      "SHICHMAN_HODGES", "Shichman-Hodges model"                                        };
-        case TYPE::JFET_PARKER_SKELLERN: return { DEVICE_TYPE::JFET,       NGSPICE::MODEL_TYPE::JFET2,     "PARKER_SKELLERN", "Parker-Skellern model"                                        };
-
-        case TYPE::MESFET_STATZ:         return { DEVICE_TYPE::MESFET,     NGSPICE::MODEL_TYPE::MES,       "STATZ",           "Statz model"                                                  };
-        case TYPE::MESFET_YTTERDAL:      return { DEVICE_TYPE::MESFET,     NGSPICE::MODEL_TYPE::MESA,      "YTTERDAL",        "Ytterdal model"                                               };
-        case TYPE::MESFET_HFET1:         return { DEVICE_TYPE::MESFET,     NGSPICE::MODEL_TYPE::HFET1,     "HFET1",           "HFET1 model"                                                  };
-        case TYPE::MESFET_HFET2:         return { DEVICE_TYPE::MESFET,     NGSPICE::MODEL_TYPE::HFET2,     "HFET2",           "HFET2 model"                                                  };
-
-        case TYPE::MOSFET_MOS1:          return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::MOS1,      "MOS1",            "Classical quadratic model (MOS1)"                             };
-        case TYPE::MOSFET_MOS2:          return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::MOS2,      "MOS2",            "Grove-Frohman model (MOS2)"                                   };
-        case TYPE::MOSFET_MOS3:          return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::MOS3,      "MOS3",            "MOS3 model"                                                   };
-        case TYPE::MOSFET_BSIM1:         return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::BSIM1,     "BSIM1",           "BSIM1 model"                                                  };
-        case TYPE::MOSFET_BSIM2:         return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::BSIM2,     "BSIM2",           "BSIM2 model"                                                  };
-        case TYPE::MOSFET_MOS6:          return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::MOS6,      "MOS6",            "MOS6 model"                                                   };
-        case TYPE::MOSFET_BSIM3:         return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::BSIM3,     "BSIM3",           "BSIM3 model"                                                  };
-        case TYPE::MOSFET_MOS9:          return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::MOS9,      "MOS9",            "MOS9 model"                                                   };
-        case TYPE::MOSFET_B4SOI:         return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::B4SOI,     "B4SOI",           "BSIM4 SOI model (B4SOI)"                                      };
-        case TYPE::MOSFET_BSIM4:         return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::BSIM4,     "BSIM4",           "BSIM4 model"                                                  };
-        //case TYPE::MOSFET_EKV2_6:           return { DEVICE_TYPE::MOSFET,     "M", 44, "EKV2.6",          "EKV2.6 model" };
-        //case TYPE::MOSFET_PSP:              return { DEVICE_TYPE::MOSFET,     "M", 45, "PSP",             "PSP model" };
-        case TYPE::MOSFET_B3SOIFD:       return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::B3SOIFD,   "B3SOIFD",         "B3SOIFD (BSIM3 fully depleted SOI) model"                     };
-        case TYPE::MOSFET_B3SOIDD:       return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::B3SOIDD,   "B3SOIDD",         "B3SOIDD (BSIM3 SOI, both fully and partially depleted) model" };
-        case TYPE::MOSFET_B3SOIPD:       return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::B3SOIPD,   "B3SOIPD",         "B3SOIPD (BSIM3 partially depleted SOI) model"                 };
-        //case TYPE::MOSFET_STAG:             return { DEVICE_TYPE::MOSFET,     "M", 60, "STAG",            "STAG model" };
-        case TYPE::MOSFET_HISIM2:        return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::HISIM2,    "HISIM2",          "HiSIM2 model"                                                 };
-        case TYPE::MOSFET_HISIM_HV1:     return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::HISIMHV1,  "HISIM_HV1",       "HiSIM_HV1 model"                                              };
-        case TYPE::MOSFET_HISIM_HV2:     return { DEVICE_TYPE::MOSFET,     NGSPICE::MODEL_TYPE::HISIMHV2,  "HISIM_HV2",       "HiSIM_HV2 model"                                              };
-
-        case TYPE::VSOURCE:              return { DEVICE_TYPE::VSOURCE,    NGSPICE::MODEL_TYPE::NONE,      "",                ""                                                             };
-        case TYPE::ISOURCE:              return { DEVICE_TYPE::ISOURCE,    NGSPICE::MODEL_TYPE::NONE,      "",                ""                                                             };
-
-        case TYPE::SUBCIRCUIT:           return { DEVICE_TYPE::SUBCIRCUIT, NGSPICE::MODEL_TYPE::NONE,      "",                ""                                                             };
-        case TYPE::CODEMODEL:            return { DEVICE_TYPE::CODEMODEL,  NGSPICE::MODEL_TYPE::NONE,      "",                ""                                                             };
-        case TYPE::RAWSPICE:             return { DEVICE_TYPE::RAWSPICE,   NGSPICE::MODEL_TYPE::NONE,      "",                ""                                                             };
-
-        case TYPE::_ENUM_END:            break;
-         }
-
-        wxFAIL;
-        return {  };
-     }
+    static DEVICE_TYPE_INFO DeviceTypeInfo( DEVICE_TYPE aDeviceType );
+    static TYPE_INFO TypeInfo( TYPE aType );
+    static NGSPICE::MODEL_INFO TypeModelInfo( TYPE aType );
 
     template <typename T>
     static TYPE ReadTypeFromFields( const std::vector<T>* aFields );

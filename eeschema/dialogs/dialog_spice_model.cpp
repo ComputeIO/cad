@@ -147,15 +147,11 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGridMgr->ShowHeader();
 
 
-    NGSPICE::MODEL_TYPE ngspiceModelType = SPICE_MODEL::TypeInfo( m_curModelType ).ngspiceModelType;
-    NGSPICE::MODEL_INFO ngspiceModelInfo = NGSPICE::GetModelInfo( ngspiceModelType );
+    NGSPICE::MODEL_INFO ngspiceModelInfo = SPICE_MODEL::TypeModelInfo( m_curModelType );
 
     m_paramGrid->Clear();
 
-    m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "Limiting Values" ) );
-    m_paramGrid->HideProperty( "Limiting Values" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
+    m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
     m_paramGrid->HideProperty( "DC" );
 
     m_paramGrid->Append( new wxPropertyCategory( "Temperature" ) );
@@ -164,8 +160,14 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGrid->Append( new wxPropertyCategory( "Noise" ) );
     m_paramGrid->HideProperty( "Noise" );
 
+    m_paramGrid->Append( new wxPropertyCategory( "Distributed Quantities" ) );
+    m_paramGrid->HideProperty( "Distributed Quantities" );
+
     m_paramGrid->Append( new wxPropertyCategory( "Geometry" ) );
     m_paramGrid->HideProperty( "Geometry" );
+
+    m_paramGrid->Append( new wxPropertyCategory( "Limiting Values" ) );
+    m_paramGrid->HideProperty( "Limiting Values" );
 
     m_paramGrid->Append( new wxPropertyCategory( "Advanced" ) );
     m_paramGrid->HideProperty( "Advanced" );
@@ -229,19 +231,19 @@ template <typename T>
 void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const wxString& paramName,
                                                         const NGSPICE::PARAM_INFO& paramInfo )
 {
-    if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT || paramInfo.flags.redundant )
+    if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT )
         return;
 
     switch( paramInfo.category )
     {
-    case NGSPICE::PARAM_CATEGORY::LIMITING:
-        m_paramGrid->HideProperty( "Limiting Values", false );
-        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( paramName, paramInfo ) );
-        break;
-
     case NGSPICE::PARAM_CATEGORY::DC:
         m_paramGrid->HideProperty( "DC", false );
         m_paramGrid->AppendIn( "DC", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::CAPACITANCE:
+        m_paramGrid->HideProperty( "Capacitance", false );
+        m_paramGrid->AppendIn( "Capacitance", newParamProperty( paramName, paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::TEMPERATURE:
@@ -254,9 +256,19 @@ void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const wxString& paramNam
         m_paramGrid->AppendIn( "Noise", newParamProperty( paramName, paramInfo ) );
         break;
 
+    case NGSPICE::PARAM_CATEGORY::DISTRIBUTED_QUANTITIES:
+        m_paramGrid->HideProperty( "Distributed Quantities", false );
+        m_paramGrid->AppendIn( "Distributed Quantities", newParamProperty( paramName, paramInfo ) );
+        break;
+
     case NGSPICE::PARAM_CATEGORY::GEOMETRY:
         m_paramGrid->HideProperty( "Geometry", false );
         m_paramGrid->AppendIn( "Geometry", newParamProperty( paramName, paramInfo ) );
+        break;
+
+    case NGSPICE::PARAM_CATEGORY::LIMITING_VALUES:
+        m_paramGrid->HideProperty( "Limiting Values", false );
+        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( paramName, paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::ADVANCED:
