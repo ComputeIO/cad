@@ -1832,7 +1832,7 @@ void PCB_SELECTION_TOOL::FindItem( BOARD_ITEM* aItem )
             if( netCode > 0 )
             {
                 selectAllItemsOnNet( netCode, true );
-                // We don't have a position for a net to focus on, yet.
+                m_frame->FocusOnLocation( aItem->GetCenter() );
             }
             break;
         }

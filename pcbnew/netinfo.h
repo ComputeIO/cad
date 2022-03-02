@@ -85,6 +85,8 @@ public:
     }
 #endif
 
+    const EDA_RECT GetBoundingBox() const override;
+
     VECTOR2I GetPosition() const override
     {
         static VECTOR2I dummy( 0, 0 );
