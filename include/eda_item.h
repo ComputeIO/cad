@@ -164,7 +164,7 @@ public:
 
     void ClearTempFlags()
     {
-        ClearFlags( CANDIDATE | TEMP_SELECTED | IS_LINKED | SKIP_STRUCT | DO_NOT_DRAW );
+        ClearFlags( CANDIDATE | SELECTED_BY_DRAG | IS_LINKED | SKIP_STRUCT | DO_NOT_DRAW );
     }
 
     void ClearEditFlags()

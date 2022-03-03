@@ -189,7 +189,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                 for( SCH_ITEM* it : m_frame->GetScreen()->Items() )
                 {
-                    it->ClearFlags( TEMP_SELECTED );
+                    it->ClearFlags( SELECTED_BY_DRAG );
 
                     if( !it->IsSelected() )
                         it->ClearFlags( STARTPOINT | ENDPOINT );
@@ -268,7 +268,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                     if( item->IsNew() )
                     {
-                        if( item->HasFlag( TEMP_SELECTED ) && m_isDrag )
+                        if( item->HasFlag( SELECTED_BY_DRAG ) && m_isDrag )
                         {
                             // Item was added in getConnectedDragItems
                             saveCopyInUndoList( (SCH_ITEM*) item, UNDO_REDO::NEWITEM, appendUndo );
@@ -1025,11 +1025,11 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                 // already been grabbed during the partial selection process.
                 line->SetFlags( STARTPOINT );
 
-                if( line->HasFlag( SELECTED ) || line->HasFlag( TEMP_SELECTED ) )
+                if( line->HasFlag( SELECTED ) || line->HasFlag( SELECTED_BY_DRAG ) )
                     continue;
                 else
                 {
-                    line->SetFlags( TEMP_SELECTED );
+                    line->SetFlags( SELECTED_BY_DRAG );
                     aList.push_back( line );
                 }
             }
@@ -1037,11 +1037,11 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
             {
                 line->SetFlags( ENDPOINT );
 
-                if( line->HasFlag( SELECTED ) || line->HasFlag( TEMP_SELECTED ) )
+                if( line->HasFlag( SELECTED ) || line->HasFlag( SELECTED_BY_DRAG ) )
                     continue;
                 else
                 {
-                    line->SetFlags( TEMP_SELECTED );
+                    line->SetFlags( SELECTED_BY_DRAG );
                     aList.push_back( line );
                 }
             }
@@ -1065,7 +1065,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                         newWire->SetFlags( IS_NEW );
                         m_frame->AddToScreen( newWire, m_frame->GetScreen() );
 
-                        newWire->SetFlags( TEMP_SELECTED | STARTPOINT );
+                        newWire->SetFlags( SELECTED_BY_DRAG | STARTPOINT );
                         aList.push_back( newWire );
 
                         //We need to add a connection reference here because the normal
@@ -1097,12 +1097,12 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                     if( label->IsSelected() )
                         continue;   // These will be moved on their own because they're selected
 
-                    if( label->HasFlag( TEMP_SELECTED ) )
+                    if( label->HasFlag( SELECTED_BY_DRAG ) )
                         continue;
 
                     if( label->CanConnect( line ) && line->HitTest( label->GetPosition(), 1 ) )
                     {
-                        label->SetFlags( TEMP_SELECTED );
+                        label->SetFlags( SELECTED_BY_DRAG );
                         aList.push_back( label );
 
                         SPECIAL_CASE_LABEL_INFO info;
@@ -1138,17 +1138,17 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                 newWire->SetFlags( IS_NEW );
                 m_frame->AddToScreen( newWire, m_frame->GetScreen() );
 
-                newWire->SetFlags( TEMP_SELECTED | STARTPOINT );
+                newWire->SetFlags( SELECTED_BY_DRAG | STARTPOINT );
                 aList.push_back( newWire );
             }
             break;
 
         case SCH_NO_CONNECT_T:
             // Select no-connects that are connected to items being moved.
-            if( !test->HasFlag( TEMP_SELECTED ) && test->IsConnected( aPoint ) )
+            if( !test->HasFlag( SELECTED_BY_DRAG ) && test->IsConnected( aPoint ) )
             {
                 aList.push_back( test );
-                test->SetFlags( TEMP_SELECTED );
+                test->SetFlags( SELECTED_BY_DRAG );
             }
 
             break;
@@ -1158,7 +1158,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
         case SCH_HIER_LABEL_T:
         case SCH_DIRECTIVE_LABEL_T:
             // Performance optimization:
-            if( test->HasFlag( TEMP_SELECTED ) )
+            if( test->HasFlag( SELECTED_BY_DRAG ) )
                 break;
 
             // Select labels that are connected to a wire (or bus) being moved.
@@ -1182,7 +1182,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                     }
                     else
                     {
-                        label->SetFlags( TEMP_SELECTED );
+                        label->SetFlags( SELECTED_BY_DRAG );
                         aList.push_back( label );
 
                         if( oneEndFixed )
@@ -1201,7 +1201,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
         case SCH_BUS_WIRE_ENTRY_T:
         case SCH_BUS_BUS_ENTRY_T:
             // Performance optimization:
-            if( test->HasFlag( TEMP_SELECTED ) )
+            if( test->HasFlag( SELECTED_BY_DRAG ) )
                 break;
 
             // Select bus entries that are connected to a bus being moved.
@@ -1221,7 +1221,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                 {
                     if( line->HitTest( point, 1 ) )
                     {
-                        test->SetFlags( TEMP_SELECTED );
+                        test->SetFlags( SELECTED_BY_DRAG );
                         aList.push_back( test );
 
                         // A bus entry needs its wire & label as well

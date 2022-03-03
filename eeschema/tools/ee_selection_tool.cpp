@@ -1229,7 +1229,7 @@ bool EE_SELECTION_TOOL::selectMultiple()
 
                 if( item )
                 {
-                    item->ClearFlags( TEMP_SELECTED | STARTPOINT | ENDPOINT );
+                    item->ClearFlags( CANDIDATE );
                     nearbyItems.push_back( item );
                 }
 
@@ -1265,8 +1265,6 @@ bool EE_SELECTION_TOOL::selectMultiple()
                             {
                                 SCH_LINE* line = static_cast<SCH_LINE*>( aItem );
 
-                                line->ClearFlags( STARTPOINT | ENDPOINT );
-
                                 if( selectionRect.Contains( line->GetStartPoint() ) )
                                     line->SetFlags( STARTPOINT );
 
@@ -1290,7 +1288,7 @@ bool EE_SELECTION_TOOL::selectMultiple()
             {
                 if( Selectable( item ) && item->HitTest( selectionRect, isWindowSelection ) )
                 {
-                    item->SetFlags( TEMP_SELECTED );
+                    item->SetFlags( CANDIDATE );
                     selectItem( item );
                 }
             }
@@ -1298,7 +1296,7 @@ bool EE_SELECTION_TOOL::selectMultiple()
             for( EDA_ITEM* item : nearbyChildren )
             {
                 if( Selectable( item )
-                        && !item->GetParent()->HasFlag( TEMP_SELECTED )
+                        && !item->GetParent()->HasFlag( CANDIDATE )
                         && item->HitTest( selectionRect, isWindowSelection ) )
                 {
                     selectItem( item );
@@ -1881,7 +1879,12 @@ void EE_SELECTION_TOOL::unhighlight( EDA_ITEM* aItem, int aMode, EE_SELECTION* a
     KICAD_T itemType = aItem->Type();
 
     if( aMode == SELECTED )
+    {
         aItem->ClearSelected();
+        // Lines need endpoints cleared here
+        if( aItem->Type() == SCH_LINE_T )
+            aItem->ClearFlags( STARTPOINT | ENDPOINT );
+    }
     else if( aMode == BRIGHTENED )
         aItem->ClearBrightened();
 
