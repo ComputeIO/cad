@@ -57,10 +57,8 @@ private:
     void onTypeChoice( wxCommandEvent& aEvent ) override;
     //void onGridCellChange( wxGridEvent& aEvent ) override;
     
-    void addParamPropertyIfRelevant( const wxString& paramName,
-                                     const NGSPICE::PARAM_INFO& paramInfo );
-    wxPGProperty* newParamProperty( const wxString& paramName,
-                                    const NGSPICE::PARAM_INFO& paramInfo ) const;
+    void addParamPropertyIfRelevant( const NGSPICE::PARAM_INFO& paramInfo );
+    wxPGProperty* newParamProperty( const NGSPICE::PARAM_INFO& paramInfo ) const;
 
     SCH_SYMBOL& m_symbol;
     std::vector<T>* m_fields;

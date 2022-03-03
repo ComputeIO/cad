@@ -52,10 +52,16 @@ public:
         TLINE,
 
         DIODE,
-        BJT,
-        JFET,
-        MESFET,
-        MOSFET,
+        NPN,
+        PNP,
+
+        NJF,
+        PJF,
+
+        NMES,
+        PMES,
+        NMOS,
+        PMOS,
 
         VSOURCE,
         ISOURCE,
@@ -74,58 +80,135 @@ public:
     DEFINE_ENUM_CLASS_WITH_ITERATOR( TYPE,
         NONE,
 
-        RESISTOR_IDEAL,
-        RESISTOR_ADVANCED,
+        R,
+        RESISTOR,
 
-        CAPACITOR_IDEAL,
-        CAPACITOR_ADVANCED,
+        C,
+        CAPACITOR,
 
-        INDUCTOR_IDEAL,
-        INDUCTOR_LOSSLESS_COIL,
+        L,
+        INDUCTOR,
 
         TLINE_LOSSY,
         TLINE_LOSSLESS,
-        TLINE_DISTRIBUTED_RC,
-        TLINE_KSPICE_LOSSY,
+        TLINE_UNIFORM_RC,
+        TLINE_KSPICE,
 
         DIODE,
 
-        BJT_GUMMEL_POON,
-        BJT_VBIC,
-        //BJT_MEXTRAM,
-        BJT_HICUM_L2,
-        //BJT_HICUM_L0,
+        NPN_GUMMEL_POON,
+        PNP_GUMMEL_POON,
+        NPN_VBIC,
+        PNP_VBIC,
+        //NPN_MEXTRAM,
+        //PNP_MEXTRAM,
+        NPN_HICUM_L2,
+        PNP_HICUM_L2,
+        //NPN_HICUM_L0,
+        //PNP_HICUM_L0,
 
-        JFET_SHICHMAN_HODGES,
-        JFET_PARKER_SKELLERN,
+        NJF_SHICHMAN_HODGES,
+        PJF_SHICHMAN_HODGES,
 
-        MESFET_STATZ,
-        MESFET_YTTERDAL,
-        MESFET_HFET1,
-        MESFET_HFET2,
+        NJF_PARKER_SKELLERN,
+        PJF_PARKER_SKELLERN,
 
-        MOSFET_MOS1,
-        MOSFET_MOS2,
-        MOSFET_MOS3,
-        MOSFET_BSIM1,
-        MOSFET_BSIM2,
-        MOSFET_MOS6,
-        MOSFET_MOS9,
-        MOSFET_BSIM3,
-        MOSFET_B4SOI,
-        MOSFET_BSIM4,
-        //MOSFET_EKV2_6,
-        //MOSFET_PSP,
-        MOSFET_B3SOIFD,
-        MOSFET_B3SOIDD,
-        MOSFET_B3SOIPD,
-        //MOSFET_STAG,
-        MOSFET_HISIM2,
-        MOSFET_HISIM_HV1,
-        MOSFET_HISIM_HV2,
 
-        VSOURCE,
-        ISOURCE,
+        NMES_STATZ,
+        PMES_STATZ,
+
+        NMES_YTTERDAL,
+        PMES_YTTERDAL,
+
+        NMES_HFET1,
+        PMES_HFET1,
+
+        NMES_HFET2,
+        PMES_HFET2,
+
+
+        NMOS_MOS1,
+        PMOS_MOS1,
+
+        NMOS_MOS2,
+        PMOS_MOS2,
+
+        NMOS_MOS3,
+        PMOS_MOS3,
+
+        NMOS_BSIM1,
+        PMOS_BSIM1,
+
+        NMOS_BSIM2,
+        PMOS_BSIM2,
+
+        NMOS_MOS6,
+        PMOS_MOS6,
+
+        NMOS_MOS9,
+        PMOS_MOS9,
+
+        NMOS_BSIM3,
+        PMOS_BSIM3,
+
+        NMOS_B4SOI,
+        PMOS_B4SOI,
+
+        NMOS_BSIM4,
+        PMOS_BSIM4,
+
+        //NMOS_EKV2_6,
+        //PMOS_EKV2_6,
+
+        //NMOS_PSP,
+        //PMOS_PSP,
+
+        NMOS_B3SOIFD,
+        PMOS_B3SOIFD,
+
+        NMOS_B3SOIDD,
+        PMOS_B3SOIDD,
+
+        NMOS_B3SOIPD,
+        PMOS_B3SOIPD,
+
+        //NMOS_STAG,
+        //PMOS_STAG,
+
+        NMOS_HISIM2,
+        PMOS_HISIM2,
+
+        NMOS_HISIM_HV1,
+        PMOS_HISIM_HV1,
+
+        NMOS_HISIM_HV2,
+        PMOS_HISIM_HV2,
+
+
+        VSOURCE_PULSE,
+        VSOURCE_SIN,
+        VSOURCE_EXP,
+        VSOURCE_SFAM,
+        VSOURCE_SFFM,
+        VSOURCE_PWL,
+        VSOURCE_NOISE,
+        VSOURCE_RANDOM_UNIFORM,
+        VSOURCE_RANDOM_GAUSSIAN,
+        VSOURCE_RANDOM_EXPONENTIAL,
+        VSOURCE_RANDOM_POISSON,
+
+        ISOURCE_PULSE,
+        ISOURCE_SIN,
+        ISOURCE_EXP,
+        ISOURCE_SFAM,
+        ISOURCE_SFFM,
+        ISOURCE_PWL,
+        ISOURCE_NOISE,
+        ISOURCE_RANDOM_UNIFORM,
+        ISOURCE_RANDOM_GAUSSIAN,
+        ISOURCE_RANDOM_EXPONENTIAL,
+        ISOURCE_RANDOM_POISSON,
+
 
         SUBCIRCUIT,
         CODEMODEL,
@@ -136,7 +219,6 @@ public:
     {
         DEVICE_TYPE deviceType;
         NGSPICE::MODEL_TYPE ngspiceModelType;
-        bool secondVariant;
         wxString fieldValue;
         wxString description;
     };

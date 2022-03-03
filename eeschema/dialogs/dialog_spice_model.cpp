@@ -86,7 +86,7 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataFromWindow()
     if( !DIALOG_SPICE_MODEL_BASE::TransferDataFromWindow() )
         return false;
 
-    m_models[static_cast<int>( m_curModelType )].WriteFields( m_fields );
+    m_models.at( static_cast<int>( m_curModelType ) ).WriteFields( m_fields );
 
     return true;
 }
@@ -97,7 +97,7 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataToWindow()
 {
     try
     {
-        m_models[static_cast<int>( SPICE_MODEL::ReadTypeFromFields( m_fields ) )]
+        m_models.at( static_cast<int>( SPICE_MODEL::ReadTypeFromFields( m_fields ) ) )
             = SPICE_MODEL( m_fields );
     }
     catch( KI_PARAM_ERROR& e )
@@ -175,11 +175,11 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
     m_paramGrid->HideProperty( "Flags" );
 
-    for( const auto& [paramName, paramInfo] : ngspiceModelInfo.modelParams )
-        addParamPropertyIfRelevant( paramName, paramInfo );
+    for( const NGSPICE::PARAM_INFO& paramInfo : ngspiceModelInfo.modelParams )
+        addParamPropertyIfRelevant( paramInfo );
 
-    for( const auto& [paramName, paramInfo] : ngspiceModelInfo.instanceParams )
-        addParamPropertyIfRelevant( paramName, paramInfo );
+    for( const NGSPICE::PARAM_INFO& paramInfo : ngspiceModelInfo.instanceParams )
+        addParamPropertyIfRelevant( paramInfo );
 
     m_paramGrid->CollapseAll();
 }
@@ -192,7 +192,7 @@ void DIALOG_SPICE_MODEL<T>::onDeviceTypeChoice( wxCommandEvent& aEvent )
     SPICE_MODEL::DEVICE_TYPE deviceType =
         static_cast<SPICE_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
 
-    m_curModelType = m_curModelTypeOfDeviceType[deviceType];
+    m_curModelType = m_curModelTypeOfDeviceType.at( deviceType );
 
     updateWidgets();
 }
@@ -215,7 +215,7 @@ void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
         }
     }
 
-    m_curModelTypeOfDeviceType[deviceType] = m_curModelType;
+    m_curModelTypeOfDeviceType.at( deviceType ) = m_curModelType;
     updateWidgets();
 }
 
@@ -228,8 +228,7 @@ void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
 //}
 
 template <typename T>
-void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const wxString& paramName,
-                                                        const NGSPICE::PARAM_INFO& paramInfo )
+void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const NGSPICE::PARAM_INFO& paramInfo )
 {
     if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT )
         return;
@@ -238,53 +237,53 @@ void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const wxString& paramNam
     {
     case NGSPICE::PARAM_CATEGORY::DC:
         m_paramGrid->HideProperty( "DC", false );
-        m_paramGrid->AppendIn( "DC", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "DC", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::CAPACITANCE:
         m_paramGrid->HideProperty( "Capacitance", false );
-        m_paramGrid->AppendIn( "Capacitance", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Capacitance", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::TEMPERATURE:
         m_paramGrid->HideProperty( "Temperature", false );
-        m_paramGrid->AppendIn( "Temperature", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Temperature", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::NOISE:
         m_paramGrid->HideProperty( "Noise", false );
-        m_paramGrid->AppendIn( "Noise", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Noise", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::DISTRIBUTED_QUANTITIES:
         m_paramGrid->HideProperty( "Distributed Quantities", false );
-        m_paramGrid->AppendIn( "Distributed Quantities", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Distributed Quantities", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::GEOMETRY:
         m_paramGrid->HideProperty( "Geometry", false );
-        m_paramGrid->AppendIn( "Geometry", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Geometry", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::LIMITING_VALUES:
         m_paramGrid->HideProperty( "Limiting Values", false );
-        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::ADVANCED:
         m_paramGrid->HideProperty( "Advanced", false );
-        m_paramGrid->AppendIn( "Advanced", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Advanced", newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::FLAGS:
         m_paramGrid->HideProperty( "Flags", false );
-        m_paramGrid->AppendIn( "Flags", newParamProperty( paramName, paramInfo ) );
+        m_paramGrid->AppendIn( "Flags", newParamProperty( paramInfo ) );
         break;
 
     default:
-        //m_paramGrid->AppendIn( nullptr, newParamProperty( paramName, paramInfo ) );
-        m_paramGrid->Insert( m_firstCategory, newParamProperty( paramName, paramInfo ) );
-        //m_paramGrid->Append( newParamProperty( paramName, paramInfo ) );
+        //m_paramGrid->AppendIn( nullptr, newParamProperty( paramInfo ) );
+        m_paramGrid->Insert( m_firstCategory, newParamProperty( paramInfo ) );
+        //m_paramGrid->Append( newParamProperty( paramInfo ) );
         break;
 
     case NGSPICE::PARAM_CATEGORY::INITIAL_CONDITIONS:
@@ -294,10 +293,9 @@ void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const wxString& paramNam
 }
 
 template <typename T>
-wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const wxString& paramName,
-                                                       const NGSPICE::PARAM_INFO& paramInfo ) const
+wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const NGSPICE::PARAM_INFO& paramInfo ) const
 {
-    wxString paramDescription = wxString::Format( "%s (%s)", paramInfo.description, paramName );
+    wxString paramDescription = wxString::Format( "%s (%s)", paramInfo.description, paramInfo.name );
     wxPGProperty* prop = nullptr;
 
     switch( paramInfo.type )
