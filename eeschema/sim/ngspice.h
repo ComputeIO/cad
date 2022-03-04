@@ -132,6 +132,8 @@ public:
         TRANLINE,
         URC,
         TRANSLINE,
+        SWITCH,
+        CSWITCH,
         DIODE,
         BJT,
         VBIC,

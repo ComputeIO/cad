@@ -50,6 +50,7 @@ public:
         CAPACITOR,
         INDUCTOR,
         TLINE,
+        SWITCH,
 
         DIODE,
         NPN,
@@ -80,19 +81,25 @@ public:
     DEFINE_ENUM_CLASS_WITH_ITERATOR( TYPE,
         NONE,
 
-        R,
-        RESISTOR,
+        RESISTOR_IDEAL,
+        RESISTOR_ADVANCED,
+        RESISTOR_BEHAVIORAL,
 
-        C,
-        CAPACITOR,
+        CAPACITOR_IDEAL,
+        CAPACITOR_ADVANCED,
+        CAPACITOR_BEHAVIORAL,
 
-        L,
-        INDUCTOR,
+        INDUCTOR_IDEAL,
+        INDUCTOR_ADVANCED,
+        INDUCTOR_BEHAVIORAL,
 
         TLINE_LOSSY,
         TLINE_LOSSLESS,
         TLINE_UNIFORM_RC,
         TLINE_KSPICE,
+
+        SWITCH_VCTRL,
+        SWITCH_ICTRL,
 
         DIODE,
 
@@ -196,6 +203,7 @@ public:
         VSOURCE_RANDOM_GAUSSIAN,
         VSOURCE_RANDOM_EXPONENTIAL,
         VSOURCE_RANDOM_POISSON,
+        VSOURCE_BEHAVIORAL,
 
         ISOURCE_PULSE,
         ISOURCE_SIN,
@@ -208,6 +216,7 @@ public:
         ISOURCE_RANDOM_GAUSSIAN,
         ISOURCE_RANDOM_EXPONENTIAL,
         ISOURCE_RANDOM_POISSON,
+        ISOURCE_BEHAVIORAL,
 
 
         SUBCIRCUIT,

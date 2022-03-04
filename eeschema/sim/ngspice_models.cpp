@@ -321,6 +321,49 @@ NGSPICE::MODEL_INFO NGSPICE::ModelInfo( NGSPICE::MODEL_TYPE aType )
             { "neg_node",  2, NGSPICE::PARAM_DIR::IN, NGSPICE::PARAM_TYPE::INTEGER, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Negative node of txl" },
             { "length",  3, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, {}, "m", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "length of line" },
         } };
+    case NGSPICE::MODEL_TYPE::SWITCH: return { "Switch", "SW", "", "Ideal voltage controlled switch",
+        // Model parameters
+        {
+            { "sw", 101, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::FLAG, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "NaN", "", "Switch model" },
+            { "vt", 104, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "V", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "0", "", "Threshold voltage" },
+            { "vh", 105, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "V", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "0", "", "Hysteresis voltage" },
+            { "ron", 102, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "ohm", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "1", "", "Resistance when closed" },
+            { "gon", 106, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, U(), "", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "1", "", "Conductance when closed" },
+            { "roff", 103, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "ohm", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "1e+12", "", "Resistance when open" },
+            { "goff", 107, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, U(), "", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "1e-12", "", "Conductance when open" },
+        },
+        // Instance parameters
+        {
+            { "on", 1, NGSPICE::PARAM_DIR::IN, NGSPICE::PARAM_TYPE::FLAG, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Switch initially closed" },
+            { "off", 2, NGSPICE::PARAM_DIR::IN, NGSPICE::PARAM_TYPE::FLAG, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Switch initially open" },
+            { "pos_node", 3, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::INTEGER, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Positive node of switch" },
+            { "neg_node", 4, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::INTEGER, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Negative node of switch" },
+            { "cont_p_node", 5, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::INTEGER, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Positive contr. node of switch" },
+            { "cont_n_node", 6, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::INTEGER, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Positive contr. node of switch" },
+            { "i", 7, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, {}, "A", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Switch current" },
+            { "p", 8, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Switch power" },
+        } };
+    case NGSPICE::MODEL_TYPE::CSWITCH: return { "CSwitch", "CSW", "", "Current controlled ideal switch",
+        // Model parameters
+        {
+            { "csw", 101, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::FLAG, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "NaN", "", "Current controlled switch model" },
+            { "it", 104, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "A", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "0", "", "Threshold current" },
+            { "ih", 105, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "A", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "0", "", "Hysterisis current" },
+            { "ron", 102, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "ohm", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "1", "", "Closed resistance" },
+            { "roff", 103, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::REAL, U(), "ohm", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "1e+12", "", "Open resistance" },
+            { "gon", 106, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, U(), "", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "", "", "Closed conductance" },
+            { "goff", 107, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, U(), "", NGSPICE::PARAM_CATEGORY::PRINCIPAL, "", "", "Open conductance" },
+        },
+        // Instance parameters
+        {
+            { "control", 1, NGSPICE::PARAM_DIR::INOUT, NGSPICE::PARAM_TYPE::INSTANCE, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Name of controlling source" },
+            { "on", 2, NGSPICE::PARAM_DIR::IN, NGSPICE::PARAM_TYPE::FLAG, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Initially closed" },
+            { "off", 3, NGSPICE::PARAM_DIR::IN, NGSPICE::PARAM_TYPE::FLAG, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Initially open" },
+            { "pos_node", 4, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::INTEGER, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Positive node of switch" },
+            { "neg_node", 5, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::INTEGER, U(), "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Negative node of switch" },
+            { "i", 6, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, {}, "A", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Switch current" },
+            { "p", 7, NGSPICE::PARAM_DIR::OUT, NGSPICE::PARAM_TYPE::REAL, {}, "", NGSPICE::PARAM_CATEGORY::SUPERFLUOUS, "", "", "Instantaneous power" },
+        } };
     case NGSPICE::MODEL_TYPE::DIODE: return { "Diode", "D", "", "Junction Diode model",
         // Model parameters
         {
