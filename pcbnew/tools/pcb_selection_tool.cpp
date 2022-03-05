@@ -1841,27 +1841,41 @@ void PCB_SELECTION_TOOL::FindItem( BOARD_ITEM* aItem )
             m_frame->FocusOnLocation( aItem->GetPosition() );
         }
 
-        KIGFX::PCB_VIEW* pcbView = canvas()->GetView();
-        BOX2D            screenBox = pcbView->GetViewport();
-        wxSize           screenSize = wxSize( screenBox.GetWidth(), screenBox.GetHeight() );
-        wxPoint          screenPos = wxPoint( screenBox.GetOrigin() );
-        EDA_RECT*        screenRect = new EDA_RECT( screenPos, screenSize );
-
-        if( !screenRect->Contains( aItem->GetBoundingBox() ) )
+        // If the item has a bouding box, then zoom out if needed
+        if( aItem->GetBoundingBox().GetHeight() > 0 && aItem->GetBoundingBox().GetWidth() > 0 )
         {
-            double scaleX = screenSize.GetWidth()
-                            / static_cast<double>( aItem->GetBoundingBox().GetWidth() );
-            double scaleY = screenSize.GetHeight()
-                            / static_cast<double>( aItem->GetBoundingBox().GetHeight() );
+            // This adds some margin
+            double marginFactor = 2;
 
-            // We divide by 2 because of the algorithm that avois dialogs
-            // This adds some margin.
-            scaleX /= 2;
-            scaleY /= 2;
-            pcbView->SetScale( pcbView->GetScale() * ( scaleX > scaleY ? scaleY : scaleX ) );
+            KIGFX::PCB_VIEW* pcbView = canvas()->GetView();
+            BOX2D            screenBox = pcbView->GetViewport();
+            wxSize           screenSize = wxSize( screenBox.GetWidth(), screenBox.GetHeight() );
+            screenSize /= marginFactor;
 
-            //Let's refocus because there is an algortihm to avoid dialogs in there.
-            m_frame->FocusOnLocation( aItem->GetCenter() );
+            wxPoint   screenPos = wxPoint( screenBox.GetOrigin() );
+            EDA_RECT* screenRect = new EDA_RECT( screenPos, screenSize );
+
+            if( !screenRect->Contains( aItem->GetBoundingBox() ) )
+            {
+                double scaleX = screenSize.GetWidth()
+                                / static_cast<double>( aItem->GetBoundingBox().GetWidth() );
+                double scaleY = screenSize.GetHeight()
+                                / static_cast<double>( aItem->GetBoundingBox().GetHeight() );
+
+
+                scaleX /= marginFactor;
+                scaleY /= marginFactor;
+
+                double scale = scaleX > scaleY ? scaleY : scaleX;
+
+                if( scale < 1 ) // Don't zoom in, only zoom out
+                {
+                    pcbView->SetScale( pcbView->GetScale() * ( scale ) );
+
+                    //Let's refocus because there is an algortihm to avoid dialogs in there.
+                    m_frame->FocusOnLocation( aItem->GetCenter() );
+                }
+            }
         }
         // Inform other potentially interested tools
         m_toolMgr->ProcessEvent( EVENTS::SelectedEvent );
