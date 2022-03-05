@@ -37,7 +37,6 @@
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
 //#include <gal/opengl/opengl_freetype.h>
-#include <harfbuzz/hb.h>
 #include <font/font.h>
 #include <font/glyph.h>
 #include <font/outline_decomposer.h>
@@ -53,6 +52,10 @@ public:
     OUTLINE_FONT();
 
     static wxString FreeTypeVersion();
+
+    static wxString HarfBuzzVersion();
+
+    static wxString FontLibraryVersion();
 
     bool IsOutline() const override { return true; }
 
