@@ -180,11 +180,6 @@ private:
     void removePlot( const wxString& aPlotName );
 
     /**
-     * Reload the current schematic for the netlist exporter.
-     */
-    void updateNetlistExporter();
-
-    /**
      * Update plot in a particular SIM_PLOT_PANEL. If the panel does not contain
      * the plot, it will be added.
      *
@@ -339,7 +334,7 @@ private:
     wxToolBarToolBase* m_toolSettings;
 
     SCH_EDIT_FRAME* m_schematicFrame;
-    std::unique_ptr<NETLIST_EXPORTER_PSPICE_SIM> m_exporter;
+    std::shared_ptr<NETLIST_EXPORTER_PSPICE_SIM> m_exporter;
     std::shared_ptr<SPICE_SIMULATOR> m_simulator;
     SIM_THREAD_REPORTER* m_reporter;
 
