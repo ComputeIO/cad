@@ -23,16 +23,16 @@
  */
 
 #include <iterator>
-#include <sim/spice_model.h>
+#include <sim/sim_model.h>
 #include <pegtl.hpp>
 #include <pegtl/contrib/parse_tree.hpp>
 #include <locale_io.h>
 #include <lib_symbol.h>
 
-using DEVICE_TYPE = SPICE_MODEL::DEVICE_TYPE;
-using DEVICE_TYPE_INFO = SPICE_MODEL::DEVICE_TYPE_INFO;
-using TYPE = SPICE_MODEL::TYPE;
-using TYPE_INFO = SPICE_MODEL::TYPE_INFO;
+using DEVICE_TYPE = SIM_MODEL::DEVICE_TYPE;
+using DEVICE_TYPE_INFO = SIM_MODEL::DEVICE_TYPE_INFO;
+using TYPE = SIM_MODEL::TYPE;
+using TYPE_INFO = SIM_MODEL::TYPE_INFO;
 
 /*namespace SPICE_MODEL_PARSER
 {
@@ -132,7 +132,7 @@ namespace SPICE_MODEL_PARSER
 }
 
 
-DEVICE_TYPE_INFO SPICE_MODEL::DeviceTypeInfo( DEVICE_TYPE aDeviceType )
+DEVICE_TYPE_INFO SIM_MODEL::DeviceTypeInfo( DEVICE_TYPE aDeviceType )
 {
     switch( aDeviceType )
     {
@@ -169,7 +169,7 @@ DEVICE_TYPE_INFO SPICE_MODEL::DeviceTypeInfo( DEVICE_TYPE aDeviceType )
 }
 
 
-TYPE_INFO SPICE_MODEL::TypeInfo( TYPE aType )
+TYPE_INFO SIM_MODEL::TypeInfo( TYPE aType )
 {
     switch( aType )
     { 
@@ -297,7 +297,7 @@ TYPE_INFO SPICE_MODEL::TypeInfo( TYPE aType )
 }
 
 
-NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
+NGSPICE::MODEL_INFO SIM_MODEL::TypeModelInfo( TYPE aType )
 {
     if( TypeInfo( aType ).ngspiceModelType != NGSPICE::MODEL_TYPE::NONE )
         return NGSPICE::ModelInfo( TypeInfo( aType ).ngspiceModelType );
@@ -324,7 +324,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             paramInfo.name = ( aType == TYPE::RESISTOR_IDEAL )  ? "r" :
                              ( aType == TYPE::CAPACITOR_IDEAL ) ? "c" :
                                                                   "l";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::RESISTOR_IDEAL )  ? "ohm" :
                              ( aType == TYPE::CAPACITOR_IDEAL ) ? "F" :
                                                                   "H";
@@ -346,7 +346,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
                              ( aType == TYPE::INDUCTOR_BEHAVIORAL ) ?  "l" :
                              ( aType == TYPE::VSOURCE_BEHAVIORAL ) ?   "v" :
                                                                        "i";
-            paramInfo.type = NGSPICE::PARAM_TYPE::STRING;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::STRING;
             paramInfo.unit = ( aType == TYPE::RESISTOR_BEHAVIORAL )  ? "ohm" :
                              ( aType == TYPE::CAPACITOR_BEHAVIORAL ) ? "F" :
                              ( aType == TYPE::INDUCTOR_BEHAVIORAL )  ? "H" :
@@ -369,7 +369,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_PULSE:
         case TYPE::ISOURCE_PULSE:
             paramInfo.name = ( aType == TYPE::VSOURCE_PULSE ) ? "v1" : "i1";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_PULSE ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -377,7 +377,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = ( aType == TYPE::VSOURCE_PULSE ) ? "v2" : "i2";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_PULSE ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -385,7 +385,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -393,7 +393,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "tr";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "tstep";
@@ -401,7 +401,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "tf";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "tstep";
@@ -409,7 +409,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "pw";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "tstop";
@@ -417,7 +417,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "per";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "tstop";
@@ -425,7 +425,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "phase";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "deg";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -436,7 +436,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_SIN:
         case TYPE::ISOURCE_SIN:
             paramInfo.name = ( aType == TYPE::VSOURCE_SIN ) ? "vo" : "io";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_SIN ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -444,7 +444,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = ( aType == TYPE::VSOURCE_SIN ) ? "va" : "ia";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_SIN ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -452,7 +452,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "freq";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "Hz";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "1/tstop";
@@ -460,7 +460,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -468,7 +468,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "theta";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "1/s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -476,7 +476,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "phase";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "deg";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -487,7 +487,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_EXP:
         case TYPE::ISOURCE_EXP:
             paramInfo.name = ( aType == TYPE::VSOURCE_EXP ) ? "v1" : "i1";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_EXP ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -495,7 +495,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = ( aType == TYPE::VSOURCE_EXP ) ? "v2" : "i2";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_EXP ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -503,7 +503,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td1";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -511,7 +511,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "tau1";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "tstep";
@@ -519,7 +519,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td2";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "td1+tstep";
@@ -527,7 +527,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "tau2";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "tstep";
@@ -538,14 +538,14 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_SFAM:
         case TYPE::ISOURCE_SFAM:
             paramInfo.name = ( aType == TYPE::VSOURCE_SFAM ) ? "vo" : "io";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_SFAM ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
             paramInfo.description = "DC offset";
 
             paramInfo.name = ( aType == TYPE::VSOURCE_SFAM ) ? "va" : "ia";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_SFAM ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -553,7 +553,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
 
             modelInfo.instanceParams.push_back( paramInfo );
             paramInfo.name = "mo";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -561,7 +561,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "fc";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "Hz";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -569,7 +569,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "mf";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "Hz";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -580,7 +580,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_SFFM:
         case TYPE::ISOURCE_SFFM:
             paramInfo.name = ( aType == TYPE::VSOURCE_SFFM ) ? "vo" : "io";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_SFFM ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -588,7 +588,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = ( aType == TYPE::VSOURCE_SFFM ) ? "va" : "ia";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_SFFM ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -596,7 +596,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "fc";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "Hz";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "1/tstop";
@@ -604,7 +604,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "mdi";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -612,7 +612,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "fs";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "Hz";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "1/tstop";
@@ -620,7 +620,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "phasec";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "deg";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -628,7 +628,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "phases";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "deg";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -639,7 +639,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_PWL:
         case TYPE::ISOURCE_PWL:
             paramInfo.name = "t";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REALVEC;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT_VECTOR;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -647,7 +647,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = ( aType == TYPE::VSOURCE_PWL ) ? "v" : "i";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REALVEC;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT_VECTOR;
             paramInfo.unit = ( aType == TYPE::VSOURCE_PWL ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -656,7 +656,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "repeat";
-            paramInfo.type = NGSPICE::PARAM_TYPE::FLAG;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::BOOL;
             paramInfo.unit = "";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -664,7 +664,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -675,7 +675,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_NOISE:
         case TYPE::ISOURCE_NOISE:
             paramInfo.name = ( aType == TYPE::VSOURCE_NOISE ) ? "vo" : "io";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_NOISE ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "";
@@ -683,7 +683,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "na";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_NOISE ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -691,7 +691,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "nt";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -699,7 +699,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "nalpha";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -707,7 +707,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "namp";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -715,7 +715,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "rtsam";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_NOISE ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -723,7 +723,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "rtscapt";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -731,7 +731,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "rtsemt";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -742,7 +742,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_RANDOM_UNIFORM:
         case TYPE::ISOURCE_RANDOM_UNIFORM:
             paramInfo.name = "min";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_UNIFORM ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "-0.5";
@@ -750,7 +750,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "max";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_UNIFORM ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0.5";
@@ -758,7 +758,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -769,7 +769,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_RANDOM_GAUSSIAN:
         case TYPE::ISOURCE_RANDOM_GAUSSIAN:
             paramInfo.name = "mean";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_GAUSSIAN ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -777,7 +777,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "stddev";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_GAUSSIAN ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "1";
@@ -785,7 +785,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -796,7 +796,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_RANDOM_EXPONENTIAL:
         case TYPE::ISOURCE_RANDOM_EXPONENTIAL:
             paramInfo.name = "offset";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_EXPONENTIAL ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -804,7 +804,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "mean";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_EXPONENTIAL ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "1";
@@ -812,7 +812,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -823,7 +823,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
         case TYPE::VSOURCE_RANDOM_POISSON:
         case TYPE::ISOURCE_RANDOM_POISSON:
             paramInfo.name = "offset";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_POISSON ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -831,7 +831,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "lambda";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = ( aType == TYPE::VSOURCE_RANDOM_POISSON ) ? "V" : "A";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "1";
@@ -839,7 +839,7 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
             modelInfo.instanceParams.push_back( paramInfo );
 
             paramInfo.name = "td";
-            paramInfo.type = NGSPICE::PARAM_TYPE::REAL;
+            paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
             paramInfo.unit = "s";
             paramInfo.category = NGSPICE::PARAM_CATEGORY::PRINCIPAL;
             paramInfo.defaultValueOfVariant1 = "0";
@@ -856,11 +856,11 @@ NGSPICE::MODEL_INFO SPICE_MODEL::TypeModelInfo( TYPE aType )
 }
 
 
-template TYPE SPICE_MODEL::ReadTypeFromFields( const std::vector<SCH_FIELD>* aFields );
-template TYPE SPICE_MODEL::ReadTypeFromFields( const std::vector<LIB_FIELD>* aFields );
+template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<SCH_FIELD>* aFields );
+template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<LIB_FIELD>* aFields );
 
 template <typename T>
-TYPE SPICE_MODEL::ReadTypeFromFields( const std::vector<T>* aFields )
+TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>* aFields )
 {
     wxString typeFieldValue = getFieldValue( aFields, TYPE_FIELD );
     wxString deviceTypeFieldValue = getFieldValue( aFields, DEVICE_TYPE_FIELD );
@@ -886,16 +886,16 @@ TYPE SPICE_MODEL::ReadTypeFromFields( const std::vector<T>* aFields )
 }
 
 
-SPICE_MODEL::SPICE_MODEL( TYPE aType ) : m_type( aType )
+SIM_MODEL::SIM_MODEL( TYPE aType ) : m_type( aType )
 {
 }
 
 
-template SPICE_MODEL::SPICE_MODEL( const std::vector<SCH_FIELD>* aFields );
-template SPICE_MODEL::SPICE_MODEL( const std::vector<LIB_FIELD>* aFields );
+template SIM_MODEL::SIM_MODEL( const std::vector<SCH_FIELD>* aFields );
+template SIM_MODEL::SIM_MODEL( const std::vector<LIB_FIELD>* aFields );
 
 template <typename T>
-SPICE_MODEL::SPICE_MODEL( const std::vector<T>* aFields )
+SIM_MODEL::SIM_MODEL( const std::vector<T>* aFields )
     : m_type( ReadTypeFromFields( aFields ) )
 {
     SetFile( getFieldValue( aFields, "Model_File" ) );
@@ -903,16 +903,16 @@ SPICE_MODEL::SPICE_MODEL( const std::vector<T>* aFields )
 }
 
 
-SPICE_MODEL::SPICE_MODEL( const wxString& aCode )
+SIM_MODEL::SIM_MODEL( const wxString& aCode )
 {
 }
 
 
-template void SPICE_MODEL::WriteFields( std::vector<SCH_FIELD>* aFields );
-template void SPICE_MODEL::WriteFields( std::vector<LIB_FIELD>* aFields );
+template void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>* aFields );
+template void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>* aFields );
 
 template <typename T>
-void SPICE_MODEL::WriteFields( std::vector<T>* aFields )
+void SIM_MODEL::WriteFields( std::vector<T>* aFields )
 {
     setFieldValue( aFields, DEVICE_TYPE_FIELD,
                    DeviceTypeInfo( TypeInfo( m_type ).deviceType ).fieldValue );
@@ -922,12 +922,12 @@ void SPICE_MODEL::WriteFields( std::vector<T>* aFields )
 }
 
 
-void SPICE_MODEL::WriteCode( wxString& aCode )
+void SIM_MODEL::WriteCode( wxString& aCode )
 {
 }
 
 
-void SPICE_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
+void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
 {
     LOCALE_IO toggle;
     
@@ -947,7 +947,7 @@ void SPICE_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
 
             try
             {
-                SPICE_VALUE value( node->string() );
+                //SIM_VALUE value( wxString( node->string() ) );
 
                 /*if( !SetParamValue( paramName, value ) )
                 {
@@ -955,6 +955,8 @@ void SPICE_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
                     throw KI_PARAM_ERROR( wxString::Format( _( "Unknown parameter \"%s\"" ),
                                                             paramName ) );
                 }*/
+
+
             }
             catch( KI_PARAM_ERROR& e )
             {
@@ -969,26 +971,26 @@ void SPICE_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
 }
 
 
-wxString SPICE_MODEL::generateParamValuePairs()
+wxString SIM_MODEL::generateParamValuePairs()
 {
     wxString result = "";
 
-    /*for( auto it = GetParams().cbegin(); it != GetParams().cend(); it++ )
+    for( auto it = m_params.cbegin(); it != m_params.cend(); it++ )
     {
-        result += it->first;
+        /*result += it->name;
         result += "=";
-        result += it->second.value.ToString();
+        result += it->value->ToString();
 
-        if( std::next( it ) != GetParams().cend() )
-            result += " ";
-    }*/
+        if( std::next( it ) != m_params.cend() )
+            result += " ";*/
+    }
 
     return result;
 }
 
 
 template <typename T>
-wxString SPICE_MODEL::getFieldValue( const std::vector<T>* aFields, const wxString& aFieldName )
+wxString SIM_MODEL::getFieldValue( const std::vector<T>* aFields, const wxString& aFieldName )
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
 
@@ -1006,7 +1008,7 @@ wxString SPICE_MODEL::getFieldValue( const std::vector<T>* aFields, const wxStri
 
 
 template <typename T>
-void SPICE_MODEL::setFieldValue( std::vector<T>* aFields, const wxString& aFieldName,
+void SIM_MODEL::setFieldValue( std::vector<T>* aFields, const wxString& aFieldName,
                                  const wxString& aValue )
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );

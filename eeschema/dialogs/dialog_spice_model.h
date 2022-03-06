@@ -29,7 +29,7 @@
 #include <netlist_exporter_pspice.h>
 #include <scintilla_tricks.h>
 
-#include <sim/spice_model.h>
+#include <sim/sim_model.h>
 #include <sch_symbol.h>
 
 // Some probable wxWidgets bugs encountered when writing this class:
@@ -43,8 +43,7 @@ class DIALOG_SPICE_MODEL : public DIALOG_SPICE_MODEL_BASE
 public:
     enum class COLUMN : int { DESCRIPTION = 0, VALUE, UNIT, DEFAULT, TYPE, END_ };
 
-    DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
-                        std::vector<T>* aSchFields );
+    DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol, std::vector<T>* aSchFields );
 
 private:
     bool TransferDataFromWindow() override;
@@ -63,9 +62,9 @@ private:
     SCH_SYMBOL& m_symbol;
     std::vector<T>* m_fields;
 
-    std::vector<SPICE_MODEL> m_models;
-    std::map<SPICE_MODEL::DEVICE_TYPE, SPICE_MODEL::TYPE> m_curModelTypeOfDeviceType;
-    SPICE_MODEL::TYPE m_curModelType = SPICE_MODEL::TYPE::NONE;
+    std::vector<SIM_MODEL> m_models;
+    std::map<SIM_MODEL::DEVICE_TYPE, SIM_MODEL::TYPE> m_curModelTypeOfDeviceType;
+    SIM_MODEL::TYPE m_curModelType = SIM_MODEL::TYPE::NONE;
 
     wxPropertyGridPage* m_paramGrid;
     wxPGProperty* m_firstCategory; // Used to add principal parameters to root (any better ideas?)

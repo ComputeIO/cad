@@ -22,8 +22,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef SPICE_MODEL_H
-#define SPICE_MODEL_H
+#ifndef SIM_MODEL_H
+#define SIM_MODEL_H
 
 #include <map>
 #include <stdexcept>
@@ -31,10 +31,10 @@
 #include <sch_field.h>
 #include <lib_field.h>
 #include <sim/ngspice.h>
-#include <sim/spice_value.h>
+#include <sim/sim_value.h>
 #include <wx/string.h>
 
-class SPICE_MODEL
+class SIM_MODEL
 {
 public:
     static constexpr auto DEVICE_TYPE_FIELD = "Model_Device";
@@ -232,6 +232,13 @@ public:
         wxString description;
     };
 
+    struct PARAM
+    {
+        const wxString name;
+        std::unique_ptr<SIM_VALUE_BASE> value;
+        const NGSPICE::PARAM_INFO& info;
+    };
+
 
     static DEVICE_TYPE_INFO DeviceTypeInfo( DEVICE_TYPE aDeviceType );
     static TYPE_INFO TypeInfo( TYPE aType );
@@ -241,19 +248,28 @@ public:
     static TYPE ReadTypeFromFields( const std::vector<T>* aFields );
 
 
-    SPICE_MODEL( TYPE aType );
+    // Move semantics.
+    // Rule of five.
+    ~SIM_MODEL() = default;
+    SIM_MODEL() = delete;
+    SIM_MODEL( const SIM_MODEL& aOther ) = delete;
+    SIM_MODEL( SIM_MODEL&& aOther ) = default;
+    SIM_MODEL& operator=(SIM_MODEL&& aOther ) = default;
+
+    SIM_MODEL( TYPE aType );
 
     template <typename T>
-    SPICE_MODEL( const std::vector<T>* aFields );
+    SIM_MODEL( const std::vector<T>* aFields );
 
-    SPICE_MODEL( const wxString& aCode );
+    SIM_MODEL( const wxString& aCode );
 
 
     template <typename T>
     void WriteFields( std::vector<T>* aFields );
 
-    void WriteCode( wxString& aCode );
+    virtual void WriteCode( wxString& aCode );
 
+    virtual std::vector<PARAM>& GetParams() { return m_params; }
 
     wxString GetFile() { return m_file; }
     void SetFile( const wxString& aFile ) { m_file = aFile; }
@@ -262,7 +278,7 @@ public:
 private:
     TYPE m_type;
     wxString m_file;
-    std::map<wxString, double> m_params;
+    std::vector<PARAM> m_params;
 
 
     template <typename T>
@@ -273,8 +289,8 @@ private:
                                const wxString& aValue );
 
 
-    wxString generateParamValuePairs();
-    void parseParamValuePairs( const wxString& aParamValuePairs );
+    virtual wxString generateParamValuePairs();
+    virtual void parseParamValuePairs( const wxString& aParamValuePairs );
 };
 
-#endif /* SPICE_MODEL_H */
+#endif /* SIM_MODEL_H */

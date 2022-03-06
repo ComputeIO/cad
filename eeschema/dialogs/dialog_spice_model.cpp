@@ -40,9 +40,9 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
 {
     try
     {
-        SPICE_MODEL::TYPE typeFromFields = SPICE_MODEL::ReadTypeFromFields( aFields );
+        SIM_MODEL::TYPE typeFromFields = SIM_MODEL::ReadTypeFromFields( aFields );
 
-        for( SPICE_MODEL::TYPE type : SPICE_MODEL::TYPE_ITERATOR() )
+        for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
         {
             if( type == typeFromFields )
             {
@@ -52,7 +52,7 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
             else
                 m_models.emplace_back( type );
 
-            SPICE_MODEL::DEVICE_TYPE deviceType = SPICE_MODEL::TypeInfo( type ).deviceType;
+            SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( type ).deviceType;
 
             // By default choose the first model type of each device type.
             if( !m_curModelTypeOfDeviceType.count( deviceType ) )
@@ -68,8 +68,8 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
 
     m_typeChoice->Clear();
 
-    for( SPICE_MODEL::DEVICE_TYPE deviceType : SPICE_MODEL::DEVICE_TYPE_ITERATOR() )
-        m_deviceTypeChoice->Append( SPICE_MODEL::DeviceTypeInfo( deviceType ).description );
+    for( SIM_MODEL::DEVICE_TYPE deviceType : SIM_MODEL::DEVICE_TYPE_ITERATOR() )
+        m_deviceTypeChoice->Append( SIM_MODEL::DeviceTypeInfo( deviceType ).description );
 
     m_paramGrid = m_paramGridMgr->AddPage();
 
@@ -86,7 +86,7 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataFromWindow()
     if( !DIALOG_SPICE_MODEL_BASE::TransferDataFromWindow() )
         return false;
 
-    m_models.at( static_cast<int>( m_curModelType ) ).WriteFields( m_fields );
+    m_models[static_cast<int>( m_curModelType )].WriteFields( m_fields );
 
     return true;
 }
@@ -97,8 +97,8 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataToWindow()
 {
     try
     {
-        m_models.at( static_cast<int>( SPICE_MODEL::ReadTypeFromFields( m_fields ) ) )
-            = SPICE_MODEL( m_fields );
+        m_models[static_cast<int>( SIM_MODEL::ReadTypeFromFields( m_fields ) )]
+            = SIM_MODEL( m_fields );
     }
     catch( KI_PARAM_ERROR& e )
     {
@@ -115,17 +115,17 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataToWindow()
 template <typename T>
 void DIALOG_SPICE_MODEL<T>::updateWidgets()
 {
-    SPICE_MODEL::DEVICE_TYPE deviceType = SPICE_MODEL::TypeInfo( m_curModelType ).deviceType;
+    SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( m_curModelType ).deviceType;
 
     m_deviceTypeChoice->SetSelection( static_cast<int>( deviceType ) );
     
     m_typeChoice->Clear();
 
-    for( SPICE_MODEL::TYPE type : SPICE_MODEL::TYPE_ITERATOR() )
+    for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
     {
-        if( SPICE_MODEL::TypeInfo( type ).deviceType == deviceType )
+        if( SIM_MODEL::TypeInfo( type ).deviceType == deviceType )
         {
-            wxString description = SPICE_MODEL::TypeInfo( type ).description;
+            wxString description = SIM_MODEL::TypeInfo( type ).description;
 
             if( !description.IsEmpty() )
                 m_typeChoice->Append( description );
@@ -136,7 +136,7 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     }
 
 
-    // This wxPropertyGridManager stuff has to be here because it crashes in the constructor.
+    // This wxPropertyGridManager stuff has to be here because it segfaults in the constructor.
 
     m_paramGridMgr->SetColumnCount( static_cast<int>( COLUMN::END_ ) );
 
@@ -147,7 +147,7 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGridMgr->ShowHeader();
 
 
-    NGSPICE::MODEL_INFO ngspiceModelInfo = SPICE_MODEL::TypeModelInfo( m_curModelType );
+    NGSPICE::MODEL_INFO ngspiceModelInfo = SIM_MODEL::TypeModelInfo( m_curModelType );
 
     m_paramGrid->Clear();
 
@@ -189,8 +189,8 @@ template <typename T>
 void DIALOG_SPICE_MODEL<T>::onDeviceTypeChoice( wxCommandEvent& aEvent )
 {
     //SPICE_MODEL::DEVICE_TYPE deviceType = SPICE_MODEL::TypeInfo( m_curModelType ).deviceType;
-    SPICE_MODEL::DEVICE_TYPE deviceType =
-        static_cast<SPICE_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
+    SIM_MODEL::DEVICE_TYPE deviceType =
+        static_cast<SIM_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
 
     m_curModelType = m_curModelTypeOfDeviceType.at( deviceType );
 
@@ -201,14 +201,14 @@ void DIALOG_SPICE_MODEL<T>::onDeviceTypeChoice( wxCommandEvent& aEvent )
 template <typename T>
 void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
 {
-    SPICE_MODEL::DEVICE_TYPE deviceType =
-        static_cast<SPICE_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
+    SIM_MODEL::DEVICE_TYPE deviceType =
+        static_cast<SIM_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
     wxString typeDescription = m_typeChoice->GetString( m_typeChoice->GetSelection() );
 
-    for( SPICE_MODEL::TYPE type : SPICE_MODEL::TYPE_ITERATOR() )
+    for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
     {
-        if( deviceType == SPICE_MODEL::TypeInfo( type ).deviceType
-            && typeDescription == SPICE_MODEL::TypeInfo( type ).description )
+        if( deviceType == SIM_MODEL::TypeInfo( type ).deviceType
+            && typeDescription == SIM_MODEL::TypeInfo( type ).description )
         {
             m_curModelType = type;
             break;
@@ -300,10 +300,10 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const NGSPICE::PARAM_INFO
 
     switch( paramInfo.type )
     {
-    case NGSPICE::PARAM_TYPE::INTEGER: prop = new wxIntProperty( paramDescription );    break;
-    case NGSPICE::PARAM_TYPE::REAL:    prop = new wxFloatProperty( paramDescription );  break;
+    case SIM_VALUE_BASE::TYPE::INT: prop = new wxIntProperty( paramDescription );    break;
+    case SIM_VALUE_BASE::TYPE::FLOAT:    prop = new wxFloatProperty( paramDescription );  break;
 
-    case NGSPICE::PARAM_TYPE::FLAG:
+    case SIM_VALUE_BASE::TYPE::BOOL:
         prop = new wxBoolProperty( paramDescription );
         prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
         break;
@@ -318,22 +318,22 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const NGSPICE::PARAM_INFO
 
     switch( paramInfo.type )
     {
-    case NGSPICE::PARAM_TYPE::FLAG:      typeStr = wxString( "Bool"            ); break;
-    case NGSPICE::PARAM_TYPE::INTEGER:   typeStr = wxString( "Integer"         ); break;
-    case NGSPICE::PARAM_TYPE::REAL:      typeStr = wxString( "Float"           ); break;
-    case NGSPICE::PARAM_TYPE::COMPLEX:   typeStr = wxString( "Complex"         ); break;
-    case NGSPICE::PARAM_TYPE::NODE:      typeStr = wxString( "Node"            ); break;
-    case NGSPICE::PARAM_TYPE::INSTANCE:  typeStr = wxString( "Instance"        ); break;
-    case NGSPICE::PARAM_TYPE::STRING:    typeStr = wxString( "String"          ); break;
-    case NGSPICE::PARAM_TYPE::PARSETREE: typeStr = wxString( "Parsetree"       ); break;
-    case NGSPICE::PARAM_TYPE::VECTOR:    typeStr = wxString( "Vector"          ); break;
-    case NGSPICE::PARAM_TYPE::FLAGVEC:   typeStr = wxString( "Bool Vector"     ); break;
-    case NGSPICE::PARAM_TYPE::INTVEC:    typeStr = wxString( "Int Vector"      ); break;
-    case NGSPICE::PARAM_TYPE::REALVEC:   typeStr = wxString( "Float Vector"    ); break;
-    case NGSPICE::PARAM_TYPE::CPLXVEC:   typeStr = wxString( "Complex Vector"  ); break;
-    case NGSPICE::PARAM_TYPE::NODEVEC:   typeStr = wxString( "Node Vector"     ); break;
-    case NGSPICE::PARAM_TYPE::INSTVEC:   typeStr = wxString( "Instance Vector" ); break;
-    case NGSPICE::PARAM_TYPE::STRINGVEC: typeStr = wxString( "String Vector"   ); break;
+    case SIM_VALUE_BASE::TYPE::BOOL:      typeStr = wxString( "Bool"            ); break;
+    case SIM_VALUE_BASE::TYPE::INT:   typeStr = wxString( "Integer"         ); break;
+    case SIM_VALUE_BASE::TYPE::FLOAT:      typeStr = wxString( "Float"           ); break;
+    case SIM_VALUE_BASE::TYPE::COMPLEX:   typeStr = wxString( "Complex"         ); break;
+    //case SIM_VALUE_BASE::TYPE::NODE:      typeStr = wxString( "Node"            ); break;
+    //case SIM_VALUE_BASE::TYPE::INSTANCE:  typeStr = wxString( "Instance"        ); break;
+    case SIM_VALUE_BASE::TYPE::STRING:    typeStr = wxString( "String"          ); break;
+    //case SIM_VALUE_BASE::TYPE::PARSETREE: typeStr = wxString( "Parsetree"       ); break;
+    //case SIM_VALUE_BASE::TYPE::VECTOR:    typeStr = wxString( "Vector"          ); break;
+    case SIM_VALUE_BASE::TYPE::BOOL_VECTOR:   typeStr = wxString( "Bool Vector"     ); break;
+    case SIM_VALUE_BASE::TYPE::INT_VECTOR:    typeStr = wxString( "Int Vector"      ); break;
+    case SIM_VALUE_BASE::TYPE::FLOAT_VECTOR:   typeStr = wxString( "Float Vector"    ); break;
+    case SIM_VALUE_BASE::TYPE::COMPLEX_VECTOR:   typeStr = wxString( "Complex Vector"  ); break;
+    //case SIM_VALUE_BASE::TYPE::NODE_VECTOR:   typeStr = wxString( "Node Vector"     ); break;
+    //case SIM_VALUE_BASE::TYPE::INST_VECTOR:   typeStr = wxString( "Instance Vector" ); break;
+    //case SIM_VALUE_BASE::TYPE::STRING_VECTOR: typeStr = wxString( "String Vector"   ); break;
     }
 
     prop->SetCell( static_cast<int>( COLUMN::TYPE ), typeStr );

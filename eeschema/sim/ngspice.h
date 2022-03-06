@@ -28,6 +28,7 @@
 #define NGSPICE_H
 
 #include <sim/spice_simulator.h>
+#include <sim/sim_value.h>
 
 #include <wx/dynlib.h>
 #include <ngspice/sharedspice.h>
@@ -53,26 +54,6 @@ public:
         IN,
         OUT,
         INOUT
-    };
-
-    enum class PARAM_TYPE
-    {
-        FLAG,
-        INTEGER,
-        REAL,
-        COMPLEX,
-        NODE,
-        INSTANCE,
-        STRING,
-        PARSETREE,
-        VECTOR,
-        FLAGVEC,
-        INTVEC,
-        REALVEC,
-        CPLXVEC,
-        NODEVEC,
-        INSTVEC,
-        STRINGVEC
     };
 
     enum class PARAM_CATEGORY
@@ -107,13 +88,14 @@ public:
         bool uninteresting = false;*/
     };
 
-    // May be moved to the SPICE_MODEL class later.
+    // This will be evolving to be ultimately the same as SIM_MODEL::PARAM, and then will be
+    // replaced by it.
     struct PARAM_INFO
     {
         wxString name;
         unsigned int id;
         PARAM_DIR dir;
-        PARAM_TYPE type;
+        SIM_VALUE_BASE::TYPE type;
         PARAM_FLAGS flags;
         wxString unit; // Derived, not extracted from Ngspice.
         PARAM_CATEGORY category;
