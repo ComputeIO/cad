@@ -135,8 +135,8 @@ wxString GetVersionInfoData( const wxString& aTitle, bool aHtml, bool aBrief )
 
     aMsg << indent4 << wxGetLibraryVersionInfo().GetVersionString() << eol;
 
-    aMsg << indent4 << KIFONT::OUTLINE_FONT::FreeTypeVersion() << eol;
-    aMsg << indent4 << KIFONT::OUTLINE_FONT::HarfBuzzVersion() << eol;
+    aMsg << indent4 << "FreeType " << KIFONT::OUTLINE_FONT::FreeTypeVersion() << eol;
+    aMsg << indent4 << "HarfBuzz " << KIFONT::OUTLINE_FONT::HarfBuzzVersion() << eol;
 
     if( !aBrief )
         aMsg << indent4 << GetKicadCurlVersion() << eol;
