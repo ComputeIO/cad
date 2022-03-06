@@ -71,6 +71,12 @@ wxString OUTLINE_FONT::HarfBuzzVersion()
 }
 
 
+wxString OUTLINE_FONT::FontConfigVersion()
+{
+    return fontconfig::FONTCONFIG::Version();
+}
+
+
 wxString OUTLINE_FONT::FontLibraryVersion()
 {
     return wxString::Format( "FreeType %s HarfBuzz %s", FreeTypeVersion(), HarfBuzzVersion() );

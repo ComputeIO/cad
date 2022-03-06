@@ -51,6 +51,8 @@ class OUTLINE_FONT : public FONT
 public:
     OUTLINE_FONT();
 
+    static wxString FontConfigVersion();
+
     static wxString FreeTypeVersion();
 
     static wxString HarfBuzzVersion();
