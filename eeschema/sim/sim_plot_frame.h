@@ -70,7 +70,6 @@ public:
     ~SIM_PLOT_FRAME();
 
     void StartSimulation( const wxString& aSimCommand = wxEmptyString );
-    void StopSimulation();
 
     /**
      * Create a new plot panel for a given simulation type and adds it to the main notebook.

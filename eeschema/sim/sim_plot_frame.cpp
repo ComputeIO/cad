@@ -489,12 +489,6 @@ void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
 }
 
 
-void SIM_PLOT_FRAME::StopSimulation()
-{
-    m_simulator->Stop();
-}
-
-
 SIM_PANEL_BASE* SIM_PLOT_FRAME::NewPlotPanel( wxString aSimCommand )
 {
     SIM_PANEL_BASE* plotPanel = nullptr;
@@ -1447,7 +1441,7 @@ void SIM_PLOT_FRAME::onWorkbookClrModified( wxCommandEvent& event )
 void SIM_PLOT_FRAME::onSimulate( wxCommandEvent& event )
 {
     if( m_simulator->IsRunning() )
-        StopSimulation();
+        m_simulator->Stop();
     else
         StartSimulation();
 }
@@ -1792,7 +1786,7 @@ void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
 void SIM_PLOT_FRAME::onSimUpdate( wxCommandEvent& aEvent )
 {
     if( m_simulator->IsRunning() )
-        StopSimulation();
+        m_simulator->Stop();
 
     if( GetCurrentPlot() != m_lastSimPlot )
     {
