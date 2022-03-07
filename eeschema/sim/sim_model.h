@@ -30,9 +30,9 @@
 #include <enum_vector.h>
 #include <sch_field.h>
 #include <lib_field.h>
-#include <sim/ngspice.h>
 #include <sim/sim_value.h>
 #include <wx/string.h>
+
 
 class SIM_MODEL
 {
@@ -72,11 +72,12 @@ public:
         RAWSPICE
     )
 
-    struct DEVICE_TYPE_INFO
+    struct DEVICE_INFO
     {
         wxString fieldValue;
         wxString description;
     };
+
 
     DEFINE_ENUM_CLASS_WITH_ITERATOR( TYPE,
         NONE,
@@ -200,8 +201,8 @@ public:
         VSOURCE_PWL,
         VSOURCE_NOISE,
         VSOURCE_RANDOM_UNIFORM,
-        VSOURCE_RANDOM_GAUSSIAN,
-        VSOURCE_RANDOM_EXPONENTIAL,
+        VSOURCE_RANDOM_NORMAL,
+        VSOURCE_RANDOM_EXP,
         VSOURCE_RANDOM_POISSON,
         VSOURCE_BEHAVIORAL,
 
@@ -213,8 +214,8 @@ public:
         ISOURCE_PWL,
         ISOURCE_NOISE,
         ISOURCE_RANDOM_UNIFORM,
-        ISOURCE_RANDOM_GAUSSIAN,
-        ISOURCE_RANDOM_EXPONENTIAL,
+        ISOURCE_RANDOM_NORMAL,
+        ISOURCE_RANDOM_EXP,
         ISOURCE_RANDOM_POISSON,
         ISOURCE_BEHAVIORAL,
 
@@ -224,33 +225,77 @@ public:
         RAWSPICE
     )
 
-    struct TYPE_INFO
+    struct INFO
     {
         DEVICE_TYPE deviceType;
-        NGSPICE::MODEL_TYPE ngspiceModelType;
         wxString fieldValue;
         wxString description;
     };
 
+
     struct PARAM
     {
-        const wxString name;
+        enum class DIR
+        {
+            IN,
+            OUT,
+            INOUT
+        };
+
+        enum class CATEGORY
+        {
+            PRINCIPAL,
+            DC,
+            CAPACITANCE,
+            TEMPERATURE,
+            NOISE,
+            DISTRIBUTED_QUANTITIES,
+            GEOMETRY,
+            LIMITING_VALUES,
+            ADVANCED,
+            FLAGS,
+            INITIAL_CONDITIONS,
+            SUPERFLUOUS
+        };
+
+        struct FLAGS {}; // Legacy.
+
+        struct INFO
+        {
+            wxString name;
+            unsigned int id; // Legacy.
+            DIR dir;
+            SIM_VALUE_BASE::TYPE type;
+            FLAGS flags;
+            wxString unit;
+            CATEGORY category;
+            wxString defaultValue;
+            wxString defaultValueOfOtherVariant; // Legacy.
+            wxString description;
+        };
+
         std::unique_ptr<SIM_VALUE_BASE> value;
-        const NGSPICE::PARAM_INFO& info;
+        const INFO& info;
+        //bool isOtherVariant; // Legacy.
     };
 
 
-    static DEVICE_TYPE_INFO DeviceTypeInfo( DEVICE_TYPE aDeviceType );
-    static TYPE_INFO TypeInfo( TYPE aType );
-    static NGSPICE::MODEL_INFO TypeModelInfo( TYPE aType );
+    static DEVICE_INFO DeviceTypeInfo( DEVICE_TYPE aDeviceType );
+
+    static INFO TypeInfo( TYPE aType );
 
     template <typename T>
     static TYPE ReadTypeFromFields( const std::vector<T>* aFields );
 
+    template <typename T>
+    static std::unique_ptr<SIM_MODEL> Create( const std::vector<T>* aFields );
+
+    static std::unique_ptr<SIM_MODEL> Create( TYPE aType );
+
 
     // Move semantics.
     // Rule of five.
-    ~SIM_MODEL() = default;
+    virtual ~SIM_MODEL() = default;
     SIM_MODEL() = delete;
     SIM_MODEL( const SIM_MODEL& aOther ) = delete;
     SIM_MODEL( SIM_MODEL&& aOther ) = default;
@@ -261,18 +306,22 @@ public:
     template <typename T>
     SIM_MODEL( const std::vector<T>* aFields );
 
-    SIM_MODEL( const wxString& aCode );
-
 
     template <typename T>
     void WriteFields( std::vector<T>* aFields );
 
-    virtual void WriteCode( wxString& aCode );
+    // C++ doesn't allow virtual template methods, so we do this:
+    virtual void DoWriteSchFields( std::vector<SCH_FIELD>* aFields );
+    virtual void DoWriteLibFields( std::vector<LIB_FIELD>* aFields );
 
-    virtual std::vector<PARAM>& GetParams() { return m_params; }
+    virtual void WriteCode( wxString& aCode ) = 0;
+
+    TYPE GetType() { return m_type; }
 
     wxString GetFile() { return m_file; }
     void SetFile( const wxString& aFile ) { m_file = aFile; }
+
+    std::vector<PARAM>& Params() { return m_params; }
 
 
 private:
@@ -293,4 +342,4 @@ private:
     virtual void parseParamValuePairs( const wxString& aParamValuePairs );
 };
 
-#endif /* SIM_MODEL_H */
+#endif // SIM_MODEL_H

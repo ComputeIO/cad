@@ -22,55 +22,23 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef SIM_VALUE_H
-#define SIM_VALUE_H
+#ifndef SIM_MODEL_NGSPICE_H
+#define SIM_MODEL_NGSPICE_H
 
-#include <memory>
-#include <wx/string.h>
+#include <sim/sim_model.h>
+#include <sim/ngspice.h>
 
-class SIM_VALUE_BASE
+
+class SIM_MODEL_NGSPICE : public SIM_MODEL
 {
 public:
-    enum class TYPE
-    {
-        BOOL,
-        INT,
-        FLOAT,
-        COMPLEX,
-        STRING,
+    SIM_MODEL_NGSPICE( TYPE aType );
 
-        BOOL_VECTOR,
-        INT_VECTOR,
-        FLOAT_VECTOR,
-        COMPLEX_VECTOR
-    };
-
-    static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType, wxString aString );
-    static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType );
-
-    void operator=( const wxString& aString );
-    virtual bool operator==( const SIM_VALUE_BASE& aOther ) const = 0;
-
-    virtual void FromString( const wxString& aString ) = 0;
-    virtual wxString ToString() const = 0;
-};
-
-
-template <typename T>
-class SIM_VALUE : public SIM_VALUE_BASE
-{
-public:
-    SIM_VALUE() = default;
-    SIM_VALUE( const T& aValue );
-
-    void FromString( const wxString& aString ) override;
-    wxString ToString() const override;
-
-    void operator=( const T& aValue );
-    bool operator==( const SIM_VALUE_BASE& aOther ) const override;
+    void WriteCode( wxString& aCode ) override;
 
 private:
-    T m_value;
+    NGSPICE::MODEL_TYPE getModelType();
+    bool isOtherVariant();
 };
 
-#endif /* SIM_VALUE_H */
+#endif /* SIM_MODEL_NGSPICE_H */

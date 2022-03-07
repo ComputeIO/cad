@@ -1,0 +1,106 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2022 Mikolaj Wielgus
+ * Copyright (C) 2022 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 3
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * https://www.gnu.org/licenses/gpl-3.0.html
+ * or you may search the http://www.gnu.org website for the version 3 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
+#include <sim/sim_model_ngspice.h>
+
+using TYPE = SIM_MODEL::TYPE;
+
+
+SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType ) : SIM_MODEL( aType )
+{
+    const NGSPICE::MODEL_INFO& modelInfo = NGSPICE::ModelInfo( getModelType() );
+
+    for( const SIM_MODEL::PARAM::INFO& paramInfo : modelInfo.modelParams )
+        Params().push_back( { SIM_VALUE_BASE::Create( paramInfo.type ), paramInfo } );
+
+    for( const SIM_MODEL::PARAM::INFO& paramInfo : modelInfo.instanceParams )
+        Params().push_back( { SIM_VALUE_BASE::Create( paramInfo.type ), paramInfo } );
+}
+
+
+void SIM_MODEL_NGSPICE::WriteCode( wxString& aCode )
+{
+    // TODO
+}
+
+
+NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType()
+{
+    switch( GetType() )
+    {
+    case TYPE::NONE:               return NGSPICE::MODEL_TYPE::NONE;
+    case TYPE::RESISTOR_ADVANCED:  return NGSPICE::MODEL_TYPE::RESISTOR;
+    case TYPE::CAPACITOR_ADVANCED: return NGSPICE::MODEL_TYPE::CAPACITOR;
+    case TYPE::INDUCTOR_ADVANCED:  return NGSPICE::MODEL_TYPE::INDUCTOR;
+    case TYPE::TLINE_LOSSY:        return NGSPICE::MODEL_TYPE::LTRA;
+    case TYPE::TLINE_LOSSLESS:     return NGSPICE::MODEL_TYPE::TRANLINE;
+    case TYPE::TLINE_UNIFORM_RC:   return NGSPICE::MODEL_TYPE::URC;
+    case TYPE::TLINE_KSPICE:       return NGSPICE::MODEL_TYPE::TRANSLINE;
+    case TYPE::SWITCH_VCTRL:       return NGSPICE::MODEL_TYPE::SWITCH;
+    case TYPE::SWITCH_ICTRL:       return NGSPICE::MODEL_TYPE::CSWITCH;
+    case TYPE::DIODE:              return NGSPICE::MODEL_TYPE::DIODE;
+    case TYPE::NPN_GUMMEL_POON:    return NGSPICE::MODEL_TYPE::BJT;
+
+    default:
+        wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_NGSPICE" );
+        return NGSPICE::MODEL_TYPE::RESISTOR;
+    }
+}
+
+
+bool SIM_MODEL_NGSPICE::isOtherVariant()
+{
+    switch( GetType() )
+    {
+    case TYPE::PNP_GUMMEL_POON:
+    case TYPE::PNP_VBIC:
+    case TYPE::PNP_HICUM_L2:
+    case TYPE::PJF_SHICHMAN_HODGES:
+    case TYPE::PJF_PARKER_SKELLERN:
+    case TYPE::PMES_STATZ:
+    case TYPE::PMES_YTTERDAL:
+    case TYPE::PMES_HFET1:
+    case TYPE::PMES_HFET2:
+    case TYPE::PMOS_MOS1:
+    case TYPE::PMOS_MOS2:
+    case TYPE::PMOS_MOS3:
+    case TYPE::PMOS_BSIM1:
+    case TYPE::PMOS_BSIM2:
+    case TYPE::PMOS_MOS6:
+    case TYPE::PMOS_BSIM3:
+    case TYPE::PMOS_MOS9:
+    case TYPE::PMOS_B4SOI:
+    case TYPE::PMOS_BSIM4:
+    case TYPE::PMOS_B3SOIFD:
+    case TYPE::PMOS_B3SOIDD:
+    case TYPE::PMOS_B3SOIPD:
+    case TYPE::PMOS_HISIM2:
+    case TYPE::PMOS_HISIM_HV1:
+    case TYPE::PMOS_HISIM_HV2:
+        return true;
+
+    default:
+        return false;
+    }
+}

@@ -26,6 +26,9 @@
 #include <dialog_spice_model.h>
 #include <confirm.h>
 
+using TYPE = SIM_VALUE_BASE::TYPE;
+using CATEGORY = SIM_MODEL::PARAM::CATEGORY;
+
 
 template class DIALOG_SPICE_MODEL<SCH_FIELD>;
 template class DIALOG_SPICE_MODEL<LIB_FIELD>;
@@ -46,11 +49,11 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
         {
             if( type == typeFromFields )
             {
-                m_models.emplace_back( aFields );
+                m_models.push_back( SIM_MODEL::Create( aFields ) );
                 m_curModelType = type;
             }
             else
-                m_models.emplace_back( type );
+                m_models.push_back( SIM_MODEL::Create( type ) );
 
             SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( type ).deviceType;
 
@@ -86,7 +89,7 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataFromWindow()
     if( !DIALOG_SPICE_MODEL_BASE::TransferDataFromWindow() )
         return false;
 
-    m_models[static_cast<int>( m_curModelType )].WriteFields( m_fields );
+    m_models[static_cast<int>( m_curModelType )]->WriteFields( m_fields );
 
     return true;
 }
@@ -98,7 +101,7 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataToWindow()
     try
     {
         m_models[static_cast<int>( SIM_MODEL::ReadTypeFromFields( m_fields ) )]
-            = SIM_MODEL( m_fields );
+            = SIM_MODEL::Create( m_fields );
     }
     catch( KI_PARAM_ERROR& e )
     {
@@ -147,7 +150,7 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGridMgr->ShowHeader();
 
 
-    NGSPICE::MODEL_INFO ngspiceModelInfo = SIM_MODEL::TypeModelInfo( m_curModelType );
+    //NGSPICE::MODEL_INFO ngspiceModelInfo = SIM_MODEL::TypeModelInfo( m_curModelType );
 
     m_paramGrid->Clear();
 
@@ -175,11 +178,13 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
     m_paramGrid->HideProperty( "Flags" );
 
-    for( const NGSPICE::PARAM_INFO& paramInfo : ngspiceModelInfo.modelParams )
-        addParamPropertyIfRelevant( paramInfo );
+    SIM_MODEL& curModel = *m_models[static_cast<int>( m_curModelType )];
 
-    for( const NGSPICE::PARAM_INFO& paramInfo : ngspiceModelInfo.instanceParams )
-        addParamPropertyIfRelevant( paramInfo );
+    for( const SIM_MODEL::PARAM& param : curModel.Params() )
+    {
+        std::cout << param.info.name << std::endl; // DEBUG TRACE
+        addParamPropertyIfRelevant( param );
+    }
 
     m_paramGrid->CollapseAll();
 }
@@ -220,120 +225,116 @@ void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
 }
 
 
-//template <typename T>
-//void DIALOG_SPICE_MODEL<T>::onGridCellChange( wxGridEvent& aEvent )
-//{
-    /*updateModel();
-    updateWidgets();*/
-//}
-
 template <typename T>
-void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const NGSPICE::PARAM_INFO& paramInfo )
+void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const SIM_MODEL::PARAM& aParam )
 {
-    if( paramInfo.dir == NGSPICE::PARAM_DIR::OUT )
+    if( aParam.info.dir == SIM_MODEL::PARAM::DIR::OUT )
         return;
 
-    switch( paramInfo.category )
+    switch( aParam.info.category )
     {
-    case NGSPICE::PARAM_CATEGORY::DC:
+    case CATEGORY::DC:
         m_paramGrid->HideProperty( "DC", false );
-        m_paramGrid->AppendIn( "DC", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "DC", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::CAPACITANCE:
+    case CATEGORY::CAPACITANCE:
         m_paramGrid->HideProperty( "Capacitance", false );
-        m_paramGrid->AppendIn( "Capacitance", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Capacitance", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::TEMPERATURE:
+    case CATEGORY::TEMPERATURE:
         m_paramGrid->HideProperty( "Temperature", false );
-        m_paramGrid->AppendIn( "Temperature", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Temperature", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::NOISE:
+    case CATEGORY::NOISE:
         m_paramGrid->HideProperty( "Noise", false );
-        m_paramGrid->AppendIn( "Noise", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Noise", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::DISTRIBUTED_QUANTITIES:
+    case CATEGORY::DISTRIBUTED_QUANTITIES:
         m_paramGrid->HideProperty( "Distributed Quantities", false );
-        m_paramGrid->AppendIn( "Distributed Quantities", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Distributed Quantities", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::GEOMETRY:
+    case CATEGORY::GEOMETRY:
         m_paramGrid->HideProperty( "Geometry", false );
-        m_paramGrid->AppendIn( "Geometry", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Geometry", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::LIMITING_VALUES:
+    case CATEGORY::LIMITING_VALUES:
         m_paramGrid->HideProperty( "Limiting Values", false );
-        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::ADVANCED:
+    case CATEGORY::ADVANCED:
         m_paramGrid->HideProperty( "Advanced", false );
-        m_paramGrid->AppendIn( "Advanced", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Advanced", newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::FLAGS:
+    case CATEGORY::FLAGS:
         m_paramGrid->HideProperty( "Flags", false );
-        m_paramGrid->AppendIn( "Flags", newParamProperty( paramInfo ) );
+        m_paramGrid->AppendIn( "Flags", newParamProperty( aParam ) );
         break;
 
     default:
-        //m_paramGrid->AppendIn( nullptr, newParamProperty( paramInfo ) );
-        m_paramGrid->Insert( m_firstCategory, newParamProperty( paramInfo ) );
-        //m_paramGrid->Append( newParamProperty( paramInfo ) );
+        //m_paramGrid->AppendIn( nullptr, newParamProperty( aParam ) );
+        m_paramGrid->Insert( m_firstCategory, newParamProperty( aParam ) );
+        //m_paramGrid->Append( newParamProperty( aParam ) );
         break;
 
-    case NGSPICE::PARAM_CATEGORY::INITIAL_CONDITIONS:
-    case NGSPICE::PARAM_CATEGORY::SUPERFLUOUS:
+    case CATEGORY::INITIAL_CONDITIONS:
+    case CATEGORY::SUPERFLUOUS:
         return;
     }
 }
 
 template <typename T>
-wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const NGSPICE::PARAM_INFO& paramInfo ) const
+wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& aParam ) const
 {
-    wxString paramDescription = wxString::Format( "%s (%s)", paramInfo.description, paramInfo.name );
+    wxString paramDescription = wxString::Format( "%s (%s)",
+                                                  aParam.info.description,
+                                                  aParam.info.name );
     wxPGProperty* prop = nullptr;
 
-    switch( paramInfo.type )
+    switch( aParam.info.type )
     {
-    case SIM_VALUE_BASE::TYPE::INT: prop = new wxIntProperty( paramDescription );    break;
-    case SIM_VALUE_BASE::TYPE::FLOAT:    prop = new wxFloatProperty( paramDescription );  break;
+    case TYPE::INT:
+        prop = new wxIntProperty( paramDescription );
+        break;
 
-    case SIM_VALUE_BASE::TYPE::BOOL:
+    case TYPE::FLOAT:
+        prop = new wxFloatProperty( paramDescription );
+        break;
+
+    case TYPE::BOOL:
         prop = new wxBoolProperty( paramDescription );
         prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
         break;
 
-    default:                           prop = new wxStringProperty( paramDescription ); break;
+    default:
+        prop = new wxStringProperty( paramDescription );
+        break;
     }
+    std::cout << "asd" << std::endl; // DEBUG TRACE
 
-    prop->SetAttribute( wxPG_ATTR_UNITS, paramInfo.unit );
-    prop->SetCell( 3, paramInfo.defaultValueOfVariant1 );
+    prop->SetAttribute( wxPG_ATTR_UNITS, aParam.info.unit );
+    prop->SetCell( 3, aParam.info.defaultValue );
 
     wxString typeStr;
 
-    switch( paramInfo.type )
+    switch( aParam.info.type )
     {
-    case SIM_VALUE_BASE::TYPE::BOOL:      typeStr = wxString( "Bool"            ); break;
-    case SIM_VALUE_BASE::TYPE::INT:   typeStr = wxString( "Integer"         ); break;
-    case SIM_VALUE_BASE::TYPE::FLOAT:      typeStr = wxString( "Float"           ); break;
-    case SIM_VALUE_BASE::TYPE::COMPLEX:   typeStr = wxString( "Complex"         ); break;
-    //case SIM_VALUE_BASE::TYPE::NODE:      typeStr = wxString( "Node"            ); break;
-    //case SIM_VALUE_BASE::TYPE::INSTANCE:  typeStr = wxString( "Instance"        ); break;
-    case SIM_VALUE_BASE::TYPE::STRING:    typeStr = wxString( "String"          ); break;
-    //case SIM_VALUE_BASE::TYPE::PARSETREE: typeStr = wxString( "Parsetree"       ); break;
-    //case SIM_VALUE_BASE::TYPE::VECTOR:    typeStr = wxString( "Vector"          ); break;
-    case SIM_VALUE_BASE::TYPE::BOOL_VECTOR:   typeStr = wxString( "Bool Vector"     ); break;
-    case SIM_VALUE_BASE::TYPE::INT_VECTOR:    typeStr = wxString( "Int Vector"      ); break;
-    case SIM_VALUE_BASE::TYPE::FLOAT_VECTOR:   typeStr = wxString( "Float Vector"    ); break;
-    case SIM_VALUE_BASE::TYPE::COMPLEX_VECTOR:   typeStr = wxString( "Complex Vector"  ); break;
-    //case SIM_VALUE_BASE::TYPE::NODE_VECTOR:   typeStr = wxString( "Node Vector"     ); break;
-    //case SIM_VALUE_BASE::TYPE::INST_VECTOR:   typeStr = wxString( "Instance Vector" ); break;
-    //case SIM_VALUE_BASE::TYPE::STRING_VECTOR: typeStr = wxString( "String Vector"   ); break;
+    case TYPE::BOOL:           typeStr = wxString( "Bool"           ); break;
+    case TYPE::INT:            typeStr = wxString( "Integer"        ); break;
+    case TYPE::FLOAT:          typeStr = wxString( "Float"          ); break;
+    case TYPE::COMPLEX:        typeStr = wxString( "Complex"        ); break;
+    case TYPE::STRING:         typeStr = wxString( "String"         ); break;
+    case TYPE::BOOL_VECTOR:    typeStr = wxString( "Bool Vector"    ); break;
+    case TYPE::INT_VECTOR:     typeStr = wxString( "Int Vector"     ); break;
+    case TYPE::FLOAT_VECTOR:   typeStr = wxString( "Float Vector"   ); break;
+    case TYPE::COMPLEX_VECTOR: typeStr = wxString( "Complex Vector" ); break;
     }
 
     prop->SetCell( static_cast<int>( COLUMN::TYPE ), typeStr );

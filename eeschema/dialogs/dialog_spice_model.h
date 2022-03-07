@@ -56,13 +56,13 @@ private:
     void onTypeChoice( wxCommandEvent& aEvent ) override;
     //void onGridCellChange( wxGridEvent& aEvent ) override;
     
-    void addParamPropertyIfRelevant( const NGSPICE::PARAM_INFO& paramInfo );
-    wxPGProperty* newParamProperty( const NGSPICE::PARAM_INFO& paramInfo ) const;
+    void addParamPropertyIfRelevant( const SIM_MODEL::PARAM& aParam );
+    wxPGProperty* newParamProperty( const SIM_MODEL::PARAM& aParam ) const;
 
     SCH_SYMBOL& m_symbol;
     std::vector<T>* m_fields;
 
-    std::vector<SIM_MODEL> m_models;
+    std::vector<std::unique_ptr<SIM_MODEL>> m_models;
     std::map<SIM_MODEL::DEVICE_TYPE, SIM_MODEL::TYPE> m_curModelTypeOfDeviceType;
     SIM_MODEL::TYPE m_curModelType = SIM_MODEL::TYPE::NONE;
 

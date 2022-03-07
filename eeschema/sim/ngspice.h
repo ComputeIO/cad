@@ -28,6 +28,7 @@
 #define NGSPICE_H
 
 #include <sim/spice_simulator.h>
+#include <sim/sim_model.h>
 #include <sim/sim_value.h>
 
 #include <wx/dynlib.h>
@@ -49,62 +50,6 @@ class wxDynamicLibrary;
 class NGSPICE : public SPICE_SIMULATOR
 {
 public:
-    enum class PARAM_DIR
-    {
-        IN,
-        OUT,
-        INOUT
-    };
-
-    enum class PARAM_CATEGORY
-    {
-        PRINCIPAL,
-        DC,
-        CAPACITANCE,
-        TEMPERATURE,
-        NOISE,
-        DISTRIBUTED_QUANTITIES,
-        GEOMETRY,
-        LIMITING_VALUES,
-        ADVANCED,
-        FLAGS,
-        INITIAL_CONDITIONS,
-        SUPERFLUOUS
-    };
-
-    struct PARAM_FLAGS
-    {
-        /*bool redundant = false;
-        bool principal = false;
-        bool ac = false;
-        bool acOnly = false;
-        bool noise = false;
-        bool nonsense = false;
-
-        bool setQuery = false;
-        bool orQuery = false;
-        bool chkQuery = false;
-
-        bool uninteresting = false;*/
-    };
-
-    // This will be evolving to be ultimately the same as SIM_MODEL::PARAM, and then will be
-    // replaced by it.
-    struct PARAM_INFO
-    {
-        wxString name;
-        unsigned int id;
-        PARAM_DIR dir;
-        SIM_VALUE_BASE::TYPE type;
-        PARAM_FLAGS flags;
-        wxString unit; // Derived, not extracted from Ngspice.
-        PARAM_CATEGORY category;
-        wxString defaultValueOfVariant1;
-        wxString defaultValueOfVariant2;
-        wxString description;
-    };
-
-
     DEFINE_ENUM_CLASS_WITH_ITERATOR( MODEL_TYPE,
         NONE,
         RESISTOR,
@@ -151,12 +96,12 @@ public:
         wxString variant1;
         wxString variant2;
         wxString description;
-        std::vector<PARAM_INFO> modelParams;
-        std::vector<PARAM_INFO> instanceParams;
+        std::vector<SIM_MODEL::PARAM::INFO> modelParams;
+        std::vector<SIM_MODEL::PARAM::INFO> instanceParams;
     };
 
 
-    static MODEL_INFO ModelInfo( MODEL_TYPE aType );
+    static const MODEL_INFO& ModelInfo( MODEL_TYPE aType );
 
     NGSPICE();
     virtual ~NGSPICE();

@@ -22,55 +22,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef SIM_VALUE_H
-#define SIM_VALUE_H
+#include <sim/sim_model_subcircuit.h>
 
-#include <memory>
-#include <wx/string.h>
-
-class SIM_VALUE_BASE
+SIM_MODEL_SUBCIRCUIT::SIM_MODEL_SUBCIRCUIT( TYPE aType ) : SIM_MODEL( aType )
 {
-public:
-    enum class TYPE
-    {
-        BOOL,
-        INT,
-        FLOAT,
-        COMPLEX,
-        STRING,
-
-        BOOL_VECTOR,
-        INT_VECTOR,
-        FLOAT_VECTOR,
-        COMPLEX_VECTOR
-    };
-
-    static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType, wxString aString );
-    static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType );
-
-    void operator=( const wxString& aString );
-    virtual bool operator==( const SIM_VALUE_BASE& aOther ) const = 0;
-
-    virtual void FromString( const wxString& aString ) = 0;
-    virtual wxString ToString() const = 0;
-};
+}
 
 
-template <typename T>
-class SIM_VALUE : public SIM_VALUE_BASE
+void SIM_MODEL_SUBCIRCUIT::WriteCode( wxString& aCode )
 {
-public:
-    SIM_VALUE() = default;
-    SIM_VALUE( const T& aValue );
-
-    void FromString( const wxString& aString ) override;
-    wxString ToString() const override;
-
-    void operator=( const T& aValue );
-    bool operator==( const SIM_VALUE_BASE& aOther ) const override;
-
-private:
-    T m_value;
-};
-
-#endif /* SIM_VALUE_H */
+    // TODO
+}
