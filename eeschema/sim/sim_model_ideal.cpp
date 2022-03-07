@@ -27,9 +27,37 @@
 
 SIM_MODEL_IDEAL::SIM_MODEL_IDEAL( TYPE aType ) : SIM_MODEL( aType )
 {
+    static PARAM::INFO resistor = makeParamInfo( "r", "Resistance", "ohm" );
+    static PARAM::INFO capacitor = makeParamInfo( "c", "Capacitance", "F" );
+    static PARAM::INFO inductor = makeParamInfo( "l", "Inductance", "H" );
+
+    switch( aType )
+    {
+    case TYPE::RESISTOR_IDEAL:  Params().emplace_back( resistor  ); break;
+    case TYPE::CAPACITOR_IDEAL: Params().emplace_back( capacitor ); break;
+    case TYPE::INDUCTOR_IDEAL:  Params().emplace_back( inductor  ); break;
+    default:
+        wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_IDEAL" );
+    }
 }
+
 
 void SIM_MODEL_IDEAL::WriteCode( wxString& aCode )
 {
     // TODO
+}
+
+
+SIM_MODEL::PARAM::INFO SIM_MODEL_IDEAL::makeParamInfo( wxString name, wxString description,
+                                                       wxString unit )
+{
+    SIM_MODEL::PARAM::INFO paramInfo = {};
+
+    paramInfo.name = name;
+    paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
+    paramInfo.unit = unit;
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.description = description;
+
+    return paramInfo;
 }

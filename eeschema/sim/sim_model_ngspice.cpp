@@ -32,10 +32,10 @@ SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType ) : SIM_MODEL( aType )
     const NGSPICE::MODEL_INFO& modelInfo = NGSPICE::ModelInfo( getModelType() );
 
     for( const SIM_MODEL::PARAM::INFO& paramInfo : modelInfo.modelParams )
-        Params().push_back( { SIM_VALUE_BASE::Create( paramInfo.type ), paramInfo } );
+        Params().emplace_back( paramInfo );
 
     for( const SIM_MODEL::PARAM::INFO& paramInfo : modelInfo.instanceParams )
-        Params().push_back( { SIM_VALUE_BASE::Create( paramInfo.type ), paramInfo } );
+        Params().emplace_back( paramInfo );
 }
 
 
@@ -64,7 +64,7 @@ NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType()
 
     default:
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_NGSPICE" );
-        return NGSPICE::MODEL_TYPE::RESISTOR;
+        return NGSPICE::MODEL_TYPE::NONE;
     }
 }
 

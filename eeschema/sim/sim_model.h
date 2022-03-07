@@ -263,20 +263,25 @@ public:
         struct INFO
         {
             wxString name;
-            unsigned int id; // Legacy.
+            unsigned int id = 0; // Legacy.
             DIR dir;
             SIM_VALUE_BASE::TYPE type;
-            FLAGS flags;
+            FLAGS flags = {}; // Legacy
             wxString unit;
             CATEGORY category;
             wxString defaultValue;
-            wxString defaultValueOfOtherVariant; // Legacy.
+            wxString defaultValueOfOtherVariant = ""; // Legacy.
             wxString description;
         };
 
         std::unique_ptr<SIM_VALUE_BASE> value;
         const INFO& info;
         //bool isOtherVariant; // Legacy.
+        
+        PARAM( const INFO& aInfo ) :
+            value( SIM_VALUE_BASE::Create( aInfo.type ) ),
+            info( aInfo )
+        {}
     };
 
 
