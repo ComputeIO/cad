@@ -36,7 +36,7 @@ public:
     void WriteCode( wxString& aCode ) override;
 
 private:
-    static PARAM::INFO makeParamInfo( wxString name, wxString description, wxString unit );
+    static PARAM::INFO makeParamInfo( wxString aName, wxString aDescription, wxString aUnit );
 };
 
 #endif // SIM_MODEL_IDEAL_H

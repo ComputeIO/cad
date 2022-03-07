@@ -34,6 +34,23 @@ public:
     SIM_MODEL_SOURCE( TYPE aType );
 
     void WriteCode( wxString& aCode ) override;
+
+private:
+    static const std::vector<PARAM::INFO>& makeParams( TYPE aType );
+
+    static std::vector<PARAM::INFO> makePulse( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeSin( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeExp( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeSfam( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeSffm( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makePwl( wxString aPrefix, wxString aQuantity, wxString aUnit );
+    static std::vector<PARAM::INFO> makeWhiteNoise( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makePinkNoise( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeBurstNoise( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeRandomUniform( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeRandomNormal( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeRandomExp( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeRandomPoisson( wxString aPrefix, wxString aUnit );
 };
 
 #endif // SIM_MODEL_SOURCE_H

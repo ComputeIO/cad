@@ -34,6 +34,9 @@ public:
     SIM_MODEL_BEHAVIORAL( TYPE aType );
 
     void WriteCode( wxString& aCode ) override;
+
+private:
+    static PARAM::INFO makeParamInfo( wxString name, wxString description, wxString unit );
 };
 
 #endif // SIM_MODEL_BEHAVIORAL_H

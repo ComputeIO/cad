@@ -26,10 +26,41 @@
 
 SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType ) : SIM_MODEL( aType )
 {
+    static PARAM::INFO resistor  = makeParamInfo( "r", "Expression for resistance",  "ohm" );
+    static PARAM::INFO capacitor = makeParamInfo( "c", "Expression for capacitance", "F"   );
+    static PARAM::INFO inductor  = makeParamInfo( "l", "Expression for inductance",  "H"   );
+    static PARAM::INFO vsource   = makeParamInfo( "v", "Expression for voltage",     "V"   );
+    static PARAM::INFO isource   = makeParamInfo( "i", "Expression for current",     "A"   );
+
+    switch( aType )
+    {
+    case TYPE::RESISTOR_BEHAVIORAL:  Params().emplace_back( resistor  ); break;
+    case TYPE::CAPACITOR_BEHAVIORAL: Params().emplace_back( capacitor ); break;
+    case TYPE::INDUCTOR_BEHAVIORAL:  Params().emplace_back( inductor  ); break;
+    case TYPE::VSOURCE_BEHAVIORAL:   Params().emplace_back( vsource   ); break;
+    case TYPE::ISOURCE_BEHAVIORAL:   Params().emplace_back( isource   ); break;
+    default:
+        wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_IDEAL" );
+    }
 }
 
 
 void SIM_MODEL_BEHAVIORAL::WriteCode( wxString& aCode )
 {
     // TODO
+}
+
+
+SIM_MODEL::PARAM::INFO SIM_MODEL_BEHAVIORAL::makeParamInfo( wxString name, wxString description,
+                                                            wxString unit )
+{
+    SIM_MODEL::PARAM::INFO paramInfo = {};
+
+    paramInfo.name = name;
+    paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
+    paramInfo.unit = unit;
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.description = description;
+
+    return paramInfo;
 }

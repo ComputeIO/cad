@@ -24,12 +24,14 @@
 
 #include <sim/sim_model_ideal.h>
 
+using PARAM = SIM_MODEL::PARAM;
+
 
 SIM_MODEL_IDEAL::SIM_MODEL_IDEAL( TYPE aType ) : SIM_MODEL( aType )
 {
-    static PARAM::INFO resistor = makeParamInfo( "r", "Resistance", "ohm" );
-    static PARAM::INFO capacitor = makeParamInfo( "c", "Capacitance", "F" );
-    static PARAM::INFO inductor = makeParamInfo( "l", "Inductance", "H" );
+    static PARAM::INFO resistor  = makeParamInfo( "r", "Resistance",  "ohm" );
+    static PARAM::INFO capacitor = makeParamInfo( "c", "Capacitance", "F"   );
+    static PARAM::INFO inductor  = makeParamInfo( "l", "Inductance",  "H"   );
 
     switch( aType )
     {
@@ -48,16 +50,15 @@ void SIM_MODEL_IDEAL::WriteCode( wxString& aCode )
 }
 
 
-SIM_MODEL::PARAM::INFO SIM_MODEL_IDEAL::makeParamInfo( wxString name, wxString description,
-                                                       wxString unit )
+PARAM::INFO SIM_MODEL_IDEAL::makeParamInfo( wxString aName, wxString aDescription, wxString aUnit )
 {
     SIM_MODEL::PARAM::INFO paramInfo = {};
 
-    paramInfo.name = name;
+    paramInfo.name = aName;
     paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
-    paramInfo.unit = unit;
+    paramInfo.unit = aUnit;
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
-    paramInfo.description = description;
+    paramInfo.description = aDescription;
 
     return paramInfo;
 }

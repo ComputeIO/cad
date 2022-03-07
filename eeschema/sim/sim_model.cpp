@@ -270,7 +270,9 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::VSOURCE_SFAM:           return { DEVICE_TYPE::VSOURCE,    "SFAM",            "Single-frequency AM"        };
     case TYPE::VSOURCE_SFFM:           return { DEVICE_TYPE::VSOURCE,    "SFFM",            "Single-frequency FM"        };
     case TYPE::VSOURCE_PWL:            return { DEVICE_TYPE::VSOURCE,    "PWL",             "Piecewise linear"           };
-    case TYPE::VSOURCE_NOISE:          return { DEVICE_TYPE::VSOURCE,    "NOISE",           "Noise"                      };
+    case TYPE::VSOURCE_WHITE_NOISE:    return { DEVICE_TYPE::VSOURCE,    "WHITE_NOISE",     "White Noise"                };
+    case TYPE::VSOURCE_PINK_NOISE:     return { DEVICE_TYPE::VSOURCE,    "PINK_NOISE",      "Pink Noise (1/f)"           };
+    case TYPE::VSOURCE_BURST_NOISE:    return { DEVICE_TYPE::VSOURCE,    "BURST_NOISE",     "Burst Noise"                };
     case TYPE::VSOURCE_RANDOM_UNIFORM: return { DEVICE_TYPE::VSOURCE,    "RANDOM_UNIFORM",  "Random uniform"             };
     case TYPE::VSOURCE_RANDOM_NORMAL:  return { DEVICE_TYPE::VSOURCE,    "RANDOM_NORMAL",   "Random normal"              };
     case TYPE::VSOURCE_RANDOM_EXP:     return { DEVICE_TYPE::VSOURCE,    "RANDOM_EXP",      "Random exponential"         };
@@ -283,7 +285,9 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::ISOURCE_SFAM:           return { DEVICE_TYPE::ISOURCE,    "SFAM",            "Single-frequency AM"        };
     case TYPE::ISOURCE_SFFM:           return { DEVICE_TYPE::ISOURCE,    "SFFM",            "Single-frequency FM"        };
     case TYPE::ISOURCE_PWL:            return { DEVICE_TYPE::ISOURCE,    "PWL",             "Piecewise linear"           };
-    case TYPE::ISOURCE_NOISE:          return { DEVICE_TYPE::ISOURCE,    "NOISE",           "Noise"                      };
+    case TYPE::ISOURCE_WHITE_NOISE:    return { DEVICE_TYPE::ISOURCE,    "WHITE_NOISE",     "White Noise"                };
+    case TYPE::ISOURCE_PINK_NOISE:     return { DEVICE_TYPE::ISOURCE,    "PINK_NOISE",      "Pink Noise (1/f)"           };
+    case TYPE::ISOURCE_BURST_NOISE:    return { DEVICE_TYPE::ISOURCE,    "BURST_NOISE",     "Burst Noise"                };
     case TYPE::ISOURCE_RANDOM_UNIFORM: return { DEVICE_TYPE::ISOURCE,    "RANDOM_UNIFORM",  "Random uniform"             };
     case TYPE::ISOURCE_RANDOM_NORMAL:  return { DEVICE_TYPE::ISOURCE,    "RANDOM_NORMAL",   "Random normal"              };
     case TYPE::ISOURCE_RANDOM_EXP:     return { DEVICE_TYPE::ISOURCE,    "RANDOM_EXP",      "Random exponential"         };
@@ -929,8 +933,12 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType )
     case TYPE::ISOURCE_SFFM:
     case TYPE::VSOURCE_PWL:
     case TYPE::ISOURCE_PWL:
-    case TYPE::VSOURCE_NOISE:
-    case TYPE::ISOURCE_NOISE:
+    case TYPE::VSOURCE_WHITE_NOISE:
+    case TYPE::ISOURCE_WHITE_NOISE:
+    case TYPE::VSOURCE_PINK_NOISE:
+    case TYPE::ISOURCE_PINK_NOISE:
+    case TYPE::VSOURCE_BURST_NOISE:
+    case TYPE::ISOURCE_BURST_NOISE:
     case TYPE::VSOURCE_RANDOM_UNIFORM:
     case TYPE::ISOURCE_RANDOM_UNIFORM:
     case TYPE::VSOURCE_RANDOM_NORMAL:

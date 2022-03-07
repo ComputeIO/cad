@@ -199,7 +199,9 @@ public:
         VSOURCE_SFAM,
         VSOURCE_SFFM,
         VSOURCE_PWL,
-        VSOURCE_NOISE,
+        VSOURCE_WHITE_NOISE,
+        VSOURCE_PINK_NOISE,
+        VSOURCE_BURST_NOISE,
         VSOURCE_RANDOM_UNIFORM,
         VSOURCE_RANDOM_NORMAL,
         VSOURCE_RANDOM_EXP,
@@ -212,7 +214,9 @@ public:
         ISOURCE_SFAM,
         ISOURCE_SFFM,
         ISOURCE_PWL,
-        ISOURCE_NOISE,
+        ISOURCE_WHITE_NOISE,
+        ISOURCE_PINK_NOISE,
+        ISOURCE_BURST_NOISE,
         ISOURCE_RANDOM_UNIFORM,
         ISOURCE_RANDOM_NORMAL,
         ISOURCE_RANDOM_EXP,
@@ -269,7 +273,7 @@ public:
             FLAGS flags = {}; // Legacy
             wxString unit;
             CATEGORY category;
-            wxString defaultValue;
+            wxString defaultValue = "";
             wxString defaultValueOfOtherVariant = ""; // Legacy.
             wxString description;
         };
