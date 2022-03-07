@@ -43,7 +43,7 @@ class DIALOG_SPICE_MODEL : public DIALOG_SPICE_MODEL_BASE
 public:
     enum class COLUMN : int { DESCRIPTION = 0, VALUE, UNIT, DEFAULT, TYPE, END_ };
 
-    DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol, std::vector<T>* aSchFields );
+    DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol, std::vector<T>& aSchFields );
 
 private:
     bool TransferDataFromWindow() override;
@@ -54,13 +54,12 @@ private:
 
     void onDeviceTypeChoice( wxCommandEvent& aEvent ) override;
     void onTypeChoice( wxCommandEvent& aEvent ) override;
-    //void onGridCellChange( wxGridEvent& aEvent ) override;
     
     void addParamPropertyIfRelevant( const SIM_MODEL::PARAM& aParam );
     wxPGProperty* newParamProperty( const SIM_MODEL::PARAM& aParam ) const;
 
     SCH_SYMBOL& m_symbol;
-    std::vector<T>* m_fields;
+    std::vector<T>& m_fields;
 
     std::vector<std::unique_ptr<SIM_MODEL>> m_models;
     std::map<SIM_MODEL::DEVICE_TYPE, SIM_MODEL::TYPE> m_curModelTypeOfDeviceType;

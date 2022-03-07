@@ -861,11 +861,11 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
 }*/
 
 
-template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<SCH_FIELD>* aFields );
-template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<LIB_FIELD>* aFields );
+template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<SCH_FIELD>& aFields );
+template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<LIB_FIELD>& aFields );
 
 template <typename T>
-TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>* aFields )
+TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
 {
     wxString typeFieldValue = getFieldValue( aFields, TYPE_FIELD );
     wxString deviceTypeFieldValue = getFieldValue( aFields, DEVICE_TYPE_FIELD );
@@ -891,11 +891,11 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>* aFields )
 }
 
 
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<SCH_FIELD>* aFields );
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<LIB_FIELD>* aFields );
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<SCH_FIELD>& aFields );
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<LIB_FIELD>& aFields );
 
 template <typename T>
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<T>* aFields )
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<T>& aFields )
 {
     return SIM_MODEL::Create( ReadTypeFromFields( aFields ) );
 }
@@ -961,11 +961,11 @@ SIM_MODEL::SIM_MODEL( TYPE aType ) : m_type( aType )
 }
 
 
-template SIM_MODEL::SIM_MODEL( const std::vector<SCH_FIELD>* aFields );
-template SIM_MODEL::SIM_MODEL( const std::vector<LIB_FIELD>* aFields );
+template SIM_MODEL::SIM_MODEL( const std::vector<SCH_FIELD>& aFields );
+template SIM_MODEL::SIM_MODEL( const std::vector<LIB_FIELD>& aFields );
 
 template <typename T>
-SIM_MODEL::SIM_MODEL( const std::vector<T>* aFields )
+SIM_MODEL::SIM_MODEL( const std::vector<T>& aFields )
     : m_type( ReadTypeFromFields( aFields ) )
 {
     SetFile( getFieldValue( aFields, "Model_File" ) );
@@ -973,22 +973,21 @@ SIM_MODEL::SIM_MODEL( const std::vector<T>* aFields )
 }
 
 
-template void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>* aFields );
-template void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>* aFields );
-
-template <typename T>
-void SIM_MODEL::WriteFields( std::vector<T>* aFields )
+template <>
+void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>& aFields )
 {
-    static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
-
-    if constexpr( std::is_same<T, SCH_FIELD>::value )
-        DoWriteSchFields( aFields );
-    else if constexpr( std::is_same<T, LIB_FIELD>::value )
-        DoWriteLibFields( aFields );
+    DoWriteSchFields( aFields );
 }
 
 
-void SIM_MODEL::DoWriteSchFields( std::vector<SCH_FIELD>* aFields )
+template <>
+void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>& aFields )
+{
+    DoWriteLibFields( aFields );
+}
+
+
+void SIM_MODEL::DoWriteSchFields( std::vector<SCH_FIELD>& aFields )
 {
     setFieldValue( aFields, DEVICE_TYPE_FIELD,
                    DeviceTypeInfo( TypeInfo( m_type ).deviceType ).fieldValue );
@@ -998,7 +997,7 @@ void SIM_MODEL::DoWriteSchFields( std::vector<SCH_FIELD>* aFields )
 }
 
 
-void SIM_MODEL::DoWriteLibFields( std::vector<LIB_FIELD>* aFields )
+void SIM_MODEL::DoWriteLibFields( std::vector<LIB_FIELD>& aFields )
 {
     setFieldValue( aFields, DEVICE_TYPE_FIELD,
                    DeviceTypeInfo( TypeInfo( m_type ).deviceType ).fieldValue );
@@ -1071,17 +1070,17 @@ wxString SIM_MODEL::generateParamValuePairs()
 
 
 template <typename T>
-wxString SIM_MODEL::getFieldValue( const std::vector<T>* aFields, const wxString& aFieldName )
+wxString SIM_MODEL::getFieldValue( const std::vector<T>& aFields, const wxString& aFieldName )
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
 
-    auto fieldIt = std::find_if( aFields->begin(), aFields->end(),
+    auto fieldIt = std::find_if( aFields.begin(), aFields.end(),
                                  [&]( const T& f )
                                  {
                                      return f.GetName() == aFieldName;
                                  } );
 
-    if( fieldIt != aFields->end() )
+    if( fieldIt != aFields.end() )
         return fieldIt->GetText();
 
     return wxEmptyString;
@@ -1089,18 +1088,18 @@ wxString SIM_MODEL::getFieldValue( const std::vector<T>* aFields, const wxString
 
 
 template <typename T>
-void SIM_MODEL::setFieldValue( std::vector<T>* aFields, const wxString& aFieldName,
+void SIM_MODEL::setFieldValue( std::vector<T>& aFields, const wxString& aFieldName,
                                  const wxString& aValue )
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
 
-    auto fieldIt = std::find_if( aFields->begin(), aFields->end(),
+    auto fieldIt = std::find_if( aFields.begin(), aFields.end(),
                                  [&]( const T& f )
                                  {
                                     return f.GetName() == aFieldName;
                                  } );
 
-    if( fieldIt != aFields->end() )
+    if( fieldIt != aFields.end() )
     {
         fieldIt->SetText( aValue );
         return;
@@ -1109,13 +1108,13 @@ void SIM_MODEL::setFieldValue( std::vector<T>* aFields, const wxString& aFieldNa
 
     if constexpr( std::is_same<T, SCH_FIELD>::value )
     {
-        wxASSERT( aFields->size() >= 1 );
+        wxASSERT( aFields.size() >= 1 );
 
-        SCH_ITEM* parent = static_cast<SCH_ITEM*>( aFields->at( 0 ).GetParent() );
-        aFields->emplace_back( wxPoint(), aFields->size(), parent, aFieldName );
+        SCH_ITEM* parent = static_cast<SCH_ITEM*>( aFields.at( 0 ).GetParent() );
+        aFields.emplace_back( wxPoint(), aFields.size(), parent, aFieldName );
     }
     else if constexpr( std::is_same<T, LIB_FIELD>::value )
-        aFields->emplace_back( aFields->size(), aFieldName );
+        aFields.emplace_back( aFields.size(), aFieldName );
 
-    aFields->back().SetText( aValue );
+    aFields.back().SetText( aValue );
 }

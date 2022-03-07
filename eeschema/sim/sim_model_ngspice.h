@@ -38,7 +38,7 @@ public:
 
 private:
     NGSPICE::MODEL_TYPE getModelType();
-    bool isOtherVariant();
+    bool getIsOtherVariant();
 };
 
 #endif /* SIM_MODEL_NGSPICE_H */

@@ -276,7 +276,7 @@ public:
 
         std::unique_ptr<SIM_VALUE_BASE> value;
         const INFO& info;
-        //bool isOtherVariant; // Legacy.
+        bool isOtherVariant = false; // Legacy.
         
         PARAM( const INFO& aInfo ) :
             value( SIM_VALUE_BASE::Create( aInfo.type ) ),
@@ -290,10 +290,10 @@ public:
     static INFO TypeInfo( TYPE aType );
 
     template <typename T>
-    static TYPE ReadTypeFromFields( const std::vector<T>* aFields );
+    static TYPE ReadTypeFromFields( const std::vector<T>& aFields );
 
     template <typename T>
-    static std::unique_ptr<SIM_MODEL> Create( const std::vector<T>* aFields );
+    static std::unique_ptr<SIM_MODEL> Create( const std::vector<T>& aFields );
 
     static std::unique_ptr<SIM_MODEL> Create( TYPE aType );
 
@@ -309,15 +309,15 @@ public:
     SIM_MODEL( TYPE aType );
 
     template <typename T>
-    SIM_MODEL( const std::vector<T>* aFields );
+    SIM_MODEL( const std::vector<T>& aFields );
 
 
     template <typename T>
-    void WriteFields( std::vector<T>* aFields );
+    void WriteFields( std::vector<T>& aFields );
 
     // C++ doesn't allow virtual template methods, so we do this:
-    virtual void DoWriteSchFields( std::vector<SCH_FIELD>* aFields );
-    virtual void DoWriteLibFields( std::vector<LIB_FIELD>* aFields );
+    virtual void DoWriteSchFields( std::vector<SCH_FIELD>& aFields );
+    virtual void DoWriteLibFields( std::vector<LIB_FIELD>& aFields );
 
     virtual void WriteCode( wxString& aCode ) = 0;
 
@@ -336,10 +336,10 @@ private:
 
 
     template <typename T>
-    static wxString getFieldValue( const std::vector<T>* aFields, const wxString& aFieldName );
+    static wxString getFieldValue( const std::vector<T>& aFields, const wxString& aFieldName );
 
     template <typename T>
-    static void setFieldValue( std::vector<T>* aFields, const wxString& aFieldName,
+    static void setFieldValue( std::vector<T>& aFields, const wxString& aFieldName,
                                const wxString& aValue );
 
 

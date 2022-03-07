@@ -32,10 +32,16 @@ SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType ) : SIM_MODEL( aType )
     const NGSPICE::MODEL_INFO& modelInfo = NGSPICE::ModelInfo( getModelType() );
 
     for( const SIM_MODEL::PARAM::INFO& paramInfo : modelInfo.modelParams )
+    {
         Params().emplace_back( paramInfo );
+        Params().back().isOtherVariant = getIsOtherVariant();
+    }
 
     for( const SIM_MODEL::PARAM::INFO& paramInfo : modelInfo.instanceParams )
+    {
         Params().emplace_back( paramInfo );
+        Params().back().isOtherVariant = getIsOtherVariant();
+    }
 }
 
 
@@ -69,7 +75,7 @@ NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType()
 }
 
 
-bool SIM_MODEL_NGSPICE::isOtherVariant()
+bool SIM_MODEL_NGSPICE::getIsOtherVariant()
 {
     switch( GetType() )
     {

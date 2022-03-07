@@ -35,7 +35,7 @@ template class DIALOG_SPICE_MODEL<LIB_FIELD>;
 
 template <typename T>
 DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
-                                           std::vector<T>* aFields )
+                                           std::vector<T>& aFields )
     : DIALOG_SPICE_MODEL_BASE( aParent ),
       m_symbol( aSymbol ),
       m_fields( aFields ),
@@ -150,8 +150,6 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGridMgr->ShowHeader();
 
 
-    //NGSPICE::MODEL_INFO ngspiceModelInfo = SIM_MODEL::TypeModelInfo( m_curModelType );
-
     m_paramGrid->Clear();
 
     m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
@@ -181,10 +179,7 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     SIM_MODEL& curModel = *m_models[static_cast<int>( m_curModelType )];
 
     for( const SIM_MODEL::PARAM& param : curModel.Params() )
-    {
-        std::cout << param.info.name << std::endl; // DEBUG TRACE
         addParamPropertyIfRelevant( param );
-    }
 
     m_paramGrid->CollapseAll();
 }
@@ -193,7 +188,6 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
 template <typename T>
 void DIALOG_SPICE_MODEL<T>::onDeviceTypeChoice( wxCommandEvent& aEvent )
 {
-    //SPICE_MODEL::DEVICE_TYPE deviceType = SPICE_MODEL::TypeInfo( m_curModelType ).deviceType;
     SIM_MODEL::DEVICE_TYPE deviceType =
         static_cast<SIM_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
 
@@ -317,10 +311,14 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
         prop = new wxStringProperty( paramDescription );
         break;
     }
-    std::cout << "asd" << std::endl; // DEBUG TRACE
 
     prop->SetAttribute( wxPG_ATTR_UNITS, aParam.info.unit );
-    prop->SetCell( 3, aParam.info.defaultValue );
+
+    // Legacy due to the way we extracted parameters from Ngspice.
+    if( aParam.isOtherVariant )
+        prop->SetCell( 3, aParam.info.defaultValueOfOtherVariant );
+    else
+        prop->SetCell( 3, aParam.info.defaultValue );
 
     wxString typeStr;
 
