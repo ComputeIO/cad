@@ -139,7 +139,7 @@ cmake_dependent_option( KICAD_USE_BUNDLED_GLEW
 
 option( KICAD_DRC_PROTO
     "Build the DRC prototype QA tool"
-    ON )
+    OFF )
 
 option( KICAD_BUILD_PEGTL_DEBUG_TOOL
     "Build the PEGTL parser debugging/playground QA tool"
