@@ -724,7 +724,7 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_SYMBOL* aSymbol, SCH_SHEET_PATH* aSheetPa
             field.SetText( value );
     }
 
-    for( const SCH_PIN* pin : aSymbol->GetAllPins() )
+    for( const std::unique_ptr<SCH_PIN>& pin : aSymbol->GetRawPins() )
     {
         if( pin->GetAlt().IsEmpty() )
         {

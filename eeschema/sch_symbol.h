@@ -467,17 +467,6 @@ public:
      */
     std::vector<SCH_PIN*> GetPins( const SCH_SHEET_PATH* aSheet = nullptr ) const;
 
-    /**
-     * Get all of the SCH_PINs for the schematic symbol regardless of unit and/or body style.
-     *
-     * @note It may be possible to replace this with #GetPins() above when a NULL sheet path
-     *       is provided but all possible code paths need to be tested because #GetPins()
-     *       defaults to the current sheet path in this case.
-     *
-     * @return a list of all of the #SCH_PIN objects for the symbol.
-     */
-    std::vector<SCH_PIN*> GetAllPins() const;
-
     std::vector<std::unique_ptr<SCH_PIN>>& GetRawPins() { return m_pins; }
 
     /**
