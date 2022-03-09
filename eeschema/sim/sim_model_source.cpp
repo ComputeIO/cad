@@ -480,12 +480,12 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeWhiteNoise( wxString aPrefix, wxS
     paramInfo.description = "White noise RMS amplitude";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "rtsam";
+    paramInfo.name = "nt";
     paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
-    paramInfo.unit = aUnit;
+    paramInfo.unit = "s";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
-    paramInfo.description = "Burst noise amplitude";
+    paramInfo.description = "Time step";
     paramInfos.push_back( paramInfo );
 
     return paramInfos;
@@ -496,6 +496,14 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePinkNoise( wxString aPrefix, wxSt
 {
     std::vector<PARAM::INFO> paramInfos;
     PARAM::INFO paramInfo;
+
+    paramInfo.name = aPrefix + "o";
+    paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
+    paramInfo.unit = aUnit;
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "";
+    paramInfo.description = "DC offset";
+    paramInfos.push_back( paramInfo );
 
     paramInfo.name = "nalpha";
     paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
@@ -529,6 +537,14 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeBurstNoise( wxString aPrefix, wxS
 {
     std::vector<PARAM::INFO> paramInfos;
     PARAM::INFO paramInfo;
+
+    paramInfo.name = "rtsam";
+    paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
+    paramInfo.unit = aUnit;
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "Burst noise amplitude";
+    paramInfos.push_back( paramInfo );
 
     paramInfo.name = "rtscapt";
     paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;

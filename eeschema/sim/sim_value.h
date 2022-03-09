@@ -25,12 +25,73 @@
 #ifndef SIM_VALUE_H
 #define SIM_VALUE_H
 
-#include <memory>
 #include <wx/string.h>
+#include <core/optional.h>
+#include <memory>
+#include <pegtl.hpp>
+
+namespace SIM_VALUE_PARSER
+{
+    using namespace tao::pegtl;
+
+    struct spaces : star<space> {};
+    struct digits : plus<tao::pegtl::digit> {}; // For some reason it fails on just "digit".
+
+    struct sign : one<'+', '-'> {};
+
+    struct intPart : digits {};
+
+    struct fracPartPrefix : one<'.'> {};
+    struct fracPart : digits {};
+    struct fracPartWithPrefix : seq<fracPartPrefix, fracPart> {};
+    
+    struct significand : sor<seq<intPart, opt<fracPartWithPrefix>>,
+                             fracPartWithPrefix> {};
+
+    struct exponentPrefix : one<'e', 'E'> {};
+    struct exponent : seq<opt<sign>, digits> {};
+    struct exponentWithPrefix : seq<exponentPrefix, exponent> {};
+
+    struct metricSuffix : sor<TAO_PEGTL_ISTRING( "T" ),
+                              TAO_PEGTL_ISTRING( "G" ),
+                              TAO_PEGTL_ISTRING( "Meg" ),
+                              TAO_PEGTL_ISTRING( "K" ),
+                              //TAO_PEGTL_ISTRING( "mil" ),
+                              TAO_PEGTL_ISTRING( "m" ),
+                              TAO_PEGTL_ISTRING( "u" ),
+                              TAO_PEGTL_ISTRING( "n" ),
+                              TAO_PEGTL_ISTRING( "p" ),
+                              TAO_PEGTL_ISTRING( "f" )> {};
+
+    struct number : seq<significand, opt<exponentWithPrefix>, opt<metricSuffix>> {};
+
+    template <typename Rule> struct numberSelector : std::false_type {};
+    template <> struct numberSelector<significand> : std::true_type {};
+    template <> struct numberSelector<intPart> : std::true_type {};
+    template <> struct numberSelector<fracPart> : std::true_type {};
+    template <> struct numberSelector<exponent> : std::true_type {};
+    template <> struct numberSelector<metricSuffix> : std::true_type {};
+
+    struct PARSE_RESULT
+    {
+        bool isEmpty = true;
+        std::string significand;
+        OPT<long> intPart;
+        OPT<long> fracPart;
+        OPT<long> exponent;
+        OPT<long> metricSuffixExponent;
+    };
+
+    PARSE_RESULT Parse( const wxString& aString );
+
+    long MetricSuffixToExponent( const wxString& aMetricSuffix );
+    wxString ExponentToMetricSuffix( long aExponent, long& aReductionExponent );
+}
 
 class SIM_VALUE_BASE
 {
 public:
+
     enum class TYPE
     {
         BOOL,
@@ -70,7 +131,9 @@ public:
     bool operator==( const SIM_VALUE_BASE& aOther ) const override;
 
 private:
-    T m_value;
+    OPT<T> m_value;
+
+    wxString getMetricSuffix();
 };
 
 #endif /* SIM_VALUE_H */

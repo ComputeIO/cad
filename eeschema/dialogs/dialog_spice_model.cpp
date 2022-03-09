@@ -89,6 +89,31 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataFromWindow()
     if( !DIALOG_SPICE_MODEL_BASE::TransferDataFromWindow() )
         return false;
 
+    SIM_MODEL& curModel = *m_models[static_cast<int>( m_curModelType )];
+
+    // Transfer data from the property grid to the model.
+    for( SIM_MODEL::PARAM& param : curModel.Params() )
+    {
+        try
+        {
+            param.value->FromString( m_paramGrid->GetPropertyValueAsString( param.info.name ) );
+        }
+        catch( KI_PARAM_ERROR& e )
+        {
+            DisplayErrorMessage( this, e.What() );
+        }
+    }
+
+    
+    // Giving it a wxPropertyGridConstIterator type causes a compilation error (wx 3.1.5).
+    /*for( wxPropertyGridIterator it = m_paramGrid->GetIterator(); !it.AtEnd(); it++ )
+    {
+        const wxPGProperty* prop = *it;
+
+        
+        //std::cout << prop->GetName() << std::endl; // DEBUG TRACE
+    }*/
+
     m_models[static_cast<int>( m_curModelType )]->WriteFields( m_fields );
 
     return true;
@@ -295,20 +320,20 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
     switch( aParam.info.type )
     {
     case TYPE::INT:
-        prop = new wxIntProperty( paramDescription );
+        prop = new wxIntProperty( paramDescription, aParam.info.name );
         break;
 
     case TYPE::FLOAT:
-        prop = new wxFloatProperty( paramDescription );
+        prop = new wxFloatProperty( paramDescription, aParam.info.name );
         break;
 
     case TYPE::BOOL:
-        prop = new wxBoolProperty( paramDescription );
+        prop = new wxBoolProperty( paramDescription, aParam.info.name );
         prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
         break;
 
     default:
-        prop = new wxStringProperty( paramDescription );
+        prop = new wxStringProperty( paramDescription, aParam.info.name );
         break;
     }
 

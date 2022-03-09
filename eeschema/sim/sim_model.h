@@ -25,13 +25,13 @@
 #ifndef SIM_MODEL_H
 #define SIM_MODEL_H
 
-#include <map>
-#include <stdexcept>
 #include <enum_vector.h>
 #include <sch_field.h>
 #include <lib_field.h>
 #include <sim/sim_value.h>
 #include <wx/string.h>
+#include <map>
+#include <stdexcept>
 
 
 class SIM_MODEL
@@ -290,7 +290,6 @@ public:
 
 
     static DEVICE_INFO DeviceTypeInfo( DEVICE_TYPE aDeviceType );
-
     static INFO TypeInfo( TYPE aType );
 
     template <typename T>
