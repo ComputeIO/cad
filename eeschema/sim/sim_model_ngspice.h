@@ -32,7 +32,8 @@
 class SIM_MODEL_NGSPICE : public SIM_MODEL
 {
 public:
-    SIM_MODEL_NGSPICE( TYPE aType );
+    template <typename T = void>
+    SIM_MODEL_NGSPICE( TYPE aType, const std::vector<T>* aFields = nullptr );
 
     void WriteCode( wxString& aCode ) override;
 

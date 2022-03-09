@@ -31,7 +31,8 @@
 class SIM_MODEL_IDEAL : public SIM_MODEL
 {
 public:
-    SIM_MODEL_IDEAL( TYPE aType );
+    template <typename T = void>
+    SIM_MODEL_IDEAL( TYPE aType, const std::vector<T>* aFields = nullptr );
 
     void WriteCode( wxString& aCode ) override;
 

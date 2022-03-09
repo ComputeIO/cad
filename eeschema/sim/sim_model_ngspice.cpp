@@ -27,7 +27,13 @@
 using TYPE = SIM_MODEL::TYPE;
 
 
-SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType ) : SIM_MODEL( aType )
+template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<void>* aFields );
+template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<SCH_FIELD>* aFields );
+template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<LIB_FIELD>* aFields );
+
+template <typename T>
+SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<T>* aFields )
+    : SIM_MODEL( aType )
 {
     const NGSPICE::MODEL_INFO& modelInfo = NGSPICE::ModelInfo( getModelType() );
 
@@ -42,6 +48,9 @@ SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType ) : SIM_MODEL( aType )
         Params().emplace_back( paramInfo );
         Params().back().isOtherVariant = getIsOtherVariant();
     }
+
+    if( aFields )
+        ReadDataFields( *aFields );
 }
 
 

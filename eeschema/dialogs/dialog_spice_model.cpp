@@ -49,7 +49,7 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
         {
             if( type == typeFromFields )
             {
-                m_models.push_back( SIM_MODEL::Create( aFields ) );
+                m_models.push_back( SIM_MODEL::Create( type, &aFields ) );
                 m_curModelType = type;
             }
             else
@@ -74,8 +74,6 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
     for( SIM_MODEL::DEVICE_TYPE deviceType : SIM_MODEL::DEVICE_TYPE_ITERATOR() )
         m_deviceTypeChoice->Append( SIM_MODEL::DeviceTypeInfo( deviceType ).description );
 
-    m_paramGrid = m_paramGridMgr->AddPage();
-
 
     m_scintillaTricks = std::make_unique<SCINTILLA_TRICKS>( m_codePreview, wxT( "{}" ), false );
 
@@ -89,32 +87,7 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataFromWindow()
     if( !DIALOG_SPICE_MODEL_BASE::TransferDataFromWindow() )
         return false;
 
-    SIM_MODEL& curModel = *m_models[static_cast<int>( m_curModelType )];
-
-    // Transfer data from the property grid to the model.
-    for( SIM_MODEL::PARAM& param : curModel.Params() )
-    {
-        try
-        {
-            param.value->FromString( m_paramGrid->GetPropertyValueAsString( param.info.name ) );
-        }
-        catch( KI_PARAM_ERROR& e )
-        {
-            DisplayErrorMessage( this, e.What() );
-        }
-    }
-
-    
-    // Giving it a wxPropertyGridConstIterator type causes a compilation error (wx 3.1.5).
-    /*for( wxPropertyGridIterator it = m_paramGrid->GetIterator(); !it.AtEnd(); it++ )
-    {
-        const wxPGProperty* prop = *it;
-
-        
-        //std::cout << prop->GetName() << std::endl; // DEBUG TRACE
-    }*/
-
-    m_models[static_cast<int>( m_curModelType )]->WriteFields( m_fields );
+    getCurModel().WriteFields( m_fields );
 
     return true;
 }
@@ -201,46 +174,10 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
     m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
     m_paramGrid->HideProperty( "Flags" );
 
-    SIM_MODEL& curModel = *m_models[static_cast<int>( m_curModelType )];
-
-    for( const SIM_MODEL::PARAM& param : curModel.Params() )
+    for( const SIM_MODEL::PARAM& param : getCurModel().Params() )
         addParamPropertyIfRelevant( param );
 
     m_paramGrid->CollapseAll();
-}
-
-
-template <typename T>
-void DIALOG_SPICE_MODEL<T>::onDeviceTypeChoice( wxCommandEvent& aEvent )
-{
-    SIM_MODEL::DEVICE_TYPE deviceType =
-        static_cast<SIM_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
-
-    m_curModelType = m_curModelTypeOfDeviceType.at( deviceType );
-
-    updateWidgets();
-}
-
-
-template <typename T>
-void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
-{
-    SIM_MODEL::DEVICE_TYPE deviceType =
-        static_cast<SIM_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
-    wxString typeDescription = m_typeChoice->GetString( m_typeChoice->GetSelection() );
-
-    for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
-    {
-        if( deviceType == SIM_MODEL::TypeInfo( type ).deviceType
-            && typeDescription == SIM_MODEL::TypeInfo( type ).description )
-        {
-            m_curModelType = type;
-            break;
-        }
-    }
-
-    m_curModelTypeOfDeviceType.at( deviceType ) = m_curModelType;
-    updateWidgets();
 }
 
 
@@ -337,9 +274,10 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
         break;
     }
 
+    prop->SetValueFromString( aParam.value->ToSimpleString() );
     prop->SetAttribute( wxPG_ATTR_UNITS, aParam.info.unit );
 
-    // Legacy due to the way we extracted parameters from Ngspice.
+    // Legacy due to the way we extracted the parameters from Ngspice.
     if( aParam.isOtherVariant )
         prop->SetCell( 3, aParam.info.defaultValueOfOtherVariant );
     else
@@ -363,4 +301,67 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
     prop->SetCell( static_cast<int>( COLUMN::TYPE ), typeStr );
 
     return prop;
+}
+
+
+template <typename T>
+SIM_MODEL& DIALOG_SPICE_MODEL<T>::getCurModel()
+{
+    return *m_models[static_cast<int>( m_curModelType )];
+}
+
+
+template <typename T>
+void DIALOG_SPICE_MODEL<T>::onDeviceTypeChoice( wxCommandEvent& aEvent )
+{
+    SIM_MODEL::DEVICE_TYPE deviceType =
+        static_cast<SIM_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
+
+    m_curModelType = m_curModelTypeOfDeviceType.at( deviceType );
+
+    updateWidgets();
+}
+
+
+template <typename T>
+void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
+{
+    SIM_MODEL::DEVICE_TYPE deviceType =
+        static_cast<SIM_MODEL::DEVICE_TYPE>( m_deviceTypeChoice->GetSelection() );
+    wxString typeDescription = m_typeChoice->GetString( m_typeChoice->GetSelection() );
+
+    for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
+    {
+        if( deviceType == SIM_MODEL::TypeInfo( type ).deviceType
+            && typeDescription == SIM_MODEL::TypeInfo( type ).description )
+        {
+            m_curModelType = type;
+            break;
+        }
+    }
+
+    m_curModelTypeOfDeviceType.at( deviceType ) = m_curModelType;
+    updateWidgets();
+}
+
+
+template <typename T>
+void DIALOG_SPICE_MODEL<T>::onPropertyChanged( wxPropertyGridEvent& aEvent )
+{
+    wxString name = aEvent.GetPropertyName();
+    
+    for( SIM_MODEL::PARAM& param : getCurModel().Params() )
+    {
+        if( param.info.name == name )
+        {
+            try
+            {
+                param.value->FromString( m_paramGrid->GetPropertyValueAsString( param.info.name ) );
+            }
+            catch( KI_PARAM_ERROR& e )
+            {
+                DisplayErrorMessage( this, e.What() );
+            }
+        }
+    }
 }

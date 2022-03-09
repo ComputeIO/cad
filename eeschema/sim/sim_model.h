@@ -295,10 +295,12 @@ public:
     template <typename T>
     static TYPE ReadTypeFromFields( const std::vector<T>& aFields );
 
+
     template <typename T>
     static std::unique_ptr<SIM_MODEL> Create( const std::vector<T>& aFields );
 
-    static std::unique_ptr<SIM_MODEL> Create( TYPE aType );
+    template <typename T = void>
+    static std::unique_ptr<SIM_MODEL> Create( TYPE aType, const std::vector<T>* aFields = nullptr );
 
 
     // Move semantics.
@@ -311,18 +313,24 @@ public:
 
     SIM_MODEL( TYPE aType );
 
+
     template <typename T>
-    SIM_MODEL( const std::vector<T>& aFields );
+    void ReadDataFields( const std::vector<T>& aFields );
+
+    // C++ doesn't allow virtual template methods, so we do this:
+    virtual void ReadDataSchFields( const std::vector<SCH_FIELD>& aFields );
+    virtual void ReadDataLibFields( const std::vector<LIB_FIELD>& aFields );
 
 
     template <typename T>
     void WriteFields( std::vector<T>& aFields );
 
     // C++ doesn't allow virtual template methods, so we do this:
-    virtual void DoWriteSchFields( std::vector<SCH_FIELD>& aFields );
-    virtual void DoWriteLibFields( std::vector<LIB_FIELD>& aFields );
+    virtual void WriteDataSchFields( std::vector<SCH_FIELD>& aFields );
+    virtual void WriteDataLibFields( std::vector<LIB_FIELD>& aFields );
 
     virtual void WriteCode( wxString& aCode ) = 0;
+
 
     TYPE GetType() { return m_type; }
 

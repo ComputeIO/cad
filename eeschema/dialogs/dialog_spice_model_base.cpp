@@ -96,6 +96,8 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 
 	m_paramGridMgr = new wxPropertyGridManager(m_parametersPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxPGMAN_DEFAULT_STYLE);
 	m_paramGridMgr->SetExtraStyle( wxPG_EX_MODE_BUTTONS|wxPG_EX_NATIVE_DOUBLE_BUFFERING );
+
+	m_paramGrid = m_paramGridMgr->AddPage( wxT("Page"), wxNullBitmap );
 	bSizer12->Add( m_paramGridMgr, 1, wxALL|wxEXPAND, 5 );
 
 
@@ -226,6 +228,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	// Connect Events
 	m_deviceTypeChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onDeviceTypeChoice ), NULL, this );
 	m_typeChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onTypeChoice ), NULL, this );
+	m_paramGridMgr->Connect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( DIALOG_SPICE_MODEL_BASE::onPropertyChanged ), NULL, this );
 }
 
 DIALOG_SPICE_MODEL_BASE::~DIALOG_SPICE_MODEL_BASE()
@@ -233,5 +236,6 @@ DIALOG_SPICE_MODEL_BASE::~DIALOG_SPICE_MODEL_BASE()
 	// Disconnect Events
 	m_deviceTypeChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onDeviceTypeChoice ), NULL, this );
 	m_typeChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SPICE_MODEL_BASE::onTypeChoice ), NULL, this );
+	m_paramGridMgr->Disconnect( wxEVT_PG_CHANGED, wxPropertyGridEventHandler( DIALOG_SPICE_MODEL_BASE::onPropertyChanged ), NULL, this );
 
 }

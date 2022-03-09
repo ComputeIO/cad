@@ -22,6 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <iostream>
 #include <sim/sim_value.h>
 #include <wx/translation.h>
 #include <ki_exception.h>
@@ -42,40 +43,47 @@ SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString 
 
     PARSE_RESULT result;
 
-    for( const auto& node : root->children )
+    try
     {
-        if( node->is_type<SIM_VALUE_PARSER::significand>() )
+        for( const auto& node : root->children )
         {
-            result.significand = node->string();
-            result.isEmpty = false;
-
-            for( const auto& subnode : node->children )
+            if( node->is_type<SIM_VALUE_PARSER::significand>() )
             {
-                if( subnode->is_type<SIM_VALUE_PARSER::intPart>() )
-                    result.intPart = std::stol( subnode->string() );
-                else if( subnode->is_type<SIM_VALUE_PARSER::fracPart>() )
-                    result.fracPart = std::stol( subnode->string() );
+                result.significand = node->string();
+                result.isEmpty = false;
+
+                for( const auto& subnode : node->children )
+                {
+                    if( subnode->is_type<SIM_VALUE_PARSER::intPart>() )
+                        result.intPart = std::stol( subnode->string() );
+                    else if( subnode->is_type<SIM_VALUE_PARSER::fracPart>() )
+                        result.fracPart = std::stol( subnode->string() );
+                }
+            }
+            else if( node->is_type<SIM_VALUE_PARSER::exponent>() )
+            {
+                result.exponent = std::stol( node->string() );
+                result.isEmpty = false;
+            }
+            else if( node->is_type<SIM_VALUE_PARSER::metricSuffix>() )
+            {
+                result.metricSuffixExponent = MetricSuffixToExponent( node->string() );
+                result.isEmpty = false;
             }
         }
-        else if( node->is_type<SIM_VALUE_PARSER::exponent>() )
-        {
-            result.exponent = std::stol( node->string() );
-            result.isEmpty = false;
-        }
-        else if( node->is_type<SIM_VALUE_PARSER::metricSuffix>() )
-        {
-            result.metricSuffixExponent = std::stol( node->string() );
-            result.isEmpty = false;
-        }
+    }
+    catch( std::invalid_argument& e )
+    {
+        throw KI_PARAM_ERROR( wxString::Format( _( "Parsing value failed: %s" ), e.what() ) );
     }
 
     return result;
 }
 
 
-long SIM_VALUE_PARSER::MetricSuffixToExponent( const wxString& aMetricSuffix )
+long SIM_VALUE_PARSER::MetricSuffixToExponent( std::string aMetricSuffix )
 {
-    wxString lowercaseaMetricSuffix = aMetricSuffix.Lower();
+    std::transform( aMetricSuffix.begin(), aMetricSuffix.end(), aMetricSuffix.begin(), ::tolower );
 
     if( aMetricSuffix == "f" )
         return -15;
@@ -276,6 +284,8 @@ void SIM_VALUE<double>::FromString( const wxString& aString )
 template <>
 void SIM_VALUE<std::complex<double>>::FromString( const wxString& aString )
 {
+    // TODO
+
     /*LOCALE_IO toggle;
 
     double value = 0;
@@ -329,7 +339,16 @@ wxString SIM_VALUE<long>::ToString() const
     LOCALE_IO toggle;
 
     if( m_value )
-        return wxString::Format( "%d", *m_value );
+    {
+        long exponent = static_cast<long>( std::log10( *m_value ) );
+        long reductionExponent = 0;
+
+        wxString metricSuffix = SIM_VALUE_PARSER::ExponentToMetricSuffix( exponent,
+                                                                          reductionExponent );
+        long reducedValue = *m_value / static_cast<long>( std::pow( 10, reductionExponent ) );
+
+        return wxString::Format( "%d%s", reducedValue, metricSuffix );
+    }
     else
         return "";
 }
@@ -347,9 +366,9 @@ wxString SIM_VALUE<double>::ToString() const
 
         wxString metricSuffix = SIM_VALUE_PARSER::ExponentToMetricSuffix( exponent,
                                                                           reductionExponent );
-        return wxString::Format( "%g%s",
-                                 *m_value / std::pow( 10, reductionExponent ),
-                                 metricSuffix );
+        double reducedValue = *m_value / std::pow( 10, reductionExponent );
+
+        return wxString::Format( "%g%s", reducedValue, metricSuffix );
     }
     else
         return "";
@@ -377,6 +396,29 @@ wxString SIM_VALUE<wxString>::ToString() const
         return *m_value;
     else
         return ""; // Empty string is completely equivalent to null string.
+}
+
+
+template <typename T>
+wxString SIM_VALUE<T>::ToSimpleString() const
+{
+    wxString result = "";
+    result << *m_value;
+
+    return result;
+}
+
+
+template <>
+wxString SIM_VALUE<std::complex<double>>::ToSimpleString() const
+{
+    // TODO
+
+    /*wxString result = "";
+    result << *m_value;
+
+    return result;*/
+    return "";
 }
 
 

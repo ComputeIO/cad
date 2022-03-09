@@ -51,12 +51,15 @@ private:
 
     void updateModel();
     void updateWidgets();
-
-    void onDeviceTypeChoice( wxCommandEvent& aEvent ) override;
-    void onTypeChoice( wxCommandEvent& aEvent ) override;
     
     void addParamPropertyIfRelevant( const SIM_MODEL::PARAM& aParam );
     wxPGProperty* newParamProperty( const SIM_MODEL::PARAM& aParam ) const;
+
+    SIM_MODEL& getCurModel();
+
+    void onDeviceTypeChoice( wxCommandEvent& aEvent ) override;
+    void onTypeChoice( wxCommandEvent& aEvent ) override;
+    void onPropertyChanged( wxPropertyGridEvent& aEvent ) override;
 
     SCH_SYMBOL& m_symbol;
     std::vector<T>& m_fields;
@@ -65,7 +68,6 @@ private:
     std::map<SIM_MODEL::DEVICE_TYPE, SIM_MODEL::TYPE> m_curModelTypeOfDeviceType;
     SIM_MODEL::TYPE m_curModelType = SIM_MODEL::TYPE::NONE;
 
-    wxPropertyGridPage* m_paramGrid;
     wxPGProperty* m_firstCategory; // Used to add principal parameters to root (any better ideas?)
     std::unique_ptr<SCINTILLA_TRICKS> m_scintillaTricks;
 };

@@ -34,7 +34,7 @@ namespace SIM_VALUE_PARSER
 {
     using namespace tao::pegtl;
 
-    struct spaces : star<space> {};
+    struct spaces : plus<space> {};
     struct digits : plus<tao::pegtl::digit> {}; // For some reason it fails on just "digit".
 
     struct sign : one<'+', '-'> {};
@@ -84,7 +84,7 @@ namespace SIM_VALUE_PARSER
 
     PARSE_RESULT Parse( const wxString& aString );
 
-    long MetricSuffixToExponent( const wxString& aMetricSuffix );
+    long MetricSuffixToExponent( std::string aMetricSuffix );
     wxString ExponentToMetricSuffix( long aExponent, long& aReductionExponent );
 }
 
@@ -114,6 +114,9 @@ public:
 
     virtual void FromString( const wxString& aString ) = 0;
     virtual wxString ToString() const = 0;
+
+    // For parsers that don't accept strings with our suffixes.
+    virtual wxString ToSimpleString() const = 0;
 };
 
 
@@ -126,6 +129,7 @@ public:
 
     void FromString( const wxString& aString ) override;
     wxString ToString() const override;
+    wxString ToSimpleString() const override;
 
     void operator=( const T& aValue );
     bool operator==( const SIM_VALUE_BASE& aOther ) const override;

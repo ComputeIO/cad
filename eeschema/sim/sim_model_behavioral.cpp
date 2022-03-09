@@ -24,7 +24,14 @@
 
 #include <sim/sim_model_behavioral.h>
 
-SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType ) : SIM_MODEL( aType )
+
+template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<void>* aFields );
+template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<SCH_FIELD>* aFields );
+template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<LIB_FIELD>* aFields );
+
+template <typename T>
+SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<T>* aFields )
+    : SIM_MODEL( aType )
 {
     static PARAM::INFO resistor  = makeParamInfo( "r", "Expression for resistance",  "ohm" );
     static PARAM::INFO capacitor = makeParamInfo( "c", "Expression for capacitance", "F"   );
@@ -42,6 +49,9 @@ SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType ) : SIM_MODEL( aType )
     default:
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_IDEAL" );
     }
+
+    if( aFields )
+        ReadDataFields( *aFields );
 }
 
 

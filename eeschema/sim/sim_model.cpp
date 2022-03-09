@@ -39,100 +39,18 @@
 using DEVICE_TYPE = SIM_MODEL::DEVICE_TYPE;
 using TYPE = SIM_MODEL::TYPE;
 
-/*namespace SPICE_MODEL_PARSER
-{
-    using namespace tao::pegtl;
-
-    struct directive : sor<TAO_PEGTL_ISTRING( ".model" ),
-                           TAO_PEGTL_ISTRING( ".param" ),
-                           TAO_PEGTL_ISTRING( ".subckt" )> {};*//*
-
-    struct spaces : star<space> {};
-    struct identifierNotFirstChar : sor<alnum, one<'!', '#', '$', '%', '[', ']', '_'>> {};
-    struct identifier : seq<alpha, star<identifierNotFirstChar>> {};
-    struct digits : plus<digit> {};
-
-    struct sign : opt<one<'+', '-'>> {};
-    struct significand : sor<seq<digits, one<'.'>, opt<digits>>, seq<one<'.'>, digits>> {};
-    struct exponent : opt<one<'e', 'E'>, sign, digits> {};
-    struct metricSuffix : sor<TAO_PEGTL_ISTRING( "T" ),
-                              TAO_PEGTL_ISTRING( "G" ),
-                              TAO_PEGTL_ISTRING( "Meg" ),
-                              TAO_PEGTL_ISTRING( "K" ),
-                              TAO_PEGTL_ISTRING( "mil" ),
-                              TAO_PEGTL_ISTRING( "m" ),
-                              TAO_PEGTL_ISTRING( "u" ),
-                              TAO_PEGTL_ISTRING( "n" ),
-                              TAO_PEGTL_ISTRING( "p" ),
-                              TAO_PEGTL_ISTRING( "f" )> {};
-    struct number : seq<sign, significand, exponent, metricSuffix> {};
-
-    struct modelModelType : sor<TAO_PEGTL_ISTRING( "R" ),
-                                TAO_PEGTL_ISTRING( "C" ),
-                                TAO_PEGTL_ISTRING( "L" ),
-                                TAO_PEGTL_ISTRING( "SW" ),
-                                TAO_PEGTL_ISTRING( "CSW" ),
-                                TAO_PEGTL_ISTRING( "URC" ),
-                                TAO_PEGTL_ISTRING( "LTRA" ),
-                                TAO_PEGTL_ISTRING( "D" ),
-                                TAO_PEGTL_ISTRING( "NPN" ),
-                                TAO_PEGTL_ISTRING( "PNP" ),
-                                TAO_PEGTL_ISTRING( "NJF" ),
-                                TAO_PEGTL_ISTRING( "PJF" ),
-                                TAO_PEGTL_ISTRING( "NMOS" ),
-                                TAO_PEGTL_ISTRING( "PMOS" ),
-                                TAO_PEGTL_ISTRING( "NMF" ),
-                                TAO_PEGTL_ISTRING( "PMF" ),
-                                TAO_PEGTL_ISTRING( "VDMOS" )> {};
-    struct paramValuePair : seq<alnum, spaces, one<'='>, spaces, number> {};
-    struct paramValuePairs : opt<paramValuePair, star<spaces, paramValuePair>> {};
-    struct modelModelSpec : seq<modelModelType,
-                                spaces,
-                                one<'('>,
-                                spaces,
-
-                                paramValuePairs,
-
-                                spaces,
-                                one<')'>,
-                                spaces> {};
-    struct modelModel : seq<TAO_PEGTL_ISTRING( ".model" ), identifier, modelModelSpec> {};
-
-    struct model : modelModel {};
-    //struct model : sor<modelModel, paramModel, subcircuitModel> {};
-}*/
-
 namespace SPICE_MODEL_PARSER
 {
-    /*using namespace tao::pegtl;
-
-    struct spaces : star<space> {};
-    struct digits : plus<digit> {};
-
-    struct sign : opt<one<'+', '-'>> {};
-    struct significand : sor<seq<digits, opt<one<'.'>, opt<digits>>>, seq<one<'.'>, digits>> {};
-    struct exponent : opt<one<'e', 'E'>, sign, digits> {};
-    struct metricSuffix : opt<sor<TAO_PEGTL_ISTRING( "T" ),
-                                  TAO_PEGTL_ISTRING( "G" ),
-                                  TAO_PEGTL_ISTRING( "Meg" ),
-                                  TAO_PEGTL_ISTRING( "K" ),
-                                  TAO_PEGTL_ISTRING( "mil" ),
-                                  TAO_PEGTL_ISTRING( "m" ),
-                                  TAO_PEGTL_ISTRING( "u" ),
-                                  TAO_PEGTL_ISTRING( "n" ),
-                                  TAO_PEGTL_ISTRING( "p" ),
-                                  TAO_PEGTL_ISTRING( "f" )>> {};*/
-
-
-    // TODO: Move the `number` grammar to the SPICE_VALUE class.
-    //struct number : seq<sign, significand, exponent, metricSuffix> {};
-
     using namespace SIM_VALUE_PARSER;
 
-    struct param : seq<alnum> {};
+    struct spaces : plus<space> {};
 
-    struct paramValuePair : seq<param, spaces, one<'='>, spaces, number> {};
-    struct paramValuePairs : opt<paramValuePair, star<spaces, paramValuePair>> {};
+    struct param : plus<alnum> {};
+
+    struct paramValuePair : seq<param, opt<spaces>, one<'='>, opt<spaces>, number> {};
+    struct paramValuePairs : seq<opt<spaces>,
+                                 opt<paramValuePair, star<spaces, paramValuePair>>,
+                                 opt<spaces>> {};
 
     template <typename Rule> struct paramValuePairsSelector : std::false_type {};
     template <> struct paramValuePairsSelector<param> : std::true_type {};
@@ -345,25 +263,33 @@ template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<LIB_FIE
 template <typename T>
 std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::vector<T>& aFields )
 {
-    return SIM_MODEL::Create( ReadTypeFromFields( aFields ) );
+    return SIM_MODEL::Create( ReadTypeFromFields( aFields ), &aFields );
 }
 
 
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType )
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType,
+                                                       const std::vector<void>* aFields );
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType,
+                                                       const std::vector<SCH_FIELD>* aFields );
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType,
+                                                       const std::vector<LIB_FIELD>* aFields );
+
+template <typename T>
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType, const std::vector<T>* aFields )
 {
     switch( aType )
     {
     case TYPE::RESISTOR_IDEAL:
     case TYPE::CAPACITOR_IDEAL:
     case TYPE::INDUCTOR_IDEAL:
-        return std::make_unique<SIM_MODEL_IDEAL>( aType );
+        return std::make_unique<SIM_MODEL_IDEAL>( aType, aFields );
 
     case TYPE::RESISTOR_BEHAVIORAL:
     case TYPE::CAPACITOR_BEHAVIORAL:
     case TYPE::INDUCTOR_BEHAVIORAL:
     case TYPE::VSOURCE_BEHAVIORAL:
     case TYPE::ISOURCE_BEHAVIORAL:
-        return std::make_unique<SIM_MODEL_BEHAVIORAL>( aType );
+        return std::make_unique<SIM_MODEL_BEHAVIORAL>( aType, aFields );
 
     case TYPE::VSOURCE_PULSE:
     case TYPE::ISOURCE_PULSE:
@@ -391,19 +317,19 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType )
     case TYPE::ISOURCE_RANDOM_EXP:
     case TYPE::VSOURCE_RANDOM_POISSON:
     case TYPE::ISOURCE_RANDOM_POISSON:
-        return std::make_unique<SIM_MODEL_SOURCE>( aType );
+        return std::make_unique<SIM_MODEL_SOURCE>( aType, aFields );
 
     case TYPE::SUBCIRCUIT:
-        return std::make_unique<SIM_MODEL_SUBCIRCUIT>( aType );
+        return std::make_unique<SIM_MODEL_SUBCIRCUIT>( aType, aFields );
 
     case TYPE::CODEMODEL:
-        return std::make_unique<SIM_MODEL_CODEMODEL>( aType );
+        return std::make_unique<SIM_MODEL_CODEMODEL>( aType, aFields );
 
     case TYPE::RAWSPICE:
-        return std::make_unique<SIM_MODEL_RAWSPICE>( aType );
+        return std::make_unique<SIM_MODEL_RAWSPICE>( aType, aFields );
 
     default:
-        return std::make_unique<SIM_MODEL_NGSPICE>( aType );
+        return std::make_unique<SIM_MODEL_NGSPICE>( aType, aFields );
     }
 }
 
@@ -413,12 +339,34 @@ SIM_MODEL::SIM_MODEL( TYPE aType ) : m_type( aType )
 }
 
 
-template SIM_MODEL::SIM_MODEL( const std::vector<SCH_FIELD>& aFields );
-template SIM_MODEL::SIM_MODEL( const std::vector<LIB_FIELD>& aFields );
+template <>
+void SIM_MODEL::ReadDataFields( const std::vector<void>& aFields )
+{
+}
 
-template <typename T>
-SIM_MODEL::SIM_MODEL( const std::vector<T>& aFields )
-    : m_type( ReadTypeFromFields( aFields ) )
+
+template <>
+void SIM_MODEL::ReadDataFields( const std::vector<SCH_FIELD>& aFields )
+{
+    ReadDataSchFields( aFields );
+}
+
+
+template <>
+void SIM_MODEL::ReadDataFields( const std::vector<LIB_FIELD>& aFields )
+{
+    ReadDataLibFields( aFields );
+}
+
+
+void SIM_MODEL::ReadDataSchFields( const std::vector<SCH_FIELD>& aFields )
+{
+    SetFile( getFieldValue( aFields, "Model_File" ) );
+    parseParamValuePairs( getFieldValue( aFields, "Model_Params" ) );
+}
+
+
+void SIM_MODEL::ReadDataLibFields( const std::vector<LIB_FIELD>& aFields )
 {
     SetFile( getFieldValue( aFields, "Model_File" ) );
     parseParamValuePairs( getFieldValue( aFields, "Model_Params" ) );
@@ -428,18 +376,18 @@ SIM_MODEL::SIM_MODEL( const std::vector<T>& aFields )
 template <>
 void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>& aFields )
 {
-    DoWriteSchFields( aFields );
+    WriteDataSchFields( aFields );
 }
 
 
 template <>
 void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>& aFields )
 {
-    DoWriteLibFields( aFields );
+    WriteDataLibFields( aFields );
 }
 
 
-void SIM_MODEL::DoWriteSchFields( std::vector<SCH_FIELD>& aFields )
+void SIM_MODEL::WriteDataSchFields( std::vector<SCH_FIELD>& aFields )
 {
     setFieldValue( aFields, DEVICE_TYPE_FIELD,
                    DeviceTypeInfo( TypeInfo( m_type ).deviceType ).fieldValue );
@@ -449,7 +397,7 @@ void SIM_MODEL::DoWriteSchFields( std::vector<SCH_FIELD>& aFields )
 }
 
 
-void SIM_MODEL::DoWriteLibFields( std::vector<LIB_FIELD>& aFields )
+void SIM_MODEL::WriteDataLibFields( std::vector<LIB_FIELD>& aFields )
 {
     setFieldValue( aFields, DEVICE_TYPE_FIELD,
                    DeviceTypeInfo( TypeInfo( m_type ).deviceType ).fieldValue );
@@ -467,6 +415,9 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
     auto root = tao::pegtl::parse_tree::parse<SPICE_MODEL_PARSER::paramValuePairs,
                                               SPICE_MODEL_PARSER::paramValuePairsSelector>( in );
 
+    if( !root )
+        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters" ) ) );
+
     wxString paramName = "";
 
     for( const auto& node : root->children )
@@ -477,24 +428,25 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
         {
             wxASSERT( paramName != "" );
 
+            auto it = std::find_if( Params().begin(), Params().end(),
+                                    [paramName]( const PARAM& param )
+                                    {
+                                        return param.info.name == paramName;
+                                    } );
+
+            if( it == Params().end() )
+                throw KI_PARAM_ERROR( wxString::Format( _( "Unknown parameter \"%s\"" ),
+                                                        paramName ) );
+
             try
             {
-                //SIM_VALUE value( wxString( node->string() ) );
-
-                /*if( !SetParamValue( paramName, value ) )
-                {
-                    m_params.clear();
-                    throw KI_PARAM_ERROR( wxString::Format( _( "Unknown parameter \"%s\"" ),
-                                                            paramName ) );
-                }*/
-
-
+                it->value->FromString( wxString( node->string() ) );
             }
             catch( KI_PARAM_ERROR& e )
             {
-                m_params.clear();
-                throw KI_PARAM_ERROR( wxString::Format( _( "Invalid \"%s\" parameter value: \"%s\"" ),
-                                                        paramName, e.What() ) );
+                Params().clear();
+                throw KI_PARAM_ERROR( wxString::Format( _( "Invalid \"%s\" parameter value: %s" ),
+                                                        paramName, node->string() ) );
             }
         }
         else
@@ -511,11 +463,11 @@ wxString SIM_MODEL::generateParamValuePairs()
     {
         wxString valueStr = it->value->ToString();
 
-        if( it != m_params.cbegin() )
-            result += " ";
-
         if( valueStr.IsEmpty() )
             continue;
+
+        if( it != m_params.cbegin() )
+            result += " ";
 
         result += it->info.name;
         result += "=";

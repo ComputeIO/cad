@@ -62,6 +62,7 @@ class DIALOG_SPICE_MODEL_BASE : public wxDialog
 		wxStaticText* m_staticText8;
 		wxChoice* m_typeChoice;
 		wxPropertyGridManager* m_paramGridMgr;
+		wxPropertyGridPage* m_paramGrid;
 		wxPanel* m_codePanel;
 		wxStyledTextCtrl* m_codePreview;
 		wxPanel* m_pinAssignmentsPanel;
@@ -75,6 +76,7 @@ class DIALOG_SPICE_MODEL_BASE : public wxDialog
 		// Virtual event handlers, override them in your derived class
 		virtual void onDeviceTypeChoice( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onTypeChoice( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onPropertyChanged( wxPropertyGridEvent& event ) { event.Skip(); }
 
 
 	public:

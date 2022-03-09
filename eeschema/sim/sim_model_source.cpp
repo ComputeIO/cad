@@ -27,10 +27,18 @@
 using PARAM = SIM_MODEL::PARAM;
 
 
-SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType ) : SIM_MODEL( aType )
+template SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, const std::vector<void>* aFields );
+template SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, const std::vector<SCH_FIELD>* aFields );
+template SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, const std::vector<LIB_FIELD>* aFields );
+
+template <typename T>
+SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, const std::vector<T>* aFields ) : SIM_MODEL( aType )
 {
     for( const PARAM::INFO& paramInfo : makeParams( aType ) )
         Params().emplace_back( paramInfo );
+
+    if( aFields )
+        ReadDataFields( *aFields );
 }
 
 
