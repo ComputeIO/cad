@@ -447,15 +447,18 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                             // Look for pre-existing lines we can drag with us instead of creating new ones
                             bool      foundAttachment = false;
-                            bool      foundJunction = false;
-                            SCH_LINE* foundLine = nullptr;
+                            bool      foundJunction   = false;
+                            bool      foundPin        = false;
+                            SCH_LINE* foundLine       = nullptr;
                             for( EDA_ITEM* cItem : m_lineConnectionCache[line] )
                             {
                                 foundAttachment = true;
 
                                 // If the move is the same angle as a connected line,
                                 // we can shrink/extend that line endpoint
-                                if( cItem->Type() == SCH_LINE_T )
+                                switch( cItem->Type() )
+                                {
+                                case SCH_LINE_T:
                                 {
                                     SCH_LINE* cLine = static_cast<SCH_LINE*>( cItem );
 
@@ -469,9 +472,19 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                                     // when we can (otherwise the zero length line will draw overlapping segments on them)
                                     if( foundLine == nullptr && cLine->GetLength() == 0 )
                                         foundLine = cLine;
+
+                                    break;
                                 }
-                                else if( cItem->Type() == SCH_JUNCTION_T )
+                                case SCH_JUNCTION_T:
                                     foundJunction = true;
+                                    break;
+
+                                case SCH_PIN_T:
+                                    foundPin = true;
+                                    break;
+
+                                default: break;
+                                }
                             }
 
                             // Ok... what if our original line is length zero from moving in its direction,
@@ -491,8 +504,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             }
                             // If we have found an attachment, but not a line, we want to check if it's
                             // a junction. These are special-cased and get a single line added instead of a
-                            // 90-degree bend.
-                            else if( !foundLine && foundJunction )
+                            // 90-degree bend. Except when we're on a pin, because pins always need bends,
+                            // and junctions are just added to pins for visual clarity.
+                            else if( !foundLine && foundJunction && !foundPin )
                             {
                                 // Create a new wire ending at the unselected end
                                 foundLine = new SCH_LINE( unselectedEnd, line->GetLayer() );
@@ -881,17 +895,37 @@ void SCH_MOVE_TOOL::getConnectedItems( SCH_ITEM* aOriginalItem, const VECTOR2I& 
 {
     EE_RTREE&         items = m_frame->GetScreen()->Items();
     EE_RTREE::EE_TYPE itemsOverlapping = items.Overlapping( aOriginalItem->GetBoundingBox() );
+    SCH_ITEM*         foundJunction = nullptr;
+    SCH_ITEM*         foundSymbol   = nullptr;
 
-    // If you're connected to a junction, you're only connected to the junction
-    // (unless you are the junction)
+    // If you're connected to a junction, you're only connected to the junction.
+    //
+    // But, if you're connected to a junction on a pin, you're only connected to the pin. This
+    // is because junctions and pins have different logic for how bend lines are generated
+    // and we need to prioritize the pin version in some cases.
     for( SCH_ITEM* item : itemsOverlapping )
     {
-        if( item != aOriginalItem && item->Type() == SCH_JUNCTION_T && item->IsConnected( aPoint ) )
+        if( item != aOriginalItem && item->IsConnected( aPoint ) )
         {
-            aList.push_back( item );
-            return;
+            if( item->Type() == SCH_JUNCTION_T )
+                foundJunction = item;
+            else if( item->Type() == SCH_SYMBOL_T )
+                foundSymbol = item;
         }
     }
+
+    if( foundSymbol && foundJunction )
+    {
+        aList.push_back( foundSymbol );
+        return;
+    }
+
+    if( foundJunction )
+    {
+        aList.push_back( foundJunction );
+        return;
+    }
+
 
     for( SCH_ITEM* test : itemsOverlapping )
     {
