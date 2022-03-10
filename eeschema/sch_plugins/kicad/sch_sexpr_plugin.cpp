@@ -718,7 +718,18 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_SYMBOL* aSymbol, SCH_SHEET_PATH* aSheetPa
         else if( id == VALUE_FIELD || id == FOOTPRINT_FIELD )
             field.SetText( wxEmptyString );
 
-        saveField( &field, aNestLevel + 1 );
+        try
+        {
+            saveField( &field, aNestLevel + 1 );
+        }
+        catch( const std::exception& exc )
+        {
+            // Restore the changed field info on write error.
+            if( id == REFERENCE_FIELD || id == VALUE_FIELD || id == FOOTPRINT_FIELD )
+                field.SetText( value );
+
+            throw;
+        }
 
         if( id == REFERENCE_FIELD || id == VALUE_FIELD || id == FOOTPRINT_FIELD )
             field.SetText( value );
