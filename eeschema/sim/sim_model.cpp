@@ -47,14 +47,23 @@ namespace SPICE_MODEL_PARSER
 
     struct param : plus<alnum> {};
 
-    struct paramValuePair : seq<param, opt<spaces>, one<'='>, opt<spaces>, number> {};
+    template <NOTATION Notation>
+    struct paramValuePair : seq<param,
+                                opt<spaces>,
+                                one<'='>,
+                                opt<spaces>,
+                                number<Notation>> {};
+
+    template <NOTATION Notation>
     struct paramValuePairs : seq<opt<spaces>,
-                                 opt<paramValuePair, star<spaces, paramValuePair>>,
+                                 opt<paramValuePair<Notation>,
+                                     star<spaces, paramValuePair<Notation>>>,
                                  opt<spaces>> {};
 
     template <typename Rule> struct paramValuePairsSelector : std::false_type {};
     template <> struct paramValuePairsSelector<param> : std::true_type {};
-    template <> struct paramValuePairsSelector<number> : std::true_type {};
+    template <> struct paramValuePairsSelector<number<NOTATION::SI>> : std::true_type {};
+    template <> struct paramValuePairsSelector<number<NOTATION::SPICE>> : std::true_type {};
 }
 
 
@@ -62,30 +71,30 @@ SIM_MODEL::DEVICE_INFO SIM_MODEL::DeviceTypeInfo( DEVICE_TYPE aDeviceType )
 {
     switch( aDeviceType )
     {
-    case DEVICE_TYPE::NONE:       return { "",           "" };
-    case DEVICE_TYPE::RESISTOR:   return { "RESISTOR",   "Resistor" };
-    case DEVICE_TYPE::CAPACITOR:  return { "CAPACITOR",  "Capacitor" };
-    case DEVICE_TYPE::INDUCTOR:   return { "INDUCTOR",   "Inductor" };
+    case DEVICE_TYPE::NONE:       return { "",           ""                  };
+    case DEVICE_TYPE::RESISTOR:   return { "RESISTOR",   "Resistor"          };
+    case DEVICE_TYPE::CAPACITOR:  return { "CAPACITOR",  "Capacitor"         };
+    case DEVICE_TYPE::INDUCTOR:   return { "INDUCTOR",   "Inductor"          };
     case DEVICE_TYPE::TLINE:      return { "TLINE",      "Transmission Line" };
-    case DEVICE_TYPE::SWITCH:     return { "SWITCH",     "Switch" };
+    case DEVICE_TYPE::SWITCH:     return { "SWITCH",     "Switch"            };
 
-    case DEVICE_TYPE::DIODE:      return { "DIODE",      "Diode" };
-    case DEVICE_TYPE::NPN:        return { "NPN",        "NPN BJT" };
-    case DEVICE_TYPE::PNP:        return { "PNP",        "PNP BJT" };
+    case DEVICE_TYPE::DIODE:      return { "DIODE",      "Diode"             };
+    case DEVICE_TYPE::NPN:        return { "NPN",        "NPN BJT"           };
+    case DEVICE_TYPE::PNP:        return { "PNP",        "PNP BJT"           };
 
-    case DEVICE_TYPE::NJF:        return { "NJF",        "N-Channel JFET" };
-    case DEVICE_TYPE::PJF:        return { "PJF",        "P-Channel JFET" };
+    case DEVICE_TYPE::NJF:        return { "NJF",        "N-Channel JFET"    };
+    case DEVICE_TYPE::PJF:        return { "PJF",        "P-Channel JFET"    };
 
-    case DEVICE_TYPE::NMOS:       return { "NMOS",       "N-Channel MOSFET" };
-    case DEVICE_TYPE::PMOS:       return { "PMOS",       "P-Channel MOSFET" };
-    case DEVICE_TYPE::NMES:       return { "NMES",       "N-Channel MESFET" };
-    case DEVICE_TYPE::PMES:       return { "PMES",       "P-Channel MESFET" };
+    case DEVICE_TYPE::NMOS:       return { "NMOS",       "N-Channel MOSFET"  };
+    case DEVICE_TYPE::PMOS:       return { "PMOS",       "P-Channel MOSFET"  };
+    case DEVICE_TYPE::NMES:       return { "NMES",       "N-Channel MESFET"  };
+    case DEVICE_TYPE::PMES:       return { "PMES",       "P-Channel MESFET"  };
 
-    case DEVICE_TYPE::VSOURCE:    return { "VSOURCE",    "Voltage Source" };
-    case DEVICE_TYPE::ISOURCE:    return { "ISOURCE",    "Current Source" };
+    case DEVICE_TYPE::VSOURCE:    return { "VSOURCE",    "Voltage Source"    };
+    case DEVICE_TYPE::ISOURCE:    return { "ISOURCE",    "Current Source"    };
 
-    case DEVICE_TYPE::SUBCIRCUIT: return { "SUBCIRCUIT", "Subcircuit" };
-    case DEVICE_TYPE::CODEMODEL:  return { "CODEMODEL",  "Code Model" };
+    case DEVICE_TYPE::SUBCIRCUIT: return { "SUBCIRCUIT", "Subcircuit"        };
+    case DEVICE_TYPE::CODEMODEL:  return { "CODEMODEL",  "Code Model"        };
     case DEVICE_TYPE::RAWSPICE:   return { "RAWSPICE",   "Raw Spice Element" };
     case DEVICE_TYPE::_ENUM_END:  break;
     }
@@ -412,8 +421,10 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
     LOCALE_IO toggle;
     
     tao::pegtl::string_input<> in( aParamValuePairs.ToStdString(), "from_input" );
-    auto root = tao::pegtl::parse_tree::parse<SPICE_MODEL_PARSER::paramValuePairs,
-                                              SPICE_MODEL_PARSER::paramValuePairsSelector>( in );
+    auto root = tao::pegtl::parse_tree::parse<
+        SPICE_MODEL_PARSER::paramValuePairs<SIM_VALUE_PARSER::NOTATION::SI>,
+        SPICE_MODEL_PARSER::paramValuePairsSelector>
+            ( in );
 
     if( !root )
         throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters" ) ) );
@@ -424,7 +435,7 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
     {
         if( node->is_type<SPICE_MODEL_PARSER::param>() )
             paramName = node->string();
-        else if( node->is_type<SPICE_MODEL_PARSER::number>() )
+        else if( node->is_type<SPICE_MODEL_PARSER::number<SIM_VALUE_PARSER::NOTATION::SI>>() )
         {
             wxASSERT( paramName != "" );
 

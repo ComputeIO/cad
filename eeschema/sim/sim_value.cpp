@@ -22,7 +22,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <iostream>
 #include <sim/sim_value.h>
 #include <wx/translation.h>
 #include <ki_exception.h>
@@ -31,12 +30,24 @@
 #include <pegtl/contrib/parse_tree.hpp>
 
 
-SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString )
+SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString,
+                                                        NOTATION aNotation )
 {
     LOCALE_IO toggle;
 
     tao::pegtl::string_input<> in( aString.ToStdString(), "from_input" );
-    const auto root = tao::pegtl::parse_tree::parse<number, numberSelector>( in );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    switch( aNotation )
+    {
+    case NOTATION::SI:
+        root = tao::pegtl::parse_tree::parse<number<NOTATION::SI>, numberSelector>( in );
+        break;
+
+    case NOTATION::SPICE:
+        root = tao::pegtl::parse_tree::parse<number<NOTATION::SPICE>, numberSelector>( in );
+        break;
+    }
 
     if( !root )
         return {};
@@ -65,9 +76,22 @@ SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString 
                 result.exponent = std::stol( node->string() );
                 result.isEmpty = false;
             }
-            else if( node->is_type<SIM_VALUE_PARSER::metricSuffix>() )
+            else
             {
-                result.metricSuffixExponent = MetricSuffixToExponent( node->string() );
+                switch( aNotation )
+                {
+                case NOTATION::SI:
+                    if( !node->is_type<metricSuffix<NOTATION::SI>>() )
+                        continue;
+                    break;
+
+                case NOTATION::SPICE:
+                    if( !node->is_type<metricSuffix<NOTATION::SPICE>>() )
+                        continue;
+                    break;
+                }
+
+                result.metricSuffixExponent = MetricSuffixToExponent( node->string(), aNotation );
                 result.isEmpty = false;
             }
         }
@@ -81,39 +105,75 @@ SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString 
 }
 
 
-long SIM_VALUE_PARSER::MetricSuffixToExponent( std::string aMetricSuffix )
+long SIM_VALUE_PARSER::MetricSuffixToExponent( std::string aMetricSuffix, NOTATION aNotation )
 {
-    std::transform( aMetricSuffix.begin(), aMetricSuffix.end(), aMetricSuffix.begin(), ::tolower );
+    switch( aNotation )
+    {
+    case NOTATION::SI:
+        if( aMetricSuffix.empty() )
+            return 0;
 
-    if( aMetricSuffix == "f" )
-        return -15;
-    else if( aMetricSuffix == "p" )
-        return -12;
-    else if( aMetricSuffix == "n" )
-        return -9;
-    else if( aMetricSuffix == "u" )
-        return -6;
-    else if( aMetricSuffix == "m" )
-        return -3;
-    else if( aMetricSuffix == "" )
-        return 0;
-    else if( aMetricSuffix == "k" )
-        return 3;
-    else if( aMetricSuffix == "meg" )
-        return 6;
-    else if( aMetricSuffix == "g" )
-        return 9;
-    else if( aMetricSuffix == "t" )
-        return 12;
+        switch( aMetricSuffix[0] )
+        {
+        case 'a': return -18;
+        case 'f': return -15;
+        case 'p': return -12;
+        case 'n': return -9;
+        case 'u': return -6;
+        case 'm': return -3;
+        case 'k':
+        case 'K': return 3;
+        case 'M': return 6;
+        case 'G': return 9;
+        case 'T': return 12;
+        case 'P': return 15;
+        case 'E': return 18;
+        }
+
+        break;
+
+    case NOTATION::SPICE:
+        std::transform( aMetricSuffix.begin(), aMetricSuffix.end(), aMetricSuffix.begin(),
+                        ::tolower );
+
+        if( aMetricSuffix == "f" )
+            return -15;
+        else if( aMetricSuffix == "p" )
+            return -12;
+        else if( aMetricSuffix == "n" )
+            return -9;
+        else if( aMetricSuffix == "u" )
+            return -6;
+        else if( aMetricSuffix == "m" )
+            return -3;
+        else if( aMetricSuffix == "" )
+            return 0;
+        else if( aMetricSuffix == "k" )
+            return 3;
+        else if( aMetricSuffix == "meg" )
+            return 6;
+        else if( aMetricSuffix == "g" )
+            return 9;
+        else if( aMetricSuffix == "t" )
+            return 12;
+
+        break;
+    }
 
     throw KI_PARAM_ERROR( wxString::Format( _( "Unknown simulator value suffix: \"%s\"" ),
                           aMetricSuffix ) );
 }
 
 
-wxString SIM_VALUE_PARSER::ExponentToMetricSuffix( long aExponent, long& aReductionExponent )
+wxString SIM_VALUE_PARSER::ExponentToMetricSuffix( long aExponent, long& aReductionExponent,
+                                                   NOTATION aNotation )
 {
-    if( aExponent > -18 && aExponent <= -15 )
+    if( aNotation == NOTATION::SI && aExponent > -21 && aExponent < -18 )
+    {
+        aReductionExponent = -18;
+        return "a";
+    }
+    else if( aExponent > -18 && aExponent <= -15 )
     {
         aReductionExponent = -15;
         return "f";
@@ -151,7 +211,7 @@ wxString SIM_VALUE_PARSER::ExponentToMetricSuffix( long aExponent, long& aReduct
     else if( aExponent >= 6 && aExponent < 9 )
     {
         aReductionExponent = 6;
-        return "Meg";
+        return ( aNotation == NOTATION::SI ) ? "M" : "Meg";
     }
     else if( aExponent >= 9 && aExponent < 12 )
     {
@@ -162,6 +222,16 @@ wxString SIM_VALUE_PARSER::ExponentToMetricSuffix( long aExponent, long& aReduct
     {
         aReductionExponent = 12;
         return "T";
+    }
+    else if( aNotation == NOTATION::SI && aExponent >= 15 && aExponent < 18 )
+    {
+        aReductionExponent = 15;
+        return "P";
+    }
+    else if( aNotation == NOTATION::SI && aExponent >= 18 && aExponent < 21 )
+    {
+        aReductionExponent = 18;
+        return "E";
     }
     
     aReductionExponent = 0;
