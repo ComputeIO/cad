@@ -722,7 +722,7 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_SYMBOL* aSymbol, SCH_SHEET_PATH* aSheetPa
         {
             saveField( &field, aNestLevel + 1 );
         }
-        catch( const std::exception& exc )
+        catch( ... )
         {
             // Restore the changed field info on write error.
             if( id == REFERENCE_FIELD || id == VALUE_FIELD || id == FOOTPRINT_FIELD )
