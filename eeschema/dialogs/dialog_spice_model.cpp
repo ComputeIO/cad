@@ -23,6 +23,7 @@
  */
 
 #include <dialog_spice_model.h>
+#include <sim/sim_property.h>
 #include <confirm.h>
 
 using TYPE = SIM_VALUE_BASE::TYPE;
@@ -76,7 +77,31 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
 
     m_scintillaTricks = std::make_unique<SCINTILLA_TRICKS>( m_codePreview, wxT( "{}" ), false );
 
+    m_paramGrid->SetValidationFailureBehavior( wxPG_VFB_STAY_IN_PROPERTY
+                                               | wxPG_VFB_BEEP
+                                               | wxPG_VFB_MARK_CELL );
+
+    m_paramGrid->GetGrid()->DedicateKey( WXK_UP );
+    m_paramGrid->GetGrid()->DedicateKey( WXK_DOWN );
+
     Layout();
+}
+
+
+template <typename T>
+bool DIALOG_SPICE_MODEL<T>::Validate()
+{
+    wxPropertyGridIterator it;
+
+    for( it = m_paramGrid->GetIterator(); !it.AtEnd(); it++ )
+    {
+        const wxPGProperty* prop = *it;
+
+        if( prop->HasFlag( wxPG_PROP_INVALID_VALUE ) )
+            return false;
+    }
+    
+    return true;
 }
 
 
@@ -256,11 +281,16 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
     switch( aParam.info.type )
     {
     case TYPE::INT:
-        prop = new wxIntProperty( paramDescription, aParam.info.name );
+        //prop = new wxIntProperty( paramDescription, aParam.info.name );
+        //prop = new SIM_INT_PROPERTY( paramDescription, aParam.info.name );
+
+
+        
+        prop = new SIM_FLOAT_PROPERTY( paramDescription, aParam.info.name, *aParam.value );
         break;
 
     case TYPE::FLOAT:
-        prop = new wxFloatProperty( paramDescription, aParam.info.name );
+        prop = new SIM_FLOAT_PROPERTY( paramDescription, aParam.info.name, *aParam.value );
         break;
 
     case TYPE::BOOL:
@@ -273,7 +303,6 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
         break;
     }
 
-    prop->SetValueFromString( aParam.value->ToSimpleString() );
     prop->SetAttribute( wxPG_ATTR_UNITS, aParam.info.unit );
 
     // Legacy due to the way we extracted the parameters from Ngspice.
@@ -344,7 +373,7 @@ void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
 }
 
 
-template <typename T>
+/*template <typename T>
 void DIALOG_SPICE_MODEL<T>::onPropertyChanged( wxPropertyGridEvent& aEvent )
 {
     wxString name = aEvent.GetPropertyName();
@@ -363,4 +392,4 @@ void DIALOG_SPICE_MODEL<T>::onPropertyChanged( wxPropertyGridEvent& aEvent )
             }
         }
     }
-}
+}*/

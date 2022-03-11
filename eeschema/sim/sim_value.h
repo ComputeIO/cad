@@ -40,6 +40,22 @@ namespace SIM_VALUE_PARSER
         SPICE
     };
 
+    template <NOTATION Notation>
+    wxString allowedIntChars;
+
+    template <> inline wxString allowedIntChars<NOTATION::SI> = "0123456789afpnumkKMGTPE-+";
+    template <> inline wxString allowedIntChars<NOTATION::SPICE> = "0123456789fFpPnNuUmMkKgGtT-+";
+
+
+    template <NOTATION Notation>
+    wxString allowedFloatChars;
+
+    template <> inline wxString allowedFloatChars<NOTATION::SI>
+        = allowedIntChars<NOTATION::SI> + ".e";
+    template <> inline wxString allowedFloatChars<NOTATION::SPICE>
+        = allowedIntChars<NOTATION::SI> + ".";
+
+
     struct spaces : plus<space> {};
     struct digits : plus<tao::pegtl::digit> {}; // For some reason it fails on just "digit".
 
@@ -58,9 +74,11 @@ namespace SIM_VALUE_PARSER
     struct exponent : seq<opt<sign>, digits> {};
     struct exponentWithPrefix : seq<exponentPrefix, exponent> {};
 
-    template <NOTATION Notation> struct metricSuffix;
+    template <NOTATION Notation>
+    struct metricSuffix;
+
     template <> struct metricSuffix<NOTATION::SI>
-        : one<'f', 'p', 'n', 'u', 'm', 'k', 'K', 'M', 'G', 'T'> {};
+        : one<'a', 'f', 'p', 'n', 'u', 'm', 'k', 'K', 'M', 'G', 'T', 'P', 'E'> {};
     template <> struct metricSuffix<NOTATION::SPICE> : sor<TAO_PEGTL_ISTRING( "f" ),
                                                            TAO_PEGTL_ISTRING( "p" ),
                                                            TAO_PEGTL_ISTRING( "n" ),
@@ -76,6 +94,10 @@ namespace SIM_VALUE_PARSER
     struct number : seq<significand,
                         opt<exponentWithPrefix>,
                         opt<metricSuffix<Notation>>> {};
+
+    template <NOTATION Notation>
+    struct numberGrammar : must<number<Notation>, eof> {};
+
 
     template <typename Rule>
     struct numberSelector : std::false_type {};
@@ -100,7 +122,7 @@ namespace SIM_VALUE_PARSER
     PARSE_RESULT Parse( const wxString& aString, NOTATION aNotation = NOTATION::SI );
 
     long MetricSuffixToExponent( std::string aMetricSuffix, NOTATION aNotation = NOTATION::SI );
-    wxString ExponentToMetricSuffix( long aExponent, long& aReductionExponent,
+    wxString ExponentToMetricSuffix( double aExponent, long& aReductionExponent,
                                      NOTATION aNotation = NOTATION::SI );
 }
 
@@ -124,6 +146,9 @@ public:
 
     static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType, wxString aString );
     static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType );
+
+    virtual ~SIM_VALUE_BASE() = default;
+    SIM_VALUE_BASE() = default;
 
     void operator=( const wxString& aString );
     virtual bool operator==( const SIM_VALUE_BASE& aOther ) const = 0;
@@ -151,7 +176,7 @@ public:
     bool operator==( const SIM_VALUE_BASE& aOther ) const override;
 
 private:
-    OPT<T> m_value;
+    OPT<T> m_value = NULLOPT;
 
     wxString getMetricSuffix();
 };

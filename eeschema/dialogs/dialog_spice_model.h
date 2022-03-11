@@ -46,6 +46,7 @@ public:
     DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol, std::vector<T>& aSchFields );
 
 private:
+    bool Validate() override;
     bool TransferDataFromWindow() override;
     bool TransferDataToWindow() override;
 
@@ -59,7 +60,7 @@ private:
 
     void onDeviceTypeChoice( wxCommandEvent& aEvent ) override;
     void onTypeChoice( wxCommandEvent& aEvent ) override;
-    void onPropertyChanged( wxPropertyGridEvent& aEvent ) override;
+    //void onPropertyChanged( wxPropertyGridEvent& aEvent ) override;
 
     SCH_SYMBOL& m_symbol;
     std::vector<T>& m_fields;

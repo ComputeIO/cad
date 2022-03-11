@@ -39,7 +39,7 @@
 using DEVICE_TYPE = SIM_MODEL::DEVICE_TYPE;
 using TYPE = SIM_MODEL::TYPE;
 
-namespace SPICE_MODEL_PARSER
+namespace SIM_MODEL_PARSER
 {
     using namespace SIM_VALUE_PARSER;
 
@@ -59,6 +59,9 @@ namespace SPICE_MODEL_PARSER
                                  opt<paramValuePair<Notation>,
                                      star<spaces, paramValuePair<Notation>>>,
                                  opt<spaces>> {};
+
+    template <NOTATION Notation>
+    struct paramValuePairsGrammar : must<paramValuePairs<Notation>, eof> {};
 
     template <typename Rule> struct paramValuePairsSelector : std::false_type {};
     template <> struct paramValuePairsSelector<param> : std::true_type {};
@@ -258,10 +261,10 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
     }
 
     if( !typeFound )
-        throw KI_PARAM_ERROR( wxString::Format( _( "Invalid \"%s\" field value: \"%s\"" ),
+        throw KI_PARAM_ERROR( wxString::Format( _( "Invalid '%s' field value: '%s'" ),
                                                 TYPE_FIELD, typeFieldValue ) );
 
-    throw KI_PARAM_ERROR( wxString::Format( _( "Invalid \"%s\" field value: \"%s\"" ),
+    throw KI_PARAM_ERROR( wxString::Format( _( "Invalid '%s' field value: '%s'" ),
                                             DEVICE_TYPE_FIELD, deviceTypeFieldValue ) );
 }
 
@@ -421,21 +424,31 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
     LOCALE_IO toggle;
     
     tao::pegtl::string_input<> in( aParamValuePairs.ToStdString(), "from_input" );
-    auto root = tao::pegtl::parse_tree::parse<
-        SPICE_MODEL_PARSER::paramValuePairs<SIM_VALUE_PARSER::NOTATION::SI>,
-        SPICE_MODEL_PARSER::paramValuePairsSelector>
-            ( in );
 
-    if( !root )
-        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters" ) ) );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        root = tao::pegtl::parse_tree::parse<
+            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_MODEL_PARSER::NOTATION::SI>,
+            SIM_MODEL_PARSER::paramValuePairsSelector>
+                ( in );
+    }
+    catch( tao::pegtl::parse_error& e )
+    {
+        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters: %s" ),
+                                                e.what() ) );
+    }
+
+    wxASSERT( root );
 
     wxString paramName = "";
 
     for( const auto& node : root->children )
     {
-        if( node->is_type<SPICE_MODEL_PARSER::param>() )
+        if( node->is_type<SIM_MODEL_PARSER::param>() )
             paramName = node->string();
-        else if( node->is_type<SPICE_MODEL_PARSER::number<SIM_VALUE_PARSER::NOTATION::SI>>() )
+        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_MODEL_PARSER::NOTATION::SI>>() )
         {
             wxASSERT( paramName != "" );
 
@@ -446,7 +459,7 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
                                     } );
 
             if( it == Params().end() )
-                throw KI_PARAM_ERROR( wxString::Format( _( "Unknown parameter \"%s\"" ),
+                throw KI_PARAM_ERROR( wxString::Format( _( "Unknown parameter '%s'" ),
                                                         paramName ) );
 
             try
@@ -456,7 +469,7 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
             catch( KI_PARAM_ERROR& e )
             {
                 Params().clear();
-                throw KI_PARAM_ERROR( wxString::Format( _( "Invalid \"%s\" parameter value: %s" ),
+                throw KI_PARAM_ERROR( wxString::Format( _( "Invalid '%s' parameter value: %s" ),
                                                         paramName, node->string() ) );
             }
         }
