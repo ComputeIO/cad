@@ -30,29 +30,131 @@
 #include <pegtl/contrib/parse_tree.hpp>
 
 
-#include <iostream> 
+#define CALL_INSTANCE( ValueType, Notation, func, ... )                        \
+    switch( ValueType )                                                        \
+    {                                                                          \
+    case SIM_VALUE_BASE::TYPE::INT:                                            \
+        switch( Notation )                                                     \
+        {                                                                      \
+        case NOTATION::SI:                                                     \
+            func<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>( __VA_ARGS__ );      \
+            break;                                                             \
+                                                                               \
+        case NOTATION::SPICE:                                                  \
+            func<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>( __VA_ARGS__ );   \
+            break;                                                             \
+        }                                                                      \
+        break;                                                                 \
+                                                                               \
+    case SIM_VALUE_BASE::TYPE::FLOAT:                                          \
+        switch( Notation )                                                     \
+        {                                                                      \
+        case NOTATION::SI:                                                     \
+            func<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>( __VA_ARGS__ );    \
+            break;                                                             \
+                                                                               \
+        case NOTATION::SPICE:                                                  \
+            func<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>( __VA_ARGS__ ); \
+            break;                                                             \
+        }                                                                      \
+        break;                                                                 \
+                                                                               \
+    case SIM_VALUE_BASE::TYPE::BOOL:                                           \
+    case SIM_VALUE_BASE::TYPE::COMPLEX:                                        \
+    case SIM_VALUE_BASE::TYPE::STRING:                                         \
+    case SIM_VALUE_BASE::TYPE::BOOL_VECTOR:                                    \
+    case SIM_VALUE_BASE::TYPE::INT_VECTOR:                                     \
+    case SIM_VALUE_BASE::TYPE::FLOAT_VECTOR:                                   \
+    case SIM_VALUE_BASE::TYPE::COMPLEX_VECTOR:                                 \
+        wxFAIL_MSG( "Unhandled SIM_VALUE_BASE type" );                         \
+        break;                                                                 \
+    }
+
+
+template <SIM_VALUE_BASE::TYPE ValueType, SIM_VALUE_PARSER::NOTATION Notation>
+static inline void doIsValid( tao::pegtl::string_input<>& aIn )
+{
+    tao::pegtl::parse<SIM_VALUE_PARSER::numberGrammar<ValueType, Notation>>( aIn );
+}
+
+bool SIM_VALUE_PARSER::IsValid( const wxString& aString,
+                                SIM_VALUE_BASE::TYPE aValueType,
+                                NOTATION aNotation )
+{
+    if( aString.IsEmpty() )
+        return true;
+
+    tao::pegtl::string_input<> in( aString, "from_input" );
+
+    try
+    {
+        CALL_INSTANCE( aValueType, aNotation, doIsValid, in );
+    }
+    catch( tao::pegtl::parse_error& e )
+    {
+        return false;
+    }
+
+    return true;
+}
+
+
+template <SIM_VALUE_BASE::TYPE ValueType, SIM_VALUE_PARSER::NOTATION Notation>
+static inline std::unique_ptr<tao::pegtl::parse_tree::node> doParse(
+        tao::pegtl::string_input<>& aIn )
+{
+    return tao::pegtl::parse_tree::parse<SIM_VALUE_PARSER::numberGrammar<ValueType, Notation>,
+                                         SIM_VALUE_PARSER::numberSelector>
+        ( aIn );
+}
+
+template <SIM_VALUE_BASE::TYPE ValueType, SIM_VALUE_PARSER::NOTATION Notation>
+static inline void handleNodeForParse( tao::pegtl::parse_tree::node& aNode,
+                                       SIM_VALUE_PARSER::PARSE_RESULT& aParseResult )
+{
+    if( aNode.is_type<SIM_VALUE_PARSER::significand<ValueType>>() )
+    {
+        aParseResult.significand = aNode.string();
+        aParseResult.isEmpty = false;
+
+        for( const auto& subnode : aNode.children )
+        {
+            if( subnode->is_type<SIM_VALUE_PARSER::intPart>() )
+                aParseResult.intPart = std::stol( subnode->string() );
+            else
+                aParseResult.fracPart = std::stol( subnode->string() );
+        }
+    }
+    else if( aNode.is_type<SIM_VALUE_PARSER::exponent>() )
+    {
+        aParseResult.exponent = std::stol( aNode.string() );
+        aParseResult.isEmpty = false;
+    }
+    else if( aNode.is_type<SIM_VALUE_PARSER::metricSuffix<ValueType, Notation>>() )
+    {
+        aParseResult.metricSuffixExponent =
+            SIM_VALUE_PARSER::MetricSuffixToExponent( aNode.string(), Notation );
+        aParseResult.isEmpty = false;
+    }
+    else
+        wxFAIL_MSG( "Unhandled parse tree node" );
+}
+
 SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString,
+                                                        SIM_VALUE_BASE::TYPE aValueType,
                                                         NOTATION aNotation )
 {
     LOCALE_IO toggle;
+
+    if( aString.IsEmpty() )
+        return {};
 
     tao::pegtl::string_input<> in( aString.ToStdString(), "from_input" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
 
     try
     {
-        switch( aNotation )
-        {
-        case NOTATION::SI:
-            root = tao::pegtl::parse_tree::parse<numberGrammar<NOTATION::SI>, numberSelector>
-                ( in );
-            break;
-
-        case NOTATION::SPICE:
-            root = tao::pegtl::parse_tree::parse<numberGrammar<NOTATION::SPICE>, numberSelector>
-                ( in );
-            break;
-        }
+        CALL_INSTANCE( aValueType, aNotation, root = doParse, in );
     }
     catch( tao::pegtl::parse_error& e )
     {
@@ -67,44 +169,7 @@ SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString,
     try
     {
         for( const auto& node : root->children )
-        {
-            if( node->is_type<SIM_VALUE_PARSER::significand>() )
-            {
-                result.significand = node->string();
-                result.isEmpty = false;
-
-                for( const auto& subnode : node->children )
-                {
-                    if( subnode->is_type<SIM_VALUE_PARSER::intPart>() )
-                        result.intPart = std::stol( subnode->string() );
-                    else if( subnode->is_type<SIM_VALUE_PARSER::fracPart>() )
-                        result.fracPart = std::stol( subnode->string() );
-                }
-            }
-            else if( node->is_type<SIM_VALUE_PARSER::exponent>() )
-            {
-                result.exponent = std::stol( node->string() );
-                result.isEmpty = false;
-            }
-            else
-            {
-                switch( aNotation )
-                {
-                case NOTATION::SI:
-                    if( !node->is_type<metricSuffix<NOTATION::SI>>() )
-                        continue;
-                    break;
-
-                case NOTATION::SPICE:
-                    if( !node->is_type<metricSuffix<NOTATION::SPICE>>() )
-                        continue;
-                    break;
-                }
-
-                result.metricSuffixExponent = MetricSuffixToExponent( node->string(), aNotation );
-                result.isEmpty = false;
-            }
-        }
+            CALL_INSTANCE( aValueType, aNotation, handleNodeForParse, *node, result );
     }
     catch( std::invalid_argument& e )
     {
@@ -179,7 +244,7 @@ long SIM_VALUE_PARSER::MetricSuffixToExponent( std::string aMetricSuffix, NOTATI
 wxString SIM_VALUE_PARSER::ExponentToMetricSuffix( double aExponent, long& aReductionExponent,
                                                    NOTATION aNotation )
 {
-    if( aNotation == NOTATION::SI && aExponent > -18 && aExponent < -15 )
+    if( aNotation == NOTATION::SI && aExponent >= -18 && aExponent <= -15 )
     {
         aReductionExponent = -18;
         return "a";
@@ -239,7 +304,7 @@ wxString SIM_VALUE_PARSER::ExponentToMetricSuffix( double aExponent, long& aRedu
         aReductionExponent = 15;
         return "P";
     }
-    else if( aNotation == NOTATION::SI && aExponent >= 18 && aExponent < 21 )
+    else if( aNotation == NOTATION::SI && aExponent >= 18 && aExponent <= 21 )
     {
         aReductionExponent = 18;
         return "E";

@@ -26,89 +26,120 @@
 #include <sim/sim_value.h>
 #include <ki_exception.h>
 #include <confirm.h>
-#include <wx/valtext.h>
+#include <wx/combo.h>
+#include <wx/combobox.h>
 
 
-wxString SIM_VALIDATOR::IsValid( const wxString& aString ) const 
+wxBEGIN_EVENT_TABLE( SIM_VALIDATOR, wxValidator )
+    EVT_TEXT( wxID_ANY, SIM_VALIDATOR::onText )
+wxEND_EVENT_TABLE()
+
+
+SIM_VALIDATOR::SIM_VALIDATOR( SIM_VALUE_BASE::TYPE aValueType,
+                              SIM_VALUE_PARSER::NOTATION aNotation )
+    : wxValidator(),
+      m_valueType( aValueType ),
+      m_notation( aNotation )
 {
-    wxString result = wxTextValidator::IsValid( aString );
+    wxTextEntry* textEntry = getTextEntry();
+    if( !textEntry )
+        return;
 
-    if( !result.IsEmpty() )
-        return result;
+    m_prevText = textEntry->GetValue();
+    m_prevInsertionPoint = textEntry->GetInsertionPoint();
+}
 
-    tao::pegtl::string_input<> in( aString, "from_input" );
 
-    try
-    {
-        tao::pegtl::parse<SIM_VALUE_PARSER::numberGrammar<SIM_VALUE_PARSER::NOTATION::SI>>( in );
-    }
-    catch( tao::pegtl::parse_error& e )
-    {
-        return wxString::Format( _( "Failed to parse '%s': %s" ), aString, e.what() );
-    }
-
-    return ""; 
+wxObject* SIM_VALIDATOR::Clone() const
+{
+    return new SIM_VALIDATOR( *this );
 }
 
 
 bool SIM_VALIDATOR::Validate( wxWindow* aParent )
 {
-    // Same as wxTextValidator::Validate, except that there is no popup window.
-
-    // If window is disabled, simply return.
     if( !m_validatorWindow->IsEnabled() )
         return true;
 
-    const wxTextEntry* text = GetTextEntry();
-    if( !text )
+    wxTextEntry* const textEntry = getTextEntry();
+    if( !textEntry )
         return false;
 
-    return IsValid( text->GetValue() ).empty();
+    return isValid( textEntry->GetValue() );
 }
 
 
-SIM_VALIDATOR::SIM_VALIDATOR() : wxTextValidator( wxFILTER_INCLUDE_CHAR_LIST )
+bool SIM_VALIDATOR::TransferToWindow()
 {
+    return true;
 }
 
 
-SIM_INT_VALIDATOR::SIM_INT_VALIDATOR( SIM_VALUE_PARSER::NOTATION aNotation ) : SIM_VALIDATOR()
+bool SIM_VALIDATOR::TransferFromWindow()
 {
-    switch( aNotation )
+    return true;
+}
+
+
+bool SIM_VALIDATOR::isValid( const wxString& aString )
+{
+    return SIM_VALUE_PARSER::IsValid( aString, m_valueType, m_notation );
+}
+
+
+void SIM_VALIDATOR::onText( wxCommandEvent& aEvent )
+{
+    wxTextEntry* textEntry = getTextEntry();
+    if( !textEntry )
+        return;
+
+    if( !isValid( textEntry->GetValue() ) )
     {
-    case SIM_VALUE_PARSER::NOTATION::SI:
-        SetCharIncludes( SIM_VALUE_PARSER::allowedIntChars<SIM_VALUE_PARSER::NOTATION::SI> );
-        break;
-
-    case SIM_VALUE_PARSER::NOTATION::SPICE:
-        SetCharIncludes( SIM_VALUE_PARSER::allowedFloatChars<SIM_VALUE_PARSER::NOTATION::SPICE> );
-        break;
+        textEntry->ChangeValue( m_prevText );
+        textEntry->SetInsertionPoint( m_prevInsertionPoint );
     }
+
+    m_prevText = textEntry->GetValue();
+    m_prevInsertionPoint = textEntry->GetInsertionPoint();
 }
 
 
-SIM_FLOAT_VALIDATOR::SIM_FLOAT_VALIDATOR( SIM_VALUE_PARSER::NOTATION aNotation ) : SIM_VALIDATOR()
+wxTextEntry* SIM_VALIDATOR::getTextEntry()
 {
-    switch( aNotation )
-    {
-    case SIM_VALUE_PARSER::NOTATION::SI:
-        SetCharIncludes( SIM_VALUE_PARSER::allowedFloatChars<SIM_VALUE_PARSER::NOTATION::SI> );
-        break;
+    // Taken from wxTextValidator.
 
-    case SIM_VALUE_PARSER::NOTATION::SPICE:
-        SetCharIncludes( SIM_VALUE_PARSER::allowedFloatChars<SIM_VALUE_PARSER::NOTATION::SPICE> );
-        break;
-    }
+    if( wxDynamicCast( m_validatorWindow, wxTextCtrl ) )
+        return ( wxTextCtrl* ) m_validatorWindow;
+
+    if( wxDynamicCast( m_validatorWindow, wxComboBox ) )
+        return ( wxComboBox* ) m_validatorWindow;
+
+    if( wxDynamicCast( m_validatorWindow, wxComboCtrl ) )
+        return ( wxComboCtrl* ) m_validatorWindow;
+
+    wxFAIL_MSG(
+        "SIM_VALIDATOR can only be used with wxTextCtrl, wxComboBox, or wxComboCtrl"
+    );
+
+    return nullptr;
 }
 
 
 SIM_PROPERTY::SIM_PROPERTY( const wxString& aLabel, const wxString& aName,
                             SIM_VALUE_BASE& aValue,
+                            SIM_VALUE_BASE::TYPE aValueType,
                             SIM_VALUE_PARSER::NOTATION aNotation )
     : wxStringProperty( aLabel, aName, aValue.ToString() ),
+      m_valueType( aValueType ),
       m_notation( aNotation ),
       m_value( aValue )
 {
+}
+
+
+wxValidator* SIM_PROPERTY::DoGetValidator() const
+{
+    return new SIM_VALIDATOR( m_valueType, m_notation );
 }
 
 
@@ -126,16 +157,4 @@ bool SIM_PROPERTY::StringToValue( wxVariant& aVariant, const wxString& aText, in
 
     aVariant = m_value.ToString();
     return true;
-}
-
-
-wxValidator* SIM_INT_PROPERTY::DoGetValidator() const
-{
-    return new SIM_INT_VALIDATOR( m_notation );
-}
-
-
-wxValidator* SIM_FLOAT_PROPERTY::DoGetValidator() const
-{
-    return new SIM_FLOAT_VALIDATOR( m_notation );
 }

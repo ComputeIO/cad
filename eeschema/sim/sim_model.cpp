@@ -47,26 +47,32 @@ namespace SIM_MODEL_PARSER
 
     struct param : plus<alnum> {};
 
-    template <NOTATION Notation>
+    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
     struct paramValuePair : seq<param,
                                 opt<spaces>,
                                 one<'='>,
                                 opt<spaces>,
-                                number<Notation>> {};
+                                number<Type, Notation>> {};
 
-    template <NOTATION Notation>
+    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
     struct paramValuePairs : seq<opt<spaces>,
-                                 opt<paramValuePair<Notation>,
-                                     star<spaces, paramValuePair<Notation>>>,
+                                 opt<paramValuePair<Type, Notation>,
+                                     star<spaces, paramValuePair<Type, Notation>>>,
                                  opt<spaces>> {};
 
-    template <NOTATION Notation>
-    struct paramValuePairsGrammar : must<paramValuePairs<Notation>, eof> {};
+    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
+    struct paramValuePairsGrammar : must<paramValuePairs<Type, Notation>, eof> {};
 
     template <typename Rule> struct paramValuePairsSelector : std::false_type {};
     template <> struct paramValuePairsSelector<param> : std::true_type {};
-    template <> struct paramValuePairsSelector<number<NOTATION::SI>> : std::true_type {};
-    template <> struct paramValuePairsSelector<number<NOTATION::SPICE>> : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
+        : std::true_type {};
 }
 
 
@@ -430,7 +436,8 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
     try
     {
         root = tao::pegtl::parse_tree::parse<
-            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_MODEL_PARSER::NOTATION::SI>,
+            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_VALUE_BASE::TYPE::FLOAT,
+                                                     SIM_MODEL_PARSER::NOTATION::SI>,
             SIM_MODEL_PARSER::paramValuePairsSelector>
                 ( in );
     }
@@ -448,7 +455,8 @@ void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
     {
         if( node->is_type<SIM_MODEL_PARSER::param>() )
             paramName = node->string();
-        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_MODEL_PARSER::NOTATION::SI>>() )
+        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE_BASE::TYPE::FLOAT,
+                                                        SIM_MODEL_PARSER::NOTATION::SI>>() )
         {
             wxASSERT( paramName != "" );
 
@@ -522,7 +530,7 @@ wxString SIM_MODEL::getFieldValue( const std::vector<T>& aFields, const wxString
 
 template <typename T>
 void SIM_MODEL::setFieldValue( std::vector<T>& aFields, const wxString& aFieldName,
-                                 const wxString& aValue )
+                               const wxString& aValue )
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
 

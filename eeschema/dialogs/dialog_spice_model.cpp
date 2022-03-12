@@ -89,23 +89,6 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
 
 
 template <typename T>
-bool DIALOG_SPICE_MODEL<T>::Validate()
-{
-    wxPropertyGridIterator it;
-
-    for( it = m_paramGrid->GetIterator(); !it.AtEnd(); it++ )
-    {
-        const wxPGProperty* prop = *it;
-
-        if( prop->HasFlag( wxPG_PROP_INVALID_VALUE ) )
-            return false;
-    }
-    
-    return true;
-}
-
-
-template <typename T>
 bool DIALOG_SPICE_MODEL<T>::TransferDataFromWindow()
 {
     if( !DIALOG_SPICE_MODEL_BASE::TransferDataFromWindow() )
@@ -281,16 +264,13 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
     switch( aParam.info.type )
     {
     case TYPE::INT:
-        //prop = new wxIntProperty( paramDescription, aParam.info.name );
-        //prop = new SIM_INT_PROPERTY( paramDescription, aParam.info.name );
-
-
-        
-        prop = new SIM_FLOAT_PROPERTY( paramDescription, aParam.info.name, *aParam.value );
+        prop = new SIM_PROPERTY( paramDescription,aParam.info.name, *aParam.value,
+                                 SIM_VALUE_BASE::TYPE::INT );
         break;
 
     case TYPE::FLOAT:
-        prop = new SIM_FLOAT_PROPERTY( paramDescription, aParam.info.name, *aParam.value );
+        prop = new SIM_PROPERTY( paramDescription,aParam.info.name, *aParam.value,
+                                 SIM_VALUE_BASE::TYPE::FLOAT );
         break;
 
     case TYPE::BOOL:

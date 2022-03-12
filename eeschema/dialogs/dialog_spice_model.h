@@ -46,7 +46,6 @@ public:
     DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol, std::vector<T>& aSchFields );
 
 private:
-    bool Validate() override;
     bool TransferDataFromWindow() override;
     bool TransferDataToWindow() override;
 

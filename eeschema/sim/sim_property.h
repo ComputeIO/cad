@@ -29,26 +29,29 @@
 #include <wx/propgrid/props.h>
 
 
-class SIM_VALIDATOR : public wxTextValidator
+class SIM_VALIDATOR : public wxValidator
 {
 public:
-    wxString IsValid( const wxString& aString ) const override;
+    SIM_VALIDATOR( SIM_VALUE_BASE::TYPE aValueType, SIM_VALUE_PARSER::NOTATION aNotation );
+    SIM_VALIDATOR( const SIM_VALIDATOR& aValidator ) = default;
+
+    wxObject* Clone() const override;
+
     bool Validate( wxWindow* aParent ) override;
+    bool TransferToWindow() override;
+    bool TransferFromWindow() override;
 
-protected:
-    SIM_VALIDATOR();
-};
+private:
+    bool isValid( const wxString& aString );
+    void onText( wxCommandEvent& aEvent );
+    wxTextEntry* getTextEntry();
 
-class SIM_INT_VALIDATOR : public SIM_VALIDATOR
-{
-public:
-    SIM_INT_VALIDATOR( SIM_VALUE_PARSER::NOTATION aNotation );
-};
-
-class SIM_FLOAT_VALIDATOR : public SIM_VALIDATOR
-{
-public:
-    SIM_FLOAT_VALIDATOR( SIM_VALUE_PARSER::NOTATION aNotation );
+    SIM_VALUE_BASE::TYPE       m_valueType;
+    SIM_VALUE_PARSER::NOTATION m_notation;
+    wxString                   m_prevText;
+    long                       m_prevInsertionPoint;
+    
+    wxDECLARE_EVENT_TABLE();
 };
 
 
@@ -56,30 +59,18 @@ class SIM_PROPERTY : public wxStringProperty
 {
 public:
     SIM_PROPERTY( const wxString& aLabel, const wxString& aName, SIM_VALUE_BASE& aValue,
+                  SIM_VALUE_BASE::TYPE aValueType = SIM_VALUE_BASE::TYPE::FLOAT,
                   SIM_VALUE_PARSER::NOTATION aNotation = SIM_VALUE_PARSER::NOTATION::SI );
 
-    wxValidator* DoGetValidator() const override = 0;
+    wxValidator* DoGetValidator() const override;
 
     bool StringToValue( wxVariant& aVariant, const wxString& aText, int aArgFlags = 0 )
         const override;
 
 protected:
+    SIM_VALUE_BASE::TYPE       m_valueType;
     SIM_VALUE_PARSER::NOTATION m_notation;
-    SIM_VALUE_BASE& m_value;
-};
-
-class SIM_INT_PROPERTY : public SIM_PROPERTY
-{
-    using SIM_PROPERTY::SIM_PROPERTY;
-
-    wxValidator* DoGetValidator() const override;
-};
-
-class SIM_FLOAT_PROPERTY : public SIM_PROPERTY
-{
-    using SIM_PROPERTY::SIM_PROPERTY;
-
-    wxValidator* DoGetValidator() const override;
+    SIM_VALUE_BASE&            m_value;
 };
 
 #endif // SIM_PROPERTY_H
