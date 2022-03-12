@@ -24,7 +24,7 @@
 
 
 #include "kibis.h"
-#include "ibis2kibis.h"
+#include "ibisParser.h"
 #include <sstream>
 
 std::string doubleToString( double aNumber )
@@ -49,17 +49,212 @@ IBIS_CORNER ReverseLogic( IBIS_CORNER aIn )
     return out;
 }
 
-bool KibisFromFile( std::string aFileName, std::vector<KIBIS_COMPONENT*>* aDest )
+KIBIS::KIBIS( std::string aFileName ) : KIBIS_ANY( this )
 {
     IbisParser* parser = new IbisParser();
     IbisFile*   file = new IbisFile();
     parser->m_parrot = false;
     parser->parseFile( aFileName, file );
-    convertKibisAll( parser, aDest );
 
-    return true;
+    bool status = true;
+
+    m_file = new KIBIS_FILE( this, parser );
+
+    for( IbisModel iModel : parser->m_ibisFile->m_models )
+    {
+        KIBIS_MODEL* kModel = new KIBIS_MODEL( this, &iModel, parser );
+        status &= kModel->m_valid;
+        m_models.push_back( kModel );
+    }
+
+    for( IbisComponent iComponent : parser->m_ibisFile->m_components )
+    {
+        KIBIS_COMPONENT* kComponent = new KIBIS_COMPONENT( this, &iComponent, parser );
+        status &= kComponent->m_valid;
+        m_components.push_back( kComponent );
+    }
+
+    m_valid = status;
 }
 
+
+KIBIS_FILE::KIBIS_FILE( KIBIS* aTopLevel, IbisParser* aParser ) : KIBIS_ANY( aTopLevel )
+{
+    bool status = true;
+
+    if( aParser == nullptr )
+    {
+        std::cerr << "Internal Error: Ibis -> Kibis, a pointer is nullptr" << std::endl;
+        status = false;
+    }
+    else
+    {
+        m_fileName = aParser->m_ibisFile->m_header.m_fileName;
+        m_fileRev = aParser->m_ibisFile->m_header.m_fileRevision;
+        m_ibisVersion = aParser->m_ibisFile->m_header.m_ibisVersion;
+        m_date = aParser->m_ibisFile->m_header.m_date;
+        m_notes = aParser->m_ibisFile->m_header.m_notes;
+        m_disclaimer = aParser->m_ibisFile->m_header.m_disclaimer;
+        m_copyright = aParser->m_ibisFile->m_header.m_copyright;
+    }
+
+    m_valid = status;
+}
+
+KIBIS_PIN::KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin* aPin, IbisComponentPackage* aPackage,
+                      IbisParser* aParser, std::vector<KIBIS_MODEL*> aModels ) :
+        KIBIS_ANY( aTopLevel )
+{
+    m_signalName = aPin->m_signalName;
+    m_pinNumber = aPin->m_pinName;
+
+    R_pin = aPackage->m_Rpkg;
+    L_pin = aPackage->m_Lpkg;
+    C_pin = aPackage->m_Cpkg;
+
+    // The values listed in the [Pin] description section override the default
+    // values defined in [Package]
+
+    // @TODO : Reading the IBIS standard, I can't figure out if we are supposed
+    // to replace typ, min, and max, or just the typ ?
+
+    if( !std::isnan( aPin->m_Lpin ) )
+    {
+        R_pin.value[IBIS_CORNER::TYP] = aPin->m_Rpin;
+        R_pin.value[IBIS_CORNER::MIN] = aPin->m_Rpin;
+        R_pin.value[IBIS_CORNER::MAX] = aPin->m_Rpin;
+    }
+    if( !std::isnan( aPin->m_Lpin ) )
+    {
+        L_pin.value[IBIS_CORNER::TYP] = aPin->m_Lpin;
+        L_pin.value[IBIS_CORNER::MIN] = aPin->m_Lpin;
+        L_pin.value[IBIS_CORNER::MAX] = aPin->m_Lpin;
+    }
+    if( !std::isnan( aPin->m_Cpin ) )
+    {
+        C_pin.value[IBIS_CORNER::TYP] = aPin->m_Cpin;
+        C_pin.value[IBIS_CORNER::MIN] = aPin->m_Cpin;
+        C_pin.value[IBIS_CORNER::MAX] = aPin->m_Cpin;
+    }
+
+    bool                     modelSelected = false;
+    std::vector<std::string> listOfModels;
+
+    for( IbisModelSelector modelSelector : aParser->m_ibisFile->m_modelSelectors )
+    {
+        if( !strcmp( modelSelector.m_name.c_str(), aPin->m_modelName.c_str() ) )
+        {
+            for( IbisModelSelectorEntry model : modelSelector.m_models )
+            {
+                listOfModels.push_back( model.m_modelName );
+            }
+            modelSelected = true;
+            break;
+        }
+    }
+    if( !modelSelected )
+    {
+        listOfModels.push_back( aPin->m_modelName );
+    }
+
+    for( std::string modelName : listOfModels )
+    {
+        for( KIBIS_MODEL* model : aModels )
+        {
+            if( !strcmp( model->m_name.c_str(), modelName.c_str() ) )
+            {
+                m_models.push_back( model );
+            }
+        }
+    }
+}
+
+KIBIS_MODEL::KIBIS_MODEL( KIBIS* aTopLevel, IbisModel* aSource, IbisParser* aParser ) :
+        KIBIS_ANY( aTopLevel )
+{
+    bool status = true;
+
+    if( aSource == nullptr || aParser == nullptr )
+    {
+        std::cerr << "Internal Error: Ibis -> Kibis, a pointer is nullptr" << std::endl;
+        status = false;
+    }
+    else
+    {
+        m_name = aSource->m_name;
+        m_type = aSource->m_type;
+
+        m_description = std::string( "No description available." );
+
+        for( IbisModelSelector modelSelector : aParser->m_ibisFile->m_modelSelectors )
+        {
+            for( IbisModelSelectorEntry entry : modelSelector.m_models )
+            {
+                if( !strcmp( entry.m_modelName.c_str(), m_name.c_str() ) )
+                {
+                    m_description = entry.m_modelDescription;
+                }
+            }
+        }
+
+        m_vinh = aSource->m_vinh;
+        m_vinl = aSource->m_vinl;
+        m_vref = aSource->m_vref;
+        m_rref = aSource->m_rref;
+        m_cref = aSource->m_cref;
+        m_vmeas = aSource->m_vmeas;
+
+        m_enable = aSource->m_enable;
+        m_polarity = aSource->m_polarity;
+
+        m_ramp = aSource->m_ramp;
+        m_risingWaveforms = aSource->m_risingWaveforms;
+        m_fallingWaveforms = aSource->m_fallingWaveforms;
+        m_GNDClamp = aSource->m_GNDClamp;
+        m_GNDClampReference = aSource->m_GNDClampReference;
+        m_POWERClamp = aSource->m_POWERClamp;
+        m_POWERClampReference = aSource->m_POWERClampReference;
+
+        m_C_comp = aSource->m_C_comp;
+        m_voltageRange = aSource->m_voltageRange;
+        m_temperatureRange = aSource->m_temperatureRange;
+        m_pullupReference = aSource->m_pullupReference;
+        m_pulldownReference = aSource->m_pulldownReference;
+
+        m_Rgnd = aSource->m_Rgnd;
+        m_Rpower = aSource->m_Rpower;
+        m_Rac = aSource->m_Rac;
+        m_Cac = aSource->m_Cac;
+        m_pullup = aSource->m_pullup;
+        m_pulldown = aSource->m_pulldown;
+    }
+    m_valid = status;
+}
+
+KIBIS_COMPONENT::KIBIS_COMPONENT( KIBIS* aTopLevel, IbisComponent* aSource, IbisParser* aParser ) :
+        KIBIS_ANY( aTopLevel )
+{
+    bool status = true;
+
+    m_name = aSource->m_name;
+    m_manufacturer = aSource->m_manufacturer;
+    m_topLevel = aTopLevel;
+
+    for( IbisComponentPin iPin : aSource->m_pins )
+    {
+        if( iPin.m_dummy )
+        {
+            continue;
+        }
+
+        KIBIS_PIN* kPin = new KIBIS_PIN( aTopLevel, &iPin, &( aSource->m_package ), aParser,
+                                         m_topLevel->m_models );
+        status &= kPin->m_valid;
+        m_pins.push_back( kPin );
+    }
+
+    m_valid = status;
+}
 
 KIBIS_PIN* KIBIS_COMPONENT::getPin( std::string aPinNumber )
 {

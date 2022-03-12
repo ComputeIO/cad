@@ -28,6 +28,19 @@
 
 #include "ibisParser.h"
 
+class KIBIS_PIN;
+class KIBIS_FILE;
+class KIBIS_MODEL;
+class KIBIS_COMPONENT;
+class KIBIS;
+
+class KIBIS_ANY
+{
+public:
+    KIBIS_ANY( KIBIS* aTopLevel ) { m_topLevel = aTopLevel, m_valid = false; };
+    KIBIS* m_topLevel;
+    bool   m_valid;
+};
 
 enum KIBIS_WAVEFORM_TYPE
 {
@@ -85,10 +98,20 @@ enum class KIBIS_ACCURACY
     LEVEL_3,
 };
 
-
-class KIBIS_FILE
+class KIBIS : public KIBIS_ANY
 {
 public:
+    KIBIS( std::string aFileName );
+    std::vector<KIBIS_COMPONENT*> m_components;
+    std::vector<KIBIS_MODEL*>     m_models;
+    KIBIS_FILE*                   m_file;
+};
+
+class KIBIS_FILE : KIBIS_ANY
+{
+public:
+    KIBIS_FILE( KIBIS* aTopLevel, IbisParser* aParser );
+
     std::string m_fileName;
     double   m_fileRev;
     double   m_ibisVersion;
@@ -100,16 +123,11 @@ public:
     std::string m_copyright;
 };
 
-class KIBIS_ANY
-{
-public:
-    KIBIS_FILE* m_file;
-};
-
-
 class KIBIS_MODEL : public KIBIS_ANY
 {
 public:
+    KIBIS_MODEL( KIBIS* aTopLevel, IbisModel* aSource, IbisParser* aParser );
+
     std::string        m_name;
     std::string        m_description;
     IBIS_MODEL_TYPE m_type = IBIS_MODEL_TYPE::UNDEFINED;
@@ -162,6 +180,8 @@ public:
 class KIBIS_PIN : public KIBIS_ANY
 {
 public:
+    KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin* aPin, IbisComponentPackage* aPackage,
+               IbisParser* aParser, std::vector<KIBIS_MODEL*> aModels );
     /** @brief Name of the pin
      *  Examples : "VCC", "GPIOA", "CLK", etc...
      */
@@ -208,6 +228,7 @@ public:
 class KIBIS_COMPONENT : public KIBIS_ANY
 {
 public:
+    KIBIS_COMPONENT( KIBIS* aToplevel, IbisComponent* aSource, IbisParser* aParser );
     /** @brief Name of the component */
     std::string m_name;
     /** @brief Name of the manufacturer */
@@ -217,7 +238,5 @@ public:
 
     KIBIS_PIN* getPin( std::string aPinNumber );
 };
-
-bool KibisFromFile( std::string aFileName, std::vector<KIBIS_COMPONENT*>* aDest );
 
 #endif

@@ -3,16 +3,12 @@
 
 int main( void )
 {
-    std::vector<KIBIS_COMPONENT*> components1;
-    KibisFromFile( "ibis_v1_1.ibs", &components1 );
-    std::vector<KIBIS_COMPONENT*> components2;
-    KibisFromFile( "ibis_v2_1.ibs", &components2 );
-    std::vector<KIBIS_COMPONENT*> components3;
-    KibisFromFile( "ibis_v2_1.pkg", &components3 );
-    std::vector<KIBIS_COMPONENT*> components4;
-    KibisFromFile( "sn74lvc541a.ibs", &components4 );
+    KIBIS* k1 = new KIBIS( "ibis_v1_1.ibs" );
+    KIBIS* k2 = new KIBIS( "ibis_v2_1.ibs" );
+    KIBIS* k3 = new KIBIS( "ibis_v2_1.pkg" );
+    KIBIS* k4 = new KIBIS( "sn74lvc541a.ibs" );
 
-    KIBIS_COMPONENT* comp = components4.at( 0 );
+    KIBIS_COMPONENT* comp = k4->m_components.at( 0 );
 
     std::cout << "Component: " << comp->m_name << std::endl;
 
@@ -68,7 +64,7 @@ int main( void )
 
     wxString simul = "";
     simul += "\n x1 OUT_1 0 DIE_1 driver_typ \n";
-    simul += "R1 OUT_1 GND 1 00\n";
+    simul += "R1 OUT_1 GND 1k\n";
     simul += ".tran 0.1n 40n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
