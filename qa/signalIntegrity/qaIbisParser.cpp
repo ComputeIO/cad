@@ -40,13 +40,11 @@ int main( void )
     pin2->writeSpiceDevice( tmp4, "device_typ", pin2->m_models.at( 0 ), IBIS_CORNER::TYP,
                             IBIS_CORNER::TYP );
     pin1->writeSpiceDriver( tmp1, "driver_typ", pin1->m_models.at( 0 ), IBIS_CORNER::TYP,
-                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave, wave->GetType() );
+                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave );
     pin1->writeSpiceDriver( tmp2, "driver_min", pin1->m_models.at( 0 ), IBIS_CORNER::MIN,
-                            IBIS_CORNER::MIN, KIBIS_ACCURACY::LEVEL_1, wave,
-                            KIBIS_WAVEFORM_TYPE::NONE );
+                            IBIS_CORNER::MIN, KIBIS_ACCURACY::LEVEL_1, wave );
     pin1->writeSpiceDriver( tmp3, "driver_max", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
-                            IBIS_CORNER::MAX, KIBIS_ACCURACY::LEVEL_2, wave,
-                            KIBIS_WAVEFORM_TYPE::NONE );
+                            IBIS_CORNER::MAX, KIBIS_ACCURACY::LEVEL_2, wave );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )

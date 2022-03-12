@@ -44,31 +44,48 @@ public:
 enum KIBIS_WAVEFORM_TYPE
 {
     NONE = 0, // Used for three state
-    RECTANGULAR
+    RECTANGULAR,
+    STUCK_HIGH,
+    STUCK_LOW,
+    HIGH_Z
 };
 
 
 class KIBIS_WAVEFORM
 {
 public:
+    KIBIS_WAVEFORM(){};
     KIBIS_WAVEFORM_TYPE GetType() { return m_type; };
 
-private:
+protected:
     KIBIS_WAVEFORM_TYPE m_type = KIBIS_WAVEFORM_TYPE::NONE;
 };
 
 class KIBIS_WAVEFORM_RECTANGULAR : public KIBIS_WAVEFORM
 {
 public:
+    KIBIS_WAVEFORM_RECTANGULAR() : KIBIS_WAVEFORM() { m_type = KIBIS_WAVEFORM_TYPE::RECTANGULAR; };
     double m_ton;
     double m_toff;
     int    m_cycles;
+};
 
+class KIBIS_WAVEFORM_STUCK_HIGH : public KIBIS_WAVEFORM
+{
 public:
-    KIBIS_WAVEFORM_TYPE GetType() { return m_type; };
+    KIBIS_WAVEFORM_STUCK_HIGH() : KIBIS_WAVEFORM() { m_type = KIBIS_WAVEFORM_TYPE::STUCK_HIGH; };
+};
 
-private:
-    KIBIS_WAVEFORM_TYPE m_type = KIBIS_WAVEFORM_TYPE::RECTANGULAR;
+class KIBIS_WAVEFORM_STUCK_LOW : public KIBIS_WAVEFORM
+{
+public:
+    KIBIS_WAVEFORM_STUCK_LOW() : KIBIS_WAVEFORM() { m_type = KIBIS_WAVEFORM_TYPE::STUCK_LOW; };
+};
+
+class KIBIS_WAVEFORM_HIGH_Z : public KIBIS_WAVEFORM
+{
+public:
+    KIBIS_WAVEFORM_HIGH_Z() : KIBIS_WAVEFORM() { m_type = KIBIS_WAVEFORM_TYPE::HIGH_Z; };
 };
 
 /** Accuracy level.
@@ -203,23 +220,23 @@ public:
 
     bool     writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
-                               KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType );
+                               KIBIS_WAVEFORM* aWave );
     bool     writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
-    void     getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
-                                KIBIS_WAVEFORM_TYPE aWaveType, IBIS_CORNER aSupply );
-    std::string getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                 KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
-                                 IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+    void     getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply );
+    std::string getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
+                                    std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                    KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
+                                    IBIS_CORNER aSpeed );
     std::string getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
-                                  std::pair<IbisWaveform*, IbisWaveform*> aPair1,
-                                  std::pair<IbisWaveform*, IbisWaveform*> aPair2,
-                                  KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
-                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+                                     std::pair<IbisWaveform*, IbisWaveform*> aPair1,
+                                     std::pair<IbisWaveform*, IbisWaveform*> aPair2,
+                                     KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
+                                     IBIS_CORNER aSpeed );
 
     std::string KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                         KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType, IBIS_CORNER aSupply,
-                         IBIS_CORNER aSpeed, int index );
+                            KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
+                            int index );
     std::string addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex );
     void     getKuKdFromFile( std::string* aSimul );
 };

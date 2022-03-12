@@ -392,7 +392,6 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
 
     IbisWaveform risingWF = TrimWaveform( aPair.first );
     IbisWaveform fallingWF = TrimWaveform( aPair.second );
-    std::cout << "Times : " << aWave->m_ton << "  " << aWave->m_toff << std::endl;
 
     if( aWave->m_ton < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
     {
@@ -582,9 +581,10 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     m_t = t;
 }
 
-std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
-                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int index )
+std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aModel,
+                                   std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                   KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
+                                   int index )
 {
     std::string simul = "";
 
@@ -626,7 +626,7 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*,
     simul += "CCPOMP 2 GND ";
     simul += doubleToString( aModel->m_C_comp.value[aSpeed] ); //@TODO: Check the corner ?
     simul += "\n";
-    switch( aWaveType )
+    switch( aWave->GetType() )
     {
     case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
         simul += aModel->generateSquareWave(
@@ -642,13 +642,13 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*,
 }
 
 std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                        std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                        KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
-                                        IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+                                           std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                           KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
+                                           IBIS_CORNER aSpeed )
 {
     std::string simul = "";
 
-    if( aWaveType == KIBIS_WAVEFORM_TYPE::NONE )
+    if( aWave->GetType() == KIBIS_WAVEFORM_TYPE::NONE )
     {
         //@TODO , there could be some current flowing through pullup / pulldown transistors, even when off
         std::vector<double> ku, kd, t;
@@ -661,7 +661,7 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
     }
     else
     {
-        simul += KuKdDriver( aModel, aPair, aWave, aWaveType, aSupply, aSpeed, 0 );
+        simul += KuKdDriver( aModel, aPair, aWave, aSupply, aSpeed, 0 );
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
@@ -710,8 +710,16 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
             std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
         }
 
+        switch( aWave->GetType() )
+        {
+        case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
+            simul += ".tran 0.1n 100n \n"; break;
 
-        simul += ".tran 0.1n 100n \n";
+        case KIBIS_WAVEFORM_TYPE::HIGH_Z:
+        case KIBIS_WAVEFORM_TYPE::STUCK_LOW:
+        case KIBIS_WAVEFORM_TYPE::STUCK_HIGH:
+        default: simul += ".tran 0.5 1 \n"; //
+        }
         simul += ".option xmu=0.49  \n";
         //simul += ".dc Vpin -5 5 0.1\n";
         simul += ".control run \n";
@@ -730,12 +738,11 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
     return simul;
 }
 
-void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
-                                   KIBIS_WAVEFORM_TYPE aWaveType, IBIS_CORNER aSupply )
+void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply )
 {
     std::vector<double> ku, kd, t;
 
-    switch( aWaveType )
+    switch( aWave->GetType() )
     {
     case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
     {
@@ -760,6 +767,21 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
         }
         break;
     }
+    case KIBIS_WAVEFORM_TYPE::STUCK_HIGH:
+    {
+        ku.push_back( 1 );
+        kd.push_back( 0 );
+        t.push_back( 0 );
+        break;
+    }
+    case KIBIS_WAVEFORM_TYPE::STUCK_LOW:
+    {
+        ku.push_back( 0 );
+        kd.push_back( 1 );
+        t.push_back( 0 );
+        break;
+    }
+    case KIBIS_WAVEFORM_TYPE::HIGH_Z:
     case KIBIS_WAVEFORM_TYPE::NONE:
     default:
         ku.push_back( 0 );
@@ -773,14 +795,14 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave,
 
 
 std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
-                                         std::pair<IbisWaveform*, IbisWaveform*> aPair1,
-                                         std::pair<IbisWaveform*, IbisWaveform*> aPair2,
-                                         KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType,
-                                         IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+                                            std::pair<IbisWaveform*, IbisWaveform*> aPair1,
+                                            std::pair<IbisWaveform*, IbisWaveform*> aPair2,
+                                            KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
+                                            IBIS_CORNER aSpeed )
 {
     std::string simul = "";
 
-    if( aWaveType == KIBIS_WAVEFORM_TYPE::NONE )
+    if( aWave->GetType() == KIBIS_WAVEFORM_TYPE::NONE )
     {
         //@TODO , there could be some current flowing through pullup / pulldown transistors, even when off
         std::vector<double> ku, kd, t;
@@ -793,8 +815,8 @@ std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                        
     }
     else
     {
-        simul += KuKdDriver( aModel, aPair1, aWave, aWaveType, aSupply, aSpeed, 0 );
-        simul += KuKdDriver( aModel, aPair2, aWave, aWaveType, aSupply, aSpeed, 1 );
+        simul += KuKdDriver( aModel, aPair1, aWave, aSupply, aSpeed, 0 );
+        simul += KuKdDriver( aModel, aPair2, aWave, aSupply, aSpeed, 1 );
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
@@ -897,7 +919,7 @@ std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                        
 
 bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                   IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
-                                  KIBIS_WAVEFORM* aWave, KIBIS_WAVEFORM_TYPE aWaveType )
+                                  KIBIS_WAVEFORM* aWave )
 {
     bool status = true;
 
@@ -949,11 +971,11 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
                 std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy"
                           << std::endl;
             }
-            getKuKdNoWaveform( aModel, aWave, aWaveType, aSupply );
+            getKuKdNoWaveform( aModel, aWave, aSupply );
         }
         else if( wfPairs.size() == 1 || aAccuracy <= KIBIS_ACCURACY::LEVEL_1 )
         {
-            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), aWave, aWaveType, aSupply, aSpeed );
+            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), aWave, aSupply, aSpeed );
         }
         else
         {
@@ -962,8 +984,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
                 std::cout << "Model has more than 2 waveform pairs, using the first two."
                           << std::endl;
             }
-            getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), aWave, aWaveType,
-                                 aSupply, aSpeed );
+            getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), aWave, aSupply, aSpeed );
         }
 
         result += "Vku KU GND pwl ( ";
