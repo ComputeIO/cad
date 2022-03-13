@@ -403,6 +403,16 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         std::cerr << "WARNING: falling edge is longer than on time." << std::endl;
     }
 
+    double deltaR = risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).V.value[ aSupply ]
+                  - risingWF.m_table.m_entries.at( 0 ).V.value[ aSupply ];
+    double deltaF = fallingWF.m_table.m_entries.at( fallingWF.m_table.m_entries.size() - 1 ).V.value[ aSupply ]
+                  - fallingWF.m_table.m_entries.at( 0 ).V.value[ aSupply ];
+
+    // Ideally, delta should be equal to zero.
+    // It can be different from zero if the falling waveform does not start were the rising one ended.
+    double delta = deltaR + deltaF;
+    double KR = deltaR * aWave->m_cycles;
+
     for( int i = 0; i < aWave->m_cycles; i++ )
     {
         simul += "Vrise";
@@ -413,11 +423,24 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         simul += aNode2;
         simul += " pwl ( ";
 
+        if( i != 0 )
+        {
+            simul += "0 0 ";
+            VTtableEntry entry0 = risingWF.m_table.m_entries.at( 0 );
+            VTtableEntry entry1 = risingWF.m_table.m_entries.at( 1 );
+            double       deltaT = entry1.t - entry0.t;
+
+            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) - deltaT );
+            simul += " ";
+            simul += "0";
+            simul += " ";
+        }
+
         for( auto entry : risingWF.m_table.m_entries )
         {
             simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) );
             simul += " ";
-            simul += doubleToString( entry.V.value[aSupply] );
+            simul += doubleToString( entry.V.value[aSupply] - delta );
             simul += " ";
         }
         simul += ")\n";
@@ -432,6 +455,20 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         simul += " ";
         simul += aNode2;
         simul += " pwl ( ";
+
+        if( i != 0 )
+        {
+            simul += "0 0 ";
+            VTtableEntry entry0 = fallingWF.m_table.m_entries.at( 0 );
+            VTtableEntry entry1 = fallingWF.m_table.m_entries.at( 1 );
+            double       deltaT = entry1.t - entry0.t;
+
+            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton
+                                     - deltaT );
+            simul += " ";
+            simul += "0";
+            simul += " ";
+        }
 
         for( auto entry : fallingWF.m_table.m_entries )
         {
@@ -571,7 +608,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     {
         std::cerr << "ERROR : I asked for file creation, but I cannot find it" << std::endl;
     }
-    std::remove( "temp_input.spice" );
+    //std::remove( "temp_input.spice" );
     std::remove( "temp_output.spice" );
 
     // @TODO : this is the end of the dirty code
@@ -632,6 +669,14 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
         simul += aModel->generateSquareWave(
                 "DIE0", "GND", static_cast<KIBIS_WAVEFORM_RECTANGULAR*>( aWave ), aPair, aSupply );
         break;
+    case KIBIS_WAVEFORM_TYPE::STUCK_HIGH:
+    {
+        IbisWaveform* fallingWF = aPair.second;
+        simul += "Vsig DIE0 GND ";
+        simul += doubleToString( fallingWF->m_table.m_entries.at( 0 ).V.value[aSupply] );
+        simul += "\n";
+        break;
+    }
     case KIBIS_WAVEFORM_TYPE::NONE:
     default: std::cout << "NO WAVEFORM" << std::endl; break;
     }
@@ -712,8 +757,7 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
 
         switch( aWave->GetType() )
         {
-        case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
-            simul += ".tran 0.1n 100n \n"; break;
+        case KIBIS_WAVEFORM_TYPE::RECTANGULAR: simul += ".tran 0.1n 1000n \n"; break;
 
         case KIBIS_WAVEFORM_TYPE::HIGH_Z:
         case KIBIS_WAVEFORM_TYPE::STUCK_LOW:
@@ -900,13 +944,14 @@ std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                        
         }
 
 
-        simul += ".tran 0.1n 100n \n";
+        simul += ".tran 0.1n 1000n \n";
         simul += ".option xmu=0.49  \n";
         //simul += ".dc Vpin -5 5 0.1\n";
         simul += ".control run \n";
         simul += "set filetype=ascii\n";
         simul += "run \n";
         simul += "plot v(KU) v(KD)\n";
+        simul += "plot v(x1.DIE0) \n";
         simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
         //simul += "quit\n";
         simul += ".endc \n";
@@ -958,11 +1003,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         result += doubleToString( C_pin.value[ReverseLogic( aSpeed )] );
         result += "\n";
 
-
-
         std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
-
-
 
         if( wfPairs.size() < 1 || aAccuracy <= KIBIS_ACCURACY::LEVEL_0 )
         {

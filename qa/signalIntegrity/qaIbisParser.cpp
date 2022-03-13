@@ -30,21 +30,20 @@ int main( void )
     std::string*  tmp3 = new std::string();
     std::string*  tmp4 = new std::string();
 
-    KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
-    wave->m_ton = 12e-9;
-    wave->m_toff = 12e-9;
-    wave->m_cycles = 5;
+    /*KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
+    wave->m_ton = 60e-9;
+    wave->m_toff = 60e-9;
+    wave->m_cycles = 10;*/
+
+
+    KIBIS_WAVEFORM_STUCK_HIGH* wave = new KIBIS_WAVEFORM_STUCK_HIGH();
 
     std::cout << "WAVEFORM TYPE IN QA: " << wave->GetType() << std::endl;
     std::cout << pin2->m_models.at(0)->m_name << std::endl;
     pin2->writeSpiceDevice( tmp4, "device_typ", pin2->m_models.at( 0 ), IBIS_CORNER::TYP,
                             IBIS_CORNER::TYP );
     pin1->writeSpiceDriver( tmp1, "driver_typ", pin1->m_models.at( 0 ), IBIS_CORNER::TYP,
-                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_1, wave );
-    pin1->writeSpiceDriver( tmp2, "driver_min", pin1->m_models.at( 0 ), IBIS_CORNER::MIN,
-                            IBIS_CORNER::MIN, KIBIS_ACCURACY::LEVEL_1, wave );
-    pin1->writeSpiceDriver( tmp3, "driver_max", pin1->m_models.at( 0 ), IBIS_CORNER::MAX,
-                            IBIS_CORNER::MAX, KIBIS_ACCURACY::LEVEL_2, wave );
+                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_2, wave );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )
