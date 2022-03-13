@@ -677,8 +677,17 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
         simul += "\n";
         break;
     }
+    case KIBIS_WAVEFORM_TYPE::STUCK_LOW:
+    {
+        IbisWaveform* risingWF = aPair.first;
+        simul += "Vsig DIE0 GND ";
+        simul += doubleToString( risingWF->m_table.m_entries.at( 0 ).V.value[aSupply] );
+        simul += "\n";
+        break;
+    }
     case KIBIS_WAVEFORM_TYPE::NONE:
-    default: std::cout << "NO WAVEFORM" << std::endl; break;
+    case KIBIS_WAVEFORM_TYPE::HIGH_Z:
+    default: break;
     }
     simul += addDie( aModel, aSupply, 0 );
 

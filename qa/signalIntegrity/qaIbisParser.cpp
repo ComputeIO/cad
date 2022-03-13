@@ -30,13 +30,11 @@ int main( void )
     std::string*  tmp3 = new std::string();
     std::string*  tmp4 = new std::string();
 
-    /*KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
+    KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
     wave->m_ton = 60e-9;
     wave->m_toff = 60e-9;
-    wave->m_cycles = 10;*/
-
-
-    KIBIS_WAVEFORM_STUCK_HIGH* wave = new KIBIS_WAVEFORM_STUCK_HIGH();
+    wave->m_cycles = 10;
+    //KIBIS_WAVEFORM_STUCK_HIGH* wave = new KIBIS_WAVEFORM_STUCK_HIGH();
 
     std::cout << "WAVEFORM TYPE IN QA: " << wave->GetType() << std::endl;
     std::cout << pin2->m_models.at(0)->m_name << std::endl;
