@@ -262,7 +262,7 @@ public:
 
     bool operator <( const SCH_ITEM& aItem ) const override;
 
-    VECTOR2I GetPosition() const override { return m_start; }
+    VECTOR2I GetPosition() const override { return GetMidPoint(); }
     void     SetPosition( const VECTOR2I& aPosition ) override;
 
     bool IsPointClickableAnchor( const VECTOR2I& aPos ) const override
