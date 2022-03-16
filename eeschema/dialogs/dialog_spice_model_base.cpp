@@ -46,7 +46,7 @@ DIALOG_SPICE_MODEL_BASE::DIALOG_SPICE_MODEL_BASE( wxWindow* parent, wxWindowID i
 	m_staticText124->Wrap( -1 );
 	fgSizer15->Add( m_staticText124, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_staticText125 = new wxStaticText( sbSizer4->GetStaticBox(), wxID_ANY, wxT("/home/mikolaj/Downloads/1N4148.lib"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText125 = new wxStaticText( sbSizer4->GetStaticBox(), wxID_ANY, wxT("etc/kicad-sim/diodes.lib"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText125->Wrap( -1 );
 	fgSizer15->Add( m_staticText125, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 

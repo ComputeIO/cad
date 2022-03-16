@@ -107,18 +107,20 @@ namespace SIM_VALUE_PARSER
 
     struct intPart : digits {};
 
-    struct fracPartPrefix : one<'.'> {};
+    //struct fracPartPrefix : one<'.'> {};
     struct fracPart : digits {};
-    struct fracPartWithPrefix : seq<fracPartPrefix, fracPart> {};
+    //struct fracPartWithPrefix : seq<fracPartPrefix, fracPart> {};
 
 
     template <SIM_VALUE_BASE::TYPE ValueType>
     struct significand;
     
     template <> struct significand<SIM_VALUE_BASE::TYPE::FLOAT> :
-        sor<seq<intPart,
-                opt<fracPartWithPrefix>>,
-            fracPartWithPrefix> {};
+        sor<seq<intPart, one<'.'>, fracPart>,
+            seq<intPart, one<'.'>>,
+            intPart,
+            seq<one<'.'>, fracPart>,
+            one<'.'>> {};
 
     template <> struct significand<SIM_VALUE_BASE::TYPE::INT> : intPart {};
 
@@ -160,7 +162,7 @@ namespace SIM_VALUE_PARSER
                         opt<metricSuffix<ValueType, Notation>>> {};
 
     template <SIM_VALUE_BASE::TYPE ValueType, NOTATION Notation>
-    struct numberGrammar : must<number<ValueType, Notation>, eof> {};
+    struct numberGrammar : must<opt<number<ValueType, Notation>>, eof> {};
 
 
     template <typename Rule>

@@ -81,9 +81,6 @@ bool SIM_VALUE_PARSER::IsValid( const wxString& aString,
                                 SIM_VALUE_BASE::TYPE aValueType,
                                 NOTATION aNotation )
 {
-    if( aString.IsEmpty() )
-        return true;
-
     tao::pegtl::string_input<> in( aString, "from_input" );
 
     try
@@ -121,7 +118,7 @@ static inline void handleNodeForParse( tao::pegtl::parse_tree::node& aNode,
         {
             if( subnode->is_type<SIM_VALUE_PARSER::intPart>() )
                 aParseResult.intPart = std::stol( subnode->string() );
-            else
+            else if( subnode->is_type<SIM_VALUE_PARSER::fracPart>() )
                 aParseResult.fracPart = std::stol( subnode->string() );
         }
     }
@@ -145,9 +142,6 @@ SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString,
                                                         NOTATION aNotation )
 {
     LOCALE_IO toggle;
-
-    if( aString.IsEmpty() )
-        return {};
 
     tao::pegtl::string_input<> in( aString.ToStdString(), "from_input" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
@@ -410,7 +404,9 @@ void SIM_VALUE<double>::FromString( const wxString& aString )
 {
     SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString );
 
-    if( parseResult.isEmpty )
+    // Single dot should be allowed in fields.
+    // TODO: disallow single dot in models.
+    if( parseResult.isEmpty || parseResult.significand == "." )
     {
         m_value = NULLOPT;
         return;

@@ -32,6 +32,8 @@
 
 wxBEGIN_EVENT_TABLE( SIM_VALIDATOR, wxValidator )
     EVT_TEXT( wxID_ANY, SIM_VALIDATOR::onText )
+    EVT_CHAR( SIM_VALIDATOR::onChar )
+    EVT_MOUSE_EVENTS( SIM_VALIDATOR::onMouse )
 wxEND_EVENT_TABLE()
 
 
@@ -87,23 +89,6 @@ bool SIM_VALIDATOR::isValid( const wxString& aString )
 }
 
 
-void SIM_VALIDATOR::onText( wxCommandEvent& aEvent )
-{
-    wxTextEntry* textEntry = getTextEntry();
-    if( !textEntry )
-        return;
-
-    if( !isValid( textEntry->GetValue() ) )
-    {
-        textEntry->ChangeValue( m_prevText );
-        textEntry->SetInsertionPoint( m_prevInsertionPoint );
-    }
-
-    m_prevText = textEntry->GetValue();
-    m_prevInsertionPoint = textEntry->GetInsertionPoint();
-}
-
-
 wxTextEntry* SIM_VALIDATOR::getTextEntry()
 {
     // Taken from wxTextValidator.
@@ -122,6 +107,46 @@ wxTextEntry* SIM_VALIDATOR::getTextEntry()
     );
 
     return nullptr;
+}
+
+
+void SIM_VALIDATOR::onText( wxCommandEvent& aEvent )
+{
+    wxTextEntry* textEntry = getTextEntry();
+    if( !textEntry )
+        return;
+
+    if( !isValid( textEntry->GetValue() ) )
+    {
+        textEntry->ChangeValue( m_prevText );
+        textEntry->SetInsertionPoint( m_prevInsertionPoint );
+    }
+
+    m_prevText = textEntry->GetValue();
+    m_prevInsertionPoint = textEntry->GetInsertionPoint();
+}
+
+
+void SIM_VALIDATOR::onChar( wxKeyEvent& aEvent )
+{
+    aEvent.Skip();
+
+    wxTextEntry* textEntry = getTextEntry();
+    if( !textEntry )
+        return;
+
+    m_prevInsertionPoint = textEntry->GetInsertionPoint();
+}
+
+void SIM_VALIDATOR::onMouse( wxMouseEvent& aEvent )
+{
+    aEvent.Skip();
+
+    wxTextEntry* textEntry = getTextEntry();
+    if( !textEntry )
+        return;
+
+    m_prevInsertionPoint = textEntry->GetInsertionPoint();
 }
 
 

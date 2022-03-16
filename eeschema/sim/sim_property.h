@@ -43,8 +43,12 @@ public:
 
 private:
     bool isValid( const wxString& aString );
-    void onText( wxCommandEvent& aEvent );
+
     wxTextEntry* getTextEntry();
+
+    void onText( wxCommandEvent& aEvent );
+    void onChar( wxKeyEvent& aEvent );
+    void onMouse( wxMouseEvent& aEvent );
 
     SIM_VALUE_BASE::TYPE       m_valueType;
     SIM_VALUE_PARSER::NOTATION m_notation;
