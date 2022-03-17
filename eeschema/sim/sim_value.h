@@ -126,7 +126,7 @@ namespace SIM_VALUE_PARSER
 
 
     struct exponentPrefix : one<'e', 'E'> {};
-    struct exponent : seq<opt<sign>, digits> {};
+    struct exponent : seq<opt<sign>, opt<digits>> {};
     struct exponentWithPrefix : seq<exponentPrefix, exponent> {};
 
 

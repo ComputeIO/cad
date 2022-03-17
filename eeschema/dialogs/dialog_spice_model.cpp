@@ -77,12 +77,34 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
 
     m_scintillaTricks = std::make_unique<SCINTILLA_TRICKS>( m_codePreview, wxT( "{}" ), false );
 
+    m_paramGridMgr->Bind( wxEVT_PG_SELECTED, &DIALOG_SPICE_MODEL::onSelectionChange, this );
+
     m_paramGrid->SetValidationFailureBehavior( wxPG_VFB_STAY_IN_PROPERTY
                                                | wxPG_VFB_BEEP
                                                | wxPG_VFB_MARK_CELL );
 
-    m_paramGrid->GetGrid()->DedicateKey( WXK_UP );
-    m_paramGrid->GetGrid()->DedicateKey( WXK_DOWN );
+    m_paramGrid->SetColumnProportion( static_cast<int>( COLUMN::DESCRIPTION ), 50 );
+    m_paramGrid->SetColumnProportion( static_cast<int>( COLUMN::VALUE ), 18 );
+    m_paramGrid->SetColumnProportion( static_cast<int>( COLUMN::UNIT ), 10 );
+    m_paramGrid->SetColumnProportion( static_cast<int>( COLUMN::DEFAULT ), 12 );
+    m_paramGrid->SetColumnProportion( static_cast<int>( COLUMN::TYPE ), 10 );
+
+    if( wxPropertyGrid* grid = m_paramGrid->GetGrid() )
+    {
+        grid->AddActionTrigger( wxPG_ACTION_EDIT, WXK_RETURN );
+        grid->DedicateKey( WXK_RETURN );
+        grid->AddActionTrigger( wxPG_ACTION_NEXT_PROPERTY, WXK_RETURN );
+
+        grid->DedicateKey( WXK_UP );
+        grid->DedicateKey( WXK_DOWN );
+
+        // Doesn't work for some reason.
+        //grid->DedicateKey( WXK_TAB );
+        //grid->AddActionTrigger( wxPG_ACTION_NEXT_PROPERTY, WXK_TAB );
+        //grid->AddActionTrigger( wxPG_ACTION_PREV_PROPERTY, WXK_TAB, wxMOD_SHIFT );
+    }
+    else
+        wxFAIL;
 
     Layout();
 }
@@ -296,7 +318,7 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
     switch( aParam.info.type )
     {
     case TYPE::BOOL:           typeStr = wxString( "Bool"           ); break;
-    case TYPE::INT:            typeStr = wxString( "Integer"        ); break;
+    case TYPE::INT:            typeStr = wxString( "Int"            ); break;
     case TYPE::FLOAT:          typeStr = wxString( "Float"          ); break;
     case TYPE::COMPLEX:        typeStr = wxString( "Complex"        ); break;
     case TYPE::STRING:         typeStr = wxString( "String"         ); break;
@@ -350,6 +372,30 @@ void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
 
     m_curModelTypeOfDeviceType.at( deviceType ) = m_curModelType;
     updateWidgets();
+}
+
+
+template <typename T>
+void DIALOG_SPICE_MODEL<T>::onSelectionChange( wxPropertyGridEvent& aEvent )
+{
+    // TODO: Activate also when the whole property grid is selected with tab key.
+
+    wxPropertyGrid* grid = m_paramGrid->GetGrid();
+    if( !grid )
+    {
+        wxFAIL;
+        return;
+    }
+
+    wxWindow* editorControl = grid->GetEditorControl();
+    if( !editorControl )
+    {
+        wxFAIL;
+        return;
+    }
+    
+    // Without this, the user had to press tab before they could j
+    editorControl->SetFocus();
 }
 
 
