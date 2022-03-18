@@ -23,49 +23,31 @@
 
 /**
  * @file common_mocks.cpp
- * @brief Mock objects for libcommon unit tests
+ * @brief Mock objects for unit tests
  */
 
-#include <pgm_base.h>
-#include <kiface_base.h>
+#include <mock_kiface_base.h>
+#include <mock_pgm_base.h>
 
-
-struct PGM_TEST_FRAME : public PGM_BASE
-{
-    void MacOpenFile( const wxString& aFileName ) override
-    {}
-};
 
 PGM_BASE& Pgm()
 {
-    static PGM_TEST_FRAME program;
+    static MOCK_PGM_BASE program;
     return program;
 }
 
-static struct IFACE : public KIFACE_BASE
+
+// Similar to PGM_BASE& Pgm(), but return nullptr when a *.ki_face is run from
+// a python script or something else.
+// Therefore here return always nullptr
+PGM_BASE* PgmOrNull()
 {
-    bool OnKifaceStart( PGM_BASE* aProgram, int aCtlBits ) override
-    {
-        return start_common( aCtlBits );
-    }
+    return nullptr;
+}
 
-    wxWindow* CreateWindow( wxWindow* aParent, int aClassId, KIWAY* aKiway, int aCtlBits = 0 ) override
-    {
-        return nullptr;
-    }
-
-    void* IfaceOrAddress( int aDataId ) override
-    {
-        return nullptr;
-    }
-
-    IFACE( const char* aDSOname, KIWAY::FACE_T aType ) :
-            KIFACE_BASE( aDSOname, aType )
-    {}
-
-} kiface( "common_test", KIWAY::KIWAY_FACE_COUNT );
 
 KIFACE_BASE& Kiface()
 {
+    static MOCK_KIFACE_BASE kiface;
     return kiface;
 }
