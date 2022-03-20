@@ -35,6 +35,8 @@ appstream-util validate-strict $KICAD_METAINFO_DIR/org.kicad.kicad.metainfo.xml
 if [ $METAINFO_VALID -eq 1 ]
 then
     echo "Metainfo files passed both checkers successfully"
+else
+    echo "Erros with metainfo files"
 fi
 
 
@@ -295,9 +297,9 @@ fi
 ###################################################################
 # Process return codes to flag errors for CI
 ###################################################################
-[ $METAINFO_VALID -ne 0 ] && exit 1
-[ $LAUNCHERS_VALID -ne 0 ] && exit 1
-[ $KICAD_MIME_VALID -ne 0 ] && exit 1
-[ $GERBER_MIME_VALID -ne 0 ] && exit 1
+[ $METAINFO_VALID -ne 1 ] && exit 1
+[ $LAUNCHERS_VALID -ne 1 ] && exit 1
+[ $KICAD_MIME_VALID -ne 1 ] && exit 1
+[ $GERBER_MIME_VALID -ne 1 ] && exit 1
 
 exit 0
