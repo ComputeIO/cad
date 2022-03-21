@@ -58,7 +58,7 @@ public:
         LTRA,
         TRANLINE,
         URC,
-        TRANSLINE,
+        //TRANSLINE,
         SWITCH,
         CSWITCH,
         DIODE,
@@ -95,6 +95,7 @@ public:
         wxString name;
         wxString variant1;
         wxString variant2;
+        std::vector<wxString> pinNames;
         wxString description;
         std::vector<SIM_MODEL::PARAM::INFO> modelParams;
         std::vector<SIM_MODEL::PARAM::INFO> instanceParams;

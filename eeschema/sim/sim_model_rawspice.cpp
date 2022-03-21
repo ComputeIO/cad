@@ -25,16 +25,19 @@
 #include <sim/sim_model_rawspice.h>
 
 
-template SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, const std::vector<void>* aFields );
-template SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, const std::vector<SCH_FIELD>* aFields );
-template SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, const std::vector<LIB_FIELD>* aFields );
+template SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, int symbolPinCount,
+                                                 const std::vector<void>* aFields );
+template SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, int symbolPinCount,
+                                                 const std::vector<SCH_FIELD>* aFields );
+template SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, int symbolPinCount,
+                                                 const std::vector<LIB_FIELD>* aFields );
 
 template <typename T>
-SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, const std::vector<T>* aFields )
+SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType, int symbolPinCount, 
+                                        const std::vector<T>* aFields )
     : SIM_MODEL( aType )
 {
-    if( aFields )
-        ReadDataFields( *aFields );
+    ReadDataFields( symbolPinCount, aFields );
 }
 
 

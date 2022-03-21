@@ -32,11 +32,13 @@ class SIM_MODEL_IDEAL : public SIM_MODEL
 {
 public:
     template <typename T = void>
-    SIM_MODEL_IDEAL( TYPE aType, const std::vector<T>* aFields = nullptr );
+    SIM_MODEL_IDEAL( TYPE aType, int symbolPinCount, const std::vector<T>* aFields = nullptr );
 
     void WriteCode( wxString& aCode ) override;
 
 private:
+    std::vector<wxString> getPinNames() override;
+
     static PARAM::INFO makeParamInfo( wxString aName, wxString aDescription, wxString aUnit );
 };
 

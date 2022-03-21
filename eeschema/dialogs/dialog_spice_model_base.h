@@ -66,7 +66,7 @@ class DIALOG_SPICE_MODEL_BASE : public wxDialog
 		wxPanel* m_codePanel;
 		wxStyledTextCtrl* m_codePreview;
 		wxPanel* m_pinAssignmentsPanel;
-		WX_GRID* m_pinAssignmentGrid;
+		WX_GRID* m_pinAssignmentsGrid;
 		wxStaticLine* m_staticline1;
 		wxCheckBox* m_excludeSymbol;
 		wxStdDialogButtonSizer* m_sdbSizer1;
@@ -77,6 +77,8 @@ class DIALOG_SPICE_MODEL_BASE : public wxDialog
 		virtual void onDeviceTypeChoice( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onTypeChoice( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onPropertyChanged( wxPropertyGridEvent& event ) { event.Skip(); }
+		virtual void onPinAssignmentsGridCellChange( wxGridEvent& event ) { event.Skip(); }
+		virtual void onPinAssignmentsGridSize( wxSizeEvent& event ) { event.Skip(); }
 
 
 	public:

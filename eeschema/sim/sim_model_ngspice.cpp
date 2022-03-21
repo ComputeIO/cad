@@ -27,12 +27,16 @@
 using TYPE = SIM_MODEL::TYPE;
 
 
-template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<void>* aFields );
-template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<SCH_FIELD>* aFields );
-template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<LIB_FIELD>* aFields );
+template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, int symbolPinCount,
+                                               const std::vector<void>* aFields );
+template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, int symbolPinCount,
+                                               const std::vector<SCH_FIELD>* aFields );
+template SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, int symbolPinCount,
+                                               const std::vector<LIB_FIELD>* aFields );
 
 template <typename T>
-SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<T>* aFields )
+SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, int symbolPinCount,
+                                      const std::vector<T>* aFields )
     : SIM_MODEL( aType )
 {
     const NGSPICE::MODEL_INFO& modelInfo = NGSPICE::ModelInfo( getModelType() );
@@ -49,14 +53,19 @@ SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType, const std::vector<T>* aFields 
         Params().back().isOtherVariant = getIsOtherVariant();
     }
 
-    if( aFields )
-        ReadDataFields( *aFields );
+    ReadDataFields( symbolPinCount, aFields );
 }
 
 
 void SIM_MODEL_NGSPICE::WriteCode( wxString& aCode )
 {
     // TODO
+}
+
+
+std::vector<wxString> SIM_MODEL_NGSPICE::getPinNames()
+{
+    return NGSPICE::ModelInfo( getModelType() ).pinNames;
 }
 
 
@@ -71,7 +80,7 @@ NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType()
     case TYPE::TLINE_LOSSY:         return NGSPICE::MODEL_TYPE::LTRA;
     case TYPE::TLINE_LOSSLESS:      return NGSPICE::MODEL_TYPE::TRANLINE;
     case TYPE::TLINE_UNIFORM_RC:    return NGSPICE::MODEL_TYPE::URC;
-    case TYPE::TLINE_KSPICE:        return NGSPICE::MODEL_TYPE::TRANSLINE;
+    //case TYPE::TLINE_KSPICE:        return NGSPICE::MODEL_TYPE::TRANSLINE;
     case TYPE::SWITCH_VCTRL:        return NGSPICE::MODEL_TYPE::SWITCH;
     case TYPE::SWITCH_ICTRL:        return NGSPICE::MODEL_TYPE::CSWITCH;
     case TYPE::DIODE:               return NGSPICE::MODEL_TYPE::DIODE;

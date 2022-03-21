@@ -1288,7 +1288,7 @@
                                             <property name="close_button">1</property>
                                             <property name="col_label_horiz_alignment">wxALIGN_CENTER</property>
                                             <property name="col_label_size"></property>
-                                            <property name="col_label_values">&quot;Schematic Pin&quot; &quot;Model Pin&quot;</property>
+                                            <property name="col_label_values">&quot;Symbol Pin&quot; &quot;Model Pin&quot;</property>
                                             <property name="col_label_vert_alignment">wxALIGN_CENTER</property>
                                             <property name="cols">2</property>
                                             <property name="column_sizes">160,160</property>
@@ -1324,7 +1324,7 @@
                                             <property name="minimize_button">0</property>
                                             <property name="minimum_size"></property>
                                             <property name="moveable">1</property>
-                                            <property name="name">m_pinAssignmentGrid</property>
+                                            <property name="name">m_pinAssignmentsGrid</property>
                                             <property name="pane_border">1</property>
                                             <property name="pane_position"></property>
                                             <property name="pane_size"></property>
@@ -1346,6 +1346,8 @@
                                             <property name="window_extra_style"></property>
                                             <property name="window_name"></property>
                                             <property name="window_style"></property>
+                                            <event name="OnGridCellChange">onPinAssignmentsGridCellChange</event>
+                                            <event name="OnSize">onPinAssignmentsGridSize</event>
                                         </object>
                                     </object>
                                 </object>

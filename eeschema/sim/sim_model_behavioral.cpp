@@ -25,12 +25,16 @@
 #include <sim/sim_model_behavioral.h>
 
 
-template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<void>* aFields );
-template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<SCH_FIELD>* aFields );
-template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<LIB_FIELD>* aFields );
+template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
+                                                     const std::vector<void>* aFields );
+template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
+                                                     const std::vector<SCH_FIELD>* aFields );
+template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
+                                                     const std::vector<LIB_FIELD>* aFields );
 
 template <typename T>
-SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<T>* aFields )
+SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
+                                            const std::vector<T>* aFields )
     : SIM_MODEL( aType )
 {
     static PARAM::INFO resistor  = makeParamInfo( "r", "Expression for resistance",  "ohm" );
@@ -50,8 +54,7 @@ SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, const std::vector<T>* aF
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_IDEAL" );
     }
 
-    if( aFields )
-        ReadDataFields( *aFields );
+    ReadDataFields( symbolPinCount, aFields );
 }
 
 
