@@ -137,6 +137,12 @@ public:
         int sash_pos;
     };
 
+    struct DATA_COLLECTION
+    {
+        bool prompted;
+        bool opted_in;
+    };
+
     COMMON_SETTINGS();
 
     virtual ~COMMON_SETTINGS() {}
@@ -172,6 +178,8 @@ public:
     NETCLASS_PANEL m_NetclassPanel;
 
     PACKAGE_MANAGER m_PackageManager;
+
+    DATA_COLLECTION m_DataCollection;
 };
 
 #endif

@@ -327,6 +327,12 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
     m_params.emplace_back( new PARAM<int>( "package_manager.sash_pos",
             &m_PackageManager.sash_pos, 380 ) );
 
+    m_params.emplace_back( new PARAM<bool>( "data_collection.opted_in",
+            &m_DataCollection.opted_in, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "data_collection.prompted",
+            &m_DataCollection.prompted, false ) );
+
     registerMigration( 0, 1, std::bind( &COMMON_SETTINGS::migrateSchema0to1, this ) );
     registerMigration( 1, 2, std::bind( &COMMON_SETTINGS::migrateSchema1to2, this ) );
 }

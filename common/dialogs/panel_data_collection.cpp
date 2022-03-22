@@ -1,0 +1,78 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
+#include <dialogs/panel_data_collection.h>
+
+#include <advanced_config.h>
+#include <bitmaps.h>
+#include <dialog_shim.h>
+#include <gal/dpi_scaling.h>
+#include <kiface_base.h>
+#include <kiplatform/ui.h>
+#include <pgm_base.h>
+#include <id.h>
+#include <settings/common_settings.h>
+#include <settings/settings_manager.h>
+
+PANEL_DATA_COLLECTION::PANEL_DATA_COLLECTION( PAGED_DIALOG* aDialog, wxWindow* aParent ) :
+        PANEL_DATA_COLLECTION_BASE( aParent ), m_dialog( aDialog )
+{
+}
+
+
+bool PANEL_DATA_COLLECTION::TransferDataToWindow()
+{
+    COMMON_SETTINGS* commonSettings = Pgm().GetCommonSettings();
+
+    applySettingsToPanel( *commonSettings );
+
+    return true;
+}
+
+
+bool PANEL_DATA_COLLECTION::TransferDataFromWindow()
+{
+    COMMON_SETTINGS* commonSettings = Pgm().GetCommonSettings();
+
+    commonSettings->m_DataCollection.opted_in = m_cbOptIn->GetValue();
+
+    Pgm().GetSettingsManager().Save( commonSettings );
+
+    return true;
+}
+
+
+void PANEL_DATA_COLLECTION::ResetPanel()
+{
+    COMMON_SETTINGS defaultSettings;
+
+    defaultSettings.ResetToDefaults();
+
+    applySettingsToPanel( defaultSettings );
+}
+
+
+void PANEL_DATA_COLLECTION::applySettingsToPanel( COMMON_SETTINGS& aSettings )
+{
+    m_cbOptIn->SetValue( aSettings.m_DataCollection.opted_in );
+}
