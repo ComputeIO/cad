@@ -285,6 +285,30 @@ bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
 
     loadCommonSettings();
 
+
+    if( !m_settings_manager->GetCommonSettings()->m_DataCollection.prompted )
+    {
+        wxMessageDialog optIn = wxMessageDialog( nullptr, _( "KiCad can anonymously collect crash report and certain event data"
+                                                             "and transmit the reports to the KiCad developers.\n"
+                                                             "Your design files are not transmitted as part of this process.\n"
+                                                             "Would you like to enable automatic crash and event reporting?"),
+                                                             _( "Data collection opt in request" ),
+                                                             wxYES_NO | wxCENTRE );
+
+        int result = optIn.ShowModal();
+
+        if( result == wxID_YES )
+        {
+            m_settings_manager->GetCommonSettings()->m_DataCollection.opted_in = true;
+        }
+        else
+        {
+            m_settings_manager->GetCommonSettings()->m_DataCollection.opted_in = false;
+        }
+
+        m_settings_manager->GetCommonSettings()->m_DataCollection.prompted = true;
+    }
+
     ReadPdfBrowserInfos();      // needs GetCommonSettings()
 
     // Create the python scripting stuff
