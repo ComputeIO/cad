@@ -41,6 +41,21 @@
 #include <math.h>
 #include <cstring>
 
+
+class IBIS_REPORTER
+{
+public:
+    void report( std::string aMsg, SEVERITY aSeverity ) { std::cout << aMsg << std::endl; };
+};
+
+class IBIS_ANY
+{
+public:
+    IBIS_ANY( IBIS_REPORTER* aReporter ) { m_reporter = aReporter; };
+    IBIS_REPORTER* m_reporter;
+};
+
+
 enum IBIS_CORNER
 {
     TYP = 0,
@@ -57,9 +72,10 @@ enum class IBIS_MATRIX_TYPE
     FULL,   // Give the whole upper triangle.
 };
 
-class IBIS_MATRIX
+class IBIS_MATRIX : public IBIS_ANY
 {
 public:
+    IBIS_MATRIX( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::UNDEFINED;
     int              m_dim = -5;
     double*          m_data;
@@ -70,6 +86,7 @@ public:
 class IBIS_MATRIX_BANDED : public IBIS_MATRIX
 {
 public:
+    IBIS_MATRIX_BANDED( IBIS_REPORTER* aReporter ) : IBIS_MATRIX( aReporter ){};
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
     int              m_dim = -2;
     int              m_bandwidth = 0;
@@ -81,6 +98,7 @@ public:
 class IBIS_MATRIX_SPARSE : public IBIS_MATRIX
 {
 public:
+    IBIS_MATRIX_SPARSE( IBIS_REPORTER* aReporter ) : IBIS_MATRIX( aReporter ){};
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
     int              m_dim = -3;
     double*          m_data;
@@ -90,6 +108,7 @@ public:
 class IBIS_MATRIX_FULL : public IBIS_MATRIX
 {
 public:
+    IBIS_MATRIX_FULL( IBIS_REPORTER* aReporter ) : IBIS_MATRIX( aReporter ){};
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::FULL;
     int              m_dim = -4;
     double*          m_data;
@@ -97,10 +116,16 @@ public:
     bool Check();
 };
 
-
-class IbisHeader
+class IBIS_SECTION : public IBIS_ANY
 {
 public:
+    IBIS_SECTION( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
+};
+
+class IbisHeader : IBIS_SECTION
+{
+public:
+    IbisHeader( IBIS_REPORTER* aReporter ) : IBIS_SECTION( aReporter ){};
     double   m_ibisVersion = -1;
     double   m_fileRevision = -1;
     std::string m_fileName;
@@ -113,28 +138,37 @@ public:
     bool Check();
 };
 
-class TypMinMaxValue
+class TypMinMaxValue : public IBIS_ANY
 {
 public:
+    TypMinMaxValue( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
     double value[3];
 
     bool Check();
 };
 
-class IbisComponentPackage
+class IbisComponentPackage : public IBIS_ANY
 {
 public:
-    TypMinMaxValue m_Rpkg;
-    TypMinMaxValue m_Lpkg;
-    TypMinMaxValue m_Cpkg;
+    IbisComponentPackage( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        m_Rpkg = new TypMinMaxValue( m_reporter );
+        m_Lpkg = new TypMinMaxValue( m_reporter );
+        m_Cpkg = new TypMinMaxValue( m_reporter );
+    };
+    TypMinMaxValue* m_Rpkg;
+    TypMinMaxValue* m_Lpkg;
+    TypMinMaxValue* m_Cpkg;
 
     bool Check();
 };
 
 
-class IbisComponentPin
+class IbisComponentPin : public IBIS_ANY
 {
 public:
+    IbisComponentPin( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
+
     std::string m_pinName;
     std::string m_signalName;
     std::string m_modelName;
@@ -152,9 +186,10 @@ public:
 };
 
 
-class IbisComponentPinMapping
+class IbisComponentPinMapping : public IBIS_ANY
 {
 public:
+    IbisComponentPinMapping( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
     std::string m_pinName;
     std::string m_PDref;
     std::string m_PUref;
@@ -165,33 +200,45 @@ public:
     bool m_virtual;
 };
 
-class IbisDiffPinEntry
+class IbisDiffPinEntry : public IBIS_ANY
 {
 public:
-    std::string       pinA;
-    std::string       pinB;
-    double         Vdiff = 0.2; // ignored for input
-    TypMinMaxValue tdelay;      // ignored for outputs
+    IbisDiffPinEntry( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        tdelay = new TypMinMaxValue( aReporter );
+    };
+
+    std::string     pinA;
+    std::string     pinB;
+    double          Vdiff = 0.2; // ignored for input
+    TypMinMaxValue* tdelay;      // ignored for outputs
 };
 
-class IbisDiffPin
+class IbisDiffPin : IBIS_ANY
 {
 public:
-    std::vector<IbisDiffPinEntry> m_entries;
+    IbisDiffPin( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
+    std::vector<IbisDiffPinEntry*> m_entries;
 };
 
-class IbisComponent
+class IbisComponent : public IBIS_ANY
 {
 public:
+    IbisComponent( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        m_package = new IbisComponentPackage( m_reporter );
+        m_diffPin = new IbisDiffPin( m_reporter );
+    };
+
     std::string                             m_name = "";
     std::string                             m_manufacturer = "";
-    IbisComponentPackage                 m_package;
-    std::vector<IbisComponentPin>        m_pins;
-    std::vector<IbisComponentPinMapping> m_pinMappings;
+    IbisComponentPackage*                   m_package;
+    std::vector<IbisComponentPin*>          m_pins;
+    std::vector<IbisComponentPinMapping*>   m_pinMappings;
     std::string                             m_packageModel;
     std::string                             m_busLabel;
     std::string                             m_dieSupplyPads;
-    IbisDiffPin                          m_diffPin;
+    IbisDiffPin*                            m_diffPin;
 
     bool Check();
 };
@@ -204,9 +251,10 @@ public:
     std::string m_modelDescription;
 };
 
-class IbisModelSelector
+class IbisModelSelector : public IBIS_ANY
 {
 public:
+    IbisModelSelector( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
     std::string                            m_name;
     std::vector<IbisModelSelectorEntry> m_models;
 
@@ -214,17 +262,21 @@ public:
 };
 
 
-class IVtableEntry
+class IVtableEntry : public IBIS_ANY
 {
 public:
+    IVtableEntry( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        I = new TypMinMaxValue( m_reporter );
+    };
     double         V;
-    TypMinMaxValue I;
+    TypMinMaxValue* I;
 };
 
 class IVtable
 {
 public:
-    std::vector<IVtableEntry> m_entries;
+    std::vector<IVtableEntry*> m_entries;
 
     bool Check();
     double   InterpolatedI( double aV, IBIS_CORNER aCorner );
@@ -234,17 +286,22 @@ public:
 private:
 };
 
-class VTtableEntry
+class VTtableEntry : public IBIS_ANY
 {
 public:
+    VTtableEntry( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        V = new TypMinMaxValue( m_reporter );
+    };
     double         t;
-    TypMinMaxValue V;
+    TypMinMaxValue* V;
 };
 
-class VTtable
+class VTtable : public IBIS_ANY
 {
 public:
-    std::vector<VTtableEntry> m_entries;
+    VTtable( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
+    std::vector<VTtableEntry*> m_entries;
 };
 
 /*
@@ -315,10 +372,14 @@ enum class IBIS_WAVEFORM_TYPE
     FALLING
 };
 
-class IbisWaveform
+class IbisWaveform : public IBIS_ANY
 {
 public:
-    VTtable            m_table;
+    IbisWaveform( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        m_table = new VTtable( m_reporter );
+    };
+    VTtable*           m_table;
     IBIS_WAVEFORM_TYPE m_type;
     double             m_R_dut;
     double             m_C_dut;
@@ -338,9 +399,23 @@ enum class IBIS_MODEL_POLARITY
     NON_INVERTING
 };
 
-class IbisModel
+class IbisModel : IBIS_ANY
 {
 public:
+    IbisModel( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        m_C_comp = new TypMinMaxValue( m_reporter );
+        m_voltageRange = new TypMinMaxValue( m_reporter );
+        m_temperatureRange = new TypMinMaxValue( m_reporter );
+        m_pullupReference = new TypMinMaxValue( m_reporter );
+        m_pulldownReference = new TypMinMaxValue( m_reporter );
+        m_GNDClampReference = new TypMinMaxValue( m_reporter );
+        m_POWERClampReference = new TypMinMaxValue( m_reporter );
+        m_Rgnd = new TypMinMaxValue( m_reporter );
+        m_Rpower = new TypMinMaxValue( m_reporter );
+        m_Rac = new TypMinMaxValue( m_reporter );
+        m_Cac = new TypMinMaxValue( m_reporter );
+    };
     std::string        m_name;
     IBIS_MODEL_TYPE m_type = IBIS_MODEL_TYPE::UNDEFINED;
     /* The Polarity, Enable, Vinl, Vinh, Vmeas, Cref, Rref, and Vref subparameters are optional. */
@@ -355,17 +430,17 @@ public:
     IBIS_MODEL_POLARITY m_polarity = IBIS_MODEL_POLARITY::UNDEFINED;
     // End of optional subparameters
 
-    TypMinMaxValue m_C_comp;
-    TypMinMaxValue m_voltageRange;
-    TypMinMaxValue m_temperatureRange;
-    TypMinMaxValue m_pullupReference;
-    TypMinMaxValue m_pulldownReference;
-    TypMinMaxValue m_GNDClampReference;
-    TypMinMaxValue m_POWERClampReference;
-    TypMinMaxValue m_Rgnd;
-    TypMinMaxValue m_Rpower;
-    TypMinMaxValue m_Rac;
-    TypMinMaxValue m_Cac;
+    TypMinMaxValue*            m_C_comp;
+    TypMinMaxValue*            m_voltageRange;
+    TypMinMaxValue*            m_temperatureRange;
+    TypMinMaxValue*            m_pullupReference;
+    TypMinMaxValue*            m_pulldownReference;
+    TypMinMaxValue*            m_GNDClampReference;
+    TypMinMaxValue*            m_POWERClampReference;
+    TypMinMaxValue*            m_Rgnd;
+    TypMinMaxValue*            m_Rpower;
+    TypMinMaxValue*            m_Rac;
+    TypMinMaxValue*            m_Cac;
     IVtable        m_GNDClamp;
     IVtable        m_POWERClamp;
     IVtable        m_pullup;
@@ -378,9 +453,11 @@ public:
 };
 
 
-class IbisPackageModel
+class IbisPackageModel : public IBIS_ANY
 {
 public:
+    IbisPackageModel( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
+
     std::string              m_name;
     std::string              m_manufacturer;
     std::string              m_OEM;
@@ -395,14 +472,19 @@ public:
     bool Check();
 };
 
-class IbisFile
+class IbisFile : public IBIS_ANY
 {
 public:
-    IbisHeader                     m_header;
-    std::vector<IbisComponent>     m_components;
-    std::vector<IbisModelSelector> m_modelSelectors;
-    std::vector<IbisModel>         m_models;
-    std::vector<IbisPackageModel>  m_packageModels;
+    IbisFile( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        m_header = new IbisHeader( m_reporter );
+    };
+
+    IbisHeader*                     m_header;
+    std::vector<IbisComponent*>     m_components;
+    std::vector<IbisModelSelector*> m_modelSelectors;
+    std::vector<IbisModel*>         m_models;
+    std::vector<IbisPackageModel*>  m_packageModels;
 };
 
 
@@ -436,9 +518,11 @@ enum class IBIS_PARSER_CONTEXT
     END
 };
 
-class IbisParser
+class IbisParser : public IBIS_ANY
 {
 public:
+    IbisParser( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
+
     bool m_parrot = false; // Write back all lines.
 
     long  m_lineCounter;
@@ -460,7 +544,6 @@ public:
     IVtable*           m_currentIVtable;
     VTtable*           m_currentVTtable;
     IbisWaveform*      m_currentWaveform;
-
 
     bool parseFile( std::string aFileName, IbisFile* );
     bool parseHeader( std::string );
@@ -519,8 +602,6 @@ private:
 
     IBIS_PARSER_CONTINUE m_continue = IBIS_PARSER_CONTINUE::NONE;
     IBIS_PARSER_CONTEXT  m_context = IBIS_PARSER_CONTEXT::HEADER;
-
-    REPORTER* m_reporter = new STDOUT_REPORTER();
 
     // To be removed
     void ibisReport( std::string aMsg, SEVERITY aSeverity=RPT_SEVERITY_INFO );

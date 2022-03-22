@@ -31,8 +31,7 @@
  */
 void IbisParser::ibisReport( std::string aMsg, SEVERITY aSeverity )
 {
-    //ibisReport( wxString( aMsg ), aSeverity );
-    std::cout << aMsg << std::endl;
+    m_reporter->report( aMsg, aSeverity );
 }
 
 bool IbisParser::ibisToDouble( std::string aString, double* aDest )
@@ -189,17 +188,17 @@ bool IbisComponentPackage::Check()
 {
     bool status =  true;
 
-    if( !m_Rpkg.Check() )
+    if( !m_Rpkg->Check() )
     {
         std::cerr << "Package: Invalid R_pkg" << std::endl;
         status = false;
     }
-    if( !m_Lpkg.Check() )
+    if( !m_Lpkg->Check() )
     {
         std::cerr << "Package: Invalid L_pkg" << std::endl;
         status = false;
     }
-    if( !m_Cpkg.Check() )
+    if( !m_Cpkg->Check() )
     {
         std::cerr << "Package: Invalid C_pkg" << std::endl;
         status = false;
@@ -216,32 +215,32 @@ bool IbisComponentPin::Check()
 
         if( m_pinName.empty() )
         {
-            std::cerr << "Pin: pin name cannot be empty." << std::endl;
+            m_reporter->report( "Pin: pin name cannot be empty.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( m_signalName.empty() )
         {
-            std::cerr << "Pin: signal name cannot be empty." << std::endl;
+            m_reporter->report( "Pin: signal name cannot be empty.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( m_modelName.empty() )
         {
-            std::cerr << "Pin: model name cannot be empty." << std::endl;
+            m_reporter->report( "Pin: model name cannot be empty.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( std::isnan( m_Rpin ) && !isNumberNA( m_Rpin ) )
         {
-            std::cerr << "Pin: Rpin is not valid." << std::endl;
+            m_reporter->report( "Pin: Rpin is not valid.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( std::isnan( m_Lpin )&& !isNumberNA( m_Lpin )  )
         {
-            std::cerr << "Pin: Lpin is not valid." << std::endl;
+            m_reporter->report( "Pin: Lpin is not valid.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( std::isnan( m_Cpin )&& !isNumberNA( m_Cpin ) )
         {
-            std::cerr << "Pin: Cpin is not valid." << std::endl;
+            m_reporter->report( "Pin: Lpin is not valid.", RPT_SEVERITY_ERROR );
             status = false;
         }
     }
@@ -267,7 +266,7 @@ bool IbisComponent::Check()
         status = false;
     }
 
-    if ( !m_package.Check() )
+    if( !m_package->Check() )
     {
         std::cerr << "Component: Invalid Package." << std::endl;
         status = false;        
@@ -279,9 +278,9 @@ bool IbisComponent::Check()
         status = false;
     }
 
-    for ( IbisComponentPin pin: m_pins )
+    for( IbisComponentPin* pin : m_pins )
     {
-        status &= pin.Check();
+        status &= pin->Check();
     }
 
     return status;
@@ -327,13 +326,13 @@ std::string IVtable::Spice( int aN, std::string aPort1, std::string aPort2, std:
         result += " pwl(\n+ x_array=[";
         for( auto entry : m_entries )
         {
-            result += doubleToStringParser( entry.V );
+            result += doubleToStringParser( entry->V );
             result += " ";
         }
         result += "]\n+ y_array=[";
         for( auto entry : m_entries )
         {
-            result += doubleToStringParser( entry.I.value[aCorner] );
+            result += doubleToStringParser( entry->I->value[aCorner] );
             result += " ";
         }
         result += "]\n+ input_domain=0.05 fraction=TRUE)\n\n";
@@ -346,27 +345,27 @@ double IVtable::InterpolatedI( double aV, IBIS_CORNER aCorner )
     double result;
     // @TODO change this algorithm
 
-    if( m_entries.at( m_entries.size() - 1 ).V > m_entries.at( 0 ).V )
+    if( m_entries.at( m_entries.size() - 1 )->V > m_entries.at( 0 )->V )
     {
-        if( aV >= m_entries.at( m_entries.size() - 1 ).V )
+        if( aV >= m_entries.at( m_entries.size() - 1 )->V )
         {
-            return m_entries.at( m_entries.size() - 1 ).I.value[aCorner];
+            return m_entries.at( m_entries.size() - 1 )->I->value[aCorner];
         }
 
-        if( aV <= m_entries.at( 0 ).V )
+        if( aV <= m_entries.at( 0 )->V )
         {
-            return m_entries.at( 0 ).I.value[aCorner];
+            return m_entries.at( 0 )->I->value[aCorner];
         }
 
         for( int i = 1; i < m_entries.size(); i++ )
         {
-            if( m_entries.at( i ).V > aV )
+            if( m_entries.at( i )->V > aV )
             {
-                return m_entries.at( i - 1 ).I.value[aCorner]
-                       + ( m_entries.at( i ).I.value[aCorner]
-                           - m_entries.at( i - 1 ).I.value[aCorner] )
-                                 / ( m_entries.at( i ).V - m_entries.at( i - 1 ).V )
-                                 * ( aV - m_entries.at( i - 1 ).V );
+                return m_entries.at( i - 1 )->I->value[aCorner]
+                       + ( m_entries.at( i )->I->value[aCorner]
+                           - m_entries.at( i - 1 )->I->value[aCorner] )
+                                 / ( m_entries.at( i )->V - m_entries.at( i - 1 )->V )
+                                 * ( aV - m_entries.at( i - 1 )->V );
             }
         }
 
@@ -384,16 +383,16 @@ double IVtable::InterpolatedI( double aV, IBIS_CORNER aCorner )
 bool IVtable::Check()
 {
     bool status = true;
-    for ( IVtableEntry entry : m_entries )
+    for( IVtableEntry* entry : m_entries )
     {
-        if ( std::isnan( entry.V ) )
+        if( std::isnan( entry->V ) )
         {
             std::cerr << "IV table: voltage is nan." << std::endl;
             status = false;
             break;
         }
 
-        if ( !entry.I.Check() )
+        if( !entry->I->Check() )
         {
             std::cerr << "IV table: current is incorrect" << std::endl;
             status = false;
@@ -508,33 +507,33 @@ bool IbisModel::Check()
         std::cerr << "Model: V_meas is invalid." << std::endl;
         status = false;
     }
-    if ( !m_C_comp.Check() )
+    if( !m_C_comp->Check() )
     {
         std::cerr << "Model: C_comp is invalid." << std::endl;
         status = false;
     }
-    if ( !m_temperatureRange.Check() )
+    if( !m_temperatureRange->Check() )
     {
         std::cerr << "Model: Temperature Range is invalid." << std::endl;
         status = false;
     }
 
-    if ( !m_voltageRange.Check() )
+    if( !m_voltageRange->Check() )
     {
         // If the voltage range is not valid, it's ok, only if we have pulls and clamps
-        if ( !m_pulldownReference.Check() )
+        if( !m_pulldownReference->Check() )
         {
             status = false;
         }
-        if ( !m_pullupReference.Check() )
+        if( !m_pullupReference->Check() )
         {
             status = false;
         }
-        if ( !m_GNDClampReference.Check() )
+        if( !m_GNDClampReference->Check() )
         {
             status = false;
         }
-        if ( !m_POWERClampReference.Check() )
+        if( !m_POWERClampReference->Check() )
         {
             status = false;
         }
@@ -813,6 +812,7 @@ bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
         pbuf->sgetn( m_buffer, size );
 
         m_lineCounter = 0;
+        m_bufferIndex = 0;
 
         for( int i = 0; i < 4000; i++ )
         {
@@ -1039,6 +1039,13 @@ bool IbisParser::GetNextLine()
             c = m_buffer[m_bufferIndex++];
         }
     }
+
+    if( i == IBIS_MAX_LINE_LENGTH )
+    {
+        ibisReport( "Line exceeds maximum length.", RPT_SEVERITY_ERROR );
+        return false;
+    }
+
     return true;
 }
 
@@ -1278,7 +1285,7 @@ bool IbisParser::changeContext( std::string aKeyword )
     {
         switch( m_context )
         {
-        case IBIS_PARSER_CONTEXT::HEADER: status &= m_ibisFile->m_header.Check(); break;
+        case IBIS_PARSER_CONTEXT::HEADER: status &= m_ibisFile->m_header->Check(); break;
         case IBIS_PARSER_CONTEXT::COMPONENT: status &= m_currentComponent->Check(); break;
         case IBIS_PARSER_CONTEXT::MODEL: status &= m_currentModel->Check(); break;
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= m_currentModelSelector->Check(); break;
@@ -1297,52 +1304,52 @@ bool IbisParser::changeContext( std::string aKeyword )
         //New context
         if( !strcasecmp( aKeyword.c_str(), "Component" ) )
         {
-            IbisComponent comp;
-            StoreString( &( comp.m_name ), false );
+            IbisComponent* comp = new IbisComponent( m_reporter );
+            StoreString( &( comp->m_name ), false );
             m_ibisFile->m_components.push_back( comp );
-            m_currentComponent = &( m_ibisFile->m_components.back() );
+            m_currentComponent = m_ibisFile->m_components.back();
             m_context = IBIS_PARSER_CONTEXT::COMPONENT;
         }
         else if( !strcasecmp( aKeyword.c_str(), "Model_Selector" ) )
         {
-            IbisModelSelector MS;
-            StoreString( &( MS.m_name ), false );
+            IbisModelSelector* MS = new IbisModelSelector( m_reporter );
+            StoreString( &( MS->m_name ), false );
             m_ibisFile->m_modelSelectors.push_back( MS );
-            m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
+            m_currentModelSelector = m_ibisFile->m_modelSelectors.back();
             m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
             m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
         }
         else if( !strcasecmp( aKeyword.c_str(), "Model" ) )
         {
-            IbisModel model;
-            model.m_temperatureRange.value[IBIS_CORNER::MIN] = 0;
-            model.m_temperatureRange.value[IBIS_CORNER::TYP] = 50;
-            model.m_temperatureRange.value[IBIS_CORNER::MAX] = 100;
-            StoreString( &( model.m_name ), false );
+            IbisModel* model = new IbisModel( m_reporter );
+            model->m_temperatureRange->value[IBIS_CORNER::MIN] = 0;
+            model->m_temperatureRange->value[IBIS_CORNER::TYP] = 50;
+            model->m_temperatureRange->value[IBIS_CORNER::MAX] = 100;
+            StoreString( &( model->m_name ), false );
             m_ibisFile->m_models.push_back( model );
-            m_currentModel = &( m_ibisFile->m_models.back() );
+            m_currentModel = m_ibisFile->m_models.back();
             m_context = IBIS_PARSER_CONTEXT::MODEL;
             m_continue = IBIS_PARSER_CONTINUE::MODEL;
         }
         else if( !strcasecmp( aKeyword.c_str(), "Define_Package_Model" ) )
         {
-            IbisPackageModel PM;
-            PM.m_resistanceMatrix = new IBIS_MATRIX();
-            PM.m_capacitanceMatrix = new IBIS_MATRIX();
-            PM.m_inductanceMatrix = new IBIS_MATRIX();
+            IbisPackageModel* PM = new IbisPackageModel( m_reporter );
+            PM->m_resistanceMatrix = new IBIS_MATRIX( m_reporter );
+            PM->m_capacitanceMatrix = new IBIS_MATRIX( m_reporter );
+            PM->m_inductanceMatrix = new IBIS_MATRIX( m_reporter );
 
-            PM.m_resistanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
-            PM.m_capacitanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
-            PM.m_inductanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
+            PM->m_resistanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
+            PM->m_capacitanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
+            PM->m_inductanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
 
-            PM.m_resistanceMatrix->m_dim = -1;
-            PM.m_capacitanceMatrix->m_dim = -1;
-            PM.m_inductanceMatrix->m_dim = -1;
+            PM->m_resistanceMatrix->m_dim = -1;
+            PM->m_capacitanceMatrix->m_dim = -1;
+            PM->m_inductanceMatrix->m_dim = -1;
 
-            StoreString( &( PM.m_name ), false );
+            StoreString( &( PM->m_name ), false );
 
             m_ibisFile->m_packageModels.push_back( PM );
-            m_currentPackageModel = &( m_ibisFile->m_packageModels.back() );
+            m_currentPackageModel = m_ibisFile->m_packageModels.back();
             m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
         }
         else if( !strcasecmp( aKeyword.c_str(), "End_Package_Model" ) )
@@ -1466,7 +1473,7 @@ bool IbisParser::readRamp()
             }
             else
             {
-                std::cerr << "Ramp: Invalid line: "<< str << std::endl;
+                m_reporter->report( "Ramp: Invalid line: " + str, RPT_SEVERITY_ERROR );
                 status = false;
             }
 
@@ -1486,9 +1493,9 @@ bool IbisParser::parseModel( std::string aKeyword )
     bool status = true;
     
     if( !strcasecmp( aKeyword.c_str(), "Voltage_Range" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_voltageRange ) );
+        status &= readTypMinMaxValue( m_currentModel->m_voltageRange );
     else if( !strcasecmp( aKeyword.c_str(), "Temperature_Range" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_temperatureRange ) );
+        status &= readTypMinMaxValue( m_currentModel->m_temperatureRange );
     else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp" ) )
         status &= readIVtableEntry( &( m_currentModel->m_GNDClamp ) );
     else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp" ) )
@@ -1504,21 +1511,21 @@ bool IbisParser::parseModel( std::string aKeyword )
     else if( !strcasecmp( aKeyword.c_str(), "Ramp" ) )
         status &= readRamp();
     else if( !strcasecmp( aKeyword.c_str(), "Pullup_Reference" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_pullupReference ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Pulldown_Reference" ) ) 
-        status &= readTypMinMaxValue( &( m_currentModel->m_pulldownReference ) );
+        status &= readTypMinMaxValue( m_currentModel->m_pullupReference );
+    else if( !strcasecmp( aKeyword.c_str(), "Pulldown_Reference" ) )
+        status &= readTypMinMaxValue( m_currentModel->m_pulldownReference );
     else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_POWERClampReference ) );
+        status &= readTypMinMaxValue( m_currentModel->m_POWERClampReference );
     else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_GNDClampReference ) );
+        status &= readTypMinMaxValue( m_currentModel->m_GNDClampReference );
     else if( !strcasecmp( aKeyword.c_str(), "Rac" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_Rac ) );
+        status &= readTypMinMaxValue( m_currentModel->m_Rac );
     else if( !strcasecmp( aKeyword.c_str(), "Cac" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_Cac ) );
+        status &= readTypMinMaxValue( m_currentModel->m_Cac );
     else if( !strcasecmp( aKeyword.c_str(), "Rpower" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_Rpower ) );
+        status &= readTypMinMaxValue( m_currentModel->m_Rpower );
     else if( !strcasecmp( aKeyword.c_str(), "Rgnd" ) )
-        status &= readTypMinMaxValue( &( m_currentModel->m_Rgnd ) );
+        status &= readTypMinMaxValue( m_currentModel->m_Rgnd );
     else
     {
         if( !changeContext( aKeyword ) )
@@ -1727,7 +1734,7 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
             {
                 if( !strcasecmp( str.c_str(), "Banded_Matrix" ) )
                 {
-                    IBIS_MATRIX_BANDED* matrix = new IBIS_MATRIX_BANDED();
+                    IBIS_MATRIX_BANDED* matrix = new IBIS_MATRIX_BANDED( m_reporter );
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
                     *aSource = static_cast<IBIS_MATRIX*>( matrix );
                     m_currentMatrix = *aSource;
@@ -1736,7 +1743,7 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
                 }
                 if( !strcasecmp( str.c_str(), "Full_Matrix" ) )
                 {
-                    IBIS_MATRIX_FULL* matrix = new IBIS_MATRIX_FULL();
+                    IBIS_MATRIX_FULL* matrix = new IBIS_MATRIX_FULL( m_reporter );
                     *aSource = static_cast<IBIS_MATRIX*>( matrix );
                     m_currentMatrix = *aSource;
                     m_currentMatrix->m_dim = m_currentPackageModel->m_numberOfPins;
@@ -1749,7 +1756,7 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
                 }
                 if( !strcasecmp( str.c_str(), "Sparse_Matrix" ) )
                 {
-                    IBIS_MATRIX_SPARSE* matrix = new IBIS_MATRIX_SPARSE();
+                    IBIS_MATRIX_SPARSE* matrix = new IBIS_MATRIX_SPARSE( m_reporter );
                     *aSource = static_cast<IBIS_MATRIX*>( matrix );
                     m_currentMatrix = *aSource;
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
@@ -1825,7 +1832,7 @@ bool IbisParser::parsePackageModelModelData( std::string aKeyword )
 
     if( !strcasecmp( aKeyword.c_str(), "Resistance_Matrix" ) )
     {
-        IBIS_MATRIX dest, source;
+        IBIS_MATRIX dest( m_reporter ), source( m_reporter );
         status &= readMatrix( &( m_currentPackageModel->m_resistanceMatrix ) );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Capacitance_Matrix" ) )
@@ -2041,8 +2048,6 @@ bool IbisParser::readModel()
 {
     bool status = true;
 
-    IbisModel model;
-
     int startOfLine = m_lineIndex;
 
     std::string subparam;
@@ -2162,7 +2167,8 @@ bool IbisParser::readModel()
                 ;
             else if( readNumericSubparam( std::string( "Vmeas" ), &( m_currentModel->m_vmeas ) ) )
                 ;
-            else if( readTypMinMaxValueSubparam( std::string( "C_comp" ), &( m_currentModel->m_C_comp ) ) )
+            else if( readTypMinMaxValueSubparam( std::string( "C_comp" ),
+                                                 m_currentModel->m_C_comp ) )
                 ; 
             else
             {
@@ -2189,7 +2195,7 @@ bool IbisParser::parseHeader( std::string aKeyword )
 
     if( !strcasecmp( aKeyword.c_str(), "IBIS_Ver" ) )
     {
-        status &= readDouble( &( m_ibisFile->m_header.m_ibisVersion ) );
+        status &= readDouble( &( m_ibisFile->m_header->m_ibisVersion ) );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Comment_char" ) )
     {
@@ -2197,31 +2203,31 @@ bool IbisParser::parseHeader( std::string aKeyword )
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Name" ) )
     {
-        StoreString( &( m_ibisFile->m_header.m_fileName ), false );
+        StoreString( &( m_ibisFile->m_header->m_fileName ), false );
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Rev" ) )
     {
-        status &= readDouble( &( m_ibisFile->m_header.m_fileRevision) );
+        status &= readDouble( &( m_ibisFile->m_header->m_fileRevision ) );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Source" ) )
     {
-        StoreString( &( m_ibisFile->m_header.m_source ), true );
+        StoreString( &( m_ibisFile->m_header->m_source ), true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Notes" ) )
     {
-        StoreString( &( m_ibisFile->m_header.m_notes ), true );
+        StoreString( &( m_ibisFile->m_header->m_notes ), true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Disclaimer" ) )
     {
-        StoreString( &( m_ibisFile->m_header.m_disclaimer ), true );
+        StoreString( &( m_ibisFile->m_header->m_disclaimer ), true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Copyright" ) )
     {
-        StoreString( &( m_ibisFile->m_header.m_copyright ), true );
+        StoreString( &( m_ibisFile->m_header->m_copyright ), true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Date" ) )
     {
-        StoreString( &( m_ibisFile->m_header.m_date ), false );
+        StoreString( &( m_ibisFile->m_header->m_date ), false );
     }
     else
     {
@@ -2310,41 +2316,41 @@ bool IbisParser::readPackage()
     {
         if( fields.at( 0 ) == "R_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package.m_Rpkg.value[IBIS_CORNER::TYP] ),
+            if( parseDouble( &( m_currentComponent->m_package->m_Rpkg->value[IBIS_CORNER::TYP] ),
                              fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package.m_Rpkg.value[IBIS_CORNER::MIN] ),
+            parseDouble( &( m_currentComponent->m_package->m_Rpkg->value[IBIS_CORNER::MIN] ),
                          fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package.m_Rpkg.value[IBIS_CORNER::MAX] ),
+            parseDouble( &( m_currentComponent->m_package->m_Rpkg->value[IBIS_CORNER::MAX] ),
                          fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "L_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package.m_Lpkg.value[IBIS_CORNER::TYP] ),
+            if( parseDouble( &( m_currentComponent->m_package->m_Lpkg->value[IBIS_CORNER::TYP] ),
                              fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package.m_Lpkg.value[IBIS_CORNER::MIN] ),
+            parseDouble( &( m_currentComponent->m_package->m_Lpkg->value[IBIS_CORNER::MIN] ),
                          fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package.m_Lpkg.value[IBIS_CORNER::MAX] ),
+            parseDouble( &( m_currentComponent->m_package->m_Lpkg->value[IBIS_CORNER::MAX] ),
                          fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "C_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package.m_Cpkg.value[IBIS_CORNER::TYP] ),
+            if( parseDouble( &( m_currentComponent->m_package->m_Cpkg->value[IBIS_CORNER::TYP] ),
                              fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package.m_Cpkg.value[IBIS_CORNER::MIN] ),
+            parseDouble( &( m_currentComponent->m_package->m_Cpkg->value[IBIS_CORNER::MIN] ),
                          fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package.m_Cpkg.value[IBIS_CORNER::MAX] ),
+            parseDouble( &( m_currentComponent->m_package->m_Cpkg->value[IBIS_CORNER::MAX] ),
                          fields.at( 3 ), true );
         }
     }
@@ -2371,46 +2377,46 @@ bool IbisParser::readPin()
 
     fields = ReadTableLine();
 
-    IbisComponentPin pin;
+    IbisComponentPin* pin = new IbisComponentPin( m_reporter );
 
     if( ( fields.size() == 3 ) )
     {
         if( m_continue == IBIS_PARSER_CONTINUE::COMPONENT_PIN ) // No info on first line
         {
-            pin.m_pinName = fields.at( 0 );
-            pin.m_signalName = fields.at( 1 );
-            pin.m_modelName = fields.at( 2 );
+            pin->m_pinName = fields.at( 0 );
+            pin->m_signalName = fields.at( 1 );
+            pin->m_modelName = fields.at( 2 );
 
             m_currentComponent->m_pins.push_back( pin );
         }
         else
         {
-            pin.m_dummy = true;
+            pin->m_dummy = true;
         }
     }
     else
     {
         if( m_continue == IBIS_PARSER_CONTINUE::COMPONENT_PIN ) // Not on the first line
         {
-            pin.m_pinName = fields.at( 0 );
-            pin.m_signalName = fields.at( 1 );
-            pin.m_modelName = fields.at( 2 );
+            pin->m_pinName = fields.at( 0 );
+            pin->m_signalName = fields.at( 1 );
+            pin->m_modelName = fields.at( 2 );
 
-            pin.m_Rcol = m_currentComponent->m_pins.back().m_Rcol;
-            pin.m_Lcol = m_currentComponent->m_pins.back().m_Lcol;
-            pin.m_Ccol = m_currentComponent->m_pins.back().m_Ccol;
+            pin->m_Rcol = m_currentComponent->m_pins.back()->m_Rcol;
+            pin->m_Lcol = m_currentComponent->m_pins.back()->m_Lcol;
+            pin->m_Ccol = m_currentComponent->m_pins.back()->m_Ccol;
 
-            if( pin.m_Rcol == 0 || pin.m_Lcol == 0 || pin.m_Ccol == 0 )
+            if( pin->m_Rcol == 0 || pin->m_Lcol == 0 || pin->m_Ccol == 0 )
             {
                 status = false; // Did we just try to go from a 3 column table to a 6 ?
             }
             else
             {
-                if ( parseDouble( &( pin.m_Rpin ), fields.at( pin.m_Rcol ), true ) )
+                if( parseDouble( &( pin->m_Rpin ), fields.at( pin->m_Rcol ), true ) )
                 {
-                    if ( parseDouble( &( pin.m_Lpin ), fields.at( pin.m_Lcol ), true ) )
+                    if( parseDouble( &( pin->m_Lpin ), fields.at( pin->m_Lcol ), true ) )
                     {
-                        if ( parseDouble( &( pin.m_Cpin ), fields.at( pin.m_Ccol ), true ) )
+                        if( parseDouble( &( pin->m_Cpin ), fields.at( pin->m_Ccol ), true ) )
                         {
                         }
                         else
@@ -2435,15 +2441,15 @@ bool IbisParser::readPin()
             {
                 if( fields.at( i ) == "R_pin" )
                 {
-                    pin.m_Rcol = i;
+                    pin->m_Rcol = i;
                 }
                 else if( fields.at( i ) == "L_pin" )
                 {
-                    pin.m_Lcol = i;
+                    pin->m_Lcol = i;
                 }
                 else if( fields.at( i ) == "C_pin" )
                 {
-                    pin.m_Ccol = i;
+                    pin->m_Ccol = i;
                 }
                 else
                 {
@@ -2452,12 +2458,12 @@ bool IbisParser::readPin()
                 }
             }
 
-            if( pin.m_Rcol == 0 || pin.m_Lcol == 0 || pin.m_Ccol == 0 )
+            if( pin->m_Rcol == 0 || pin->m_Lcol == 0 || pin->m_Ccol == 0 )
             {
                 ibisReport( "[Pin]: Missing argument", RPT_SEVERITY_ERROR );
                 status = false;
             }
-            pin.m_dummy = true;
+            pin->m_dummy = true;
         }
     }
 
@@ -2477,7 +2483,7 @@ bool IbisParser::readPinMapping()
 
     fields = ReadTableLine();
 
-    IbisComponentPinMapping pinMapping;
+    IbisComponentPinMapping* pinMapping = new IbisComponentPinMapping( m_reporter );
 
     if( m_continue == IBIS_PARSER_CONTINUE::NONE ) // No info on first line
     {
@@ -2494,15 +2500,15 @@ bool IbisParser::readPinMapping()
             }
             else
             {
-                pinMapping.m_pinName = fields.at( 0 );
-                pinMapping.m_PDref = fields.at( 1 );
-                pinMapping.m_PUref = fields.at( 2 );
+                pinMapping->m_pinName = fields.at( 0 );
+                pinMapping->m_PDref = fields.at( 1 );
+                pinMapping->m_PUref = fields.at( 2 );
                 if( fields.size() > 3 )
-                    pinMapping.m_GNDClampRef = fields.at( 3 );
+                    pinMapping->m_GNDClampRef = fields.at( 3 );
                 if( fields.size() > 4 )
-                    pinMapping.m_POWERClampRef = fields.at( 4 );
+                    pinMapping->m_POWERClampRef = fields.at( 4 );
                 if( fields.size() > 5 )
-                    pinMapping.m_extRef = fields.at( 5 );
+                    pinMapping->m_extRef = fields.at( 5 );
             }
             m_currentComponent->m_pinMappings.push_back( pinMapping );
         }
@@ -2515,7 +2521,7 @@ bool IbisParser::readDiffPin()
 {
     bool status = true;
 
-    IbisDiffPinEntry entry;
+    IbisDiffPinEntry* entry = new IbisDiffPinEntry( m_reporter );
 
     if( m_continue == IBIS_PARSER_CONTINUE::NONE ) // No info on first line
     {
@@ -2523,16 +2529,16 @@ bool IbisParser::readDiffPin()
     }
     else
     {
-        if( readWord( &( entry.pinA ) ) )
+        if( readWord( &( entry->pinA ) ) )
         {
-            if( readWord( &( entry.pinB ) ) )
+            if( readWord( &( entry->pinB ) ) )
             {
-                if( readDouble( &( entry.Vdiff ) ) )
+                if( readDouble( &( entry->Vdiff ) ) )
                 {
-                    if( readTypMinMaxValue( &( entry.tdelay ) ) )
+                    if( readTypMinMaxValue( entry->tdelay ) )
                     {
                     }
-                    m_currentComponent->m_diffPin.m_entries.push_back( entry );
+                    m_currentComponent->m_diffPin->m_entries.push_back( entry );
                 }
                 else
                 {
@@ -2541,7 +2547,7 @@ bool IbisParser::readDiffPin()
             }
             else
             {
-                std::cout << entry.pinB << std::endl;
+                std::cout << entry->pinB << std::endl;
 
                 ibisReport( "[Pin Diff]: Incorrect inv_pin", RPT_SEVERITY_ERROR );
             }
@@ -2561,16 +2567,16 @@ bool IbisParser::readIVtableEntry( IVtable* aDest )
 
     skipWhitespaces();
 
-    IVtableEntry entry;
+    IVtableEntry* entry = new IVtableEntry( m_reporter );
 
     if( m_lineIndex < m_lineLength )
     {
         std::string str;
         if( readWord( &str ) )
         {
-            if( parseDouble( &( entry.V ), str, true ) )
+            if( parseDouble( &( entry->V ), str, true ) )
             {
-                if( readTypMinMaxValue( &( entry.I ) ) )
+                if( readTypMinMaxValue( entry->I ) )
                 {
                     aDest->m_entries.push_back( entry );
                 }
@@ -2602,16 +2608,16 @@ bool IbisParser::readVTtableEntry( VTtable* aDest )
     bool status = true;
     skipWhitespaces();
 
-    VTtableEntry entry;
+    VTtableEntry* entry = new VTtableEntry( m_reporter );
 
     if( m_lineIndex < m_lineLength )
     {
         std::string str;
         if( readWord( &str ) )
         {
-            if( parseDouble( &( entry.t ), str, true ) )
+            if( parseDouble( &( entry->t ), str, true ) )
             {
-                if( readTypMinMaxValue( &( entry.V ) ) )
+                if( readTypMinMaxValue( entry->V ) )
                 {
                 }
                 else
@@ -2662,7 +2668,7 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
 
     if( m_continue != IBIS_PARSER_CONTINUE::WAVEFORM )
     {
-        wf = new IbisWaveform();
+        wf = new IbisWaveform( m_reporter );
         wf->m_type = aType;
 
         switch( aType )
@@ -2707,9 +2713,7 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
             ;
         else
         {
-            VTtableEntry entry;
-
-            if( readVTtableEntry( &m_currentWaveform->m_table ) )
+            if( readVTtableEntry( m_currentWaveform->m_table ) )
             {
             }
             else

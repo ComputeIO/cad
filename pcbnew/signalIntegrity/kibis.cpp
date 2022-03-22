@@ -50,25 +50,26 @@ IBIS_CORNER ReverseLogic( IBIS_CORNER aIn )
 
 KIBIS::KIBIS( std::string aFileName ) : KIBIS_ANY( this )
 {
-    IbisParser* parser = new IbisParser();
-    IbisFile*   file = new IbisFile();
-    parser->m_parrot = false;
+    IBIS_REPORTER* reporter = new IBIS_REPORTER();
+    IbisFile*      file = new IbisFile( reporter );
+    IbisParser*    parser = new IbisParser( reporter );
+    parser->m_parrot = true;
     parser->parseFile( aFileName, file );
 
     bool status = true;
 
     m_file = new KIBIS_FILE( this, parser );
 
-    for( IbisModel iModel : parser->m_ibisFile->m_models )
+    for( IbisModel* iModel : parser->m_ibisFile->m_models )
     {
-        KIBIS_MODEL* kModel = new KIBIS_MODEL( this, &iModel, parser );
+        KIBIS_MODEL* kModel = new KIBIS_MODEL( this, iModel, parser );
         status &= kModel->m_valid;
         m_models.push_back( kModel );
     }
 
-    for( IbisComponent iComponent : parser->m_ibisFile->m_components )
+    for( IbisComponent* iComponent : parser->m_ibisFile->m_components )
     {
-        KIBIS_COMPONENT* kComponent = new KIBIS_COMPONENT( this, &iComponent, parser );
+        KIBIS_COMPONENT* kComponent = new KIBIS_COMPONENT( this, iComponent, parser );
         status &= kComponent->m_valid;
         m_components.push_back( kComponent );
     }
@@ -88,13 +89,13 @@ KIBIS_FILE::KIBIS_FILE( KIBIS* aTopLevel, IbisParser* aParser ) : KIBIS_ANY( aTo
     }
     else
     {
-        m_fileName = aParser->m_ibisFile->m_header.m_fileName;
-        m_fileRev = aParser->m_ibisFile->m_header.m_fileRevision;
-        m_ibisVersion = aParser->m_ibisFile->m_header.m_ibisVersion;
-        m_date = aParser->m_ibisFile->m_header.m_date;
-        m_notes = aParser->m_ibisFile->m_header.m_notes;
-        m_disclaimer = aParser->m_ibisFile->m_header.m_disclaimer;
-        m_copyright = aParser->m_ibisFile->m_header.m_copyright;
+        m_fileName = aParser->m_ibisFile->m_header->m_fileName;
+        m_fileRev = aParser->m_ibisFile->m_header->m_fileRevision;
+        m_ibisVersion = aParser->m_ibisFile->m_header->m_ibisVersion;
+        m_date = aParser->m_ibisFile->m_header->m_date;
+        m_notes = aParser->m_ibisFile->m_header->m_notes;
+        m_disclaimer = aParser->m_ibisFile->m_header->m_disclaimer;
+        m_copyright = aParser->m_ibisFile->m_header->m_copyright;
     }
 
     m_valid = status;
@@ -119,31 +120,31 @@ KIBIS_PIN::KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin* aPin, IbisComponentPac
 
     if( !std::isnan( aPin->m_Lpin ) )
     {
-        R_pin.value[IBIS_CORNER::TYP] = aPin->m_Rpin;
-        R_pin.value[IBIS_CORNER::MIN] = aPin->m_Rpin;
-        R_pin.value[IBIS_CORNER::MAX] = aPin->m_Rpin;
+        R_pin->value[IBIS_CORNER::TYP] = aPin->m_Rpin;
+        R_pin->value[IBIS_CORNER::MIN] = aPin->m_Rpin;
+        R_pin->value[IBIS_CORNER::MAX] = aPin->m_Rpin;
     }
     if( !std::isnan( aPin->m_Lpin ) )
     {
-        L_pin.value[IBIS_CORNER::TYP] = aPin->m_Lpin;
-        L_pin.value[IBIS_CORNER::MIN] = aPin->m_Lpin;
-        L_pin.value[IBIS_CORNER::MAX] = aPin->m_Lpin;
+        L_pin->value[IBIS_CORNER::TYP] = aPin->m_Lpin;
+        L_pin->value[IBIS_CORNER::MIN] = aPin->m_Lpin;
+        L_pin->value[IBIS_CORNER::MAX] = aPin->m_Lpin;
     }
     if( !std::isnan( aPin->m_Cpin ) )
     {
-        C_pin.value[IBIS_CORNER::TYP] = aPin->m_Cpin;
-        C_pin.value[IBIS_CORNER::MIN] = aPin->m_Cpin;
-        C_pin.value[IBIS_CORNER::MAX] = aPin->m_Cpin;
+        C_pin->value[IBIS_CORNER::TYP] = aPin->m_Cpin;
+        C_pin->value[IBIS_CORNER::MIN] = aPin->m_Cpin;
+        C_pin->value[IBIS_CORNER::MAX] = aPin->m_Cpin;
     }
 
     bool                     modelSelected = false;
     std::vector<std::string> listOfModels;
 
-    for( IbisModelSelector modelSelector : aParser->m_ibisFile->m_modelSelectors )
+    for( IbisModelSelector* modelSelector : aParser->m_ibisFile->m_modelSelectors )
     {
-        if( !strcmp( modelSelector.m_name.c_str(), aPin->m_modelName.c_str() ) )
+        if( !strcmp( modelSelector->m_name.c_str(), aPin->m_modelName.c_str() ) )
         {
-            for( IbisModelSelectorEntry model : modelSelector.m_models )
+            for( IbisModelSelectorEntry model : modelSelector->m_models )
             {
                 listOfModels.push_back( model.m_modelName );
             }
@@ -185,9 +186,9 @@ KIBIS_MODEL::KIBIS_MODEL( KIBIS* aTopLevel, IbisModel* aSource, IbisParser* aPar
 
         m_description = std::string( "No description available." );
 
-        for( IbisModelSelector modelSelector : aParser->m_ibisFile->m_modelSelectors )
+        for( IbisModelSelector* modelSelector : aParser->m_ibisFile->m_modelSelectors )
         {
-            for( IbisModelSelectorEntry entry : modelSelector.m_models )
+            for( IbisModelSelectorEntry entry : modelSelector->m_models )
             {
                 if( !strcmp( entry.m_modelName.c_str(), m_name.c_str() ) )
                 {
@@ -239,15 +240,15 @@ KIBIS_COMPONENT::KIBIS_COMPONENT( KIBIS* aTopLevel, IbisComponent* aSource, Ibis
     m_manufacturer = aSource->m_manufacturer;
     m_topLevel = aTopLevel;
 
-    for( IbisComponentPin iPin : aSource->m_pins )
+    for( IbisComponentPin* iPin : aSource->m_pins )
     {
-        if( iPin.m_dummy )
+        if( iPin->m_dummy )
         {
             continue;
         }
 
-        KIBIS_PIN* kPin = new KIBIS_PIN( aTopLevel, &iPin, &( aSource->m_package ), aParser,
-                                         m_topLevel->m_models );
+        KIBIS_PIN* kPin =
+                new KIBIS_PIN( aTopLevel, iPin, aSource->m_package, aParser, m_topLevel->m_models );
         status &= kPin->m_valid;
         m_pins.push_back( kPin );
     }
@@ -309,10 +310,10 @@ std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 
     result = "\n";
     result += "VPWR POWER GND ";
-    result += doubleToString( m_voltageRange.value[ aSupply ] );
+    result += doubleToString( m_voltageRange->value[aSupply] );
     result += "\n";
     result += "CCPOMP DIE GND ";
-    result += doubleToString( m_C_comp.value[ReverseLogic( aSpeed )] );
+    result += doubleToString( m_C_comp->value[ReverseLogic( aSpeed )] );
     result += "\n";
     result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
     result += m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode", aSupply );
@@ -330,12 +331,11 @@ std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
     return result;
 }
 
-IbisWaveform TrimWaveform( IbisWaveform* aIn )
+IbisWaveform* TrimWaveform( IbisWaveform* aIn )
 {
-    IbisWaveform out;
+    IbisWaveform* out = new IbisWaveform( aIn->m_reporter );
 
-    out = *aIn; //@TODO : deepcopy ?
-    int nbPoints = out.m_table.m_entries.size();
+    int nbPoints = aIn->m_table->m_entries.size();
 
     if( nbPoints < 2 )
     {
@@ -343,24 +343,24 @@ IbisWaveform TrimWaveform( IbisWaveform* aIn )
         return out;
     }
 
-    double DCtyp = aIn->m_table.m_entries[0].V.value[IBIS_CORNER::TYP];
-    double DCmin = aIn->m_table.m_entries[0].V.value[IBIS_CORNER::MIN];
-    double DCmax = aIn->m_table.m_entries[0].V.value[IBIS_CORNER::MAX];
+    double DCtyp = aIn->m_table->m_entries[0]->V->value[IBIS_CORNER::TYP];
+    double DCmin = aIn->m_table->m_entries[0]->V->value[IBIS_CORNER::MIN];
+    double DCmax = aIn->m_table->m_entries[0]->V->value[IBIS_CORNER::MAX];
 
     if( nbPoints == 2 )
     {
         return out;
     }
 
-    out.m_table.m_entries.clear();
+    out->m_table->m_entries.clear();
     bool kept = false;
 
     for( int i = 0; i < nbPoints; i++ )
     {
-        out.m_table.m_entries.push_back( aIn->m_table.m_entries.at( i ) );
-        out.m_table.m_entries.at( i ).V.value[IBIS_CORNER::TYP] -= DCtyp;
-        out.m_table.m_entries.at( i ).V.value[IBIS_CORNER::MIN] -= DCmin;
-        out.m_table.m_entries.at( i ).V.value[IBIS_CORNER::MAX] -= DCmax;
+        out->m_table->m_entries.push_back( aIn->m_table->m_entries.at( i ) );
+        out->m_table->m_entries.at( i )->V->value[IBIS_CORNER::TYP] -= DCtyp;
+        out->m_table->m_entries.at( i )->V->value[IBIS_CORNER::MIN] -= DCmin;
+        out->m_table->m_entries.at( i )->V->value[IBIS_CORNER::MAX] -= DCmax;
     }
 
     return out;
@@ -390,23 +390,27 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
 {
     std::string simul;
 
-    IbisWaveform risingWF = TrimWaveform( aPair.first );
-    IbisWaveform fallingWF = TrimWaveform( aPair.second );
+    IbisWaveform* risingWF = TrimWaveform( aPair.first );
+    IbisWaveform* fallingWF = TrimWaveform( aPair.second );
 
-    if( aWave->m_ton < risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).t )
+    if( aWave->m_ton
+        < risingWF->m_table->m_entries.at( risingWF->m_table->m_entries.size() - 1 )->t )
     {
         std::cerr << "WARNING: rising edge is longer than on time." << std::endl;
     }
 
-    if( aWave->m_toff < fallingWF.m_table.m_entries.at( fallingWF.m_table.m_entries.size() - 1 ).t )
+    if( aWave->m_toff
+        < fallingWF->m_table->m_entries.at( fallingWF->m_table->m_entries.size() - 1 )->t )
     {
         std::cerr << "WARNING: falling edge is longer than on time." << std::endl;
     }
 
-    double deltaR = risingWF.m_table.m_entries.at( risingWF.m_table.m_entries.size() - 1 ).V.value[ aSupply ]
-                  - risingWF.m_table.m_entries.at( 0 ).V.value[ aSupply ];
-    double deltaF = fallingWF.m_table.m_entries.at( fallingWF.m_table.m_entries.size() - 1 ).V.value[ aSupply ]
-                  - fallingWF.m_table.m_entries.at( 0 ).V.value[ aSupply ];
+    double deltaR = risingWF->m_table->m_entries.at( risingWF->m_table->m_entries.size() - 1 )
+                            ->V->value[aSupply]
+                    - risingWF->m_table->m_entries.at( 0 )->V->value[aSupply];
+    double deltaF = fallingWF->m_table->m_entries.at( fallingWF->m_table->m_entries.size() - 1 )
+                            ->V->value[aSupply]
+                    - fallingWF->m_table->m_entries.at( 0 )->V->value[aSupply];
 
     // Ideally, delta should be equal to zero.
     // It can be different from zero if the falling waveform does not start were the rising one ended.
@@ -426,21 +430,21 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         if( i != 0 )
         {
             simul += "0 0 ";
-            VTtableEntry entry0 = risingWF.m_table.m_entries.at( 0 );
-            VTtableEntry entry1 = risingWF.m_table.m_entries.at( 1 );
-            double       deltaT = entry1.t - entry0.t;
+            VTtableEntry* entry0 = risingWF->m_table->m_entries.at( 0 );
+            VTtableEntry* entry1 = risingWF->m_table->m_entries.at( 1 );
+            double        deltaT = entry1->t - entry0->t;
 
-            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) - deltaT );
+            simul += doubleToString( entry0->t + i * ( aWave->m_ton + aWave->m_toff ) - deltaT );
             simul += " ";
             simul += "0";
             simul += " ";
         }
 
-        for( auto entry : risingWF.m_table.m_entries )
+        for( auto entry : risingWF->m_table->m_entries )
         {
-            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) );
+            simul += doubleToString( entry->t + i * ( aWave->m_ton + aWave->m_toff ) );
             simul += " ";
-            simul += doubleToString( entry.V.value[aSupply] - delta );
+            simul += doubleToString( entry->V->value[aSupply] - delta );
             simul += " ";
         }
         simul += ")\n";
@@ -459,22 +463,23 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         if( i != 0 )
         {
             simul += "0 0 ";
-            VTtableEntry entry0 = fallingWF.m_table.m_entries.at( 0 );
-            VTtableEntry entry1 = fallingWF.m_table.m_entries.at( 1 );
-            double       deltaT = entry1.t - entry0.t;
+            VTtableEntry* entry0 = fallingWF->m_table->m_entries.at( 0 );
+            VTtableEntry* entry1 = fallingWF->m_table->m_entries.at( 1 );
+            double        deltaT = entry1->t - entry0->t;
 
-            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton
+            simul += doubleToString( entry0->t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton
                                      - deltaT );
             simul += " ";
             simul += "0";
             simul += " ";
         }
 
-        for( auto entry : fallingWF.m_table.m_entries )
+        for( auto entry : fallingWF->m_table->m_entries )
         {
-            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton );
+            simul += doubleToString( entry->t + i * ( aWave->m_ton + aWave->m_toff )
+                                     + aWave->m_ton );
             simul += " ";
-            simul += doubleToString( entry.V.value[aSupply] );
+            simul += doubleToString( entry->V->value[aSupply] );
             simul += " ";
         }
         simul += ")\n";
@@ -495,7 +500,8 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         simul += ") ";
         simul += "+";
     }
-    simul += doubleToString( aPair.first->m_table.m_entries.at( 0 ).V.value[aSupply] ); // Add DC bias
+    simul += doubleToString(
+            aPair.first->m_table->m_entries.at( 0 )->V->value[aSupply] ); // Add DC bias
 
     simul += ")\n";
     return simul;
@@ -661,7 +667,7 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
 
     simul += "\n";
     simul += "CCPOMP 2 GND ";
-    simul += doubleToString( aModel->m_C_comp.value[aSpeed] ); //@TODO: Check the corner ?
+    simul += doubleToString( aModel->m_C_comp->value[aSpeed] ); //@TODO: Check the corner ?
     simul += "\n";
     switch( aWave->GetType() )
     {
@@ -673,7 +679,7 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
     {
         IbisWaveform* fallingWF = aPair.second;
         simul += "Vsig DIE0 GND ";
-        simul += doubleToString( fallingWF->m_table.m_entries.at( 0 ).V.value[aSupply] );
+        simul += doubleToString( fallingWF->m_table->m_entries.at( 0 )->V->value[aSupply] );
         simul += "\n";
         break;
     }
@@ -681,7 +687,7 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
     {
         IbisWaveform* risingWF = aPair.first;
         simul += "Vsig DIE0 GND ";
-        simul += doubleToString( risingWF->m_table.m_entries.at( 0 ).V.value[aSupply] );
+        simul += doubleToString( risingWF->m_table->m_entries.at( 0 )->V->value[aSupply] );
         simul += "\n";
         break;
     }
@@ -719,7 +725,7 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
-        simul += doubleToString( aModel->m_voltageRange.value[aSupply] );
+        simul += doubleToString( aModel->m_voltageRange->value[aSupply] );
         simul += "\n";
         //simul += "Vpin x1.DIE 0 1 \n"
         simul += "Lfixture 1 4 ";
@@ -873,7 +879,7 @@ std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                        
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
-        simul += doubleToString( aModel->m_voltageRange.value[aSupply] );
+        simul += doubleToString( aModel->m_voltageRange->value[aSupply] );
         simul += "\n";
         //simul += "Vpin x1.DIE 0 1 \n"
         simul += "Lfixture0 1 4 ";
@@ -1003,13 +1009,13 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         result += "\n";
 
         result += "RPIN 1 PIN ";
-        result += doubleToString( R_pin.value[ReverseLogic( aSpeed )] );
+        result += doubleToString( R_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "LPIN DIE 1 ";
-        result += doubleToString( L_pin.value[ReverseLogic( aSpeed )] );
+        result += doubleToString( L_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "CPIN PIN GND ";
-        result += doubleToString( C_pin.value[ReverseLogic( aSpeed )] );
+        result += doubleToString( C_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
 
         std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel->waveformPairs();
@@ -1100,13 +1106,13 @@ bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_M
         result += "\n";
         result += "\n";
         result += "RPIN 1 PIN ";
-        result += doubleToString( R_pin.value[ReverseLogic( aSpeed )] );
+        result += doubleToString( R_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "LPIN DIE 1 ";
-        result += doubleToString( L_pin.value[ReverseLogic( aSpeed )] );
+        result += doubleToString( L_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "CPIN PIN GND ";
-        result += doubleToString( C_pin.value[ReverseLogic( aSpeed )] );
+        result += doubleToString( C_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
 
 

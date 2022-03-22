@@ -159,17 +159,17 @@ public:
     IBIS_MODEL_POLARITY m_polarity = IBIS_MODEL_POLARITY::UNDEFINED;
     // End of optional subparameters
 
-    TypMinMaxValue m_C_comp;
-    TypMinMaxValue m_voltageRange;
-    TypMinMaxValue m_temperatureRange;
-    TypMinMaxValue m_pullupReference;
-    TypMinMaxValue m_pulldownReference;
-    TypMinMaxValue m_GNDClampReference;
-    TypMinMaxValue m_POWERClampReference;
-    TypMinMaxValue m_Rgnd;
-    TypMinMaxValue m_Rpower;
-    TypMinMaxValue m_Rac;
-    TypMinMaxValue m_Cac;
+    TypMinMaxValue*            m_C_comp;
+    TypMinMaxValue*            m_voltageRange;
+    TypMinMaxValue*            m_temperatureRange;
+    TypMinMaxValue*            m_pullupReference;
+    TypMinMaxValue*            m_pulldownReference;
+    TypMinMaxValue*            m_GNDClampReference;
+    TypMinMaxValue*            m_POWERClampReference;
+    TypMinMaxValue*            m_Rgnd;
+    TypMinMaxValue*            m_Rpower;
+    TypMinMaxValue*            m_Rac;
+    TypMinMaxValue*            m_Cac;
     IVtable        m_GNDClamp;
     IVtable        m_POWERClamp;
     IVtable        m_pullup;
@@ -208,11 +208,11 @@ public:
     std::string m_pinNumber;
 
     /** @brief Resistance from die to pin */
-    TypMinMaxValue R_pin;
+    TypMinMaxValue* R_pin;
     /** @brief Inductance from die to pin */
-    TypMinMaxValue L_pin;
+    TypMinMaxValue* L_pin;
     /** @brief Capacitance from pin to GND */
-    TypMinMaxValue C_pin;
+    TypMinMaxValue* C_pin;
 
     std::vector<double> m_t, m_Ku, m_Kd;
 
