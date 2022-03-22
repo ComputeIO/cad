@@ -949,7 +949,8 @@ endif()
 
 
 if( KICAD_USE_SENTRY )
-    add_subdirectory(thirdparty/sentry-native )
+    add_subdirectory( thirdparty/sentry-native )
+    add_definitions( -DKICAD_USE_SENTRY )
 endif()
 
 #================================================

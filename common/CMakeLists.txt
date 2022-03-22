@@ -498,6 +498,7 @@ target_link_libraries( common
     scripting
     pybind11::embed
     compoundfilereader
+    sentry
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
     ${wxWidgets_LIBRARIES}
@@ -507,6 +508,11 @@ target_link_libraries( common
    	${HarfBuzz_LIBRARIES}
 	${Fontconfig_LIBRARIES}
     )
+
+if( KICAD_USE_SENTRY )
+    target_link_libraries( common
+        sentry )
+endif()
 
 target_include_directories( common
     PUBLIC

@@ -59,6 +59,9 @@
 #include <trace_helpers.h>
 #include <paths.h>
 
+#ifdef KICAD_USE_SENTRY
+#include <sentry.h>
+#endif
 
 /**
  * Current list of languages supported by KiCad.
@@ -127,6 +130,10 @@ PGM_BASE::~PGM_BASE()
 
 void PGM_BASE::Destroy()
 {
+#ifdef KICAD_USE_SENTRY
+    sentry_close();
+ #endif
+
     // unlike a normal destructor, this is designed to be called more than once safely:
     delete m_locale;
     m_locale = nullptr;
@@ -285,11 +292,11 @@ bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
 
     loadCommonSettings();
 
-
+#ifdef KICAD_USE_SENTRY
     if( !m_settings_manager->GetCommonSettings()->m_DataCollection.prompted )
     {
         wxMessageDialog optIn = wxMessageDialog( nullptr, _( "KiCad can anonymously collect crash report and certain event data"
-                                                             "and transmit the reports to the KiCad developers.\n"
+                                                             " and transmit the reports to the KiCad developers.\n"
                                                              "Your design files are not transmitted as part of this process.\n"
                                                              "Would you like to enable automatic crash and event reporting?"),
                                                              _( "Data collection opt in request" ),
@@ -308,6 +315,16 @@ bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
 
         m_settings_manager->GetCommonSettings()->m_DataCollection.prompted = true;
     }
+
+    if( m_settings_manager->GetCommonSettings()->m_DataCollection.opted_in )
+    {
+        sentry_options_t* options = sentry_options_new();
+        sentry_options_set_dsn(
+                options,
+                "https://463925e689c34632b5172436ffb76de5@o1171731.ingest.sentry.io/6266565" );
+        sentry_init( options );
+    }
+#endif
 
     ReadPdfBrowserInfos();      // needs GetCommonSettings()
 
