@@ -60,7 +60,7 @@ int main( void )
     wxString simul = "";
     simul += "\n x1 OUT_1 0 DIE_1 driver_typ \n";
     simul += "R1 OUT_1 GND 1k\n";
-    simul += ".tran 0.1n 40n \n";
+    simul += ".tran 0.1n 200n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";

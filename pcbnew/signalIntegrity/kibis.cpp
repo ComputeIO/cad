@@ -357,7 +357,16 @@ IbisWaveform* TrimWaveform( IbisWaveform* aIn )
 
     for( int i = 0; i < nbPoints; i++ )
     {
-        out->m_table->m_entries.push_back( aIn->m_table->m_entries.at( i ) );
+        VTtableEntry* entry = new VTtableEntry( out->m_reporter );
+
+        entry->t = aIn->m_table->m_entries.at( i )->t;
+        entry->V->value[IBIS_CORNER::TYP] =
+                aIn->m_table->m_entries.at( i )->V->value[IBIS_CORNER::TYP];
+        entry->V->value[IBIS_CORNER::MIN] =
+                aIn->m_table->m_entries.at( i )->V->value[IBIS_CORNER::MIN];
+        entry->V->value[IBIS_CORNER::MAX] =
+                aIn->m_table->m_entries.at( i )->V->value[IBIS_CORNER::MAX];
+        out->m_table->m_entries.push_back( entry );
         out->m_table->m_entries.at( i )->V->value[IBIS_CORNER::TYP] -= DCtyp;
         out->m_table->m_entries.at( i )->V->value[IBIS_CORNER::MIN] -= DCmin;
         out->m_table->m_entries.at( i )->V->value[IBIS_CORNER::MAX] -= DCmax;
@@ -497,7 +506,7 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         simul += std::to_string( i );
         simul += " ) + v( fall";
         simul += std::to_string( i );
-        simul += ") ";
+        simul += " ) ";
         simul += "+";
     }
     simul += doubleToString(
