@@ -42,9 +42,7 @@ PANEL_DATA_COLLECTION::PANEL_DATA_COLLECTION( PAGED_DIALOG* aDialog, wxWindow* a
 
 bool PANEL_DATA_COLLECTION::TransferDataToWindow()
 {
-    COMMON_SETTINGS* commonSettings = Pgm().GetCommonSettings();
-
-    applySettingsToPanel( *commonSettings );
+    applySettingsToPanel();
 
     return true;
 }
@@ -52,11 +50,7 @@ bool PANEL_DATA_COLLECTION::TransferDataToWindow()
 
 bool PANEL_DATA_COLLECTION::TransferDataFromWindow()
 {
-    COMMON_SETTINGS* commonSettings = Pgm().GetCommonSettings();
-
-    commonSettings->m_DataCollection.opted_in = m_cbOptIn->GetValue();
-
-    Pgm().GetSettingsManager().Save( commonSettings );
+    Pgm().SetSentryOptIn( m_cbOptIn->GetValue() );
 
     return true;
 }
@@ -64,15 +58,11 @@ bool PANEL_DATA_COLLECTION::TransferDataFromWindow()
 
 void PANEL_DATA_COLLECTION::ResetPanel()
 {
-    COMMON_SETTINGS defaultSettings;
-
-    defaultSettings.ResetToDefaults();
-
-    applySettingsToPanel( defaultSettings );
+    applySettingsToPanel();
 }
 
 
-void PANEL_DATA_COLLECTION::applySettingsToPanel( COMMON_SETTINGS& aSettings )
+void PANEL_DATA_COLLECTION::applySettingsToPanel()
 {
-    m_cbOptIn->SetValue( aSettings.m_DataCollection.opted_in );
+    m_cbOptIn->SetValue( Pgm().IsSentryOptIn() );
 }

@@ -43,7 +43,7 @@ protected:
     bool TransferDataToWindow() override;
 
 private:
-    void applySettingsToPanel( COMMON_SETTINGS& aSettings );
+    void applySettingsToPanel();
 
 protected:
     PAGED_DIALOG* m_dialog;

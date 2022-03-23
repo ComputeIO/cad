@@ -38,6 +38,7 @@
 #include <wx/stdpaths.h>
 #include <wx/sysopt.h>
 #include <wx/filedlg.h>
+#include <wx/ffile.h>
 #include <wx/tooltip.h>
 
 #include <advanced_config.h>
@@ -211,8 +212,105 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 }
 
 
+#ifdef KICAD_USE_SENTRY
+bool PGM_BASE::IsSentryOptIn()
+{
+    return m_sentry_init_fn.Exists();
+}
+
+
+void PGM_BASE::SetSentryOptIn( bool aOptIn )
+{
+    if( aOptIn )
+    {
+        KIID     userKiid;
+        wxString userGuid = userKiid.AsString();
+
+        wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath(), "w" );
+        sentryInitFile.Write( userGuid );
+        sentryInitFile.Close();
+    }
+    else
+    {
+        wxRemoveFile( m_sentry_init_fn.GetFullPath() );
+    }
+}
+
+
+void PGM_BASE::sentryInit()
+{
+    m_sentry_init_fn = wxFileName( SETTINGS_MANAGER::GetUserSettingsPath(), "sentry-opt-in" );
+
+    if( m_sentry_init_fn.Exists() )
+    {
+        wxString userGuid;
+
+        wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath() );
+        sentryInitFile.ReadAll( &userGuid );
+        sentryInitFile.Close();
+
+        if( userGuid.IsEmpty() || userGuid.length() != 36 )
+        {
+            KIID    userKiid;
+            userGuid = userKiid.AsString();
+
+            wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath(), "w" );
+            sentryInitFile.Write( userGuid );
+            sentryInitFile.Close();
+        }
+
+        sentry_options_t* options = sentry_options_new();
+
+        sentry_options_set_dsn(
+                options,
+                "https://463925e689c34632b5172436ffb76de5@o1171731.ingest.sentry.io/6266565" );
+
+        wxFileName tmp;
+        tmp.AssignDir( PATHS::GetUserCachePath() );
+        tmp.AppendDir( "sentry" );
+
+        sentry_options_set_database_pathw( options, tmp.GetPathWithSep().wc_str() );
+        sentry_options_set_symbolize_stacktraces( options, true );
+
+        sentry_init( options );
+
+        sentry_value_t user = sentry_value_new_object();
+        sentry_value_set_by_key( user, "id", sentry_value_new_string( userGuid.c_str() ) );
+        sentry_set_user( user );
+    }
+}
+
+
+void PGM_BASE::sentryPrompt()
+{
+    if( !m_settings_manager->GetCommonSettings()->m_DoNotShowAgain.data_collection_prompt )
+    {
+        wxMessageDialog optIn = wxMessageDialog(
+                nullptr,
+                _( "KiCad can anonymously collect crash report and certain event data"
+                   " and transmit the reports to the KiCad developers.\n"
+                   "Your design files are not transmitted as part of this process.\n"
+                   "Would you like to enable automatic crash and event reporting?" ),
+                _( "Data collection opt in request" ), wxYES_NO | wxCENTRE );
+
+        int result = optIn.ShowModal();
+
+        if( result == wxID_YES )
+        {
+            sentryInit();
+        }
+
+        m_settings_manager->GetCommonSettings()->m_DoNotShowAgain.data_collection_prompt = true;
+    }
+}
+#endif
+
+
 bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
 {
+#ifdef KICAD_USE_SENTRY
+    sentryInit();
+#endif
     wxString pgm_name;
 
     /// Should never happen but boost unit_test isn't playing nicely in some cases
@@ -293,37 +391,7 @@ bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
     loadCommonSettings();
 
 #ifdef KICAD_USE_SENTRY
-    if( !m_settings_manager->GetCommonSettings()->m_DataCollection.prompted )
-    {
-        wxMessageDialog optIn = wxMessageDialog( nullptr, _( "KiCad can anonymously collect crash report and certain event data"
-                                                             " and transmit the reports to the KiCad developers.\n"
-                                                             "Your design files are not transmitted as part of this process.\n"
-                                                             "Would you like to enable automatic crash and event reporting?"),
-                                                             _( "Data collection opt in request" ),
-                                                             wxYES_NO | wxCENTRE );
-
-        int result = optIn.ShowModal();
-
-        if( result == wxID_YES )
-        {
-            m_settings_manager->GetCommonSettings()->m_DataCollection.opted_in = true;
-        }
-        else
-        {
-            m_settings_manager->GetCommonSettings()->m_DataCollection.opted_in = false;
-        }
-
-        m_settings_manager->GetCommonSettings()->m_DataCollection.prompted = true;
-    }
-
-    if( m_settings_manager->GetCommonSettings()->m_DataCollection.opted_in )
-    {
-        sentry_options_t* options = sentry_options_new();
-        sentry_options_set_dsn(
-                options,
-                "https://463925e689c34632b5172436ffb76de5@o1171731.ingest.sentry.io/6266565" );
-        sentry_init( options );
-    }
+    sentryPrompt();
 #endif
 
     ReadPdfBrowserInfos();      // needs GetCommonSettings()

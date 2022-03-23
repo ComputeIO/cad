@@ -285,6 +285,11 @@ public:
      */
     void SaveCommonSettings();
 
+#ifdef KICAD_USE_SENTRY
+    bool IsSentryOptIn();
+    void SetSentryOptIn( bool aOptIn );
+#endif
+
     /**
      * wxWidgets on MSW tends to crash if you spool up more than one print job at a time.
      */
@@ -308,6 +313,11 @@ protected:
      */
     bool setExecutablePath();
 
+#ifdef KICAD_USE_SENTRY
+    void sentryInit();
+    void sentryPrompt();
+#endif
+
 protected:
     std::unique_ptr<SETTINGS_MANAGER> m_settings_manager;
 
@@ -323,6 +333,10 @@ protected:
     wxString        m_pdf_browser;            /// Filename of the app selected for browsing PDFs
 
     wxString        m_text_editor;
+
+#ifdef KICAD_USE_SENTRY
+    wxFileName      m_sentry_init_fn;
+#endif
 };
 
 
