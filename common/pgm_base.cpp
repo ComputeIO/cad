@@ -278,6 +278,10 @@ void PGM_BASE::sentryInit()
         sentry_options_set_database_pathw( options, tmp.GetPathWithSep().wc_str() );
         sentry_options_set_symbolize_stacktraces( options, true );
 
+        #if !KICAD_IS_NIGHTLY
+        sentry_options_set_release( options, KICAD_SEMANTIC_VERSION );
+        #endif
+
         sentry_init( options );
 
         sentry_value_t user = sentry_value_new_object();
