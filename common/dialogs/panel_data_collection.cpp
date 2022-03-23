@@ -64,5 +64,16 @@ void PANEL_DATA_COLLECTION::ResetPanel()
 
 void PANEL_DATA_COLLECTION::applySettingsToPanel()
 {
-    m_cbOptIn->SetValue( Pgm().IsSentryOptIn() );
+    m_cbOptIn->SetValue( Pgm().IsSentryOptedIn() );
+}
+
+
+void PANEL_DATA_COLLECTION::OnResetIdClick( wxCommandEvent& aEvent )
+{
+    // this recreates the opt in which contains the id
+    if( Pgm().IsSentryOptedIn() )
+    {
+        Pgm().SetSentryOptIn( false );
+        Pgm().SetSentryOptIn( true );
+    }
 }

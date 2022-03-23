@@ -42,6 +42,8 @@ protected:
     bool TransferDataFromWindow() override;
     bool TransferDataToWindow() override;
 
+    virtual void OnResetIdClick( wxCommandEvent& aEvent ) override;
+
 private:
     void applySettingsToPanel();
 

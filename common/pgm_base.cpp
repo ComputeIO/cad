@@ -61,6 +61,8 @@
 #include <paths.h>
 
 #ifdef KICAD_USE_SENTRY
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/uuid_generators.hpp>
 #include <sentry.h>
 #endif
 
@@ -213,7 +215,7 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 
 
 #ifdef KICAD_USE_SENTRY
-bool PGM_BASE::IsSentryOptIn()
+bool PGM_BASE::IsSentryOptedIn()
 {
     return m_sentry_init_fn.Exists();
 }
@@ -223,12 +225,15 @@ void PGM_BASE::SetSentryOptIn( bool aOptIn )
 {
     if( aOptIn )
     {
-        KIID     userKiid;
-        wxString userGuid = userKiid.AsString();
+        if( !IsSentryOptedIn() )
+        {
+            boost::uuids::uuid uuid = boost::uuids::random_generator()();
+            wxString userGuid = boost::uuids::to_string( uuid );
 
-        wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath(), "w" );
-        sentryInitFile.Write( userGuid );
-        sentryInitFile.Close();
+            wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath(), "w" );
+            sentryInitFile.Write( userGuid );
+            sentryInitFile.Close();
+        }
     }
     else
     {
@@ -251,8 +256,8 @@ void PGM_BASE::sentryInit()
 
         if( userGuid.IsEmpty() || userGuid.length() != 36 )
         {
-            KIID    userKiid;
-            userGuid = userKiid.AsString();
+            boost::uuids::uuid uuid = boost::uuids::random_generator()();
+            userGuid = boost::uuids::to_string( uuid );
 
             wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath(), "w" );
             sentryInitFile.Write( userGuid );

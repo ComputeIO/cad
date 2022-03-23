@@ -21,8 +21,17 @@ PANEL_DATA_COLLECTION_BASE::PANEL_DATA_COLLECTION_BASE( wxWindow* parent, wxWind
 	m_stExplanation->Wrap( 500 );
 	bSizer8->Add( m_stExplanation, 0, wxALL, 5 );
 
+	wxBoxSizer* bSizer3;
+	bSizer3 = new wxBoxSizer( wxHORIZONTAL );
+
 	m_cbOptIn = new wxCheckBox( this, wxID_ANY, _("I agree to provide anonymous reports"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer8->Add( m_cbOptIn, 0, wxALL, 5 );
+	bSizer3->Add( m_cbOptIn, 0, wxALL, 5 );
+
+	m_buttonResetId = new wxButton( this, wxID_ANY, _("Reset Unique Id"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer3->Add( m_buttonResetId, 0, wxALL, 5 );
+
+
+	bSizer8->Add( bSizer3, 1, wxEXPAND, 5 );
 
 
 	bPanelSizer->Add( bSizer8, 1, wxEXPAND, 5 );
@@ -31,8 +40,14 @@ PANEL_DATA_COLLECTION_BASE::PANEL_DATA_COLLECTION_BASE( wxWindow* parent, wxWind
 	this->SetSizer( bPanelSizer );
 	this->Layout();
 	bPanelSizer->Fit( this );
+
+	// Connect Events
+	m_buttonResetId->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PANEL_DATA_COLLECTION_BASE::OnResetIdClick ), NULL, this );
 }
 
 PANEL_DATA_COLLECTION_BASE::~PANEL_DATA_COLLECTION_BASE()
 {
+	// Disconnect Events
+	m_buttonResetId->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PANEL_DATA_COLLECTION_BASE::OnResetIdClick ), NULL, this );
+
 }

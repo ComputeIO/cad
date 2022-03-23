@@ -286,7 +286,7 @@ public:
     void SaveCommonSettings();
 
 #ifdef KICAD_USE_SENTRY
-    bool IsSentryOptIn();
+    bool IsSentryOptedIn();
     void SetSentryOptIn( bool aOptIn );
 #endif
 

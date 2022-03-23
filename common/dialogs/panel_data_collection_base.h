@@ -18,6 +18,10 @@
 #include <wx/colour.h>
 #include <wx/settings.h>
 #include <wx/checkbox.h>
+#include <wx/button.h>
+#include <wx/bitmap.h>
+#include <wx/image.h>
+#include <wx/icon.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
 
@@ -33,6 +37,11 @@ class PANEL_DATA_COLLECTION_BASE : public RESETTABLE_PANEL
 	protected:
 		wxStaticText* m_stExplanation;
 		wxCheckBox* m_cbOptIn;
+		wxButton* m_buttonResetId;
+
+		// Virtual event handlers, override them in your derived class
+		virtual void OnResetIdClick( wxCommandEvent& event ) { event.Skip(); }
+
 
 	public:
 
