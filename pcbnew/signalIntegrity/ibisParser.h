@@ -45,7 +45,7 @@
 class IBIS_REPORTER
 {
 public:
-    void report( std::string aMsg, SEVERITY aSeverity ) { std::cout << aMsg << std::endl; };
+    void Report( std::string aMsg, SEVERITY aSeverity ) { std::cout << aMsg << std::endl; };
 };
 
 class IBIS_ANY
@@ -53,6 +53,13 @@ class IBIS_ANY
 public:
     IBIS_ANY( IBIS_REPORTER* aReporter ) { m_reporter = aReporter; };
     IBIS_REPORTER* m_reporter;
+    void           Report( std::string aMsg, SEVERITY aSeverity = RPT_SEVERITY_INFO )
+    {
+        if( m_reporter )
+        {
+            m_reporter->Report( aMsg, aSeverity );
+        }
+    };
 };
 
 
@@ -273,9 +280,10 @@ public:
     TypMinMaxValue* I;
 };
 
-class IVtable
+class IVtable : public IBIS_ANY
 {
 public:
+    IVtable( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
     std::vector<IVtableEntry*> m_entries;
 
     bool Check();
@@ -347,20 +355,27 @@ public:
     double m_dt;
 };
 
-class dvdtTypMinMax
+class dvdtTypMinMax : public IBIS_ANY
 {
 public:
+    dvdtTypMinMax( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter ){};
     dvdt value[3];
 
     bool Check();
 };
 
 
-class IbisRamp
+class IbisRamp : public IBIS_ANY
 {
 public:
-    dvdtTypMinMax m_falling;
-    dvdtTypMinMax m_rising;
+    IbisRamp( IBIS_REPORTER* aReporter ) : IBIS_ANY( aReporter )
+    {
+        m_falling = new dvdtTypMinMax( m_reporter );
+        m_rising = new dvdtTypMinMax( m_reporter );
+    };
+
+    dvdtTypMinMax* m_falling;
+    dvdtTypMinMax* m_rising;
     double m_Rload = 50; // The R_load subparameter is optional if the default 50 ohm load is used
 
     bool Check();
@@ -415,7 +430,13 @@ public:
         m_Rpower = new TypMinMaxValue( m_reporter );
         m_Rac = new TypMinMaxValue( m_reporter );
         m_Cac = new TypMinMaxValue( m_reporter );
+        m_GNDClamp = new IVtable( m_reporter );
+        m_POWERClamp = new IVtable( m_reporter );
+        m_pullup = new IVtable( m_reporter );
+        m_pulldown = new IVtable( m_reporter );
+        m_ramp = new IbisRamp( m_reporter );
     };
+
     std::string        m_name;
     IBIS_MODEL_TYPE m_type = IBIS_MODEL_TYPE::UNDEFINED;
     /* The Polarity, Enable, Vinl, Vinh, Vmeas, Cref, Rref, and Vref subparameters are optional. */
@@ -441,13 +462,13 @@ public:
     TypMinMaxValue*            m_Rpower;
     TypMinMaxValue*            m_Rac;
     TypMinMaxValue*            m_Cac;
-    IVtable        m_GNDClamp;
-    IVtable        m_POWERClamp;
-    IVtable        m_pullup;
-    IVtable        m_pulldown;
+    IVtable*                   m_GNDClamp;
+    IVtable*                   m_POWERClamp;
+    IVtable*                   m_pullup;
+    IVtable*                   m_pulldown;
     std::vector<IbisWaveform*> m_risingWaveforms;
     std::vector<IbisWaveform*> m_fallingWaveforms;
-    IbisRamp       m_ramp;
+    IbisRamp*                  m_ramp;
 
     bool Check();
 };
@@ -604,7 +625,6 @@ private:
     IBIS_PARSER_CONTEXT  m_context = IBIS_PARSER_CONTEXT::HEADER;
 
     // To be removed
-    void ibisReport( std::string aMsg, SEVERITY aSeverity=RPT_SEVERITY_INFO );
     bool ibisToDouble( std::string aString, double* aDest );
 };
 

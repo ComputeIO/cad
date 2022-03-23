@@ -26,6 +26,12 @@
 #include "ibisParser.h"
 #include <sstream>
 
+KIBIS_ANY::KIBIS_ANY( KIBIS* aTopLevel ) : IBIS_ANY( aTopLevel->m_reporter )
+{
+    m_topLevel = aTopLevel;
+    m_valid = false;
+}
+
 std::string doubleToString( double aNumber )
 {
     std::ostringstream ss;
@@ -53,7 +59,7 @@ KIBIS::KIBIS( std::string aFileName ) : KIBIS_ANY( this )
     IBIS_REPORTER* reporter = new IBIS_REPORTER();
     IbisFile*      file = new IbisFile( reporter );
     IbisParser*    parser = new IbisParser( reporter );
-    parser->m_parrot = true;
+    parser->m_parrot = false;
     parser->parseFile( aFileName, file );
 
     bool status = true;
@@ -291,12 +297,6 @@ std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs(
                 p.first = wf1;
                 p.second = wf2;
                 pairs.push_back( p );
-
-                std::cout << "WAVEFORM PAIR :" << std::endl;
-                std::cout << wf1->m_R_fixture << std::endl;
-                std::cout << wf1->m_L_fixture << std::endl;
-                std::cout << wf1->m_C_fixture << std::endl;
-                std::cout << wf1->m_V_fixture << std::endl;
             }
         }
     }
@@ -315,10 +315,10 @@ std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
     result += "CCPOMP DIE GND ";
     result += doubleToString( m_C_comp->value[ReverseLogic( aSpeed )] );
     result += "\n";
-    result += m_GNDClamp.Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
-    result += m_POWERClamp.Spice( 2, "DIE", "POWER", "POWERClampDiode", aSupply );
-    result += m_pulldown.Spice( 3, "DIEBUFF", "GND2", "Pulldown", aSupply );
-    result += m_pullup.Spice( 4, "POWER2", "DIEBUFF", "Pullup", aSupply );
+    result += m_GNDClamp->Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
+    result += m_POWERClamp->Spice( 2, "DIE", "POWER", "POWERClampDiode", aSupply );
+    result += m_pulldown->Spice( 3, "DIEBUFF", "GND2", "Pulldown", aSupply );
+    result += m_pullup->Spice( 4, "POWER2", "DIEBUFF", "Pullup", aSupply );
     result += "BDIEBUFF DIEBUFF GND v=v(DIE)\n";
 
     result += "VmeasPD GND GND2 0\n";
@@ -377,19 +377,19 @@ IbisWaveform* TrimWaveform( IbisWaveform* aIn )
 
 bool KIBIS_MODEL::HasPulldown()
 {
-    return m_pulldown.m_entries.size() > 0;
+    return m_pulldown->m_entries.size() > 0;
 }
 bool KIBIS_MODEL::HasPullup()
 {
-    return m_pullup.m_entries.size() > 0;
+    return m_pullup->m_entries.size() > 0;
 }
 bool KIBIS_MODEL::HasGNDClamp()
 {
-    return m_GNDClamp.m_entries.size() > 0;
+    return m_GNDClamp->m_entries.size() > 0;
 }
 bool KIBIS_MODEL::HasPOWERClamp()
 {
-    return m_POWERClamp.m_entries.size() > 0;
+    return m_POWERClamp->m_entries.size() > 0;
 }
 
 std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNode2,
@@ -545,19 +545,19 @@ std::string KIBIS_PIN::addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIn
 
     if( aModel->HasGNDClamp() )
     {
-        simul += aModel->m_GNDClamp.Spice( aIndex * 4 + 1, DIE, GC_GND, GC, aSupply );
+        simul += aModel->m_GNDClamp->Spice( aIndex * 4 + 1, DIE, GC_GND, GC, aSupply );
     }
     if( aModel->HasPOWERClamp() )
     {
-        simul += aModel->m_POWERClamp.Spice( aIndex * 4 + 2, DIE, PC_PWR, PC, aSupply );
+        simul += aModel->m_POWERClamp->Spice( aIndex * 4 + 2, DIE, PC_PWR, PC, aSupply );
     }
     if( aModel->HasPulldown() )
     {
-        simul += aModel->m_pulldown.Spice( aIndex * 4 + 3, DIE, PD_GND, PD, aSupply );
+        simul += aModel->m_pulldown->Spice( aIndex * 4 + 3, DIE, PD_GND, PD, aSupply );
     }
     if( aModel->HasPullup() )
     {
-        simul += aModel->m_pullup.Spice( aIndex * 4 + 4, PU_PWR, DIE, PU, aSupply );
+        simul += aModel->m_pullup->Spice( aIndex * 4 + 4, PU_PWR, DIE, PU, aSupply );
     }
 
     return simul;
@@ -655,9 +655,6 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
         simul += "Vdummy 2 PIN 0\n";
     }
     {
-        std::cout << "R:" << aPair.first->m_R_dut << std::endl;
-        std::cout << "L:" << aPair.first->m_L_dut << std::endl;
-        std::cout << "C:" << aPair.first->m_C_dut << std::endl;
         /*
         simul += "RPIN 1 PIN ";
         simul << aPair.first->m_R_dut;
@@ -669,9 +666,8 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
         simul << aPair.first->m_C_dut;
         simul += "\n";
         */
-        std::cerr
-                << "WARNING : I can't yet use DUT values. https://ibis.org/summits/nov16a/chen.pdf"
-                << std::endl;
+        Report( "WARNING : I can't yet use DUT values. https://ibis.org/summits/nov16a/chen.pdf",
+                RPT_SEVERITY_WARNING );
     }
 
     simul += "\n";
@@ -757,7 +753,7 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
 
         if( aModel->HasPullup() && aModel->HasPulldown() )
         {
-            std::cout << "Model has only one waveform pair, reduced accuracy" << std::endl;
+            Report( "Model has only one waveform pair, reduced accuracy", RPT_SEVERITY_WARNING );
             simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
                      ")/(i(VmeasPD)-i(VmeasPU)))\n";
             simul += "Bkd KD 0 v=(1-v(KU))\n";
@@ -776,7 +772,7 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
         }
         else
         {
-            std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
+            Report( "ERROR: Driver needs at least a pullup or a pulldown", RPT_SEVERITY_ERROR );
         }
 
         switch( aWave->GetType() )
@@ -823,7 +819,7 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, I
             ku.push_back( 1 );
             kd.push_back( 0 );
             t.push_back( ( rectWave->m_ton + rectWave->m_toff ) * i
-                         + aModel->m_ramp.m_rising.value[aSupply].m_dt
+                         + aModel->m_ramp->m_rising->value[aSupply].m_dt
                                    / 0.6 ); // 0.6 because ibis only gives 20%-80% time
             ku.push_back( 1 );
             kd.push_back( 0 );
@@ -831,7 +827,7 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, I
             ku.push_back( 0 );
             kd.push_back( 1 );
             t.push_back( ( rectWave->m_ton + rectWave->m_toff ) * i + rectWave->m_toff
-                         + aModel->m_ramp.m_falling.value[aSupply].m_dt / 0.6 );
+                         + aModel->m_ramp->m_falling->value[aSupply].m_dt / 0.6 );
         }
         break;
     }
@@ -947,24 +943,22 @@ std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                        
 
         else if( !aModel->HasPullup() && aModel->HasPulldown() )
         {
-            std::cout << " I have two waveforms, but only one transistor. More equations than "
-                         "unknowns."
-                      << std::endl;
+            Report( "I have two waveforms, but only one transistor. More equations than unknowns.",
+                    RPT_SEVERITY_WARNING );
             simul += "Bku KD 0 v=( ( i(VmeasIout0)+i(VmeasPC0)+i(VmeasGC0) )/(i(VmeasPD0)))\n";
             simul += "Bkd KU 0 v=0\n";
         }
 
         else if( aModel->HasPullup() && !aModel->HasPulldown() )
         {
-            std::cout << " I have two waveforms, but only one transistor. More equations than "
-                         "unknowns."
-                      << std::endl;
+            Report( "I have two waveforms, but only one transistor. More equations than unknowns.",
+                    RPT_SEVERITY_WARNING );
             simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
             simul += "Bkd KD 0 v=0\n";
         }
         else
         {
-            std::cout << "ERROR: Driver needs at least a pullup or a pulldown" << std::endl;
+            Report( "ERROR: Driver needs at least a pullup or a pulldown", RPT_SEVERITY_ERROR );
         }
 
 
@@ -1033,8 +1027,8 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         {
             if( aAccuracy > KIBIS_ACCURACY::LEVEL_0 )
             {
-                std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy"
-                          << std::endl;
+                Report( "Model has no waveform pair, using [Ramp] instead, poor accuracy",
+                        RPT_SEVERITY_INFO );
             }
             getKuKdNoWaveform( aModel, aWave, aSupply );
         }
@@ -1046,8 +1040,8 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         {
             if( wfPairs.size() > 2 || aAccuracy <= KIBIS_ACCURACY::LEVEL_2 )
             {
-                std::cout << "Model has more than 2 waveform pairs, using the first two."
-                          << std::endl;
+                Report( "Model has more than 2 waveform pairs, using the first two.",
+                        RPT_SEVERITY_WARNING );
             }
             getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), aWave, aSupply, aSpeed );
         }
@@ -1082,7 +1076,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         break;
     }
     default:
-        std::cout << "ERROR : Can't define a driver for that model type." << std::endl;
+        Report( "ERROR : Can't define a driver for that model type.", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -1136,7 +1130,7 @@ bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_M
         break;
     }
     default:
-        std::cout << "ERROR : Can't define a driver for that model type." << std::endl;
+        Report( "ERROR : Can't define a device for that model type.", RPT_SEVERITY_ERROR );
         status = false;
     }
 

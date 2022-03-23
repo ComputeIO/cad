@@ -24,15 +24,7 @@
 
 #include "ibisParser.h"
 #include <sstream>
-/** To be removed
- *  We want to remove the wxString dependency if this files is to get into ngspice.
- *  KiCad reporter class uses wxString.
- *  To remove it easily in the future, we use this function....
- */
-void IbisParser::ibisReport( std::string aMsg, SEVERITY aSeverity )
-{
-    m_reporter->report( aMsg, aSeverity );
-}
+
 
 bool IbisParser::ibisToDouble( std::string aString, double* aDest )
 {
@@ -51,7 +43,7 @@ bool IbisParser::ibisToDouble( std::string aString, double* aDest )
     }
     catch (...)
     {
-        ibisReport( "Cannot convert double value" );
+        Report( "Cannot convert double value" );
         return false;
     }
     return true;
@@ -63,19 +55,19 @@ bool IBIS_MATRIX_BANDED::Check()
 
     if( m_dim < 1 )
     {
-        std::cout << "Matrix Banded: dimension should be > 1 " << std::endl;
+        Report( "Matrix Banded: dimension should be > 1 ", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_bandwidth < 1 )
     {
-        std::cout << "Matrix Banded: bandwidth should be > 1 " << std::endl;
+        Report( "Matrix Banded: bandwidth should be > 1 ", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_data == nullptr )
     {
-        std::cout << "Matrix Banded: data array is uninitizalized " << std::endl;
+        Report( "Matrix Banded: data array is uninitizalized ", RPT_SEVERITY_ERROR );
         status = false;
     }
     else
@@ -84,7 +76,7 @@ bool IBIS_MATRIX_BANDED::Check()
         {
             if( std::isnan( m_data[i] ) )
             {
-                std::cout << "Matrix Banded: an element is NaN " << std::endl;
+                Report( "Matrix Banded: an element is NaN ", RPT_SEVERITY_ERROR );
                 status = false;
             }
         }
@@ -100,13 +92,13 @@ bool IBIS_MATRIX_FULL::Check()
 
     if( m_dim < 1 )
     {
-        std::cout << "Matrix Full: dimension should be > 1 " << std::endl;
+        Report( "Matrix Full: dimension should be > 1 ", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_data == nullptr )
     {
-        std::cout << "Matrix Full: data array is uninitizalized " << std::endl;
+        Report( "Matrix Full: data array is uninitizalized ", RPT_SEVERITY_ERROR );
         status = false;
     }
     else
@@ -115,7 +107,7 @@ bool IBIS_MATRIX_FULL::Check()
         {
             if( std::isnan( m_data[i] ) )
             {
-                std::cout << "Matrix Full: an element is NaN " << std::endl;
+                Report( "Matrix Full: an element is NaN ", RPT_SEVERITY_ERROR );
                 status = false;
             }
         }
@@ -131,13 +123,13 @@ bool IBIS_MATRIX_SPARSE::Check()
 
     if( m_dim < 1 )
     {
-        std::cout << "Matrix Full: dimension should be > 1 " << std::endl;
+        Report( "Matrix Sparse: dimension should be > 1 ", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_data == nullptr )
     {
-        std::cout << "Matrix Full: data array is uninitizalized " << std::endl;
+        Report( "Matrix Sparse: data array is uninitizalized ", RPT_SEVERITY_ERROR );
         status = false;
     }
     else
@@ -146,7 +138,7 @@ bool IBIS_MATRIX_SPARSE::Check()
         {
             if( std::isnan( m_data[i] ) )
             {
-                std::cout << "Matrix Full: an element is NaN " << std::endl;
+                Report( "Matrix Sparse: an element is NaN ", RPT_SEVERITY_ERROR );
                 status = false;
             }
         }
@@ -190,17 +182,17 @@ bool IbisComponentPackage::Check()
 
     if( !m_Rpkg->Check() )
     {
-        std::cerr << "Package: Invalid R_pkg" << std::endl;
+        Report( "Package: Invalid R_pkg", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( !m_Lpkg->Check() )
     {
-        std::cerr << "Package: Invalid L_pkg" << std::endl;
+        Report( "Package: Invalid L_pkg", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( !m_Cpkg->Check() )
     {
-        std::cerr << "Package: Invalid C_pkg" << std::endl;
+        Report( "Package: Invalid C_pkg", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -215,32 +207,32 @@ bool IbisComponentPin::Check()
 
         if( m_pinName.empty() )
         {
-            m_reporter->report( "Pin: pin name cannot be empty.", RPT_SEVERITY_ERROR );
+            Report( "Pin: pin name cannot be empty.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( m_signalName.empty() )
         {
-            m_reporter->report( "Pin: signal name cannot be empty.", RPT_SEVERITY_ERROR );
+            Report( "Pin: signal name cannot be empty.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( m_modelName.empty() )
         {
-            m_reporter->report( "Pin: model name cannot be empty.", RPT_SEVERITY_ERROR );
+            Report( "Pin: model name cannot be empty.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( std::isnan( m_Rpin ) && !isNumberNA( m_Rpin ) )
         {
-            m_reporter->report( "Pin: Rpin is not valid.", RPT_SEVERITY_ERROR );
+            Report( "Pin: Rpin is not valid.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( std::isnan( m_Lpin )&& !isNumberNA( m_Lpin )  )
         {
-            m_reporter->report( "Pin: Lpin is not valid.", RPT_SEVERITY_ERROR );
+            Report( "Pin: Lpin is not valid.", RPT_SEVERITY_ERROR );
             status = false;
         }
         if( std::isnan( m_Cpin )&& !isNumberNA( m_Cpin ) )
         {
-            m_reporter->report( "Pin: Lpin is not valid.", RPT_SEVERITY_ERROR );
+            Report( "Pin: Lpin is not valid.", RPT_SEVERITY_ERROR );
             status = false;
         }
     }
@@ -254,27 +246,26 @@ bool IbisComponent::Check()
 
     if( m_name.empty() )
     {
-        std::cerr << "Component: name cannot be empty." << std::endl;
+        Report( "Component: name cannot be empty.", RPT_SEVERITY_ERROR );
         status = false;
     }
-
-    std::cout << "Checking component " << m_name << "..." << std::endl;
+    Report( "Checking component " + m_name + "...", RPT_SEVERITY_ACTION );
 
     if( m_manufacturer.empty() )
     {
-        std::cerr << "Component: manufacturer cannot be empty." << std::endl;
+        Report( "Component: manufacturer cannot be empty.", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( !m_package->Check() )
     {
-        std::cerr << "Component: Invalid Package." << std::endl;
+        Report( "Component: Invalid Package.", RPT_SEVERITY_ERROR );
         status = false;        
     }
     
     if ( m_pins.size() < 1 )
     {
-        std::cerr << "Component: no pin" << std::endl;    
+        Report( "Component: no pin", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -368,13 +359,12 @@ double IVtable::InterpolatedI( double aV, IBIS_CORNER aCorner )
                                  * ( aV - m_entries.at( i - 1 )->V );
             }
         }
-
-        std::cout << "ERROR: non monotonic data ? " << std::endl;
+        Report( "IV table: non monotonic data ?", RPT_SEVERITY_ERROR );
         return 0;
     }
     else
     {
-        std::cout << "ERROR: I guess I need to implement that... " << std::endl;
+        Report( "ERROR: I guess I need to implement that... ", RPT_SEVERITY_ERROR );
         return 0;
     }
     // @TODO prefer another method such as a dichotomy
@@ -387,14 +377,14 @@ bool IVtable::Check()
     {
         if( std::isnan( entry->V ) )
         {
-            std::cerr << "IV table: voltage is nan." << std::endl;
+            Report( "IV table: voltage is nan.", RPT_SEVERITY_ERROR );
             status = false;
             break;
         }
 
         if( !entry->I->Check() )
         {
-            std::cerr << "IV table: current is incorrect" << std::endl;
+            Report( "IV table: current is incorrect", RPT_SEVERITY_ERROR );
             status = false;
             break;
         }
@@ -429,7 +419,7 @@ bool dvdtTypMinMax::Check()
 
     if ( !status )
     {
-        std::cout << "dv/dt: Incorrect dv/dt" << std::endl;
+        Report( "dv/dt: Incorrect dv/dt", RPT_SEVERITY_ERROR );
     }
 
     return status;
@@ -442,16 +432,16 @@ bool IbisRamp::Check()
     if ( std::isnan( m_Rload ) )
     {
         status = false;
-        std::cerr << "Ramp: Invalid R_load" << std::endl;
+        Report( "Ramp: Invalid R_load", RPT_SEVERITY_ERROR );
     }
-    if ( !m_falling.Check() )
+    if( !m_falling->Check() )
     {
-        std::cerr << "Ramp: falling invalid" << std::endl;
+        Report( "Ramp: falling invalid", RPT_SEVERITY_ERROR );
         status = false;
     }
-    if ( !m_rising.Check() )
+    if( !m_rising->Check() )
     {
-        std::cerr << "Ramp: rising invalid" << std::endl;
+        Report( "Ramp: rising invalid", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -466,55 +456,55 @@ bool IbisModel::Check()
 
     if( m_name.empty() )
     {
-        std::cerr << "Model: model name cannot be empty" << std::endl;
+        Report( "Model: model name cannot be empty", RPT_SEVERITY_ERROR );
         status = false;
     }
+    Report( "Checking model " + m_name + "...", RPT_SEVERITY_ACTION );
 
-    std::cout << "Checking model " << m_name << "..." << std::endl;
     if (m_type == IBIS_MODEL_TYPE::UNDEFINED)
     {
-        std::cerr << "Model: Undefined model type" << std::endl;
+        Report( "Model: Undefined model type", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if ( isnan( m_vinh ) && !isNumberNA( m_vinh ) )
     {
-        std::cerr << "Model: Vinh is invalid." << std::endl;
+        Report( "Model: Vinh is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if ( isnan( m_vinl ) && !isNumberNA( m_vinl ) )
     {
-        std::cerr << "Model: Vinh is invalid." << std::endl;
+        Report( "Model: Vinh is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if ( isnan( m_rref ) && !isNumberNA( m_rref ) )
     {
-        std::cerr << "Model: R_ref is invalid." << std::endl;
+        Report( "Model: R_ref is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if ( isnan( m_cref ) && !isNumberNA( m_cref ) )
     {
-        std::cerr << "Model: C_ref is invalid." << std::endl;
+        Report( "Model: C_ref is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if ( isnan( m_vref ) && !isNumberNA( m_vref ) )
     {
-        std::cerr << "Model: V_ref is invalid." << std::endl;
+        Report( "Model: V_ref is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if ( isnan( m_vmeas ) && !isNumberNA( m_vmeas ) )
     {
-        std::cerr << "Model: V_meas is invalid." << std::endl;
+        Report( "Model: V_meas is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( !m_C_comp->Check() )
     {
-        std::cerr << "Model: C_comp is invalid." << std::endl;
+        Report( "Model: C_comp is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( !m_temperatureRange->Check() )
     {
-        std::cerr << "Model: Temperature Range is invalid." << std::endl;
+        Report( "Model: Temperature Range is invalid.", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -539,37 +529,37 @@ bool IbisModel::Check()
         }
         if ( !status )
         {
-        std::cerr << "Model: Voltage Range is invalid." << std::endl;
+            Report( "Model: Voltage Range is invalid.", RPT_SEVERITY_ERROR );
         }
         status = false;
     }
-    if ( !m_pulldown.Check() )
+    if( !m_pulldown->Check() )
     {
-        std::cerr << "Model: Invalid pulldown." << std::endl;
+        Report( "Model: Invalid pulldown.", RPT_SEVERITY_ERROR );
         status = false;
-    } 
-    if ( !m_pullup.Check() )
+    }
+    if( !m_pullup->Check() )
     {
-        std::cerr << "Model: Invalid pullup." << std::endl;
+        Report( "Model: Invalid pullup.", RPT_SEVERITY_ERROR );
         status = false;
-    } 
-    if ( !m_POWERClamp.Check() )
+    }
+    if( !m_POWERClamp->Check() )
     {
-        std::cerr << "Model: Invalid POWER clamp." << std::endl;
+        Report( "Model: Invalid POWER clamp.", RPT_SEVERITY_ERROR );
         status = false;
-    } 
-    if ( !m_GNDClamp.Check() )
+    }
+    if( !m_GNDClamp->Check() )
     {
-        std::cerr << "Model: Invalid GND clamp." << std::endl;
+        Report( "Model: Invalid GND clamp.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( m_type != IBIS_MODEL_TYPE::INPUT_ECL && m_type != IBIS_MODEL_TYPE::INPUT
         && m_type != IBIS_MODEL_TYPE::TERMINATOR && m_type != IBIS_MODEL_TYPE::SERIES
         && m_type != IBIS_MODEL_TYPE::SERIES_SWITCH )
     {
-        if( !m_ramp.Check() )
+        if( !m_ramp->Check() )
         {
-            std::cerr << "Invalid Ramp" << std::endl;
+            Report( "Model: Invalid Ramp", RPT_SEVERITY_ERROR );
         }
     }
     return status;
@@ -579,31 +569,31 @@ bool IbisHeader::Check()
 {
     bool status = true;
 
-
-    std::cout << "Checking Header..." << std::endl;
+    Report( "Checking Header...", RPT_SEVERITY_ACTION );
 
     if( m_ibisVersion == -1 )
     {
-        std::cerr << "Missing [IBIS Ver]" << std::endl;
+        Report( "Missing [IBIS Ver]", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_ibisVersion > IBIS_MAX_VERSION )
     {
-        std::cerr << "Max IBIS version :" << IBIS_MAX_VERSION << " ( This file : " << m_ibisVersion
-                  << " )" << std::endl;
+        Report( "Max IBIS version :" + std::to_string( IBIS_MAX_VERSION )
+                        + " ( This file : " + std::to_string( m_ibisVersion ) + " )",
+                RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_fileRevision == -1 )
     {
-        std::cerr << "Missing [File Rev]" << std::endl;
+        Report( "Missing [File Rev]", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_fileName.empty() )
     {
-        std::cerr << "Missing [File Name]" << std::endl;
+        Report( "Missing [File Name]", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -612,7 +602,8 @@ bool IbisHeader::Check()
     if( !( !strcasecmp( ext.c_str(), ".ibs" )  || !strcasecmp( ext.c_str(), ".pkg" )
            || !strcasecmp( ext.c_str(), ".ebd" ) || !strcasecmp( ext.c_str(), ".ims" ) ) )
     {
-        std::cerr << "[File Name]: Extension is not allowed: " <<  m_fileName << " " << ext << std::endl;
+        Report( "[File Name]: Extension is not allowed: " + m_fileName + " " + ext,
+                RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -626,36 +617,37 @@ bool IbisPackageModel::Check()
 
     if( m_name.empty() )
     {
-        std::cerr << "Package Model: name cannot be empty." << std::endl;
+        Report( "Package Model: name cannot be empty.", RPT_SEVERITY_ERROR );
         status = false;
     }
 
-    std::cout << "Checking package model " << m_name << "..." << std::endl;
+    Report( "Checking package model " + m_name + "...", RPT_SEVERITY_ACTION );
 
     if( m_manufacturer.empty() )
     {
-        std::cerr << "Package Model: manufacturer cannot be empty." << std::endl;
+        Report( "Package Model: manufacturer cannot be empty.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( m_OEM.empty() )
     {
-        std::cerr << "Package Model: OEM cannot be empty." << std::endl;
+        Report( "Package Model: OEM cannot be empty.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( std::isnan( m_numberOfPins ) )
     {
-        std::cerr << "Package Model: number of pins is NaN." << std::endl;
+        Report( "Package Model: number of pins is NaN.", RPT_SEVERITY_ERROR );
         status = false;
     }
     if( m_numberOfPins <= 0 )
     {
-        std::cerr << "Package Model: number of pins is negative." << std::endl;
+        Report( "Package Model: number of pins is negative.", RPT_SEVERITY_ERROR );
         status = false;
     }
 
     if( m_pins.size() != m_numberOfPins )
     {
-        std::cerr << "Package Model: number of pins does not match [Pin Numbers] size" << std::endl;
+        Report( "Package Model: number of pins does not match [Pin Numbers] size",
+                RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -663,7 +655,7 @@ bool IbisPackageModel::Check()
     {
         if( m_pins.at( i ).empty() )
         {
-            std::cerr << "Package Model: Empty pin number" << std::endl;
+            Report( "Package Model: Empty pin number", RPT_SEVERITY_ERROR );
             status = false;
         }
     }
@@ -674,7 +666,7 @@ bool IbisPackageModel::Check()
 
         if( !( static_cast<IBIS_MATRIX_BANDED*>( m_resistanceMatrix ) )->Check() )
         {
-            std::cerr << "Package Model: Resistance matrix is incorrect" << std::endl;
+            Report( "Package Model: Resistance matrix is incorrect", RPT_SEVERITY_ERROR );
             status = false;
         }
         break;
@@ -682,7 +674,7 @@ bool IbisPackageModel::Check()
 
         if( !( static_cast<IBIS_MATRIX_FULL*>( m_resistanceMatrix ) )->Check() )
         {
-            std::cerr << "Package Model: Resistance matrix is incorrect" << std::endl;
+            Report( "Package Model: Resistance matrix is incorrect", RPT_SEVERITY_ERROR );
             status = false;
         }
         break;
@@ -690,7 +682,7 @@ bool IbisPackageModel::Check()
 
         if( !( static_cast<IBIS_MATRIX_SPARSE*>( m_resistanceMatrix ) )->Check() )
         {
-            std::cerr << "Package Model: Resistance matrix is incorrect" << std::endl;
+            Report( "Package Model: Resistance matrix is incorrect", RPT_SEVERITY_ERROR );
             status = false;
         }
         break;
@@ -700,7 +692,7 @@ bool IbisPackageModel::Check()
     {
         if( m_capacitanceMatrix->m_type == IBIS_MATRIX_TYPE::UNDEFINED )
         {
-            std::cerr << "Package Model: Capacitance matrix is undefined" << std::endl;
+            Report( "Package Model: Capacitance matrix is undefined", RPT_SEVERITY_ERROR );
             status = false;
         }
 
@@ -710,7 +702,7 @@ bool IbisPackageModel::Check()
 
             if( !( static_cast<IBIS_MATRIX_BANDED*>( m_capacitanceMatrix ) )->Check() )
             {
-                std::cerr << "Package Model: Capacitance matrix is incorrect" << std::endl;
+                Report( "Package Model: Capacitance matrix is incorrect", RPT_SEVERITY_ERROR );
                 status = false;
             }
             break;
@@ -718,7 +710,7 @@ bool IbisPackageModel::Check()
 
             if( !( static_cast<IBIS_MATRIX_FULL*>( m_capacitanceMatrix ) )->Check() )
             {
-                std::cerr << "Package Model: Capacitance matrix is incorrect" << std::endl;
+                Report( "Package Model: Capacitance matrix is incorrect", RPT_SEVERITY_ERROR );
                 status = false;
             }
             break;
@@ -726,20 +718,20 @@ bool IbisPackageModel::Check()
 
             if( !( static_cast<IBIS_MATRIX_SPARSE*>( m_capacitanceMatrix ) )->Check() )
             {
-                std::cerr << "Package Model: Capacitance matrix is incorrect" << std::endl;
+                Report( "Package Model: Capacitance matrix is incorrect", RPT_SEVERITY_ERROR );
                 status = false;
             }
             break;
         default:
         {
-            std::cerr << "Package Model: Capacitance matrix is missing " << std::endl;
+            Report( "Package Model: Capacitance matrix is undefined", RPT_SEVERITY_ERROR );
             status = false;
         }
         }
     }
     else
     {
-        std::cerr << "Package Model: Capacitance matrix is nullptr" << std::endl;
+        Report( "Package Model: Capacitance matrix is nullptr", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -747,7 +739,7 @@ bool IbisPackageModel::Check()
     {
         if( m_inductanceMatrix->m_type == IBIS_MATRIX_TYPE::UNDEFINED )
         {
-            std::cerr << "Package Model: Inductance matrix is undefined" << std::endl;
+            Report( "Package Model: Inductance matrix is undefined", RPT_SEVERITY_ERROR );
             status = false;
         }
 
@@ -757,7 +749,7 @@ bool IbisPackageModel::Check()
 
             if( !( static_cast<IBIS_MATRIX_BANDED*>( m_inductanceMatrix ) )->Check() )
             {
-                std::cerr << "Package Model: Inductance matrix is incorrect" << std::endl;
+                Report( "Package Model: Inductance matrix is incorrect", RPT_SEVERITY_ERROR );
                 status = false;
             }
             break;
@@ -765,7 +757,7 @@ bool IbisPackageModel::Check()
 
             if( !( static_cast<IBIS_MATRIX_FULL*>( m_inductanceMatrix ) )->Check() )
             {
-                std::cerr << "Package Model: Inductance matrix is incorrect" << std::endl;
+                Report( "Package Model: Inductance matrix is incorrect", RPT_SEVERITY_ERROR );
                 status = false;
             }
             break;
@@ -773,20 +765,20 @@ bool IbisPackageModel::Check()
 
             if( !( static_cast<IBIS_MATRIX_SPARSE*>( m_inductanceMatrix ) )->Check() )
             {
-                std::cerr << "Package Model: Inductance matrix is incorrect" << std::endl;
+                Report( "Package Model: Inductance matrix is incorrect", RPT_SEVERITY_ERROR );
                 status = false;
             }
             break;
         default:
         {
-            std::cerr << "Package Model: Inductance matrix is missing " << std::endl;
+            Report( "Package Model: Inductance matrix is undefined", RPT_SEVERITY_ERROR );
             status = false;
         }
         }
     }
     else
     {
-        std::cerr << "Package Model: Inductance matrix is nullptr" << std::endl;
+        Report( "Package Model: Inductance matrix is nullptr", RPT_SEVERITY_ERROR );
         status = false;
     }
     return status;
@@ -803,7 +795,7 @@ bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
     if( ibisFile )
     {
         err_msg = std::string( "Reading file " ) + aFileName + std::string( "..." );
-        ibisReport( err_msg, RPT_SEVERITY_ACTION );
+        Report( err_msg, RPT_SEVERITY_ACTION );
         std::filebuf* pbuf = ibisFile.rdbuf();
         long          size = pbuf->pubseekoff( 0, ibisFile.end );
         pbuf->pubseekoff( 0, ibisFile.beg ); // rewind
@@ -818,7 +810,7 @@ bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
         {
             if( !GetNextLine() )
             {
-                ibisReport( "Unexpected end of file. Missing [END] ?", RPT_SEVERITY_ERROR );
+                Report( "Unexpected end of file. Missing [END] ?", RPT_SEVERITY_ERROR );
                 return false;
             }
 
@@ -831,7 +823,7 @@ bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
             {
                 err_msg = std::string( "Error at line " );
                 err_msg += std::to_string( m_lineCounter );
-                ibisReport( err_msg, RPT_SEVERITY_ERROR );
+                Report( err_msg, RPT_SEVERITY_ERROR );
                 return false;
             }
             if( m_context == IBIS_PARSER_CONTEXT::END )
@@ -844,7 +836,7 @@ bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
     {
         err_msg = std::string( "Could not open file " );
         err_msg += aFileName;
-        ibisReport( err_msg, RPT_SEVERITY_ERROR );
+        Report( err_msg, RPT_SEVERITY_ERROR );
     }
     return true;
 }
@@ -863,7 +855,7 @@ bool IbisParser::checkEndofLine()
 
     if( m_lineIndex < m_lineLength )
     {
-        std::cerr << "There should not be any more data one that line..." << std::endl;
+        Report( "There should not be any more data one that line...", RPT_SEVERITY_ERROR );
         return false;
     }
     return true;
@@ -985,8 +977,6 @@ bool IbisParser::parseDouble( double* aDest, std::string aStr, bool aAllowModifi
                 case 'f': result *= 1e-15; break;
                 default:
                     break;
-                    //std::cerr << "Internal error: could not apply modifier to double" << std::endl;
-                    //status = false;
                 }
             }
         }
@@ -1025,7 +1015,7 @@ bool IbisParser::GetNextLine()
 
     if( i == IBIS_MAX_LINE_LENGTH )
     {
-        ibisReport( "Line exceeds maximum length.", RPT_SEVERITY_ERROR );
+        Report( "Line exceeds maximum length.", RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -1042,7 +1032,7 @@ bool IbisParser::GetNextLine()
 
     if( i == IBIS_MAX_LINE_LENGTH )
     {
-        ibisReport( "Line exceeds maximum length.", RPT_SEVERITY_ERROR );
+        Report( "Line exceeds maximum length.", RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -1071,14 +1061,14 @@ bool IbisParser::readDouble( double* aDest )
         }
         else
         {
-            ibisReport( "Can't read double", RPT_SEVERITY_WARNING);
+            Report( "Can't read double", RPT_SEVERITY_WARNING );
             status = false;
         }
 
     }
     else
     {
-        ibisReport( "Can't read word", RPT_SEVERITY_WARNING);
+        Report( "Can't read word", RPT_SEVERITY_WARNING );
         status = false;
     }
 
@@ -1105,24 +1095,24 @@ bool IbisParser::readInt( int* aDest )
                 else
                 {
                     status = false;
-                    ibisReport( "Number is not an integer", RPT_SEVERITY_WARNING );
+                    Report( "Number is not an integer", RPT_SEVERITY_WARNING );
                 }
             }
             else
             {
                 status = false;
-                ibisReport( "Can't read number", RPT_SEVERITY_WARNING );
+                Report( "Can't read number", RPT_SEVERITY_WARNING );
             }
         }
         else
         {
-            ibisReport( "Can't read word", RPT_SEVERITY_WARNING );
+            Report( "Can't read word", RPT_SEVERITY_WARNING );
             status = false;
         }
     }
     else
     {
-        ibisReport( "Internal error while reading int", RPT_SEVERITY_ERROR );
+        Report( "Internal error while reading int", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -1197,7 +1187,7 @@ bool IbisParser::ChangeCommentChar()
            || c == '>' || c == '?' || c == '@' || c == '\\' || c == '^' || c == '`' || c == '{'
            || c == '|' || c == '}' || c == '~' || c == ')' ) )
     {
-        ibisReport( "New comment character is invalid.", RPT_SEVERITY_ERROR );
+        Report( "New comment character is invalid.", RPT_SEVERITY_ERROR );
     }
 
     c = m_line[m_lineIndex++];
@@ -1210,8 +1200,7 @@ bool IbisParser::ChangeCommentChar()
 
     if( !strcmp( strChar.c_str(), "_char" ) )
     {
-        ibisReport( "Invalid syntax. Should be |_char or &_char, etc...",
-                            RPT_SEVERITY_ERROR );
+        Report( "Invalid syntax. Should be |_char or &_char, etc...", RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -1223,7 +1212,7 @@ bool IbisParser::ChangeCommentChar()
 
     if( ( !isspace( c ) ) && c != d )
     {
-        ibisReport( "No extra argument was expected", RPT_SEVERITY_ERROR );
+        Report( "No extra argument was expected", RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -1291,11 +1280,11 @@ bool IbisParser::changeContext( std::string aKeyword )
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= m_currentModelSelector->Check(); break;
         case IBIS_PARSER_CONTEXT::PACKAGEMODEL: status &= m_currentPackageModel->Check(); break;
         case IBIS_PARSER_CONTEXT::END:
-            ibisReport( "Internal Error: Cannot change context after [END]" );
+            Report( "Internal Error: Cannot change context after [END]" );
             status = false;
             break;
 
-        default: ibisReport( "Internal Error: Changing context from undefined context" );
+        default: Report( "Internal Error: Changing context from undefined context" );
         }
     }
 
@@ -1385,7 +1374,7 @@ bool IbisParser::changeContext( std::string aKeyword )
 
             err_msg += " context : " + aKeyword;
 
-            ibisReport( err_msg, RPT_SEVERITY_ERROR );
+            Report( err_msg, RPT_SEVERITY_ERROR );
         }
     }
     else
@@ -1416,15 +1405,15 @@ bool IbisParser::readRampdvdt( dvdtTypMinMax* aDest )
 
     if( readWord( &str ) )
     {
-        dvdtTypMinMax ramp;
+        dvdtTypMinMax* ramp = new dvdtTypMinMax( m_reporter );
 
-        if( readDvdt( str, &( ramp.value[IBIS_CORNER::TYP] ) ) )
+        if( readDvdt( str, &( ramp->value[IBIS_CORNER::TYP] ) ) )
         {
-            if( readDvdt( str, &( ramp.value[IBIS_CORNER::MIN] ) ) )
+            if( readDvdt( str, &( ramp->value[IBIS_CORNER::MIN] ) ) )
             {
-                if( readDvdt( str, &( ramp.value[IBIS_CORNER::MAX] ) ) )
+                if( readDvdt( str, &( ramp->value[IBIS_CORNER::MAX] ) ) )
                 {
-                    *aDest = ramp;
+                    *aDest = *ramp;
                 }
                 else
                 {
@@ -1455,7 +1444,7 @@ bool IbisParser::readRamp()
 
     m_continue = IBIS_PARSER_CONTINUE::RAMP;
 
-    if( readNumericSubparam( std::string( "R_load" ), &( m_currentModel->m_ramp.m_Rload ) ) )
+    if( readNumericSubparam( std::string( "R_load" ), &( m_currentModel->m_ramp->m_Rload ) ) )
         ;
     else
     {
@@ -1465,15 +1454,15 @@ bool IbisParser::readRamp()
         {
             if ( !strcmp( str.c_str(), "dV/dt_r" ) )
             {
-                readRampdvdt( &(m_currentModel->m_ramp.m_rising) );
+                readRampdvdt( m_currentModel->m_ramp->m_rising );
             }
             else if ( !strcmp( str.c_str(), "dV/dt_f" ) )
             {
-                readRampdvdt( &(m_currentModel->m_ramp.m_falling) );
+                readRampdvdt( m_currentModel->m_ramp->m_falling );
             }
             else
             {
-                m_reporter->report( "Ramp: Invalid line: " + str, RPT_SEVERITY_ERROR );
+                Report( "Ramp: Invalid line: " + str, RPT_SEVERITY_ERROR );
                 status = false;
             }
 
@@ -1497,13 +1486,13 @@ bool IbisParser::parseModel( std::string aKeyword )
     else if( !strcasecmp( aKeyword.c_str(), "Temperature_Range" ) )
         status &= readTypMinMaxValue( m_currentModel->m_temperatureRange );
     else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp" ) )
-        status &= readIVtableEntry( &( m_currentModel->m_GNDClamp ) );
+        status &= readIVtableEntry( m_currentModel->m_GNDClamp );
     else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp" ) )
-        status &= readIVtableEntry( &( m_currentModel->m_POWERClamp ) );
+        status &= readIVtableEntry( m_currentModel->m_POWERClamp );
     else if( !strcasecmp( aKeyword.c_str(), "Pulldown" ) )
-        status &= readIVtableEntry( &( m_currentModel->m_pulldown ) );
+        status &= readIVtableEntry( m_currentModel->m_pulldown );
     else if( !strcasecmp( aKeyword.c_str(), "Pullup" ) )
-        status &= readIVtableEntry( &( m_currentModel->m_pullup ) );
+        status &= readIVtableEntry( m_currentModel->m_pullup );
     else if( !strcasecmp( aKeyword.c_str(), "Rising_Waveform" ) )
         status &= readWaveform( nullptr, IBIS_WAVEFORM_TYPE::RISING );
     else if( !strcasecmp( aKeyword.c_str(), "Falling_Waveform" ) )
@@ -1572,7 +1561,7 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED* aDe
 
                     if( !aDest->m_data )
                     {
-                        ibisReport( "Banded matrix: malloc error.", RPT_SEVERITY_ERROR );
+                        Report( "Banded matrix: malloc error.", RPT_SEVERITY_ERROR );
                         status = false;
                     }
                 }
@@ -1580,8 +1569,7 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED* aDe
             else
             {
                 status = false;
-                ibisReport( "[Bandwidth] is reserved for banded matrices.",
-                                    RPT_SEVERITY_ERROR );
+                Report( "[Bandwidth] is reserved for banded matrices.", RPT_SEVERITY_ERROR );
             }
         }
         if( strcasecmp( aKeyword.c_str(), "Dummy" ) )
@@ -1591,8 +1579,8 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED* aDe
             {
                 if( i + m_currentMatrixRowIndex >= aDest->m_bandwidth )
                 {
-                    ibisReport( "Banded matrix: too much data to fit into that row.",
-                                        RPT_SEVERITY_ERROR );
+                    Report( "Banded matrix: too much data to fit into that row.",
+                            RPT_SEVERITY_ERROR );
                     status = false;
                     break;
                 }
@@ -1601,7 +1589,7 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED* aDe
 
                 if( !readDouble( &( aDest->m_data[index] ) ) )
                 {
-                    ibisReport( "Banded matrix: can't read row.", RPT_SEVERITY_ERROR );
+                    Report( "Banded matrix: can't read row.", RPT_SEVERITY_ERROR );
                     status = false;
                     break;
                 }
@@ -1611,7 +1599,7 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED* aDe
     }
     else
     {
-        ibisReport( "Banded matrix: not initialized.", RPT_SEVERITY_ERROR );
+        Report( "Banded matrix: not initialized.", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -1636,8 +1624,7 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL* aDest )
 
             if( i >= ( aDest->m_dim - m_currentMatrixRow - m_currentMatrixRowIndex ) )
             {
-                ibisReport( "Full matrix : too much data to fit into that row",
-                                    RPT_SEVERITY_ERROR );
+                Report( "Full matrix : too much data to fit into that row", RPT_SEVERITY_ERROR );
                 status = false;
                 break;
             }
@@ -1645,13 +1632,12 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL* aDest )
             if( index >= aDest->m_dim * aDest->m_dim )
             {
                 status = false;
-                ibisReport( "Full matrix : too much data to fit into that matrix",
-                                    RPT_SEVERITY_ERROR );
+                Report( "Full matrix : too much data to fit into that matrix", RPT_SEVERITY_ERROR );
                 break;
             }
             if( !parseDouble( aDest->m_data + index, values.at( i ), true ) )
             {
-                ibisReport( "Banded matrix: can't read row.", RPT_SEVERITY_ERROR );
+                Report( "Banded matrix: can't read row.", RPT_SEVERITY_ERROR );
                 status = false;
             }
             else
@@ -1681,12 +1667,12 @@ bool IbisParser::readMatrixSparse( std::string aKeyword, IBIS_MATRIX_SPARSE* aDe
             }
             else
             {
-                ibisReport( "Sparse matrix : can't read value", RPT_SEVERITY_ERROR );
+                Report( "Sparse matrix : can't read value", RPT_SEVERITY_ERROR );
             }
         }
         else
         {
-            ibisReport( "Sparse matrix : can't read index", RPT_SEVERITY_ERROR );
+            Report( "Sparse matrix : can't read index", RPT_SEVERITY_ERROR );
         }
     }
     return status;
@@ -1716,13 +1702,13 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
         }
         else
         {
-            ibisReport( "Internal Error: matrix pointer is null." );
+            Report( "Internal Error: matrix pointer is null." );
             status = false;
         }
     }
     else
     {
-        ibisReport( "Internal Error: matrix pointer pointer is null." );
+        Report( "Internal Error: matrix pointer pointer is null." );
         status = false;
     }
 
@@ -1768,20 +1754,20 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
                 else
                 {
                     status = false;
-                    ibisReport( "Matrix: unknown type.", RPT_SEVERITY_ERROR );
-                    ibisReport( str, RPT_SEVERITY_INFO );
+                    Report( "Matrix: unknown type.", RPT_SEVERITY_ERROR );
+                    Report( str, RPT_SEVERITY_INFO );
                 }
             }
             else
             {
                 status = false;
-                ibisReport( "Matrix: type missing.", RPT_SEVERITY_ERROR );
+                Report( "Matrix: type missing.", RPT_SEVERITY_ERROR );
             }
         }
         else
         {
             status = false;
-            ibisReport( " Matrix :already init. But m_continue was not set" );
+            Report( " Matrix :already init. But m_continue was not set" );
         }
     }
     else
@@ -1809,18 +1795,18 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
                 default:
                 {
                     status = false;
-                    ibisReport( " Matrix :Tried to read a row from an undefined matrix" );
+                    Report( " Matrix :Tried to read a row from an undefined matrix" );
                 }
                 }
             }
             else
             {
-                ibisReport( "Internal Error : matrix pointer is null" );
+                Report( "Internal Error : matrix pointer is null" );
             }
         }
         else
         {
-            ibisReport( "Internal Error : matrix pointer pointer is null" );
+            Report( "Internal Error : matrix pointer pointer is null" );
         }
     }
     return status;
@@ -2007,7 +1993,7 @@ bool IbisParser::readTypMinMaxValue( TypMinMaxValue* aDest )
         else
         {
             status = false;
-            ibisReport( "Typ-Min-Max Values requires at least Typ.", RPT_SEVERITY_ERROR );
+            Report( "Typ-Min-Max Values requires at least Typ.", RPT_SEVERITY_ERROR );
         }
     }
     return status;
@@ -2053,13 +2039,11 @@ bool IbisParser::readModel()
     std::string subparam;
     if( readWord( &subparam ) )
     {
-        std::cout << "Reading suparam..." << subparam.substr( 0, 10 ) << std::endl;
         switch( m_continue )
         {
         case IBIS_PARSER_CONTINUE::MODEL:
             if( !strcmp( subparam.substr( 0, 10 ).c_str(), "Model_type" ) )
             {
-                std::cout << "Assigning model type..." << std::endl;
                 if( readWord( &subparam ) )
                 {
                     if( !strcmp( subparam.c_str(), "Input" ) )
@@ -2100,14 +2084,13 @@ bool IbisParser::readModel()
                     {
                         std::string err_msg = std::string( "Unknown Model_type: " );
                         err_msg += subparam;
-                        ibisReport( err_msg, RPT_SEVERITY_ERROR );
+                        Report( err_msg, RPT_SEVERITY_ERROR );
                         status = false;
                     }
                 }
                 else
                 {
-                    ibisReport( "Internal Error while reading model_type",
-                                        RPT_SEVERITY_ERROR );
+                    Report( "Internal Error while reading model_type", RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
@@ -2123,13 +2106,13 @@ bool IbisParser::readModel()
                     {
                         std::string err_msg = std::string( "Unknown Enable: " );
                         err_msg += subparam;
-                        ibisReport( err_msg, RPT_SEVERITY_ERROR );
+                        Report( err_msg, RPT_SEVERITY_ERROR );
                         status = false;
                     }
                 }
                 else
                 {
-                    ibisReport( "Internal Error while reading Enable", RPT_SEVERITY_ERROR );
+                    Report( "Internal Error while reading Enable", RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
@@ -2145,13 +2128,13 @@ bool IbisParser::readModel()
                     {
                         std::string err_msg = std::string( "Unknown Polarity: " );
                         err_msg += subparam;
-                        ibisReport( err_msg, RPT_SEVERITY_ERROR );
+                        Report( err_msg, RPT_SEVERITY_ERROR );
                         status = false;
                     }
                 }
                 else
                 {
-                    ibisReport( "Internal Error while reading Enable", RPT_SEVERITY_ERROR );
+                    Report( "Internal Error while reading Enable", RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
@@ -2180,8 +2163,8 @@ bool IbisParser::readModel()
             break;
         default:
             status = false;
-            ibisReport( "Internal error: continued reading a model that is not started.",
-                                RPT_SEVERITY_ERROR );
+            Report( "Internal error: continued reading a model that is not started.",
+                    RPT_SEVERITY_ERROR );
         }
     }
 
@@ -2358,8 +2341,7 @@ bool IbisParser::readPackage()
     {
         if( fields.size() != 0 )
         {
-            ibisReport( "A [Package] line requires exactly 4 elements.",
-                                RPT_SEVERITY_ERROR );
+            Report( "A [Package] line requires exactly 4 elements.", RPT_SEVERITY_ERROR );
             status = false;
         }
     }
@@ -2453,14 +2435,14 @@ bool IbisParser::readPin()
                 }
                 else
                 {
-                    ibisReport( "[Pin]: Invalid field name", RPT_SEVERITY_ERROR );
+                    Report( "[Pin]: Invalid field name", RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
 
             if( pin->m_Rcol == 0 || pin->m_Lcol == 0 || pin->m_Ccol == 0 )
             {
-                ibisReport( "[Pin]: Missing argument", RPT_SEVERITY_ERROR );
+                Report( "[Pin]: Missing argument", RPT_SEVERITY_ERROR );
                 status = false;
             }
             pin->m_dummy = true;
@@ -2495,7 +2477,7 @@ bool IbisParser::readPinMapping()
         {
             if( fields.size() > 6 && fields.size() < 3 )
             {
-                ibisReport( "[Pin Mapping]: wrong number of columns", RPT_SEVERITY_ERROR );
+                Report( "[Pin Mapping]: wrong number of columns", RPT_SEVERITY_ERROR );
                 status = false;
             }
             else
@@ -2542,19 +2524,17 @@ bool IbisParser::readDiffPin()
                 }
                 else
                 {
-                    ibisReport( "[Pin Diff]: Incorrect vdiff", RPT_SEVERITY_ERROR );
+                    Report( "[Pin Diff]: Incorrect vdiff", RPT_SEVERITY_ERROR );
                 }
             }
             else
             {
-                std::cout << entry->pinB << std::endl;
-
-                ibisReport( "[Pin Diff]: Incorrect inv_pin", RPT_SEVERITY_ERROR );
+                Report( "[Pin Diff]: Incorrect inv_pin", RPT_SEVERITY_ERROR );
             }
         }
         else
         {
-            ibisReport( "[Pin Diff]: Incorrect pin name", RPT_SEVERITY_ERROR );
+            Report( "[Pin Diff]: Incorrect pin name", RPT_SEVERITY_ERROR );
         }
     }
     return status;
@@ -2647,7 +2627,7 @@ bool IbisParser::readVTtableEntry( VTtable* aDest )
         }
         else
         {
-            ibisReport( "Internal Error: destination IV table is empty" );
+            Report( "Internal Error: destination IV table is empty" );
             status = false;
         }
     }
@@ -2675,7 +2655,7 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
         {
         case IBIS_WAVEFORM_TYPE::FALLING: m_currentModel->m_fallingWaveforms.push_back( wf ); break;
         case IBIS_WAVEFORM_TYPE::RISING: m_currentModel->m_risingWaveforms.push_back( wf ); break;
-        default: ibisReport( "Unknown waveform type", RPT_SEVERITY_ERROR ); status = false;
+        default: Report( "Unknown waveform type", RPT_SEVERITY_ERROR ); status = false;
         }
     }
     else
@@ -2691,7 +2671,6 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
     {
         if( isLineEmptyFromCursor() )
         {
-            std::cout << "That line was empty" << std::endl;
         }
         else if( readNumericSubparam( std::string( "R_fixture" ), &( wf->m_R_fixture ) ) )
             ;
@@ -2755,7 +2734,7 @@ bool IbisParser::onNewLine()
         default:
         {
             status = false;
-            ibisReport( "Internal error: Bad parser context.", RPT_SEVERITY_ERROR );
+            Report( "Internal error: Bad parser context.", RPT_SEVERITY_ERROR );
         }
         }
     }
@@ -2792,7 +2771,7 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTINUE::MATRIX: status &= readMatrix( &m_currentMatrix ); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
-            ibisReport( "Missing keyword.", RPT_SEVERITY_ERROR );
+            Report( "Missing keyword.", RPT_SEVERITY_ERROR );
             return false;
             break;
         }

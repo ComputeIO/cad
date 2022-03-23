@@ -33,10 +33,10 @@ class KIBIS_MODEL;
 class KIBIS_COMPONENT;
 class KIBIS;
 
-class KIBIS_ANY
+class KIBIS_ANY : public IBIS_ANY
 {
 public:
-    KIBIS_ANY( KIBIS* aTopLevel ) { m_topLevel = aTopLevel, m_valid = false; };
+    KIBIS_ANY( KIBIS* aTopLevel );
     KIBIS* m_topLevel;
     bool   m_valid;
 };
@@ -170,13 +170,13 @@ public:
     TypMinMaxValue*            m_Rpower;
     TypMinMaxValue*            m_Rac;
     TypMinMaxValue*            m_Cac;
-    IVtable        m_GNDClamp;
-    IVtable        m_POWERClamp;
-    IVtable        m_pullup;
-    IVtable        m_pulldown;
+    IVtable*                   m_GNDClamp;
+    IVtable*                   m_POWERClamp;
+    IVtable*                   m_pullup;
+    IVtable*                   m_pulldown;
     std::vector<IbisWaveform*> m_risingWaveforms;
     std::vector<IbisWaveform*> m_fallingWaveforms;
-    IbisRamp       m_ramp;
+    IbisRamp*                  m_ramp;
 
     bool HasPulldown();
     bool HasPullup();
