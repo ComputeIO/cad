@@ -64,6 +64,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <sentry.h>
+#include <kicad_build_version.h>
 #endif
 
 /**
@@ -282,6 +283,8 @@ void PGM_BASE::sentryInit()
         sentry_value_t user = sentry_value_new_object();
         sentry_value_set_by_key( user, "id", sentry_value_new_string( userGuid.c_str() ) );
         sentry_set_user( user );
+
+        sentry_set_tag( "kicad.version", KICAD_VERSION_FULL );
     }
 }
 
@@ -323,6 +326,10 @@ bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
         pgm_name = wxT( "kicad" );
     else
         pgm_name = wxFileName( App().argv[0] ).GetName().Lower();
+
+#ifdef KICAD_USE_SENTRY
+    sentry_set_tag( "kicad.app", pgm_name.c_str() );
+#endif
 
     wxInitAllImageHandlers();
 
