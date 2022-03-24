@@ -1465,13 +1465,7 @@ bool IbisParser::readRamp()
                 Report( "Ramp: Invalid line: " + str, RPT_SEVERITY_ERROR );
                 status = false;
             }
-
-
         }
-
-    }
-    if( status == false )
-    {
     }
     return status;
 }
