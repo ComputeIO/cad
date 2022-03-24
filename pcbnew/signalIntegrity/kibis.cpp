@@ -616,7 +616,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     {
         std::cerr << "ERROR : I asked for file creation, but I cannot find it" << std::endl;
     }
-    //std::remove( "temp_input.spice" );
+    std::remove( "temp_input.spice" );
     std::remove( "temp_output.spice" );
 
     // @TODO : this is the end of the dirty code
@@ -629,7 +629,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
 std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aModel,
                                    std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                    KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
-                                   int index )
+                                   int aIndex )
 {
     std::string simul = "";
 
@@ -638,7 +638,7 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
     simul += "*You should not be able to read this.\n\n";
 
     simul += ".SUBCKT DRIVER";
-    simul += std::to_string( index );
+    simul += std::to_string( aIndex );
     simul += " POWER GND PIN \n"; // 1: POWER, 2:GND, 3:PIN
 
     if( ( aPair.first->m_R_dut == 0 ) && ( aPair.first->m_L_dut == 0 )
@@ -699,10 +699,9 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL*                            aMode
     return simul;
 }
 
-std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                           std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                           KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
-                                           IBIS_CORNER aSpeed )
+void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
+                                    std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                    KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
 {
     std::string simul = "";
 
@@ -792,7 +791,6 @@ std::string KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                         
 
         getKuKdFromFile( &simul );
     }
-    return simul;
 }
 
 void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply )
@@ -850,12 +848,11 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, I
     m_t = t;
 }
 
-
-std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
-                                            std::pair<IbisWaveform*, IbisWaveform*> aPair1,
-                                            std::pair<IbisWaveform*, IbisWaveform*> aPair2,
-                                            KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
-                                            IBIS_CORNER aSpeed )
+void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
+                                     std::pair<IbisWaveform*, IbisWaveform*> aPair1,
+                                     std::pair<IbisWaveform*, IbisWaveform*> aPair2,
+                                     KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
+                                     IBIS_CORNER aSpeed )
 {
     std::string simul = "";
 
@@ -970,7 +967,6 @@ std::string KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                        
 
         getKuKdFromFile( &simul );
     }
-    return simul;
 }
 
 bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,

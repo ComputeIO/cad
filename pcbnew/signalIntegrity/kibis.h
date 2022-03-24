@@ -178,19 +178,50 @@ public:
     std::vector<IbisWaveform*> m_fallingWaveforms;
     IbisRamp*                  m_ramp;
 
+    /** @brief Return true if the model has a pulldown transistor */
     bool HasPulldown();
+    /** @brief Return true if the model has a pullup transistor */
     bool HasPullup();
+    /** @brief Return true if the model has a clamp diode to the gnd net */
     bool HasGNDClamp();
+    /** @brief Return true if the model has a clamp diode to the power net */
     bool HasPOWERClamp();
 
+    /** @brief Generate the spice directive to simulate the die
+     * 
+     *  @param aSupply Power supply corner
+     *  @param aSpeed Speed corner
+     *  @return A multiline string with spice directives
+     */
     std::string SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
-    //private:
+    /** @brief Create waveform pairs
+     * 
+     *  For maximum accuracy, we need a waveform pair.
+     *  This function creates the pairs based on the fixture.
+     *  The first element is the rising edge, the second is the falling edge.
+     *  
+     *  @return a vector of waveform pairs
+     */
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
+
+
+    /** @brief Generate a square waveform
+     * 
+     *  For maximum accuracy, we need a waveform pair.
+     *  This function creates the pairs based on the fixture.  
+     *  
+     *  @param aNode1 node where the voltage is applied
+     *  @param aNode2 Reference node
+     *  @param aWave Class holding information about the wave to generate
+     *  @param aPair @see waveformPairs()
+     *  @param aSupply Power supply corner
+     *  @return A multiline string with spice directives
+     */
     std::string generateSquareWave( std::string aNode1, std::string aNode2,
-                                 KIBIS_WAVEFORM_RECTANGULAR*             aWave,
-                                 std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                 IBIS_CORNER                             aCorner );
+                                    KIBIS_WAVEFORM_RECTANGULAR*             aWave,
+                                    std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                    IBIS_CORNER                             aSupply );
 };
 
 class KIBIS_PIN : public KIBIS_ANY
@@ -223,21 +254,75 @@ public:
                                KIBIS_WAVEFORM* aWave );
     bool     writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
                                IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
-    void     getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply );
-    std::string getKuKdOneWaveform( KIBIS_MODEL*                            aModel,
-                                    std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                    KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
-                                    IBIS_CORNER aSpeed );
-    std::string getKuKdTwoWaveforms( KIBIS_MODEL*                            aModel,
-                                     std::pair<IbisWaveform*, IbisWaveform*> aPair1,
-                                     std::pair<IbisWaveform*, IbisWaveform*> aPair2,
-                                     KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
-                                     IBIS_CORNER aSpeed );
 
+    /** @brief Update m_Ku, m_Kd using no falling / rising waveform inputs ( low accuracy )
+     *  @param aModel Model to be used
+     *  @param aWave Waveform to generate
+     *  @param aSupply Power supply corner
+     */
+    void getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply );
+
+    /** @brief Update m_Ku, m_Kd using with a single waveform input
+     *  @param aModel Model to be used
+     *  @param aPair @see waveformPairs()
+     *  @param aWave Waveform to generate
+     *  @param aSupply Power supply corner
+     *  @param aSpeed Speed corner
+     */
+    void getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                             KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+
+    /** @brief Update m_Ku, m_Kd using with two waveform inputs
+     * 
+     *  The order of aPair1 and aPair2 is not important.
+     *  @param aModel Model to be used
+     *  @param aPair1 @see waveformPairs()
+     *  @param aPair2 @see waveformPairs()
+     *  @param aWave Waveform to generate
+     *  @param aSupply Power supply corner
+     *  @param aSpeed Speed corner
+     */
+    void getKuKdTwoWaveforms( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair1,
+                              std::pair<IbisWaveform*, IbisWaveform*> aPair2, KIBIS_WAVEFORM* aWave,
+                              IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+
+    /** @brief Update m_Ku, m_Kd using with two waveform inputs
+     * 
+     *  The order of aPair1 and aPair2 is not important.
+     *  @param aModel Model to be used
+     *  @param aPair @see waveformPairs()
+     *  @param aWave Waveform to generate
+     *  @param aSupply Power supply corner
+     *  @param aSpeed Speed corner
+     *  @param aIndex Index for numbering spice .SUBCKT
+     * 
+     *  @return A multiline string with spice directives
+     */
     std::string KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                             KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
-                            int index );
+                            int aIndex );
+
+    /** @brief Generate the spice directive to simulate the die for Ku/Kd estimation
+     * 
+     *  DO NOT use it in order to generate a model.
+     *  It sole purpose is to run the internal simulation to get Ku/Kd
+     * 
+     *  @param aModel Model to be used
+     *  @param aSupply Power supply corner
+     *  @param aIndex Index for numbering ports
+     *  @return A multiline string with spice directives
+     */
     std::string addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex );
+
+
+    /** @brief Update m_Ku, m_Kd using with two waveform inputs
+     * 
+     * Runs a simulation. The simulation creates a specific file with Ku/Kd values
+     * This function then reads the output file and updates m_Ku / m_Kd.
+     * This function probably needs a rewrite.
+     * 
+     * @param aSimul The simulation to run, multiline spice directives
+     */
     void     getKuKdFromFile( std::string* aSimul );
 };
 
@@ -252,6 +337,11 @@ public:
 
     std::vector<KIBIS_PIN*> m_pins;
 
+    /** @brief Get a pin by its number ( 1, 2, A1, A2, ... )
+     *  
+     *  @param aPinNumber pin number
+     *  @return pointer to a KIBIS_PIN, or nullptr if there is no matching pin
+     */
     KIBIS_PIN* getPin( std::string aPinNumber );
 };
 
