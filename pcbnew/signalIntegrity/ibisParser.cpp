@@ -1434,9 +1434,7 @@ bool IbisParser::readRamp()
 
     m_continue = IBIS_PARSER_CONTINUE::RAMP;
 
-    if( readNumericSubparam( std::string( "R_load" ), &( m_currentModel->m_ramp->m_Rload ) ) )
-        ;
-    else
+    if( !readNumericSubparam( std::string( "R_load" ), &( m_currentModel->m_ramp->m_Rload ) ) )
     {
         std::string str;
 
