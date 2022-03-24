@@ -403,15 +403,15 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
     IbisWaveform* fallingWF = TrimWaveform( aPair.second );
 
     if( aWave->m_ton
-        < risingWF->m_table->m_entries.at( risingWF->m_table->m_entries.size() - 1 )->t )
+        < risingWF->m_table->m_entries.back()->t )
     {
         std::cerr << "WARNING: rising edge is longer than on time." << std::endl;
     }
 
     if( aWave->m_toff
-        < fallingWF->m_table->m_entries.at( fallingWF->m_table->m_entries.size() - 1 )->t )
+        < fallingWF->m_table->m_entries.back()->t )
     {
-        std::cerr << "WARNING: falling edge is longer than on time." << std::endl;
+        std::cerr << "WARNING: falling edge is longer than off time." << std::endl;
     }
 
     double deltaR = risingWF->m_table->m_entries.at( risingWF->m_table->m_entries.size() - 1 )
