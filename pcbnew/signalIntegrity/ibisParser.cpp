@@ -794,51 +794,51 @@ bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
 
     std::ifstream ibisFile;
     ibisFile.open( aFileName );
-    if( ibisFile )
-    {
-        err_msg = std::string( "Reading file " ) + aFileName + std::string( "..." );
-        Report( err_msg, RPT_SEVERITY_ACTION );
-        std::filebuf* pbuf = ibisFile.rdbuf();
-        long          size = pbuf->pubseekoff( 0, ibisFile.end );
-        pbuf->pubseekoff( 0, ibisFile.beg ); // rewind
 
-        m_buffer = new char[size];
-        pbuf->sgetn( m_buffer, size );
-
-        m_lineCounter = 0;
-        m_bufferIndex = 0;
-
-        while ( m_bufferIndex < size )
-        {
-            if( !GetNextLine() )
-            {
-                Report( "Unexpected end of file. Missing [END] ?", RPT_SEVERITY_ERROR );
-                return false;
-            }
-
-            if( m_parrot )
-            {
-                PrintLine();
-            }
-
-            if( !onNewLine() )
-            {
-                err_msg = std::string( "Error at line " );
-                err_msg += std::to_string( m_lineCounter );
-                Report( err_msg, RPT_SEVERITY_ERROR );
-                return false;
-            }
-            if( m_context == IBIS_PARSER_CONTEXT::END )
-            {
-                return true;
-            }
-        }
-    }
-    else
+    if( !ibisFile.is_open() )
     {
         err_msg = std::string( "Could not open file " );
         err_msg += aFileName;
         Report( err_msg, RPT_SEVERITY_ERROR );
+        return false;
+    }
+
+    err_msg = std::string( "Reading file " ) + aFileName + std::string( "..." );
+    Report( err_msg, RPT_SEVERITY_ACTION );
+    std::filebuf* pbuf = ibisFile.rdbuf();
+    long          size = pbuf->pubseekoff( 0, ibisFile.end );
+    pbuf->pubseekoff( 0, ibisFile.beg ); // rewind
+
+    m_buffer = new char[size];
+    pbuf->sgetn( m_buffer, size );
+
+    m_lineCounter = 0;
+    m_bufferIndex = 0;
+
+    while( m_bufferIndex < size )
+    {
+        if( !GetNextLine() )
+        {
+            Report( "Unexpected end of file. Missing [END] ?", RPT_SEVERITY_ERROR );
+            return false;
+        }
+
+        if( m_parrot )
+        {
+            PrintLine();
+        }
+
+        if( !onNewLine() )
+        {
+            err_msg = std::string( "Error at line " );
+            err_msg += std::to_string( m_lineCounter );
+            Report( err_msg, RPT_SEVERITY_ERROR );
+            return false;
+        }
+        if( m_context == IBIS_PARSER_CONTEXT::END )
+        {
+            return true;
+        }
     }
     return true;
 }
