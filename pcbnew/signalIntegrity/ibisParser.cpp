@@ -806,7 +806,7 @@ bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
         m_lineCounter = 0;
         m_bufferIndex = 0;
 
-        for( int i = 0; i < 4000; i++ )
+        while ( m_bufferIndex < size )
         {
             if( !GetNextLine() )
             {
