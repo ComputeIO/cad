@@ -2469,10 +2469,13 @@ bool IbisParser::readPinMapping()
                 pinMapping->m_pinName = fields.at( 0 );
                 pinMapping->m_PDref = fields.at( 1 );
                 pinMapping->m_PUref = fields.at( 2 );
+
                 if( fields.size() > 3 )
                     pinMapping->m_GNDClampRef = fields.at( 3 );
+
                 if( fields.size() > 4 )
                     pinMapping->m_POWERClampRef = fields.at( 4 );
+
                 if( fields.size() > 5 )
                     pinMapping->m_extRef = fields.at( 5 );
             }
@@ -2495,30 +2498,19 @@ bool IbisParser::readDiffPin()
     }
     else
     {
-        if( readWord( &( entry->pinA ) ) )
-        {
-            if( readWord( &( entry->pinB ) ) )
-            {
-                if( readDouble( &( entry->Vdiff ) ) )
-                {
-                    if( readTypMinMaxValue( entry->tdelay ) )
-                    {
-                    }
-                    m_currentComponent->m_diffPin->m_entries.push_back( entry );
-                }
-                else
-                {
-                    Report( _( "[Pin Diff]: Incorrect vdiff" ), RPT_SEVERITY_ERROR );
-                }
-            }
-            else
-            {
-                Report( _( "[Pin Diff]: Incorrect inv_pin" ), RPT_SEVERITY_ERROR );
-            }
-        }
-        else
+        if( !readWord( &( entry->pinA ) ) )
         {
             Report( _( "[Pin Diff]: Incorrect pin name" ), RPT_SEVERITY_ERROR );
+            status = false;
+        }
+        if( !readWord( &( entry->pinB ) ) )
+        {
+            Report( _( "[Pin Diff]: Incorrect inv_pin" ), RPT_SEVERITY_ERROR );
+            status = false;
+        }
+        if( status && readWord( &( entry->pinB ) ) )
+        {
+            m_currentComponent->m_diffPin->m_entries.push_back( entry );
         }
     }
     return status;
@@ -2536,27 +2528,19 @@ bool IbisParser::readIVtableEntry( IVtable* aDest )
     if( m_lineIndex < m_lineLength )
     {
         std::string str;
-        if( readWord( &str ) )
-        {
-            if( parseDouble( &( entry->V ), str, true ) )
-            {
-                if( readTypMinMaxValue( entry->I ) )
-                {
-                    aDest->m_entries.push_back( entry );
-                }
-                else
-                {
-                    status = false;
-                }
-            }
-            else
-            {
-                status = false;
-            }
-        }
-        else
+
+        if( !readWord( &str ) )
         {
             status = false;
+        }
+        if( !parseDouble( &( entry->V ), str, true ) )
+        {
+            status = false;
+        }
+
+        if( status && readTypMinMaxValue( entry->I ) )
+        {
+            aDest->m_entries.push_back( entry );
         }
     }
 
