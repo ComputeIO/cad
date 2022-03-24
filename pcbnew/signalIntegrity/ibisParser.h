@@ -25,6 +25,7 @@
 #ifndef IBIS_PARSER_H
 #define IBIS_PARSER_H
 
+#define _( x ) x
 
 #define NAN_NA "1"
 #define NAN_INVALID "0"

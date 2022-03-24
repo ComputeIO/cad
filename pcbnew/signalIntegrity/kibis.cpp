@@ -745,7 +745,8 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aMod
 
         if( aModel->HasPullup() && aModel->HasPulldown() )
         {
-            Report( "Model has only one waveform pair, reduced accuracy", RPT_SEVERITY_WARNING );
+            Report( _( "Model has only one waveform pair, reduced accuracy" ),
+                    RPT_SEVERITY_WARNING );
             simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
                      ")/(i(VmeasPD)-i(VmeasPU)))\n";
             simul += "Bkd KD 0 v=(1-v(KU))\n";
@@ -764,7 +765,8 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL*                            aMod
         }
         else
         {
-            Report( "ERROR: Driver needs at least a pullup or a pulldown", RPT_SEVERITY_ERROR );
+            Report( _( "ERROR: Driver needs at least a pullup or a pulldown" ),
+                    RPT_SEVERITY_ERROR );
         }
 
         switch( aWave->GetType() )
@@ -948,7 +950,8 @@ void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL*                            aMo
         }
         else
         {
-            Report( "ERROR: Driver needs at least a pullup or a pulldown", RPT_SEVERITY_ERROR );
+            Report( _( "ERROR: Driver needs at least a pullup or a pulldown" ),
+                    RPT_SEVERITY_ERROR );
         }
 
 
@@ -1065,7 +1068,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         break;
     }
     default:
-        Report( "ERROR : Can't define a driver for that model type.", RPT_SEVERITY_ERROR );
+        Report( _( "ERROR : Can't define a driver for that model type." ), RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -1119,7 +1122,7 @@ bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_M
         break;
     }
     default:
-        Report( "ERROR : Can't define a device for that model type.", RPT_SEVERITY_ERROR );
+        Report( _( "ERROR : Can't define a device for that model type." ), RPT_SEVERITY_ERROR );
         status = false;
     }
 
