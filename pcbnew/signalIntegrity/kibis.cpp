@@ -32,13 +32,6 @@ KIBIS_ANY::KIBIS_ANY( KIBIS* aTopLevel ) : IBIS_ANY( aTopLevel->m_reporter )
     m_valid = false;
 }
 
-std::string doubleToString( double aNumber )
-{
-    std::ostringstream ss;
-    ss.setf( std::ios_base::scientific, std::ios_base::floatfield );
-    ss << aNumber;
-    return ss.str();
-}
 
 IBIS_CORNER ReverseLogic( IBIS_CORNER aIn )
 {

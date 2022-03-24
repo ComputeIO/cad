@@ -60,6 +60,8 @@ public:
             m_reporter->Report( aMsg, aSeverity );
         }
     };
+protected:
+    std::string doubleToString( double aNumber );
 };
 
 

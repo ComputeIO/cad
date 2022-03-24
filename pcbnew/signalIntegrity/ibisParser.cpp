@@ -283,13 +283,15 @@ bool IbisModelSelector::Check()
     return true;
 }
 
-std::string doubleToStringParser( double aNumber )
+
+std::string IBIS_ANY::doubleToString( double aNumber )
 {
     std::ostringstream ss;
     ss.setf( std::ios_base::scientific, std::ios_base::floatfield );
     ss << aNumber;
     return ss.str();
 }
+
 
 std::string IVtable::Spice( int aN, std::string aPort1, std::string aPort2, std::string aModelName,
                          IBIS_CORNER aCorner )
@@ -317,13 +319,13 @@ std::string IVtable::Spice( int aN, std::string aPort1, std::string aPort2, std:
         result += " pwl(\n+ x_array=[";
         for( auto entry : m_entries )
         {
-            result += doubleToStringParser( entry->V );
+            result += doubleToString( entry->V );
             result += " ";
         }
         result += "]\n+ y_array=[";
         for( auto entry : m_entries )
         {
-            result += doubleToStringParser( entry->I->value[aCorner] );
+            result += doubleToString( entry->I->value[aCorner] );
             result += " ";
         }
         result += "]\n+ input_domain=0.05 fraction=TRUE)\n\n";
