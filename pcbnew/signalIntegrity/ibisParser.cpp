@@ -901,17 +901,14 @@ bool IbisParser::readDvdt( std::string aString, dvdt* aDest )
             status = false;
         }
     }
+    else if( aString == "NA" )
+    {
+        aDest->m_dv = std::nan( NAN_NA );
+        aDest->m_dt = std::nan( NAN_NA );
+    }
     else
     {
-        if ( aString == "NA" )
-        {
-            aDest->m_dv = std::nan( NAN_NA );
-            aDest->m_dt = std::nan( NAN_NA );
-        }
-        else
-        {
-            status = false;
-        }
+        status = false;
     }
 
     return status;
