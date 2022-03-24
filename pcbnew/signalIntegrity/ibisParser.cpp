@@ -2649,12 +2649,11 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
     }
 
 
-    if( status )
+    if( status & !isLineEmptyFromCursor() )
     {
-        if( isLineEmptyFromCursor() )
-        {
-        }
-        else if( readNumericSubparam( std::string( "R_fixture" ), &( wf->m_R_fixture ) ) )
+        // readNumericSubparam() returns true if it could read the subparameter and store it
+        // Testing all subparameters
+        if( readNumericSubparam( std::string( "R_fixture" ), &( wf->m_R_fixture ) ) )
             ;
         else if( readNumericSubparam( std::string( "L_fixture" ), &( wf->m_L_fixture ) ) )
             ;
@@ -2672,15 +2671,10 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
             ;
         else if( readNumericSubparam( std::string( "C_dut" ), &( wf->m_C_fixture ) ) )
             ;
-        else
+        // The line is not a subparameter, then let's try to read a VT table entry
+        else if( !readVTtableEntry( m_currentWaveform->m_table ) )
         {
-            if( readVTtableEntry( m_currentWaveform->m_table ) )
-            {
-            }
-            else
-            {
-                status = false;
-            }
+            status = false;
         }
     }
     m_currentWaveform = wf;
