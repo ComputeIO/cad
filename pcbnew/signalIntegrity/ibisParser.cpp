@@ -895,17 +895,8 @@ bool IbisParser::readDvdt( std::string aString, dvdt* aDest )
         std::string str1 = aString.substr( 0, i );
         std::string str2 = aString.substr( i + 2, aString.size() );
 
-        if( parseDouble( &( aDest->m_dv ), str1, true ) )
-        {
-            if( parseDouble( &( aDest->m_dt ), str2, true ) )
-            {
-            }
-            else
-            {
-                status = false;
-            }
-        }
-        else
+        if( !parseDouble( &( aDest->m_dv ), str1, true )
+            || !parseDouble( &( aDest->m_dt ), str2, true ) )
         {
             status = false;
         }
