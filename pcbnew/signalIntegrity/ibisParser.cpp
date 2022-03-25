@@ -1113,15 +1113,16 @@ bool IbisParser::readWord( std::string* aDest )
 {
     skipWhitespaces();
 
-    std::string str;
+    int m_start = m_lineIndex;
+
     while( ( !isspace( m_line[m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
     {
-        str += m_line[m_lineIndex++];
+        m_lineIndex++;
     }
 
-    *( aDest ) = str;
+    *( aDest ) = std::string( m_line + m_start, m_lineIndex - m_start );
 
-    return ( str.size() > 0 );
+    return ( aDest->size() > 0 );
 }
 
 bool IbisParser::readString( std::string* aDest )
