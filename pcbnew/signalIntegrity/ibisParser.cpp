@@ -2276,6 +2276,10 @@ bool IbisParser::readPackage()
 
     std::vector<std::string> fields;
 
+    TypMinMaxValue* R = m_currentComponent->m_package->m_Rpkg;
+    TypMinMaxValue* L = m_currentComponent->m_package->m_Lpkg;
+    TypMinMaxValue* C = m_currentComponent->m_package->m_Cpkg;
+
     fields = ReadTableLine();
 
     int extraArg = ( m_continue == IBIS_PARSER_CONTINUE::NONE ) ? 1 : 0;
@@ -2284,42 +2288,33 @@ bool IbisParser::readPackage()
     {
         if( fields.at( 0 ) == "R_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package->m_Rpkg->value[IBIS_CORNER::TYP] ),
-                             fields.at( 1 ), true ) )
+            if( parseDouble( &( R->value[IBIS_CORNER::TYP] ), fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package->m_Rpkg->value[IBIS_CORNER::MIN] ),
-                         fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package->m_Rpkg->value[IBIS_CORNER::MAX] ),
-                         fields.at( 3 ), true );
+            parseDouble( &( R->value[IBIS_CORNER::MIN] ), fields.at( 2 ), true );
+            parseDouble( &( R->value[IBIS_CORNER::MAX] ), fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "L_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package->m_Lpkg->value[IBIS_CORNER::TYP] ),
-                             fields.at( 1 ), true ) )
+            if( parseDouble( &( L->value[IBIS_CORNER::TYP] ), fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package->m_Lpkg->value[IBIS_CORNER::MIN] ),
-                         fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package->m_Lpkg->value[IBIS_CORNER::MAX] ),
-                         fields.at( 3 ), true );
+            parseDouble( &( L->value[IBIS_CORNER::MIN] ), fields.at( 2 ), true );
+            parseDouble( &( L->value[IBIS_CORNER::MAX] ), fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "C_pkg" )
         {
-            if( parseDouble( &( m_currentComponent->m_package->m_Cpkg->value[IBIS_CORNER::TYP] ),
-                             fields.at( 1 ), true ) )
+            if( parseDouble( &( C->value[IBIS_CORNER::TYP] ), fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( m_currentComponent->m_package->m_Cpkg->value[IBIS_CORNER::MIN] ),
-                         fields.at( 2 ), true );
-            parseDouble( &( m_currentComponent->m_package->m_Cpkg->value[IBIS_CORNER::MAX] ),
-                         fields.at( 3 ), true );
+            parseDouble( &( C->value[IBIS_CORNER::MIN] ), fields.at( 2 ), true );
+            parseDouble( &( C->value[IBIS_CORNER::MAX] ), fields.at( 3 ), true );
         }
     }
     else
