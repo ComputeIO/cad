@@ -2374,24 +2374,9 @@ bool IbisParser::readPin()
             }
             else
             {
-                if( parseDouble( &( pin->m_Rpin ), fields.at( pin->m_Rcol ), true ) )
-                {
-                    if( parseDouble( &( pin->m_Lpin ), fields.at( pin->m_Lcol ), true ) )
-                    {
-                        if( parseDouble( &( pin->m_Cpin ), fields.at( pin->m_Ccol ), true ) )
-                        {
-                        }
-                        else
-                        {
-                            status = false;
-                        }
-                    }
-                    else
-                    {
-                        status = false;
-                    }
-                }
-                else
+                if( !parseDouble( &( pin->m_Rpin ), fields.at( pin->m_Rcol ), true )
+                    || !parseDouble( &( pin->m_Lpin ), fields.at( pin->m_Lcol ), true )
+                    || !parseDouble( &( pin->m_Cpin ), fields.at( pin->m_Ccol ), true ) )
                 {
                     status = false;
                 }
@@ -2559,17 +2544,7 @@ bool IbisParser::readVTtableEntry( VTtable* aDest )
         std::string str;
         if( readWord( &str ) )
         {
-            if( parseDouble( &( entry->t ), str, true ) )
-            {
-                if( readTypMinMaxValue( entry->V ) )
-                {
-                }
-                else
-                {
-                    status = false;
-                }
-            }
-            else
+            if( !parseDouble( &( entry->t ), str, true ) || !readTypMinMaxValue( entry->V ) )
             {
                 status = false;
             }
