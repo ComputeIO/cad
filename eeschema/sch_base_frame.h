@@ -57,6 +57,7 @@ class LIB_ID;
 class SYMBOL_LIB_TABLE;
 class EESCHEMA_SETTINGS;
 class SYMBOL_EDITOR_SETTINGS;
+class NL_SCHEMATIC_PLUGIN;
 
 /**
  * Load symbol from symbol library table.
@@ -241,7 +242,11 @@ public:
 
     COLOR_SETTINGS* GetColorSettings( bool aForceRefresh = false ) const override;
 
+    void ActivateGalCanvas() override;
+
 protected:
+    void handleActivateEvent( wxActivateEvent& aEvent ) override;
+
     /**
      * Save Symbol Library Tables to disk.
      *
@@ -254,6 +259,9 @@ protected:
     /// These are only used by symbol_editor.  Eeschema should be using the one inside
     /// the SCHEMATIC.
     SCHEMATIC_SETTINGS  m_base_frame_defaults;
+
+private:
+    NL_SCHEMATIC_PLUGIN* m_spaceMouse;
 };
 
 #endif // SCH_BASE_FRAME_H_
