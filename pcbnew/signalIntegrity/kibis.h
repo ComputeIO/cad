@@ -222,6 +222,15 @@ public:
                                     KIBIS_WAVEFORM_RECTANGULAR*             aWave,
                                     std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                     IBIS_CORNER                             aSupply );
+
+
+    /** @brief Copy a waveform, and substract the first value to all samples
+     * 
+     * 
+     * @param aIn Input waveform
+     * @return Output waveform
+     */
+    IbisWaveform* TrimWaveform( IbisWaveform* aIn );
 };
 
 class KIBIS_PIN : public KIBIS_ANY

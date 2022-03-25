@@ -83,7 +83,7 @@ KIBIS_FILE::KIBIS_FILE( KIBIS* aTopLevel, IbisParser* aParser ) : KIBIS_ANY( aTo
 
     if( aParser == nullptr )
     {
-        std::cerr << "Internal Error: Ibis -> Kibis, a pointer is nullptr" << std::endl;
+        Report( _( "Internal Error: Ibis -> Kibis, a pointer is nullptr" ), RPT_SEVERITY_ERROR );
         status = false;
     }
     else
@@ -175,7 +175,7 @@ KIBIS_MODEL::KIBIS_MODEL( KIBIS* aTopLevel, IbisModel* aSource, IbisParser* aPar
 
     if( aSource == nullptr || aParser == nullptr )
     {
-        std::cerr << "Internal Error: Ibis -> Kibis, a pointer is nullptr" << std::endl;
+        Report( _( "Internal Error: Ibis -> Kibis, a pointer is nullptr" ), RPT_SEVERITY_ERROR );
         status = false;
     }
     else
@@ -324,7 +324,7 @@ std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
     return result;
 }
 
-IbisWaveform* TrimWaveform( IbisWaveform* aIn )
+IbisWaveform* KIBIS_MODEL::TrimWaveform( IbisWaveform* aIn )
 {
     IbisWaveform* out = new IbisWaveform( aIn->m_reporter );
 
@@ -332,7 +332,7 @@ IbisWaveform* TrimWaveform( IbisWaveform* aIn )
 
     if( nbPoints < 2 )
     {
-        std::cerr << "ERROR : waveform has less than two points" << std::endl;
+        Report( _( "ERROR : waveform has less than two points" ), RPT_SEVERITY_ERROR );
         return out;
     }
 
@@ -398,13 +398,13 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
     if( aWave->m_ton
         < risingWF->m_table->m_entries.back()->t )
     {
-        std::cerr << "WARNING: rising edge is longer than on time." << std::endl;
+        Report( _( "WARNING: rising edge is longer than on time." ), RPT_SEVERITY_WARNING );
     }
 
     if( aWave->m_toff
         < fallingWF->m_table->m_entries.back()->t )
     {
-        std::cerr << "WARNING: falling edge is longer than off time." << std::endl;
+        Report( _( "WARNING: falling edge is longer than off time." ), RPT_SEVERITY_WARNING );
     }
 
     double deltaR = risingWF->m_table->m_entries.at( risingWF->m_table->m_entries.size() - 1 )
@@ -606,7 +606,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
                 kd.push_back( kd_v );
                 t.push_back( t_v );
                 break;
-            default: std::cerr << "ERROR : i should be between 0 and 2." << std::endl;
+            default: Report( _( "ERROR : i should be between 0 and 2." ), RPT_SEVERITY_ERROR );
             }
             i = ( i + 1 ) % 3;
         }
@@ -614,7 +614,8 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     }
     else
     {
-        std::cerr << "ERROR : I asked for file creation, but I cannot find it" << std::endl;
+        Report( _( "ERROR : I asked for file creation, but I cannot find it" ),
+                RPT_SEVERITY_ERROR );
     }
     std::remove( "temp_input.spice" );
     std::remove( "temp_output.spice" );
