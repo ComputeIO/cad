@@ -708,20 +708,21 @@ private:
     bool      checkEndofLine(); // To be used when there cannot be any character left on the line
     bool      isLineEmptyFromCursor();
     std::string* getKeyword();
-    bool      readInt( int* aDest );
-    bool      readDouble( double* aDest );
-    bool         readWord( std::string* aDest );
-    bool         readDvdt( std::string, dvdt* aDest );
-    bool      readMatrix( IBIS_MATRIX** );
-    bool         readMatrixBanded( std::string, IBIS_MATRIX_BANDED* aDest );
-    bool         readMatrixFull( std::string, IBIS_MATRIX_FULL* aDest );
-    bool         readMatrixSparse( std::string, IBIS_MATRIX_SPARSE* aDest );
-    bool      readRampdvdt( dvdtTypMinMax* aDest );
-    bool      readRamp();
-    bool      readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
-    bool      readString( std::string* );
-    bool      StoreString( std::string* aDest, bool aMultiline );
-    std::vector<std::string> ReadTableLine();
+
+    bool readInt( int* aDest );
+    bool readDouble( double* aDest );
+    bool readWord( std::string* aDest );
+    bool readDvdt( std::string, dvdt* aDest );
+    bool readMatrix( IBIS_MATRIX** );
+    bool readMatrixBanded( std::string, IBIS_MATRIX_BANDED* aDest );
+    bool readMatrixFull( std::string, IBIS_MATRIX_FULL* aDest );
+    bool readMatrixSparse( std::string, IBIS_MATRIX_SPARSE* aDest );
+    bool readRampdvdt( dvdtTypMinMax* aDest );
+    bool readRamp();
+    bool readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
+    bool readString( std::string* );
+    bool StoreString( std::string* aDest, bool aMultiline );
+    bool ReadTableLine( std::vector<std::string>& aDest );
 
     bool readNumericSubparam( std::string aSubparam, double* aDest );
     bool readIVtableEntry( IVtable* aTable );

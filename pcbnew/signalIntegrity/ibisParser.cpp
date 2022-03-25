@@ -1598,8 +1598,10 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL* aDest )
 
     if( strcasecmp( aKeyword.c_str(), "Dummy" ) )
     {
-        std::vector<std::string> values = ReadTableLine();
-        int                   i;
+        std::vector<std::string> values;
+
+        status &= ReadTableLine( values );
+        int i;
         for( i = 0; i < values.size(); i++ )
         {
             int index = i + m_currentMatrixRow * aDest->m_dim + m_currentMatrixRow;
@@ -2250,9 +2252,10 @@ bool IbisParser::parseComponent( std::string aKeyword )
     return status;
 }
 
-std::vector<std::string> IbisParser::ReadTableLine()
+bool IbisParser::ReadTableLine( std::vector<std::string>& aDest )
 {
-    std::vector<std::string> elements;
+    aDest.clear();
+
     while( m_lineIndex < m_lineLength )
     {
         std::string str;
@@ -2261,13 +2264,16 @@ std::vector<std::string> IbisParser::ReadTableLine()
         {
             str += m_line[m_lineIndex++];
         }
-        elements.push_back( str );
+        if( str.size() > 0 )
+        {
+            aDest.push_back( str );
+        }
         while( isspace( m_line[m_lineIndex] ) && ( m_lineIndex < m_lineLength ) )
         {
             m_lineIndex++;
         }
     }
-    return elements;
+    return true;
 }
 
 bool IbisParser::readPackage()
@@ -2280,7 +2286,7 @@ bool IbisParser::readPackage()
     TypMinMaxValue* L = m_currentComponent->m_package->m_Lpkg;
     TypMinMaxValue* C = m_currentComponent->m_package->m_Cpkg;
 
-    fields = ReadTableLine();
+    ReadTableLine( fields );
 
     int extraArg = ( m_continue == IBIS_PARSER_CONTINUE::NONE ) ? 1 : 0;
 
@@ -2337,7 +2343,8 @@ bool IbisParser::readPin()
 
     std::vector<std::string> fields;
 
-    fields = ReadTableLine();
+    m_lineIndex = 0;
+    status &= ReadTableLine( fields );
 
     IbisComponentPin* pin = new IbisComponentPin( m_reporter );
 
@@ -2418,7 +2425,7 @@ bool IbisParser::readPin()
     m_continue = IBIS_PARSER_CONTINUE::COMPONENT_PIN;
 
 
-    return true;
+    return status;
 }
 
 
@@ -2428,7 +2435,7 @@ bool IbisParser::readPinMapping()
 
     std::vector<std::string> fields;
 
-    fields = ReadTableLine();
+    status &= ReadTableLine( fields );
 
     IbisComponentPinMapping* pinMapping = new IbisComponentPinMapping( m_reporter );
 
