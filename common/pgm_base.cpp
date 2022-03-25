@@ -269,7 +269,7 @@ void PGM_BASE::sentryInit()
 
         sentry_options_set_dsn(
                 options,
-                "https://463925e689c34632b5172436ffb76de5@o1171731.ingest.sentry.io/6266565" );
+                "https://463925e689c34632b5172436ffb76de5@sentry-relay.kicad.org/6266565" );
 
         wxFileName tmp;
         tmp.AssignDir( PATHS::GetUserCachePath() );

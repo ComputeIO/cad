@@ -995,7 +995,9 @@ void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
     book->AddPage( new PANEL_MOUSE_SETTINGS( &dlg, book ), _( "Mouse and Touchpad" ) );
     book->AddPage( hotkeysPanel, _( "Hotkeys" ) );
 
+#ifdef KICAD_USE_SENTRY
     book->AddPage( new PANEL_DATA_COLLECTION( &dlg, book ), _( "Data Collection" ) );
+#endif
 
 #define CREATE_PANEL( key ) kiface->CreateWindow( book, key, &Kiway() )
 
