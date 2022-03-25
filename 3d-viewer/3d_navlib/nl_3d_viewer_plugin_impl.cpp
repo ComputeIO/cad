@@ -681,7 +681,7 @@ long NL_3D_VIEWER_PLUGIN_IMPL::GetFrontView( navlib::matrix_t& matrix ) const
 long NL_3D_VIEWER_PLUGIN_IMPL::GetCoordinateSystem( navlib::matrix_t& matrix ) const
 {
     // Use the right-handed coordinate system X-right, Z-up, Y-in (row vectors)
-    matrix = { 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1 };
+    matrix = { 1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1 };
     return 0;
 }
 
