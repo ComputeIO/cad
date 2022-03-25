@@ -340,9 +340,9 @@ double IVtable::InterpolatedI( double aV, IBIS_CORNER aCorner )
 
     if( m_entries.at( m_entries.size() - 1 )->V > m_entries.at( 0 )->V )
     {
-        if( aV >= m_entries.at( m_entries.size() - 1 )->V )
+        if( aV >= m_entries.back()->V )
         {
-            return m_entries.at( m_entries.size() - 1 )->I->value[aCorner];
+            return m_entries.back()->I->value[aCorner];
         }
 
         if( aV <= m_entries.at( 0 )->V )
