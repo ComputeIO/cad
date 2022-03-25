@@ -299,10 +299,13 @@ void PGM_BASE::sentryPrompt()
     {
         wxMessageDialog optIn = wxMessageDialog(
                 nullptr,
-                _( "KiCad can anonymously collect crash report and certain event data"
-                   " and transmit the reports to the KiCad developers.\n"
-                   "Your design files are not transmitted as part of this process.\n"
-                   "Would you like to enable automatic crash and event reporting?" ),
+                _( "KiCad can anonymously report crashes and special event "
+                   "data to developers in order to aid identifying critical bugs "
+                   "across the user base more effectively and help profile "
+                   "functionality to guide improvements. \n"
+                    "If you choose to voluntarily participate, KiCad will automatically "
+                    "handle sending said reports when crashes or events occur. \n"
+                    "Your design files such as schematic or PCB are not shared in this process." ),
                 _( "Data collection opt in request" ), wxYES_NO | wxCENTRE );
 
         int result = optIn.ShowModal();
