@@ -86,7 +86,7 @@ SCH_BASE_FRAME::SCH_BASE_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aWindo
                                 const wxSize& aSize, long aStyle, const wxString& aFrameName ) :
         EDA_DRAW_FRAME( aKiway, aParent, aWindowType, aTitle, aPosition, aSize, aStyle,
                         aFrameName ),
-        m_base_frame_defaults( nullptr, "base_Frame_defaults" ), m_spaceMouse( nullptr )
+        m_base_frame_defaults( nullptr, "base_Frame_defaults" )
 {
     createCanvas();
 
@@ -108,10 +108,6 @@ SCH_BASE_FRAME::SCH_BASE_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aWindo
 
 SCH_BASE_FRAME::~SCH_BASE_FRAME()
 {
-#if defined( KICAD_USE_3DCONNEXION )
-    if( m_spaceMouse != nullptr )
-        delete m_spaceMouse;
-#endif
 }
 
 
@@ -315,9 +311,9 @@ void SCH_BASE_FRAME::ActivateGalCanvas()
 #if defined( KICAD_USE_3DCONNEXION )
     try
     {
-        if( m_spaceMouse == nullptr )
+        if( !m_spaceMouse )
         {
-            m_spaceMouse = new NL_SCHEMATIC_PLUGIN();
+            m_spaceMouse = std::make_unique<NL_SCHEMATIC_PLUGIN>();
         }
 
         m_spaceMouse->SetCanvas( GetCanvas() );
@@ -507,7 +503,7 @@ void SCH_BASE_FRAME::handleActivateEvent( wxActivateEvent& aEvent )
     EDA_DRAW_FRAME::handleActivateEvent( aEvent );
 
 #if defined( KICAD_USE_3DCONNEXION )
-    if( m_spaceMouse != nullptr )
+    if( m_spaceMouse )
     {
         m_spaceMouse->SetFocus( aEvent.GetActive() );
     }
