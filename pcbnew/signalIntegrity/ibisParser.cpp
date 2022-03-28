@@ -26,7 +26,7 @@
 #include <sstream>
 
 
-bool IbisParser::ibisToDouble( std::string aString, double* aDest )
+bool IbisParser::ibisToDouble( std::string aString, double& aDest )
 {
     //Apparently stod does not check if there is an alpha character at the end.
     //This would prevent us for getting m,u,n,k,... modifiers
@@ -39,7 +39,7 @@ bool IbisParser::ibisToDouble( std::string aString, double* aDest )
     }
     try
     {
-        *aDest = std::stod( aString );
+        aDest = std::stod( aString );
     }
     catch (...)
     {
@@ -876,7 +876,7 @@ bool IbisParser::isLineEmptyFromCursor()
     return ( cursor >= m_lineLength );
 }
 
-bool IbisParser::readDvdt( std::string aString, dvdt* aDest )
+bool IbisParser::readDvdt( std::string aString, dvdt& aDest )
 {
     bool status = true;
 
@@ -895,16 +895,15 @@ bool IbisParser::readDvdt( std::string aString, dvdt* aDest )
         std::string str1 = aString.substr( 0, i );
         std::string str2 = aString.substr( i + 2, aString.size() );
 
-        if( !parseDouble( &( aDest->m_dv ), str1, true )
-            || !parseDouble( &( aDest->m_dt ), str2, true ) )
+        if( !parseDouble( aDest.m_dv, str1, true ) || !parseDouble( aDest.m_dt, str2, true ) )
         {
             status = false;
         }
     }
     else if( aString == "NA" )
     {
-        aDest->m_dv = std::nan( NAN_NA );
-        aDest->m_dt = std::nan( NAN_NA );
+        aDest.m_dv = std::nan( NAN_NA );
+        aDest.m_dt = std::nan( NAN_NA );
     }
     else
     {
@@ -915,7 +914,7 @@ bool IbisParser::readDvdt( std::string aString, dvdt* aDest )
 }
 
 
-bool IbisParser::parseDouble( double* aDest, std::string aStr, bool aAllowModifiers )
+bool IbisParser::parseDouble( double& aDest, std::string aStr, bool aAllowModifiers )
 {
     // "  an entry of the C matrix could be given as 1.23e-12 or as 1.23p or 1.23pF."
     skipWhitespaces();
@@ -929,7 +928,7 @@ bool IbisParser::parseDouble( double* aDest, std::string aStr, bool aAllowModifi
     {
         result = std::nan( NAN_NA );
     }
-    else if( !ibisToDouble( str, &result ) )
+    else if( !ibisToDouble( str, result ) )
     {
         if( aAllowModifiers )
         {
@@ -948,7 +947,7 @@ bool IbisParser::parseDouble( double* aDest, std::string aStr, bool aAllowModifi
             }
             std::string str2 = str.substr( 0, i );
 
-            if( !ibisToDouble( str2, &result ) )
+            if( !ibisToDouble( str2, result ) )
             {
                 status = false;
             }
@@ -980,7 +979,7 @@ bool IbisParser::parseDouble( double* aDest, std::string aStr, bool aAllowModifi
         result = std::nan( NAN_INVALID );
     }
 
-    *aDest = result;
+    aDest = result;
 
     return status;
 }
@@ -1039,12 +1038,12 @@ void IbisParser::PrintLine()
     std::cout << std::endl;
 }
 
-bool IbisParser::readDouble( double* aDest )
+bool IbisParser::readDouble( double& aDest )
 {
     bool status = true;
     std::string str;
 
-    if ( readWord( &str ) )
+    if( readWord( str ) )
     {
         if ( parseDouble( aDest, str,  true ) )
         {
@@ -1065,51 +1064,43 @@ bool IbisParser::readDouble( double* aDest )
     return status;
 }
 
-bool IbisParser::readInt( int* aDest )
+bool IbisParser::readInt( int& aDest )
 {
     bool     status = true;
     std::string str;
     double   buffer;
 
-    if( aDest != nullptr )
+    if( readWord( str ) )
     {
-        if( readWord( &str ) )
+        if( !ibisToDouble( str, buffer ) )
         {
-            if( !ibisToDouble( str, &buffer ) )
+            int result = static_cast<int>( buffer );
+            if( buffer == static_cast<double>( result ) )
             {
-                int result = static_cast<int>( buffer );
-                if( buffer == static_cast<double>( result ) )
-                {
-                    *aDest = result;
-                }
-                else
-                {
-                    status = false;
-                    Report( _( "Number is not an integer" ), RPT_SEVERITY_WARNING );
-                }
+                aDest = result;
             }
             else
             {
                 status = false;
-                Report( _( "Can't read number" ), RPT_SEVERITY_WARNING );
+                Report( _( "Number is not an integer" ), RPT_SEVERITY_WARNING );
             }
         }
         else
         {
-            Report( _( "Can't read word" ), RPT_SEVERITY_WARNING );
             status = false;
+            Report( _( "Can't read number" ), RPT_SEVERITY_WARNING );
         }
     }
     else
     {
-        Report( _( "Internal error while reading int" ), RPT_SEVERITY_ERROR );
+        Report( _( "Can't read word" ), RPT_SEVERITY_WARNING );
         status = false;
     }
 
     return status;
 }
 
-bool IbisParser::readWord( std::string* aDest )
+bool IbisParser::readWord( std::string& aDest )
 {
     skipWhitespaces();
 
@@ -1120,34 +1111,34 @@ bool IbisParser::readWord( std::string* aDest )
         m_lineIndex++;
     }
 
-    *( aDest ) = std::string( m_line + m_start, m_lineIndex - m_start );
+    aDest = std::string( m_line + m_start, m_lineIndex - m_start );
 
-    return ( aDest->size() > 0 );
+    return ( aDest.size() > 0 );
 }
 
-bool IbisParser::readString( std::string* aDest )
+bool IbisParser::readString( std::string& aDest )
 {
     while( m_lineIndex < m_lineLength )
     {
-        *aDest += m_line[m_lineIndex++];
+        aDest += m_line[m_lineIndex++];
     }
 
     // Remove extra whitespace characters
-    int len = aDest->length();
-    char c = (*aDest)[ len -1 ];
+    int  len = aDest.length();
+    char c = aDest[len - 1];
     int i = 0;
 
     while( isspace( c ) && ( i < len ) )
     {
-        c = (*aDest)[ len - 1 - i ];
+        c = aDest[len - 1 - i];
         i++;
     }
-    *aDest = aDest->substr( 0, len - i +1 );
+    aDest = aDest.substr( 0, len - i + 1 );
 
     return true;
 }
 
-bool IbisParser::StoreString( std::string* aDest, bool aMultiline )
+bool IbisParser::StoreString( std::string& aDest, bool aMultiline )
 {
     
     skipWhitespaces();
@@ -1155,7 +1146,7 @@ bool IbisParser::StoreString( std::string* aDest, bool aMultiline )
     readString( aDest );
 
     m_continue = aMultiline ? IBIS_PARSER_CONTINUE::STRING : IBIS_PARSER_CONTINUE::NONE;
-    m_continuingString = aDest;
+    m_continuingString = &aDest;
 
     return checkEndofLine();
 }
@@ -1285,7 +1276,7 @@ bool IbisParser::changeContext( std::string aKeyword )
         if( !strcasecmp( aKeyword.c_str(), "Component" ) )
         {
             IbisComponent* comp = new IbisComponent( m_reporter );
-            StoreString( &( comp->m_name ), false );
+            StoreString( comp->m_name, false );
             m_ibisFile->m_components.push_back( comp );
             m_currentComponent = m_ibisFile->m_components.back();
             m_context = IBIS_PARSER_CONTEXT::COMPONENT;
@@ -1293,7 +1284,7 @@ bool IbisParser::changeContext( std::string aKeyword )
         else if( !strcasecmp( aKeyword.c_str(), "Model_Selector" ) )
         {
             IbisModelSelector* MS = new IbisModelSelector( m_reporter );
-            StoreString( &( MS->m_name ), false );
+            StoreString( MS->m_name, false );
             m_ibisFile->m_modelSelectors.push_back( MS );
             m_currentModelSelector = m_ibisFile->m_modelSelectors.back();
             m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
@@ -1305,7 +1296,7 @@ bool IbisParser::changeContext( std::string aKeyword )
             model->m_temperatureRange->value[IBIS_CORNER::MIN] = 0;
             model->m_temperatureRange->value[IBIS_CORNER::TYP] = 50;
             model->m_temperatureRange->value[IBIS_CORNER::MAX] = 100;
-            StoreString( &( model->m_name ), false );
+            StoreString( model->m_name, false );
             m_ibisFile->m_models.push_back( model );
             m_currentModel = m_ibisFile->m_models.back();
             m_context = IBIS_PARSER_CONTEXT::MODEL;
@@ -1326,7 +1317,7 @@ bool IbisParser::changeContext( std::string aKeyword )
             PM->m_capacitanceMatrix->m_dim = -1;
             PM->m_inductanceMatrix->m_dim = -1;
 
-            StoreString( &( PM->m_name ), false );
+            StoreString( PM->m_name, false );
 
             m_ibisFile->m_packageModels.push_back( PM );
             m_currentPackageModel = m_ibisFile->m_packageModels.back();
@@ -1389,37 +1380,16 @@ bool IbisParser::parseModelSelector( std::string aKeyword )
 }
 
 
-bool IbisParser::readRampdvdt( dvdtTypMinMax* aDest )
+bool IbisParser::readRampdvdt( dvdtTypMinMax& aDest )
 {
     bool status = true;
     std::string str;
 
-    if( readWord( &str ) )
+    if( readWord( str ) )
     {
-        dvdtTypMinMax* ramp = new dvdtTypMinMax( m_reporter );
-
-        if( readDvdt( str, &( ramp->value[IBIS_CORNER::TYP] ) ) )
-        {
-            if( readDvdt( str, &( ramp->value[IBIS_CORNER::MIN] ) ) )
-            {
-                if( readDvdt( str, &( ramp->value[IBIS_CORNER::MAX] ) ) )
-                {
-                    *aDest = *ramp;
-                }
-                else
-                {
-                    status = false;
-                }
-            }
-            else
-            {
-                status = false;
-            }
-        }
-        else
-        {
-            status = false;
-        }
+        status &= readDvdt( str, aDest.value[IBIS_CORNER::TYP] )
+                  && readDvdt( str, aDest.value[IBIS_CORNER::MIN] )
+                  && readDvdt( str, aDest.value[IBIS_CORNER::MAX] );
     }
     else
     {
@@ -1435,19 +1405,19 @@ bool IbisParser::readRamp()
 
     m_continue = IBIS_PARSER_CONTINUE::RAMP;
 
-    if( !readNumericSubparam( std::string( "R_load" ), &( m_currentModel->m_ramp->m_Rload ) ) )
+    if( !readNumericSubparam( std::string( "R_load" ), m_currentModel->m_ramp->m_Rload ) )
     {
         std::string str;
 
-        if ( readWord( &str ) )
+        if( readWord( str ) )
         {
             if ( !strcmp( str.c_str(), "dV/dt_r" ) )
             {
-                readRampdvdt( m_currentModel->m_ramp->m_rising );
+                readRampdvdt( *( m_currentModel->m_ramp->m_rising ) );
             }
             else if ( !strcmp( str.c_str(), "dV/dt_f" ) )
             {
-                readRampdvdt( m_currentModel->m_ramp->m_falling );
+                readRampdvdt( *( m_currentModel->m_ramp->m_falling ) );
             }
             else
             {
@@ -1465,17 +1435,17 @@ bool IbisParser::parseModel( std::string aKeyword )
     bool status = true;
     
     if( !strcasecmp( aKeyword.c_str(), "Voltage_Range" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_voltageRange );
+        status &= readTypMinMaxValue( *( m_currentModel->m_voltageRange ) );
     else if( !strcasecmp( aKeyword.c_str(), "Temperature_Range" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_temperatureRange );
+        status &= readTypMinMaxValue( *( m_currentModel->m_temperatureRange ) );
     else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp" ) )
-        status &= readIVtableEntry( m_currentModel->m_GNDClamp );
+        status &= readIVtableEntry( *( m_currentModel->m_GNDClamp ) );
     else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp" ) )
-        status &= readIVtableEntry( m_currentModel->m_POWERClamp );
+        status &= readIVtableEntry( *( m_currentModel->m_POWERClamp ) );
     else if( !strcasecmp( aKeyword.c_str(), "Pulldown" ) )
-        status &= readIVtableEntry( m_currentModel->m_pulldown );
+        status &= readIVtableEntry( *( m_currentModel->m_pulldown ) );
     else if( !strcasecmp( aKeyword.c_str(), "Pullup" ) )
-        status &= readIVtableEntry( m_currentModel->m_pullup );
+        status &= readIVtableEntry( *( m_currentModel->m_pullup ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rising_Waveform" ) )
         status &= readWaveform( nullptr, IBIS_WAVEFORM_TYPE::RISING );
     else if( !strcasecmp( aKeyword.c_str(), "Falling_Waveform" ) )
@@ -1483,21 +1453,21 @@ bool IbisParser::parseModel( std::string aKeyword )
     else if( !strcasecmp( aKeyword.c_str(), "Ramp" ) )
         status &= readRamp();
     else if( !strcasecmp( aKeyword.c_str(), "Pullup_Reference" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_pullupReference );
+        status &= readTypMinMaxValue( *( m_currentModel->m_pullupReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "Pulldown_Reference" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_pulldownReference );
+        status &= readTypMinMaxValue( *( m_currentModel->m_pulldownReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_POWERClampReference );
+        status &= readTypMinMaxValue( *( m_currentModel->m_POWERClampReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_GNDClampReference );
+        status &= readTypMinMaxValue( *( m_currentModel->m_GNDClampReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rac" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_Rac );
+        status &= readTypMinMaxValue( *( m_currentModel->m_Rac ) );
     else if( !strcasecmp( aKeyword.c_str(), "Cac" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_Cac );
+        status &= readTypMinMaxValue( *( m_currentModel->m_Cac ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rpower" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_Rpower );
+        status &= readTypMinMaxValue( *( m_currentModel->m_Rpower ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rgnd" ) )
-        status &= readTypMinMaxValue( m_currentModel->m_Rgnd );
+        status &= readTypMinMaxValue( *( m_currentModel->m_Rgnd ) );
     else
     {
         if( !changeContext( aKeyword ) )
@@ -1513,88 +1483,77 @@ bool IbisParser::readPackageModelPins()
     m_continue = IBIS_PARSER_CONTINUE::PACKAGEMODEL_PINS;
     std::string str;
 
-    if( readWord( &str ) )
+    if( readWord( str ) )
         m_currentPackageModel->m_pins.push_back( str );
 
     return true;
 }
 
 
-bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED* aDest )
+bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED& aDest )
 {
     bool status = true;
     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
-    m_currentMatrix = static_cast<IBIS_MATRIX_BANDED*>( aDest );
 
-    if( aDest != nullptr )
+    if( !strcasecmp( aKeyword.c_str(), "Bandwidth" ) )
     {
-        if( !strcasecmp( aKeyword.c_str(), "Bandwidth" ) )
+        if( m_currentMatrix->m_type == IBIS_MATRIX_TYPE::BANDED )
         {
-            if( m_currentMatrix->m_type == IBIS_MATRIX_TYPE::BANDED )
+            status &= readInt( aDest.m_bandwidth );
+            if( status )
             {
-                status &= readInt( &( aDest->m_bandwidth ) );
-                if( status )
+                if( aDest.m_data != nullptr )
                 {
-                    if( aDest->m_data != nullptr )
-                    {
-                        free( aDest->m_data );
-                    }
-                    aDest->m_data = static_cast<double*>(
-                            malloc( ( aDest->m_bandwidth * aDest->m_dim ) * sizeof( double ) ) );
-
-                    if( !aDest->m_data )
-                    {
-                        Report( _( "Banded matrix: malloc error." ), RPT_SEVERITY_ERROR );
-                        status = false;
-                    }
+                    free( aDest.m_data );
                 }
-            }
-            else
-            {
-                status = false;
-                Report( _( "[Bandwidth] is reserved for banded matrices." ), RPT_SEVERITY_ERROR );
+                aDest.m_data = static_cast<double*>(
+                        malloc( ( aDest.m_bandwidth * aDest.m_dim ) * sizeof( double ) ) );
+
+                if( !aDest.m_data )
+                {
+                    Report( _( "Banded matrix: malloc error." ), RPT_SEVERITY_ERROR );
+                    status = false;
+                }
             }
         }
-        if( strcasecmp( aKeyword.c_str(), "Dummy" ) )
+        else
         {
-            int i;
-            for( i = 0; i < aDest->m_bandwidth; i++ )
-            {
-                if( i + m_currentMatrixRowIndex >= aDest->m_bandwidth )
-                {
-                    Report( "Banded matrix: too much data to fit into that row.",
-                            RPT_SEVERITY_ERROR );
-                    status = false;
-                    break;
-                }
-
-                int index = i + m_currentMatrixRow * aDest->m_bandwidth;
-
-                if( !readDouble( &( aDest->m_data[index] ) ) )
-                {
-                    Report( _( "Banded matrix: can't read row." ), RPT_SEVERITY_ERROR );
-                    status = false;
-                    break;
-                }
-            }
-            m_currentMatrixRowIndex = i;
+            status = false;
+            Report( _( "[Bandwidth] is reserved for banded matrices." ), RPT_SEVERITY_ERROR );
         }
     }
-    else
+    if( strcasecmp( aKeyword.c_str(), "Dummy" ) )
     {
-        Report( _( "Banded matrix: not initialized." ), RPT_SEVERITY_ERROR );
-        status = false;
+        int i;
+        for( i = 0; i < aDest.m_bandwidth; i++ )
+        {
+            if( i + m_currentMatrixRowIndex >= aDest.m_bandwidth )
+            {
+                Report( "Banded matrix: too much data to fit into that row.", RPT_SEVERITY_ERROR );
+                status = false;
+                break;
+            }
+
+            int index = i + m_currentMatrixRow * aDest.m_bandwidth;
+
+            if( !readDouble( aDest.m_data[index] ) )
+            {
+                Report( _( "Banded matrix: can't read row." ), RPT_SEVERITY_ERROR );
+                status = false;
+                break;
+            }
+        }
+        m_currentMatrixRowIndex = i;
     }
 
     return status;
 }
 
 
-bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL* aDest )
+bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL& aDest )
 {
     bool status = true;
     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
-    m_currentMatrix = static_cast<IBIS_MATRIX_FULL*>( aDest );
 
     if( strcasecmp( aKeyword.c_str(), "Dummy" ) )
     {
@@ -1604,10 +1563,10 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL* aDest )
         int i;
         for( i = 0; i < values.size(); i++ )
         {
-            int index = i + m_currentMatrixRow * aDest->m_dim + m_currentMatrixRow;
+            int index = i + m_currentMatrixRow * aDest.m_dim + m_currentMatrixRow;
             // + final m_currentMatrixRow because we don't fill the lower triangle.
 
-            if( i >= ( aDest->m_dim - m_currentMatrixRow - m_currentMatrixRowIndex ) )
+            if( i >= ( aDest.m_dim - m_currentMatrixRow - m_currentMatrixRowIndex ) )
             {
                 Report( _( "Full matrix : too much data to fit into that row" ),
                         RPT_SEVERITY_ERROR );
@@ -1615,14 +1574,14 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL* aDest )
                 break;
             }
 
-            if( index >= aDest->m_dim * aDest->m_dim )
+            if( index >= aDest.m_dim * aDest.m_dim )
             {
                 status = false;
                 Report( _( "Full matrix : too much data to fit into that matrix" ),
                         RPT_SEVERITY_ERROR );
                 break;
             }
-            if( !parseDouble( aDest->m_data + index, values.at( i ), true ) )
+            if( !parseDouble( *( aDest.m_data + index ), values.at( i ), true ) )
             {
                 Report( _( "Banded matrix: can't read row." ), RPT_SEVERITY_ERROR );
                 status = false;
@@ -1637,7 +1596,7 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL* aDest )
 }
 
 
-bool IbisParser::readMatrixSparse( std::string aKeyword, IBIS_MATRIX_SPARSE* aDest )
+bool IbisParser::readMatrixSparse( std::string aKeyword, IBIS_MATRIX_SPARSE& aDest )
 {
     bool status = true;
 
@@ -1646,11 +1605,11 @@ bool IbisParser::readMatrixSparse( std::string aKeyword, IBIS_MATRIX_SPARSE* aDe
         int    subindex;
         double value;
 
-        if( readInt( &subindex ) )
+        if( readInt( subindex ) )
         {
-            if( readDouble( &value ) )
+            if( readDouble( value ) )
             {
-                int index = subindex + m_currentMatrixRow * aDest->m_dim + m_currentMatrixRow;
+                int index = subindex + m_currentMatrixRow * aDest.m_dim + m_currentMatrixRow;
             }
             else
             {
@@ -1665,7 +1624,7 @@ bool IbisParser::readMatrixSparse( std::string aKeyword, IBIS_MATRIX_SPARSE* aDe
     return status;
 }
 
-bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
+bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
 {
     bool     status = true;
     std::string str;
@@ -1674,28 +1633,19 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
 
     if( aSource != nullptr )
     {
-        if( *aSource != nullptr )
+        if( aSource->m_type != IBIS_MATRIX_TYPE::BANDED && aSource->m_type != IBIS_MATRIX_TYPE::FULL
+            && aSource->m_type != IBIS_MATRIX_TYPE::SPARSE )
         {
-            if( ( *aSource )->m_type != IBIS_MATRIX_TYPE::BANDED
-                && ( *aSource )->m_type != IBIS_MATRIX_TYPE::FULL
-                && ( *aSource )->m_type != IBIS_MATRIX_TYPE::SPARSE )
-            {
-                init = false;
-            }
-            else
-            {
-                init = true;
-            }
+            init = false;
         }
         else
         {
-            Report( "Internal Error: matrix pointer is null." );
-            status = false;
+            init = true;
         }
     }
     else
     {
-        Report( "Internal Error: matrix pointer pointer is null." );
+        Report( "Internal Error: matrix pointer is null." );
         status = false;
     }
 
@@ -1703,22 +1653,22 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
     {
         if( !init )
         {
-            if( readWord( &str ) )
+            if( readWord( str ) )
             {
                 if( !strcasecmp( str.c_str(), "Banded_Matrix" ) )
                 {
                     IBIS_MATRIX_BANDED* matrix = new IBIS_MATRIX_BANDED( m_reporter );
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
-                    *aSource = static_cast<IBIS_MATRIX*>( matrix );
-                    m_currentMatrix = *aSource;
+                    aSource = static_cast<IBIS_MATRIX*>( matrix );
+                    m_currentMatrix = aSource;
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::BANDED;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
                 if( !strcasecmp( str.c_str(), "Full_Matrix" ) )
                 {
                     IBIS_MATRIX_FULL* matrix = new IBIS_MATRIX_FULL( m_reporter );
-                    *aSource = static_cast<IBIS_MATRIX*>( matrix );
-                    m_currentMatrix = *aSource;
+                    aSource = static_cast<IBIS_MATRIX*>( matrix );
+                    m_currentMatrix = aSource;
                     m_currentMatrix->m_dim = m_currentPackageModel->m_numberOfPins;
 
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
@@ -1730,8 +1680,8 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
                 if( !strcasecmp( str.c_str(), "Sparse_Matrix" ) )
                 {
                     IBIS_MATRIX_SPARSE* matrix = new IBIS_MATRIX_SPARSE( m_reporter );
-                    *aSource = static_cast<IBIS_MATRIX*>( matrix );
-                    m_currentMatrix = *aSource;
+                    aSource = static_cast<IBIS_MATRIX*>( matrix );
+                    m_currentMatrix = aSource;
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
                     matrix->m_data = static_cast<double*>(
                             malloc( ( matrix->m_dim * matrix->m_dim ) * sizeof( double ) ) );
@@ -1761,39 +1711,32 @@ bool IbisParser::readMatrix( IBIS_MATRIX** aSource )
     {
         if( aSource != nullptr )
         {
-            if( *aSource != nullptr )
+            // If m_continue is set, ( and no keyword ) then it is a row
+            switch( aSource->m_type )
             {
-                // If m_continue is set, ( and no keyword ) then it is a row
-                switch( ( *aSource )->m_type )
-                {
-                case IBIS_MATRIX_TYPE::BANDED:
-                    readMatrixBanded( std::string( "Dummy" ),
-                                      static_cast<IBIS_MATRIX_BANDED*>( *aSource ) );
-                    break;
-                case IBIS_MATRIX_TYPE::FULL:
-                    readMatrixFull( std::string( "Dummy" ),
-                                    static_cast<IBIS_MATRIX_FULL*>( *aSource ) );
-                    break;
-                case IBIS_MATRIX_TYPE::SPARSE:
-                    readMatrixSparse( std::string( "Dummy" ),
-                                      static_cast<IBIS_MATRIX_SPARSE*>( *aSource ) );
-                    break;
-                case IBIS_MATRIX_TYPE::UNDEFINED:
-                default:
-                {
-                    status = false;
-                    Report( " Matrix :Tried to read a row from an undefined matrix" );
-                }
-                }
+            case IBIS_MATRIX_TYPE::BANDED:
+                readMatrixBanded( std::string( "Dummy" ),
+                                  *static_cast<IBIS_MATRIX_BANDED*>( aSource ) );
+                break;
+            case IBIS_MATRIX_TYPE::FULL:
+                readMatrixFull( std::string( "Dummy" ),
+                                *static_cast<IBIS_MATRIX_FULL*>( aSource ) );
+                break;
+            case IBIS_MATRIX_TYPE::SPARSE:
+                readMatrixSparse( std::string( "Dummy" ),
+                                  *static_cast<IBIS_MATRIX_SPARSE*>( aSource ) );
+                break;
+            case IBIS_MATRIX_TYPE::UNDEFINED:
+            default:
+            {
+                status = false;
+                Report( " Matrix :Tried to read a row from an undefined matrix" );
             }
-            else
-            {
-                Report( "Internal Error : matrix pointer is null" );
             }
         }
         else
         {
-            Report( "Internal Error : matrix pointer pointer is null" );
+            Report( "Internal Error : matrix pointer is null" );
         }
     }
     return status;
@@ -1806,23 +1749,24 @@ bool IbisParser::parsePackageModelModelData( std::string aKeyword )
     if( !strcasecmp( aKeyword.c_str(), "Resistance_Matrix" ) )
     {
         IBIS_MATRIX dest( m_reporter ), source( m_reporter );
-        status &= readMatrix( &( m_currentPackageModel->m_resistanceMatrix ) );
+        status &= readMatrix( m_currentPackageModel->m_resistanceMatrix );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Capacitance_Matrix" ) )
     {
-        status &= readMatrix( &( m_currentPackageModel->m_capacitanceMatrix ) );
+        status &= readMatrix( m_currentPackageModel->m_capacitanceMatrix );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Inductance_Matrix" ) )
     {
-        status &= readMatrix( &( m_currentPackageModel->m_inductanceMatrix ) );
+        status &= readMatrix( m_currentPackageModel->m_inductanceMatrix );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Bandwidth" ) )
     {
-        status &= readMatrixBanded( aKeyword, static_cast<IBIS_MATRIX_BANDED*>( m_currentMatrix ) );
+        status &=
+                readMatrixBanded( aKeyword, *static_cast<IBIS_MATRIX_BANDED*>( m_currentMatrix ) );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Row" ) )
     {
-        status &= readInt( &( m_currentMatrixRow ) );
+        status &= readInt( m_currentMatrixRow );
         m_currentMatrixRow--;        // The matrix starts at 0
         m_currentMatrixRowIndex = 0; // The matrix starts at 0*/
         m_continue = IBIS_PARSER_CONTINUE::MATRIX;
@@ -1847,13 +1791,13 @@ bool IbisParser::parsePackageModel( std::string aKeyword )
     bool status = true;
 
     if( !strcasecmp( aKeyword.c_str(), "Manufacturer" ) )
-        status &= StoreString( &( m_currentPackageModel->m_manufacturer ), false );
+        status &= StoreString( m_currentPackageModel->m_manufacturer, false );
     else if( !strcasecmp( aKeyword.c_str(), "OEM" ) )
-        status &= StoreString( &( m_currentPackageModel->m_OEM ), false );
+        status &= StoreString( m_currentPackageModel->m_OEM, false );
     else if( !strcasecmp( aKeyword.c_str(), "Description" ) )
-        status &= StoreString( &( m_currentPackageModel->m_description ), false );
+        status &= StoreString( m_currentPackageModel->m_description, false );
     else if( !strcasecmp( aKeyword.c_str(), "Number_of_Pins" ) )
-        status &= readInt( &( m_currentPackageModel->m_numberOfPins ) );
+        status &= readInt( m_currentPackageModel->m_numberOfPins );
     else if( !strcasecmp( aKeyword.c_str(), "Pin_Numbers" ) )
         status &= readPackageModelPins();
     else if( !strcasecmp( aKeyword.c_str(), "Model_Data" ) )
@@ -1877,9 +1821,9 @@ bool IbisParser::readModelSelector()
 
     IbisModelSelectorEntry model;
 
-    if( readWord( &( model.m_modelName ) ) )
+    if( readWord( model.m_modelName ) )
     {
-        if( !readString( &( model.m_modelDescription ) ) )
+        if( !readString( model.m_modelDescription ) )
         {
             status &= false;
         }
@@ -1892,7 +1836,7 @@ bool IbisParser::readModelSelector()
     return status;
 }
 
-bool IbisParser::readNumericSubparam( std::string aSubparam, double* aDest )
+bool IbisParser::readNumericSubparam( std::string aSubparam, double& aDest )
 {
     std::string paramName;
     bool     status = true;
@@ -1915,7 +1859,7 @@ bool IbisParser::readNumericSubparam( std::string aSubparam, double* aDest )
 
                 std::string strValue;
 
-                if( !StoreString( &strValue, false ) )
+                if( !StoreString( strValue, false ) )
                 {
                     status = false;
                 }
@@ -1951,7 +1895,7 @@ bool IbisParser::readNumericSubparam( std::string aSubparam, double* aDest )
 }
 
 
-bool IbisParser::readTypMinMaxValue( TypMinMaxValue* aDest )
+bool IbisParser::readTypMinMaxValue( TypMinMaxValue& aDest )
 {
     bool status = true;
 
@@ -1960,20 +1904,20 @@ bool IbisParser::readTypMinMaxValue( TypMinMaxValue* aDest )
     std::string strValue;
 
 
-    if( !readWord( &strValue ) )
+    if( !readWord( strValue ) )
     {
         status = false;
     }
     else
     {
-        if( parseDouble( &( ( *aDest ).value[IBIS_CORNER::TYP] ), strValue, true ) )
+        if( parseDouble( aDest.value[IBIS_CORNER::TYP], strValue, true ) )
         {
-            if( readWord( &strValue ) )
+            if( readWord( strValue ) )
             {
-                parseDouble( &( ( *aDest ).value[IBIS_CORNER::MIN] ), strValue, true );
-                if( readWord( &strValue ) )
+                parseDouble( aDest.value[IBIS_CORNER::MIN], strValue, true );
+                if( readWord( strValue ) )
                 {
-                    parseDouble( &( ( *aDest ).value[IBIS_CORNER::MAX] ), strValue, true );
+                    parseDouble( aDest.value[IBIS_CORNER::MAX], strValue, true );
                 }
             }
         }
@@ -1986,7 +1930,7 @@ bool IbisParser::readTypMinMaxValue( TypMinMaxValue* aDest )
     return status;
 }
 
-bool IbisParser::readTypMinMaxValueSubparam( std::string aSubparam, TypMinMaxValue* aDest )
+bool IbisParser::readTypMinMaxValueSubparam( std::string aSubparam, TypMinMaxValue& aDest )
 {
     std::string paramName;
     bool     status = true;
@@ -2024,14 +1968,14 @@ bool IbisParser::readModel()
     int startOfLine = m_lineIndex;
 
     std::string subparam;
-    if( readWord( &subparam ) )
+    if( readWord( subparam ) )
     {
         switch( m_continue )
         {
         case IBIS_PARSER_CONTINUE::MODEL:
             if( !strcmp( subparam.substr( 0, 10 ).c_str(), "Model_type" ) )
             {
-                if( readWord( &subparam ) )
+                if( readWord( subparam ) )
                 {
                     if( !strcmp( subparam.c_str(), "Input" ) )
                         m_currentModel->m_type = IBIS_MODEL_TYPE::INPUT;
@@ -2083,7 +2027,7 @@ bool IbisParser::readModel()
             }
             else if( !strcmp( subparam.substr( 0, 7 ).c_str(), "Enable" ) )
             {
-                if( readWord( &subparam ) )
+                if( readWord( subparam ) )
                 {
                     if( !strcmp( subparam.c_str(), "Active-High" ) )
                         m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_HIGH;
@@ -2105,7 +2049,7 @@ bool IbisParser::readModel()
             }
             else if( subparam.substr( 0, 9 ) == "Polarity" )
             {
-                if( readWord( &subparam ) )
+                if( readWord( subparam ) )
                 {
                     if( subparam == "Inverting" )
                         m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_HIGH;
@@ -2125,20 +2069,20 @@ bool IbisParser::readModel()
                     status = false;
                 }
             }
-            else if( readNumericSubparam( std::string( "Vinl" ), &( m_currentModel->m_vinl ) ) )
+            else if( readNumericSubparam( std::string( "Vinl" ), m_currentModel->m_vinl ) )
                 ;
-            else if( readNumericSubparam( std::string( "Vinh" ), &( m_currentModel->m_vinh ) ) )
+            else if( readNumericSubparam( std::string( "Vinh" ), m_currentModel->m_vinh ) )
                 ;
-            else if( readNumericSubparam( std::string( "Vref" ), &( m_currentModel->m_vref ) ) )
+            else if( readNumericSubparam( std::string( "Vref" ), m_currentModel->m_vref ) )
                 ;
-            else if( readNumericSubparam( std::string( "Rref" ), &( m_currentModel->m_rref ) ) )
+            else if( readNumericSubparam( std::string( "Rref" ), m_currentModel->m_rref ) )
                 ;
-            else if( readNumericSubparam( std::string( "Cref" ), &( m_currentModel->m_cref ) ) )
+            else if( readNumericSubparam( std::string( "Cref" ), m_currentModel->m_cref ) )
                 ;
-            else if( readNumericSubparam( std::string( "Vmeas" ), &( m_currentModel->m_vmeas ) ) )
+            else if( readNumericSubparam( std::string( "Vmeas" ), m_currentModel->m_vmeas ) )
                 ;
             else if( readTypMinMaxValueSubparam( std::string( "C_comp" ),
-                                                 m_currentModel->m_C_comp ) )
+                                                 *( m_currentModel->m_C_comp ) ) )
                 ; 
             else
             {
@@ -2165,7 +2109,7 @@ bool IbisParser::parseHeader( std::string aKeyword )
 
     if( !strcasecmp( aKeyword.c_str(), "IBIS_Ver" ) )
     {
-        status &= readDouble( &( m_ibisFile->m_header->m_ibisVersion ) );
+        status &= readDouble( m_ibisFile->m_header->m_ibisVersion );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Comment_char" ) )
     {
@@ -2173,31 +2117,31 @@ bool IbisParser::parseHeader( std::string aKeyword )
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Name" ) )
     {
-        StoreString( &( m_ibisFile->m_header->m_fileName ), false );
+        StoreString( m_ibisFile->m_header->m_fileName, false );
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Rev" ) )
     {
-        status &= readDouble( &( m_ibisFile->m_header->m_fileRevision ) );
+        status &= readDouble( m_ibisFile->m_header->m_fileRevision );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Source" ) )
     {
-        StoreString( &( m_ibisFile->m_header->m_source ), true );
+        StoreString( m_ibisFile->m_header->m_source, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Notes" ) )
     {
-        StoreString( &( m_ibisFile->m_header->m_notes ), true );
+        StoreString( m_ibisFile->m_header->m_notes, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Disclaimer" ) )
     {
-        StoreString( &( m_ibisFile->m_header->m_disclaimer ), true );
+        StoreString( m_ibisFile->m_header->m_disclaimer, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Copyright" ) )
     {
-        StoreString( &( m_ibisFile->m_header->m_copyright ), true );
+        StoreString( m_ibisFile->m_header->m_copyright, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Date" ) )
     {
-        StoreString( &( m_ibisFile->m_header->m_date ), false );
+        StoreString( m_ibisFile->m_header->m_date, false );
     }
     else
     {
@@ -2215,7 +2159,7 @@ bool IbisParser::parseComponent( std::string aKeyword )
     bool status = true;
     if( !strcasecmp( aKeyword.c_str(), "Manufacturer" ) )
     {
-        status &= StoreString( &( m_currentComponent->m_manufacturer ), true );
+        status &= StoreString( m_currentComponent->m_manufacturer, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Package" ) )
     {
@@ -2240,7 +2184,7 @@ bool IbisParser::parseComponent( std::string aKeyword )
     }*/
     else if( !strcasecmp( aKeyword.c_str(), "Package_Model" ) )
     {
-        status &= StoreString( &( m_currentComponent->m_packageModel ), true );
+        status &= StoreString( m_currentComponent->m_packageModel, true );
     }
     else
     {
@@ -2294,33 +2238,33 @@ bool IbisParser::readPackage()
     {
         if( fields.at( 0 ) == "R_pkg" )
         {
-            if( parseDouble( &( R->value[IBIS_CORNER::TYP] ), fields.at( 1 ), true ) )
+            if( parseDouble( R->value[IBIS_CORNER::TYP], fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( R->value[IBIS_CORNER::MIN] ), fields.at( 2 ), true );
-            parseDouble( &( R->value[IBIS_CORNER::MAX] ), fields.at( 3 ), true );
+            parseDouble( R->value[IBIS_CORNER::MIN], fields.at( 2 ), true );
+            parseDouble( R->value[IBIS_CORNER::MAX], fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "L_pkg" )
         {
-            if( parseDouble( &( L->value[IBIS_CORNER::TYP] ), fields.at( 1 ), true ) )
+            if( parseDouble( L->value[IBIS_CORNER::TYP], fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( L->value[IBIS_CORNER::MIN] ), fields.at( 2 ), true );
-            parseDouble( &( L->value[IBIS_CORNER::MAX] ), fields.at( 3 ), true );
+            parseDouble( L->value[IBIS_CORNER::MIN], fields.at( 2 ), true );
+            parseDouble( L->value[IBIS_CORNER::MAX], fields.at( 3 ), true );
         }
         else if( fields.at( 0 ) == "C_pkg" )
         {
-            if( parseDouble( &( C->value[IBIS_CORNER::TYP] ), fields.at( 1 ), true ) )
+            if( parseDouble( C->value[IBIS_CORNER::TYP], fields.at( 1 ), true ) )
             {
                 status = false;
             }
 
-            parseDouble( &( C->value[IBIS_CORNER::MIN] ), fields.at( 2 ), true );
-            parseDouble( &( C->value[IBIS_CORNER::MAX] ), fields.at( 3 ), true );
+            parseDouble( C->value[IBIS_CORNER::MIN], fields.at( 2 ), true );
+            parseDouble( C->value[IBIS_CORNER::MAX], fields.at( 3 ), true );
         }
     }
     else
@@ -2381,9 +2325,9 @@ bool IbisParser::readPin()
             }
             else
             {
-                if( !parseDouble( &( pin->m_Rpin ), fields.at( pin->m_Rcol ), true )
-                    || !parseDouble( &( pin->m_Lpin ), fields.at( pin->m_Lcol ), true )
-                    || !parseDouble( &( pin->m_Cpin ), fields.at( pin->m_Ccol ), true ) )
+                if( !parseDouble( pin->m_Rpin, fields.at( pin->m_Rcol ), true )
+                    || !parseDouble( pin->m_Lpin, fields.at( pin->m_Lcol ), true )
+                    || !parseDouble( pin->m_Cpin, fields.at( pin->m_Ccol ), true ) )
                 {
                     status = false;
                 }
@@ -2486,17 +2430,17 @@ bool IbisParser::readDiffPin()
     }
     else
     {
-        if( !readWord( &( entry->pinA ) ) )
+        if( !readWord( entry->pinA ) )
         {
             Report( _( "[Pin Diff]: Incorrect pin name" ), RPT_SEVERITY_ERROR );
             status = false;
         }
-        if( !readWord( &( entry->pinB ) ) )
+        if( !readWord( entry->pinB ) )
         {
             Report( _( "[Pin Diff]: Incorrect inv_pin" ), RPT_SEVERITY_ERROR );
             status = false;
         }
-        if( status && readWord( &( entry->pinB ) ) )
+        if( status && readWord( entry->pinB ) )
         {
             m_currentComponent->m_diffPin->m_entries.push_back( entry );
         }
@@ -2505,7 +2449,7 @@ bool IbisParser::readDiffPin()
 }
 
 
-bool IbisParser::readIVtableEntry( IVtable* aDest )
+bool IbisParser::readIVtableEntry( IVtable& aDest )
 {
     bool status = true;
 
@@ -2517,29 +2461,29 @@ bool IbisParser::readIVtableEntry( IVtable* aDest )
     {
         std::string str;
 
-        if( !readWord( &str ) )
+        if( !readWord( str ) )
         {
             status = false;
         }
-        if( !parseDouble( &( entry->V ), str, true ) )
+        if( !parseDouble( entry->V, str, true ) )
         {
             status = false;
         }
 
-        if( status && readTypMinMaxValue( entry->I ) )
+        if( status && readTypMinMaxValue( *( entry->I ) ) )
         {
-            aDest->m_entries.push_back( entry );
+            aDest.m_entries.push_back( entry );
         }
     }
 
     m_continue = IBIS_PARSER_CONTINUE::IV_TABLE;
-    m_currentIVtable = aDest;
+    m_currentIVtable = &aDest;
 
 
     return status;
 }
 
-bool IbisParser::readVTtableEntry( VTtable* aDest )
+bool IbisParser::readVTtableEntry( VTtable& aDest )
 {
     bool status = true;
     skipWhitespaces();
@@ -2549,9 +2493,9 @@ bool IbisParser::readVTtableEntry( VTtable* aDest )
     if( m_lineIndex < m_lineLength )
     {
         std::string str;
-        if( readWord( &str ) )
+        if( readWord( str ) )
         {
-            if( !parseDouble( &( entry->t ), str, true ) || !readTypMinMaxValue( entry->V ) )
+            if( !parseDouble( entry->t, str, true ) || !readTypMinMaxValue( *( entry->V ) ) )
             {
                 status = false;
             }
@@ -2563,19 +2507,11 @@ bool IbisParser::readVTtableEntry( VTtable* aDest )
     }
 
     m_continue = IBIS_PARSER_CONTINUE::IV_TABLE;
-    m_currentVTtable = aDest;
+    m_currentVTtable = &aDest;
 
     if( status )
     {
-        if( aDest != nullptr )
-        {
-            aDest->m_entries.push_back( entry );
-        }
-        else
-        {
-            Report( "Internal Error: destination IV table is empty" );
-            status = false;
-        }
+        aDest.m_entries.push_back( entry );
     }
     else
     {
@@ -2617,26 +2553,26 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
     {
         // readNumericSubparam() returns true if it could read the subparameter and store it
         // Testing all subparameters
-        if( readNumericSubparam( std::string( "R_fixture" ), &( wf->m_R_fixture ) ) )
+        if( readNumericSubparam( std::string( "R_fixture" ), wf->m_R_fixture ) )
             ;
-        else if( readNumericSubparam( std::string( "L_fixture" ), &( wf->m_L_fixture ) ) )
+        else if( readNumericSubparam( std::string( "L_fixture" ), wf->m_L_fixture ) )
             ;
-        else if( readNumericSubparam( std::string( "C_fixture" ), &( wf->m_C_fixture ) ) )
+        else if( readNumericSubparam( std::string( "C_fixture" ), wf->m_C_fixture ) )
             ;
-        else if( readNumericSubparam( std::string( "V_fixture" ), &( wf->m_V_fixture ) ) )
+        else if( readNumericSubparam( std::string( "V_fixture" ), wf->m_V_fixture ) )
             ;
-        else if( readNumericSubparam( std::string( "V_fixture_min" ), &( wf->m_V_fixture_min ) ) )
+        else if( readNumericSubparam( std::string( "V_fixture_min" ), wf->m_V_fixture_min ) )
             ;
-        else if( readNumericSubparam( std::string( "V_fixture_max" ), &( wf->m_V_fixture_max ) ) )
+        else if( readNumericSubparam( std::string( "V_fixture_max" ), wf->m_V_fixture_max ) )
             ;
-        else if( readNumericSubparam( std::string( "R_dut" ), &( wf->m_R_fixture ) ) )
+        else if( readNumericSubparam( std::string( "R_dut" ), wf->m_R_fixture ) )
             ;
-        else if( readNumericSubparam( std::string( "L_dut" ), &( wf->m_L_fixture ) ) )
+        else if( readNumericSubparam( std::string( "L_dut" ), wf->m_L_fixture ) )
             ;
-        else if( readNumericSubparam( std::string( "C_dut" ), &( wf->m_C_fixture ) ) )
+        else if( readNumericSubparam( std::string( "C_dut" ), wf->m_C_fixture ) )
             ;
         // The line is not a subparameter, then let's try to read a VT table entry
-        else if( !readVTtableEntry( m_currentWaveform->m_table ) )
+        else if( !readVTtableEntry( *( m_currentWaveform->m_table ) ) )
         {
             status = false;
         }
@@ -2693,7 +2629,7 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTINUE::STRING:
             skipWhitespaces();
             *m_continuingString += '\n';
-            readString( m_continuingString );
+            readString( *m_continuingString );
             break;
         case IBIS_PARSER_CONTINUE::COMPONENT_PACKAGE: status &= readPackage(); break;
         case IBIS_PARSER_CONTINUE::COMPONENT_PIN: status &= readPin(); break;
@@ -2701,14 +2637,18 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTINUE::COMPONENT_DIFFPIN: status &= readDiffPin(); break;
         case IBIS_PARSER_CONTINUE::MODELSELECTOR: status &= readModelSelector(); break;
         case IBIS_PARSER_CONTINUE::MODEL: status &= readModel(); break;
-        case IBIS_PARSER_CONTINUE::IV_TABLE: status &= readIVtableEntry( m_currentIVtable ); break;
-        case IBIS_PARSER_CONTINUE::VT_TABLE: status &= readVTtableEntry( m_currentVTtable ); break;
+        case IBIS_PARSER_CONTINUE::IV_TABLE:
+            status &= readIVtableEntry( *( m_currentIVtable ) );
+            break;
+        case IBIS_PARSER_CONTINUE::VT_TABLE:
+            status &= readVTtableEntry( *( m_currentVTtable ) );
+            break;
         case IBIS_PARSER_CONTINUE::WAVEFORM:
             status &= readWaveform( m_currentWaveform, m_currentWaveform->m_type );
             break;
         case IBIS_PARSER_CONTINUE::RAMP: status &= readRamp(); break;
         case IBIS_PARSER_CONTINUE::PACKAGEMODEL_PINS: status &= readPackageModelPins(); break;
-        case IBIS_PARSER_CONTINUE::MATRIX: status &= readMatrix( &m_currentMatrix ); break;
+        case IBIS_PARSER_CONTINUE::MATRIX: status &= readMatrix( m_currentMatrix ); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
             Report( _( "Missing keyword." ), RPT_SEVERITY_ERROR );

@@ -686,7 +686,7 @@ public:
      * @param aAllowModifiers Allows modifiers ( p for pico, f for femto, k for kilo, ... )
      * @return True in case of success
      */
-    bool parseDouble( double* aDest, std::string aStr, bool aAllowModifiers = false );
+    bool parseDouble( double& aDest, std::string aStr, bool aAllowModifiers = false );
 
 private:
     std::string* m_continuingString;
@@ -709,26 +709,26 @@ private:
     bool      isLineEmptyFromCursor();
     std::string* getKeyword();
 
-    bool readInt( int* aDest );
-    bool readDouble( double* aDest );
-    bool readWord( std::string* aDest );
-    bool readDvdt( std::string, dvdt* aDest );
-    bool readMatrix( IBIS_MATRIX** );
-    bool readMatrixBanded( std::string, IBIS_MATRIX_BANDED* aDest );
-    bool readMatrixFull( std::string, IBIS_MATRIX_FULL* aDest );
-    bool readMatrixSparse( std::string, IBIS_MATRIX_SPARSE* aDest );
-    bool readRampdvdt( dvdtTypMinMax* aDest );
+    bool readInt( int& aDest );
+    bool readDouble( double& aDest );
+    bool readWord( std::string& aDest );
+    bool readDvdt( std::string, dvdt& aDest );
+    bool readMatrix( IBIS_MATRIX* aDest );
+    bool readMatrixBanded( std::string, IBIS_MATRIX_BANDED& aDest );
+    bool readMatrixFull( std::string, IBIS_MATRIX_FULL& aDest );
+    bool readMatrixSparse( std::string, IBIS_MATRIX_SPARSE& aDest );
+    bool readRampdvdt( dvdtTypMinMax& aDest );
     bool readRamp();
     bool readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
-    bool readString( std::string* );
-    bool StoreString( std::string* aDest, bool aMultiline );
+    bool readString( std::string& aDest );
+    bool StoreString( std::string& aDest, bool aMultiline );
     bool ReadTableLine( std::vector<std::string>& aDest );
 
-    bool readNumericSubparam( std::string aSubparam, double* aDest );
-    bool readIVtableEntry( IVtable* aTable );
-    bool readVTtableEntry( VTtable* aTable );
-    bool readTypMinMaxValue( TypMinMaxValue* aDest );
-    bool readTypMinMaxValueSubparam( std::string aSubparam, TypMinMaxValue* aDest );
+    bool readNumericSubparam( std::string aSubparam, double& aDest );
+    bool readIVtableEntry( IVtable& aTable );
+    bool readVTtableEntry( VTtable& aTable );
+    bool readTypMinMaxValue( TypMinMaxValue& aDest );
+    bool readTypMinMaxValueSubparam( std::string aSubparam, TypMinMaxValue& aDest );
     //bool ReadDieSupplyPads();
 
     bool readPackage();
@@ -753,7 +753,7 @@ private:
      * @param aDest destination
      * @return True in case of success
      */
-    bool ibisToDouble( std::string aString, double* aDest );
+    bool ibisToDouble( std::string aString, double& aDest );
 };
 
 #endif
