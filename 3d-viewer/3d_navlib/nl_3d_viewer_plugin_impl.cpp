@@ -245,13 +245,13 @@ void NL_3D_VIEWER_PLUGIN_IMPL::exportCommandsAndImages()
                                                    streamBuffer->GetBufferSize() ),
                                       0 );
 
-                wxLogTrace( m_logTrace, "Adding image for : %s", name );
+                wxLogTrace( m_logTrace, wxT( "Adding image for : %s" ), name );
                 vImages.push_back( std::move( tdxImage ) );
             }
         }
 
-        wxLogTrace( m_logTrace, "Inserting command: %s,  description: %s,  in category:  %s", name,
-                    description, iter->first );
+        wxLogTrace( m_logTrace, wxT( "Inserting command: %s,  description: %s,  in category:  %s" ),
+                    name, description, iter->first );
 
         iter->second->push_back(
                 CCommand( std::move( name ), std::move( label ), std::move( description ) ) );

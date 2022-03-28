@@ -142,7 +142,7 @@ void NL_SCHEMATIC_PLUGIN_IMPL::SetCanvas( EDA_DRAW_PANEL_GAL* aViewport )
 
 void NL_SCHEMATIC_PLUGIN_IMPL::SetFocus( bool aFocus )
 {
-    wxLogTrace( m_logTrace, "NL_SCHEMATIC_PLUGIN_IMPL::SetFocus %d", aFocus );
+    wxLogTrace( m_logTrace, wxT( "NL_SCHEMATIC_PLUGIN_IMPL::SetFocus %d" ), aFocus );
     NAV_3D::Write( navlib::focus_k, aFocus );
 }
 
@@ -192,7 +192,7 @@ static CATEGORY_STORE::iterator add_category( std::string     aCategoryPath,
 
 void NL_SCHEMATIC_PLUGIN_IMPL::exportCommandsAndImages()
 {
-    wxLogTrace( m_logTrace, "NL_SCHEMATIC_PLUGIN_IMPL::exportCommandsAndImages" );
+    wxLogTrace( m_logTrace, wxT( "NL_SCHEMATIC_PLUGIN_IMPL::exportCommandsAndImages" ) );
 
     std::list<TOOL_ACTION*> actions = ACTION_MANAGER::GetActionList();
 
@@ -267,13 +267,13 @@ void NL_SCHEMATIC_PLUGIN_IMPL::exportCommandsAndImages()
                                                    streamBuffer->GetBufferSize() ),
                                       0 );
 
-                wxLogTrace( m_logTrace, "Adding image for : %s", name );
+                wxLogTrace( m_logTrace, wxT( "Adding image for : %s" ), name );
                 vImages.push_back( std::move( tdxImage ) );
             }
         }
 
-        wxLogTrace( m_logTrace, "Inserting command: %s,  description: %s,  in category:  %s", name,
-                    description, iter->first );
+        wxLogTrace( m_logTrace, wxT( "Inserting command: %s,  description: %s,  in category:  %s" ),
+                    name, description, iter->first );
 
         iter->second->push_back(
                 CCommand( std::move( name ), std::move( label ), std::move( description ) ) );
