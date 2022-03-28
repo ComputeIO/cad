@@ -787,9 +787,8 @@ bool IbisPackageModel::Check()
 }
 
 
-bool IbisParser::parseFile( std::string aFileName, IbisFile* aFile )
+bool IbisParser::parseFile( std::string aFileName )
 {
-    m_ibisFile = aFile;
     std::string err_msg;
 
     std::ifstream ibisFile;
@@ -1256,7 +1255,7 @@ bool IbisParser::changeContext( std::string aKeyword )
     {
         switch( m_context )
         {
-        case IBIS_PARSER_CONTEXT::HEADER: status &= m_ibisFile->m_header->Check(); break;
+        case IBIS_PARSER_CONTEXT::HEADER: status &= m_ibisFile.m_header->Check(); break;
         case IBIS_PARSER_CONTEXT::COMPONENT: status &= m_currentComponent->Check(); break;
         case IBIS_PARSER_CONTEXT::MODEL: status &= m_currentModel->Check(); break;
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= m_currentModelSelector->Check(); break;
@@ -1277,16 +1276,16 @@ bool IbisParser::changeContext( std::string aKeyword )
         {
             IbisComponent* comp = new IbisComponent( m_reporter );
             StoreString( comp->m_name, false );
-            m_ibisFile->m_components.push_back( comp );
-            m_currentComponent = m_ibisFile->m_components.back();
+            m_ibisFile.m_components.push_back( comp );
+            m_currentComponent = m_ibisFile.m_components.back();
             m_context = IBIS_PARSER_CONTEXT::COMPONENT;
         }
         else if( !strcasecmp( aKeyword.c_str(), "Model_Selector" ) )
         {
             IbisModelSelector* MS = new IbisModelSelector( m_reporter );
             StoreString( MS->m_name, false );
-            m_ibisFile->m_modelSelectors.push_back( MS );
-            m_currentModelSelector = m_ibisFile->m_modelSelectors.back();
+            m_ibisFile.m_modelSelectors.push_back( MS );
+            m_currentModelSelector = m_ibisFile.m_modelSelectors.back();
             m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
             m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
         }
@@ -1297,8 +1296,8 @@ bool IbisParser::changeContext( std::string aKeyword )
             model->m_temperatureRange->value[IBIS_CORNER::TYP] = 50;
             model->m_temperatureRange->value[IBIS_CORNER::MAX] = 100;
             StoreString( model->m_name, false );
-            m_ibisFile->m_models.push_back( model );
-            m_currentModel = m_ibisFile->m_models.back();
+            m_ibisFile.m_models.push_back( model );
+            m_currentModel = m_ibisFile.m_models.back();
             m_context = IBIS_PARSER_CONTEXT::MODEL;
             m_continue = IBIS_PARSER_CONTINUE::MODEL;
         }
@@ -1319,8 +1318,8 @@ bool IbisParser::changeContext( std::string aKeyword )
 
             StoreString( PM->m_name, false );
 
-            m_ibisFile->m_packageModels.push_back( PM );
-            m_currentPackageModel = m_ibisFile->m_packageModels.back();
+            m_ibisFile.m_packageModels.push_back( PM );
+            m_currentPackageModel = m_ibisFile.m_packageModels.back();
             m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
         }
         else if( !strcasecmp( aKeyword.c_str(), "End_Package_Model" ) )
@@ -2109,7 +2108,7 @@ bool IbisParser::parseHeader( std::string aKeyword )
 
     if( !strcasecmp( aKeyword.c_str(), "IBIS_Ver" ) )
     {
-        status &= readDouble( m_ibisFile->m_header->m_ibisVersion );
+        status &= readDouble( m_ibisFile.m_header->m_ibisVersion );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Comment_char" ) )
     {
@@ -2117,31 +2116,31 @@ bool IbisParser::parseHeader( std::string aKeyword )
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Name" ) )
     {
-        StoreString( m_ibisFile->m_header->m_fileName, false );
+        StoreString( m_ibisFile.m_header->m_fileName, false );
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Rev" ) )
     {
-        status &= readDouble( m_ibisFile->m_header->m_fileRevision );
+        status &= readDouble( m_ibisFile.m_header->m_fileRevision );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Source" ) )
     {
-        StoreString( m_ibisFile->m_header->m_source, true );
+        StoreString( m_ibisFile.m_header->m_source, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Notes" ) )
     {
-        StoreString( m_ibisFile->m_header->m_notes, true );
+        StoreString( m_ibisFile.m_header->m_notes, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Disclaimer" ) )
     {
-        StoreString( m_ibisFile->m_header->m_disclaimer, true );
+        StoreString( m_ibisFile.m_header->m_disclaimer, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Copyright" ) )
     {
-        StoreString( m_ibisFile->m_header->m_copyright, true );
+        StoreString( m_ibisFile.m_header->m_copyright, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Date" ) )
     {
-        StoreString( m_ibisFile->m_header->m_date, false );
+        StoreString( m_ibisFile.m_header->m_date, false );
     }
     else
     {

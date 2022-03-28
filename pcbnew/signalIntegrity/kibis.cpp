@@ -50,23 +50,22 @@ IBIS_CORNER ReverseLogic( IBIS_CORNER aIn )
 KIBIS::KIBIS( std::string aFileName ) : KIBIS_ANY( this )
 {
     IBIS_REPORTER* reporter = new IBIS_REPORTER();
-    IbisFile*      file = new IbisFile( reporter );
     IbisParser*    parser = new IbisParser( reporter );
     parser->m_parrot = false;
-    parser->parseFile( aFileName, file );
+    parser->parseFile( aFileName );
 
     bool status = true;
 
     m_file = new KIBIS_FILE( this, parser );
 
-    for( IbisModel* iModel : parser->m_ibisFile->m_models )
+    for( IbisModel* iModel : parser->m_ibisFile.m_models )
     {
         KIBIS_MODEL* kModel = new KIBIS_MODEL( this, iModel, parser );
         status &= kModel->m_valid;
         m_models.push_back( kModel );
     }
 
-    for( IbisComponent* iComponent : parser->m_ibisFile->m_components )
+    for( IbisComponent* iComponent : parser->m_ibisFile.m_components )
     {
         KIBIS_COMPONENT* kComponent = new KIBIS_COMPONENT( this, iComponent, parser );
         status &= kComponent->m_valid;
@@ -88,13 +87,13 @@ KIBIS_FILE::KIBIS_FILE( KIBIS* aTopLevel, IbisParser* aParser ) : KIBIS_ANY( aTo
     }
     else
     {
-        m_fileName = aParser->m_ibisFile->m_header->m_fileName;
-        m_fileRev = aParser->m_ibisFile->m_header->m_fileRevision;
-        m_ibisVersion = aParser->m_ibisFile->m_header->m_ibisVersion;
-        m_date = aParser->m_ibisFile->m_header->m_date;
-        m_notes = aParser->m_ibisFile->m_header->m_notes;
-        m_disclaimer = aParser->m_ibisFile->m_header->m_disclaimer;
-        m_copyright = aParser->m_ibisFile->m_header->m_copyright;
+        m_fileName = aParser->m_ibisFile.m_header->m_fileName;
+        m_fileRev = aParser->m_ibisFile.m_header->m_fileRevision;
+        m_ibisVersion = aParser->m_ibisFile.m_header->m_ibisVersion;
+        m_date = aParser->m_ibisFile.m_header->m_date;
+        m_notes = aParser->m_ibisFile.m_header->m_notes;
+        m_disclaimer = aParser->m_ibisFile.m_header->m_disclaimer;
+        m_copyright = aParser->m_ibisFile.m_header->m_copyright;
     }
 
     m_valid = status;
@@ -139,7 +138,7 @@ KIBIS_PIN::KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin* aPin, IbisComponentPac
     bool                     modelSelected = false;
     std::vector<std::string> listOfModels;
 
-    for( IbisModelSelector* modelSelector : aParser->m_ibisFile->m_modelSelectors )
+    for( IbisModelSelector* modelSelector : aParser->m_ibisFile.m_modelSelectors )
     {
         if( !strcmp( modelSelector->m_name.c_str(), aPin->m_modelName.c_str() ) )
         {
@@ -185,7 +184,7 @@ KIBIS_MODEL::KIBIS_MODEL( KIBIS* aTopLevel, IbisModel* aSource, IbisParser* aPar
 
         m_description = std::string( "No description available." );
 
-        for( IbisModelSelector* modelSelector : aParser->m_ibisFile->m_modelSelectors )
+        for( IbisModelSelector* modelSelector : aParser->m_ibisFile.m_modelSelectors )
         {
             for( IbisModelSelectorEntry entry : modelSelector->m_models )
             {

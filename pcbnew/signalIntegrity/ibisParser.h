@@ -610,7 +610,7 @@ enum class IBIS_PARSER_CONTEXT
 class IbisParser : public IBIS_INPUT
 {
 public:
-    IbisParser( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ){};
+    IbisParser( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ), m_ibisFile( aReporter ){};
 
     bool m_parrot = false; // Write back all lines.
 
@@ -622,7 +622,7 @@ public:
     int   m_lineIndex;
     int   m_lineLength;
 
-    IbisFile*          m_ibisFile;
+    IbisFile           m_ibisFile;
     IbisComponent*     m_currentComponent;
     IbisModelSelector* m_currentModelSelector;
     IbisModel*         m_currentModel;
@@ -639,10 +639,9 @@ public:
      * This is the entry point to parse a file
      * 
      * @param aFileName input file name
-     * @param aFile Ibis file structure... Can be removed ? 
      * @return True in case of success
      */
-    bool parseFile( std::string aFileName, IbisFile* aFile );
+    bool parseFile( std::string aFileName );
     /** @brief Parse a single keyword in the header context
      * 
      * @param aKeyword Keyword
