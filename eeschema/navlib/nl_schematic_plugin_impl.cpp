@@ -205,7 +205,7 @@ void NL_SCHEMATIC_PLUGIN_IMPL::exportCommandsAndImages()
     using TDx::SpaceMouse::CCommandSet;
 
     // The root action set node
-    CCommandSet commandSet( "Default", "Schematic Editor" );
+    CCommandSet commandSet( "SCHEMATIC_EDITOR", "Schematic Editor" );
 
     // Activate the command set
     NAV_3D::PutActiveCommands( commandSet.GetId() );
