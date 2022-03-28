@@ -26,7 +26,7 @@
 #include <sstream>
 
 
-bool IbisParser::ibisToDouble( std::string aString, double& aDest )
+bool IbisParser::ibisToDouble( std::string& aString, double& aDest )
 {
     //Apparently stod does not check if there is an alpha character at the end.
     //This would prevent us for getting m,u,n,k,... modifiers
@@ -787,7 +787,7 @@ bool IbisPackageModel::Check()
 }
 
 
-bool IbisParser::parseFile( std::string aFileName )
+bool IbisParser::parseFile( std::string& aFileName )
 {
     std::string err_msg;
 
@@ -875,7 +875,7 @@ bool IbisParser::isLineEmptyFromCursor()
     return ( cursor >= m_lineLength );
 }
 
-bool IbisParser::readDvdt( std::string aString, dvdt& aDest )
+bool IbisParser::readDvdt( std::string& aString, dvdt& aDest )
 {
     bool status = true;
 
@@ -913,7 +913,7 @@ bool IbisParser::readDvdt( std::string aString, dvdt& aDest )
 }
 
 
-bool IbisParser::parseDouble( double& aDest, std::string aStr, bool aAllowModifiers )
+bool IbisParser::parseDouble( double& aDest, std::string& aStr, bool aAllowModifiers )
 {
     // "  an entry of the C matrix could be given as 1.23e-12 or as 1.23p or 1.23pF."
     skipWhitespaces();
@@ -1239,7 +1239,7 @@ std::string* IbisParser::getKeyword()
     return keyword;
 }
 
-bool IbisParser::changeContext( std::string aKeyword )
+bool IbisParser::changeContext( std::string& aKeyword )
 {
     bool status = true;
 
@@ -1367,7 +1367,7 @@ bool IbisParser::changeContext( std::string aKeyword )
 }
 
 
-bool IbisParser::parseModelSelector( std::string aKeyword )
+bool IbisParser::parseModelSelector( std::string& aKeyword )
 {
     bool status = true;
 
@@ -1404,7 +1404,8 @@ bool IbisParser::readRamp()
 
     m_continue = IBIS_PARSER_CONTINUE::RAMP;
 
-    if( !readNumericSubparam( std::string( "R_load" ), m_currentModel->m_ramp->m_Rload ) )
+    std::string keyword = std::string( "R_load " );
+    if( !readNumericSubparam( std::string( "R_load " ), m_currentModel->m_ramp->m_Rload ) )
     {
         std::string str;
 
@@ -1429,7 +1430,7 @@ bool IbisParser::readRamp()
 }
 
 
-bool IbisParser::parseModel( std::string aKeyword )
+bool IbisParser::parseModel( std::string& aKeyword )
 {
     bool status = true;
     
@@ -1741,7 +1742,7 @@ bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
     return status;
 }
 
-bool IbisParser::parsePackageModelModelData( std::string aKeyword )
+bool IbisParser::parsePackageModelModelData( std::string& aKeyword )
 {
     bool status = true;
 
@@ -1785,7 +1786,7 @@ bool IbisParser::parsePackageModelModelData( std::string aKeyword )
     return status;
 }
 
-bool IbisParser::parsePackageModel( std::string aKeyword )
+bool IbisParser::parsePackageModel( std::string& aKeyword )
 {
     bool status = true;
 
@@ -2102,7 +2103,7 @@ bool IbisParser::readModel()
 }
 
 
-bool IbisParser::parseHeader( std::string aKeyword )
+bool IbisParser::parseHeader( std::string& aKeyword )
 {
     bool status = true;
 
@@ -2153,7 +2154,7 @@ bool IbisParser::parseHeader( std::string aKeyword )
 }
 
 
-bool IbisParser::parseComponent( std::string aKeyword )
+bool IbisParser::parseComponent( std::string& aKeyword )
 {
     bool status = true;
     if( !strcasecmp( aKeyword.c_str(), "Manufacturer" ) )

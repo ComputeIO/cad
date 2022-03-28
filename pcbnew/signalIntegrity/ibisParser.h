@@ -641,43 +641,43 @@ public:
      * @param aFileName input file name
      * @return True in case of success
      */
-    bool parseFile( std::string aFileName );
+    bool parseFile( std::string& aFileName );
     /** @brief Parse a single keyword in the header context
      * 
      * @param aKeyword Keyword
      * @return True in case of success
      */
-    bool parseHeader( std::string aKeyword );
+    bool parseHeader( std::string& aKeyword );
     /** @brief Parse a single keyword in the component context
      * 
      * @param aKeyword Keyword
      * @return True in case of success
      */
-    bool parseComponent( std::string aKeyword );
+    bool parseComponent( std::string& aKeyword );
     /** @brief Parse a single keyword in the component context
      * 
      * @param aKeyword Keyword
      * @return True in case of success
      */
-    bool parseModelSelector( std::string aKeyword );
+    bool parseModelSelector( std::string& aKeyword );
     /** @brief Parse a single keyword in the model selector context
      * 
      * @param aKeyword Keyword
      * @return True in case of success
      */
-    bool parseModel( std::string aKeyword );
+    bool parseModel( std::string& aKeyword );
     /** @brief Parse a single keyword in the model context
      * 
      * @param aKeyword Keyword
      * @return True in case of success
      */
-    bool parsePackageModel( std::string aKeyword );
+    bool parsePackageModel( std::string& aKeyword );
     /** @brief Parse a single keyword in the package model context
      * 
      * @param aKeyword Keyword
      * @return True in case of success
      */
-    bool parsePackageModelModelData( std::string );
+    bool parsePackageModelModelData( std::string& );
     /** @brief Parse a double according to the ibis standard
      * 
      * @param aDest Where the double should be stored
@@ -685,7 +685,7 @@ public:
      * @param aAllowModifiers Allows modifiers ( p for pico, f for femto, k for kilo, ... )
      * @return True in case of success
      */
-    bool parseDouble( double& aDest, std::string aStr, bool aAllowModifiers = false );
+    bool parseDouble( double& aDest, std::string& aStr, bool aAllowModifiers = false );
 
 private:
     std::string* m_continuingString;
@@ -711,7 +711,7 @@ private:
     bool readInt( int& aDest );
     bool readDouble( double& aDest );
     bool readWord( std::string& aDest );
-    bool readDvdt( std::string, dvdt& aDest );
+    bool readDvdt( std::string& aString, dvdt& aDest );
     bool readMatrix( IBIS_MATRIX* aDest );
     bool readMatrixBanded( std::string, IBIS_MATRIX_BANDED& aDest );
     bool readMatrixFull( std::string, IBIS_MATRIX_FULL& aDest );
@@ -740,7 +740,7 @@ private:
 
     /** @brief Ibis can change the character used for comments */
     bool ChangeCommentChar();
-    bool changeContext( std::string aKeyword );
+    bool changeContext( std::string& aKeyword );
 
     IBIS_PARSER_CONTINUE m_continue = IBIS_PARSER_CONTINUE::NONE;
     IBIS_PARSER_CONTEXT  m_context = IBIS_PARSER_CONTEXT::HEADER;
@@ -752,7 +752,7 @@ private:
      * @param aDest destination
      * @return True in case of success
      */
-    bool ibisToDouble( std::string aString, double& aDest );
+    bool ibisToDouble( std::string& aString, double& aDest );
 };
 
 #endif
