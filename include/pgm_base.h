@@ -288,6 +288,7 @@ public:
 #ifdef KICAD_USE_SENTRY
     bool IsSentryOptedIn();
     void SetSentryOptIn( bool aOptIn );
+    void ResetSentryId();
 #endif
 
     /**
@@ -316,6 +317,7 @@ protected:
 #ifdef KICAD_USE_SENTRY
     void sentryInit();
     void sentryPrompt();
+    wxString sentryCreateUid();
 #endif
 
 protected:
@@ -335,7 +337,8 @@ protected:
     wxString        m_text_editor;
 
 #ifdef KICAD_USE_SENTRY
-    wxFileName      m_sentry_init_fn;
+    wxFileName      m_sentry_optin_fn;
+    wxFileName      m_sentry_uid_fn;
 #endif
 };
 

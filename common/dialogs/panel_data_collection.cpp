@@ -70,10 +70,5 @@ void PANEL_DATA_COLLECTION::applySettingsToPanel()
 
 void PANEL_DATA_COLLECTION::OnResetIdClick( wxCommandEvent& aEvent )
 {
-    // this recreates the opt in which contains the id
-    if( Pgm().IsSentryOptedIn() )
-    {
-        Pgm().SetSentryOptIn( false );
-        Pgm().SetSentryOptIn( true );
-    }
+    Pgm().ResetSentryId();
 }

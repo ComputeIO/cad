@@ -218,7 +218,7 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 #ifdef KICAD_USE_SENTRY
 bool PGM_BASE::IsSentryOptedIn()
 {
-    return m_sentry_init_fn.Exists();
+    return m_sentry_optin_fn.Exists();
 }
 
 
@@ -226,43 +226,64 @@ void PGM_BASE::SetSentryOptIn( bool aOptIn )
 {
     if( aOptIn )
     {
-        if( !IsSentryOptedIn() )
+        if( !m_sentry_uid_fn.Exists() )
         {
-            boost::uuids::uuid uuid = boost::uuids::random_generator()();
-            wxString userGuid = boost::uuids::to_string( uuid );
+            sentryCreateUid();
+        }
 
-            wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath(), "w" );
-            sentryInitFile.Write( userGuid );
+        if( !m_sentry_optin_fn.Exists() )
+        {
+            wxFFile sentryInitFile( m_sentry_optin_fn.GetFullPath(), "w" );
+            sentryInitFile.Write( "" );
             sentryInitFile.Close();
         }
     }
     else
     {
-        wxRemoveFile( m_sentry_init_fn.GetFullPath() );
+        if( m_sentry_optin_fn.Exists() )
+        {
+            wxRemoveFile( m_sentry_optin_fn.GetFullPath() );
+            sentry_close();
+        }
     }
+}
+
+
+wxString PGM_BASE::sentryCreateUid()
+{
+    boost::uuids::uuid uuid = boost::uuids::random_generator()();
+    wxString userGuid = boost::uuids::to_string( uuid );
+
+    wxFFile sentryInitFile( m_sentry_uid_fn.GetFullPath(), "w" );
+    sentryInitFile.Write( userGuid );
+    sentryInitFile.Close();
+
+    return userGuid;
+}
+
+
+void PGM_BASE::ResetSentryId()
+{
+    sentryCreateUid();
 }
 
 
 void PGM_BASE::sentryInit()
 {
-    m_sentry_init_fn = wxFileName( SETTINGS_MANAGER::GetUserSettingsPath(), "sentry-opt-in" );
+    m_sentry_optin_fn = wxFileName( PATHS::GetUserCachePath(), "sentry-opt-in" );
+    m_sentry_uid_fn = wxFileName( PATHS::GetUserCachePath(), "sentry-uid" );
 
-    if( m_sentry_init_fn.Exists() )
+    if( IsSentryOptedIn() )
     {
         wxString userGuid;
 
-        wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath() );
+        wxFFile sentryInitFile( m_sentry_uid_fn.GetFullPath() );
         sentryInitFile.ReadAll( &userGuid );
         sentryInitFile.Close();
 
         if( userGuid.IsEmpty() || userGuid.length() != 36 )
         {
-            boost::uuids::uuid uuid = boost::uuids::random_generator()();
-            userGuid = boost::uuids::to_string( uuid );
-
-            wxFFile sentryInitFile( m_sentry_init_fn.GetFullPath(), "w" );
-            sentryInitFile.Write( userGuid );
-            sentryInitFile.Close();
+            userGuid = sentryCreateUid();
         }
 
         sentry_options_t* options = sentry_options_new();
@@ -280,6 +301,8 @@ void PGM_BASE::sentryInit()
 
         #if !KICAD_IS_NIGHTLY
         sentry_options_set_release( options, KICAD_SEMANTIC_VERSION );
+        #else
+        sentry_options_set_release( options, KICAD_MAJOR_MINOR_VERSION );
         #endif
 
         sentry_init( options );
@@ -312,7 +335,12 @@ void PGM_BASE::sentryPrompt()
 
         if( result == wxID_YES )
         {
+            SetSentryOptIn( true );
             sentryInit();
+        }
+        else
+        {
+            SetSentryOptIn( false );
         }
 
         m_settings_manager->GetCommonSettings()->m_DoNotShowAgain.data_collection_prompt = true;
