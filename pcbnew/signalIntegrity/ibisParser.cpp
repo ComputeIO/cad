@@ -1205,20 +1205,20 @@ bool IbisParser::ChangeCommentChar()
     return true;
 }
 
-std::string* IbisParser::getKeyword()
+std::string IbisParser::getKeyword()
 {
+    std::string keyword = "";
     //"Keywords must be enclosed in square brackets, “[]”, and must start in column 1 of the line."
     //"No space or tab is allowed immediately after the opening bracket “[” or immediately"
     // "before the closing bracket “]"
 
     if( m_line[m_lineIndex] != '[' )
     {
-        return nullptr;
+        // We return an empty keyword, this should stop the parser.
+        return "";
     }
 
     m_lineIndex++;
-
-    std::string* keyword = new std::string( "" );
 
     char c;
     c = m_line[m_lineIndex++];
@@ -1232,7 +1232,7 @@ std::string* IbisParser::getKeyword()
         {
             c = '_';
         }
-        *keyword += c;
+        keyword += c;
         c = m_line[m_lineIndex++];
     }
 
@@ -2586,12 +2586,10 @@ bool IbisParser::onNewLine()
 {
     bool      status = true;
     char      c;
-    std::string* pKeyword = getKeyword();
-    // New line
+    std::string keyword = getKeyword();
 
-    if( pKeyword ) // New keyword
+    if( keyword.size() > 0 ) // New keyword
     {
-        std::string keyword = *pKeyword;
 
         if( m_continue != IBIS_PARSER_CONTINUE::NONE )
         {
