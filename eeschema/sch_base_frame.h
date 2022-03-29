@@ -57,7 +57,10 @@ class LIB_ID;
 class SYMBOL_LIB_TABLE;
 class EESCHEMA_SETTINGS;
 class SYMBOL_EDITOR_SETTINGS;
+
+#if defined( KICAD_USE_3DCONNEXION )
 class NL_SCHEMATIC_PLUGIN;
+#endif
 
 /**
  * Load symbol from symbol library table.
@@ -261,7 +264,9 @@ protected:
     SCHEMATIC_SETTINGS  m_base_frame_defaults;
 
 private:
+#if defined( KICAD_USE_3DCONNEXION )
     std::unique_ptr<NL_SCHEMATIC_PLUGIN> m_spaceMouse;
+#endif
 };
 
 #endif // SCH_BASE_FRAME_H_
