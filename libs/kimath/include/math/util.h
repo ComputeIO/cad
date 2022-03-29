@@ -113,4 +113,37 @@ int rescale( int aNumerator, int aValue, int aDenominator );
 template <>
 int64_t rescale( int64_t aNumerator, int64_t aValue, int64_t aDenominator );
 
+
+/**
+ * Template to compare two floating point values for equality within a required epsilon.
+ *
+ * @param aFirst value to compare.
+ * @param aSecond value to compare.
+ * @param aEpsilon allowed error.
+ * @return true if the values considered equal within the specified epsilon, otherwise false.
+ */
+template <class T>
+typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type
+equals( T aFirst, T aSecond, T aEpsilon = std::numeric_limits<T>::epsilon() )
+{
+    T diff = fabs( aFirst - aSecond );
+
+    if( diff < aEpsilon )
+    {
+        return true;
+    }
+
+    aFirst = fabs( aFirst );
+    aSecond = fabs( aSecond );
+    T largest = aFirst > aSecond ? aFirst : aSecond;
+
+    if( diff <= largest * aEpsilon )
+    {
+        return true;
+    }
+
+    return false;
+}
+
+
 #endif // UTIL_H

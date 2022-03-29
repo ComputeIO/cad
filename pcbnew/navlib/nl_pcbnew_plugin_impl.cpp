@@ -42,55 +42,6 @@
 #include <wx/log.h>
 #include <wx/mstream.h>
 
-/**
- * Template to compare two floating point values for equality within a required epsilon.
- *
- * @param aFirst value to compare.
- * @param aSecond value to compare.
- * @param aEpsilon allowed error.
- * @return true if the values considered equal within the specified epsilon, otherwise false.
- */
-template <class T>
-bool equals( T aFirst, T aSecond, T aEpsilon = static_cast<T>( FLT_EPSILON ) )
-{
-    T diff = fabs( aFirst - aSecond );
-
-    if( diff < aEpsilon )
-    {
-        return true;
-    }
-
-    aFirst = fabs( aFirst );
-    aSecond = fabs( aSecond );
-    T largest = aFirst > aSecond ? aFirst : aSecond;
-
-    if( diff <= largest * aEpsilon )
-    {
-        return true;
-    }
-
-    return false;
-}
-
-/**
- * Template to compare two VECTOR2<T> values for equality within a required epsilon.
- *
- * @param aFirst value to compare.
- * @param aSecond value to compare.
- * @param aEpsilon allowed error.
- * @return true if the values considered equal within the specified epsilon, otherwise false.
- */
-template <class T>
-bool equals( VECTOR2<T> const& aFirst, VECTOR2<T> const& aSecond,
-             T aEpsilon = static_cast<T>( FLT_EPSILON ) )
-{
-    if( !equals( aFirst.x, aSecond.x, aEpsilon ) )
-    {
-        return false;
-    }
-
-    return equals( aFirst.y, aSecond.y, aEpsilon );
-}
 
 /**
  * Flag to enable the NL_PCBNEW_PLUGIN debug tracing.
@@ -349,7 +300,8 @@ long NL_PCBNEW_PLUGIN_IMPL::SetCameraMatrix( const navlib::matrix_t& matrix )
     long     result = 0;
     VECTOR2D viewPos( matrix.m4x4[3][0], matrix.m4x4[3][1] );
 
-    if( !equals( m_view->GetCenter(), m_viewPosition ) )
+    if( !equals( m_view->GetCenter(), m_viewPosition,
+                 static_cast<VECTOR2D::coord_type>( FLT_EPSILON ) ) )
     {
         m_view->SetCenter( viewPos + m_view->GetCenter() - m_viewPosition );
         result = navlib::make_result_code( navlib::navlib_errc::error );
@@ -385,7 +337,7 @@ long NL_PCBNEW_PLUGIN_IMPL::SetViewExtents( const navlib::box_t& extents )
     double scale = width / m_viewportWidth * m_view->GetScale();
     m_view->SetScale( scale, m_view->GetCenter() );
 
-    if( !equals( m_view->GetScale(), scale ) )
+    if( !equals( m_view->GetScale(), scale, static_cast<double>( FLT_EPSILON ) ) )
     {
         result = navlib::make_result_code( navlib::navlib_errc::error );
     }

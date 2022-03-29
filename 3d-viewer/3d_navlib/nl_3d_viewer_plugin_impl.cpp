@@ -44,35 +44,6 @@
  */
 const wxChar* NL_3D_VIEWER_PLUGIN_IMPL::m_logTrace = wxT( "KI_TRACE_NL_3D_VIEWER_PLUGIN" );
 
-/**
- * Template to compare two floating point values for equality within a required epsilon.
- *
- * @param aFirst value to compare.
- * @param aSecond value to compare.
- * @param aEpsilon allowed error.
- * @return true if the values considered equal within the specified epsilon, otherwise false.
- */
-template <class T>
-bool equals( T aFirst, T aSecond, T aEpsilon = static_cast<T>( FLT_EPSILON ) )
-{
-    T diff = fabs( aFirst - aSecond );
-
-    if( diff < aEpsilon )
-    {
-        return true;
-    }
-
-    aFirst = fabs( aFirst );
-    aSecond = fabs( aSecond );
-    T largest = aFirst > aSecond ? aFirst : aSecond;
-
-    if( diff <= largest * aEpsilon )
-    {
-        return true;
-    }
-
-    return false;
-}
 
 /**
  * Template to compare two glm::mat<T> values for equality within a required epsilon.
