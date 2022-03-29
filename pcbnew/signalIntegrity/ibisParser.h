@@ -122,8 +122,7 @@ public:
     IBIS_MATRIX( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ){};
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::UNDEFINED;
     int              m_dim = -5;
-    double*          m_data;
-
+    std::vector<double> m_data;
 };
 
 class IBIS_MATRIX_BANDED : public IBIS_MATRIX
@@ -133,7 +132,7 @@ public:
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
     int              m_dim = -2;
     int              m_bandwidth = 0;
-    double*          m_data;
+    std::vector<double> m_data;
 
     bool Check() override;
 };
@@ -144,7 +143,7 @@ public:
     IBIS_MATRIX_SPARSE( IBIS_REPORTER* aReporter ) : IBIS_MATRIX( aReporter ){};
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
     int              m_dim = -3;
-    double*          m_data;
+    std::vector<double> m_data;
 
     bool Check() override;
 };
@@ -156,7 +155,7 @@ public:
     IBIS_MATRIX_FULL( IBIS_REPORTER* aReporter ) : IBIS_MATRIX( aReporter ){};
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::FULL;
     int              m_dim = -4;
-    double*          m_data;
+    std::vector<double> m_data;
 
     bool Check() override;
 };

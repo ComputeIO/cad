@@ -65,20 +65,12 @@ bool IBIS_MATRIX_BANDED::Check()
         status = false;
     }
 
-    if( m_data == nullptr )
+    for( int i = 0; i < m_bandwidth * m_dim; i++ )
     {
-        Report( _( "Matrix Banded: data array is uninitizalized " ), RPT_SEVERITY_ERROR );
-        status = false;
-    }
-    else
-    {
-        for( int i = 0; i < m_bandwidth * m_dim; i++ )
+        if( std::isnan( m_data[i] ) )
         {
-            if( std::isnan( m_data[i] ) )
-            {
-                Report( _( "Matrix Banded: an element is NaN " ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
+            Report( _( "Matrix Banded: an element is NaN " ), RPT_SEVERITY_ERROR );
+            status = false;
         }
     }
 
@@ -96,20 +88,12 @@ bool IBIS_MATRIX_FULL::Check()
         status = false;
     }
 
-    if( m_data == nullptr )
+    for( int i = 0; i < m_dim * m_dim; i++ )
     {
-        Report( _( "Matrix Full: data array is uninitizalized " ), RPT_SEVERITY_ERROR );
-        status = false;
-    }
-    else
-    {
-        for( int i = 0; i < m_dim * m_dim; i++ )
+        if( std::isnan( m_data[i] ) )
         {
-            if( std::isnan( m_data[i] ) )
-            {
-                Report( _( "Matrix Full: an element is NaN " ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
+            Report( _( "Matrix Full: an element is NaN " ), RPT_SEVERITY_ERROR );
+            status = false;
         }
     }
 
@@ -127,20 +111,12 @@ bool IBIS_MATRIX_SPARSE::Check()
         status = false;
     }
 
-    if( m_data == nullptr )
+    for( int i = 0; i < m_dim * m_dim; i++ )
     {
-        Report( _( "Matrix Sparse: data array is uninitizalized " ), RPT_SEVERITY_ERROR );
-        status = false;
-    }
-    else
-    {
-        for( int i = 0; i < m_dim * m_dim; i++ )
+        if( std::isnan( m_data[i] ) )
         {
-            if( std::isnan( m_data[i] ) )
-            {
-                Report( _( "Matrix Sparse: an element is NaN " ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
+            Report( _( "Matrix Sparse: an element is NaN " ), RPT_SEVERITY_ERROR );
+            status = false;
         }
     }
 
@@ -1502,18 +1478,7 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED& aDe
             status &= readInt( aDest.m_bandwidth );
             if( status )
             {
-                if( aDest.m_data != nullptr )
-                {
-                    free( aDest.m_data );
-                }
-                aDest.m_data = static_cast<double*>(
-                        malloc( ( aDest.m_bandwidth * aDest.m_dim ) * sizeof( double ) ) );
-
-                if( !aDest.m_data )
-                {
-                    Report( _( "Banded matrix: malloc error." ), RPT_SEVERITY_ERROR );
-                    status = false;
-                }
+                aDest.m_data.resize( aDest.m_bandwidth * aDest.m_dim );
             }
         }
         else
@@ -1581,7 +1546,7 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL& aDest )
                         RPT_SEVERITY_ERROR );
                 break;
             }
-            if( !parseDouble( *( aDest.m_data + index ), values.at( i ), true ) )
+            if( !parseDouble( aDest.m_data[index], values.at( i ), true ) )
             {
                 Report( _( "Banded matrix: can't read row." ), RPT_SEVERITY_ERROR );
                 status = false;
@@ -1672,8 +1637,7 @@ bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
                     m_currentMatrix->m_dim = m_currentPackageModel->m_numberOfPins;
 
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
-                    matrix->m_data = static_cast<double*>(
-                            malloc( ( matrix->m_dim * matrix->m_dim ) * sizeof( double ) ) );
+                    m_currentMatrix->m_data.resize( matrix->m_dim * matrix->m_dim );
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::FULL;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
@@ -1683,8 +1647,7 @@ bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
                     aSource = static_cast<IBIS_MATRIX*>( matrix );
                     m_currentMatrix = aSource;
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
-                    matrix->m_data = static_cast<double*>(
-                            malloc( ( matrix->m_dim * matrix->m_dim ) * sizeof( double ) ) );
+                    m_currentMatrix->m_data.resize( matrix->m_dim * matrix->m_dim );
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::SPARSE;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
