@@ -32,6 +32,7 @@
 #include <cstdint>
 #include <limits>
 #include <typeinfo>
+#include <type_traits>
 
 /**
  * Helper to avoid directly including wx/log.h for the templated functions in kimath
