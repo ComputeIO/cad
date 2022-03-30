@@ -49,8 +49,11 @@
 
 
 SETTINGS_MANAGER::SETTINGS_MANAGER( bool aHeadless ) :
-        m_headless( aHeadless ), m_kiway( nullptr ), m_common_settings( nullptr ),
-        m_migration_source(), m_migrateLibraryTables( true )
+        m_headless( aHeadless ),
+        m_kiway( nullptr ),
+        m_common_settings( nullptr ),
+        m_migration_source(),
+        m_migrateLibraryTables( true )
 {
     PATHS::EnsureUserPathsExist();
 
