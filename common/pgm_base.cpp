@@ -298,6 +298,7 @@ void PGM_BASE::sentryInit()
 
         sentry_options_set_database_pathw( options, tmp.GetPathWithSep().wc_str() );
         sentry_options_set_symbolize_stacktraces( options, true );
+        sentry_options_set_auto_session_tracking( options, false );
 
         #if !KICAD_IS_NIGHTLY
         sentry_options_set_release( options, KICAD_SEMANTIC_VERSION );
