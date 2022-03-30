@@ -48,8 +48,8 @@ set( QA_EESCHEMA_SRCS
     test_sch_biu.cpp
 
     # Shared between programs, but dependent on the BIU
-    ${CMAKE_SOURCE_DIR}/qa/common/test_format_units.cpp
-    ${CMAKE_SOURCE_DIR}/qa/common/test_array_options.cpp
+    ${CMAKE_SOURCE_DIR}/qa/unittests/common/test_format_units.cpp
+    ${CMAKE_SOURCE_DIR}/qa/unittests/common/test_array_options.cpp
 
     sch_plugins/altium/test_altium_parser_sch.cpp
 
@@ -98,7 +98,7 @@ target_compile_definitions( qa_eeschema
 
 # Pass in the default data location
 set_source_files_properties( eeschema_test_utils.cpp PROPERTIES
-    COMPILE_DEFINITIONS "QA_EESCHEMA_DATA_LOCATION=(\"${CMAKE_CURRENT_SOURCE_DIR}/data\")"
+    COMPILE_DEFINITIONS "QA_EESCHEMA_DATA_LOCATION=(\"${CMAKE_SOURCE_DIR}/qa/data/eeschema\")"
 )
 
 kicad_add_boost_test( qa_eeschema qa_eeschema )
