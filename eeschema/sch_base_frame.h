@@ -250,6 +250,8 @@ public:
 protected:
     void handleActivateEvent( wxActivateEvent& aEvent ) override;
 
+    void handleIconizeEvent( wxIconizeEvent& aEvent ) override;
+
     /**
      * Save Symbol Library Tables to disk.
      *

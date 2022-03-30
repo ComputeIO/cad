@@ -509,3 +509,16 @@ void SCH_BASE_FRAME::handleActivateEvent( wxActivateEvent& aEvent )
     }
 #endif
 }
+
+
+void SCH_BASE_FRAME::handleIconizeEvent( wxIconizeEvent& aEvent )
+{
+    EDA_DRAW_FRAME::handleIconizeEvent( aEvent );
+
+#if defined( KICAD_USE_3DCONNEXION )
+    if( m_spaceMouse && aEvent.IsIconized() )
+    {
+        m_spaceMouse->SetFocus( false );
+    }
+#endif
+}
