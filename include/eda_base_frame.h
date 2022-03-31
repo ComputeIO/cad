@@ -612,7 +612,7 @@ protected:
      * 
      * @param aEvent is the data for the event.
      */
-    virtual void handleIconizeEvent( wxIconizeEvent& aEvent );
+    virtual void handleIconizeEvent( wxIconizeEvent& aEvent ) {}
     void         onIconize( wxIconizeEvent& aEvent );
 
     /**

@@ -1325,9 +1325,6 @@ void EDA_BASE_FRAME::onSystemColorChange( wxSysColourChangedEvent& aEvent )
     aEvent.Skip();
 }
 
-void EDA_BASE_FRAME::handleIconizeEvent( wxIconizeEvent& aEvent )
-{
-}
 
 void EDA_BASE_FRAME::onIconize( wxIconizeEvent& aEvent )
 {
@@ -1337,6 +1334,7 @@ void EDA_BASE_FRAME::onIconize( wxIconizeEvent& aEvent )
     // Skip the event.
     aEvent.Skip();
 }
+
 
 #ifdef _WIN32
 WXLRESULT EDA_BASE_FRAME::MSWWindowProc( WXUINT message, WXWPARAM wParam, WXLPARAM lParam )
