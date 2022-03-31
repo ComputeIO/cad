@@ -7,6 +7,11 @@
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
+ * The equals() method to compare two floating point values adapted from
+ * AlmostEqualRelativeAndAbs() on 
+ * https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
+ * (C) Bruce Dawson subject to the Apache 2.0 license.
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
