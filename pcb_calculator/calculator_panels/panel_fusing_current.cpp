@@ -124,7 +124,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
         }
         else
         {
-            m_widthValue->SetValue( "Error" );
+            m_widthValue->SetValue( _( "Error" ) );
         }
     }
     else if( m_thicknessRadio->GetValue() )
@@ -149,7 +149,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
         }
         else
         {
-            m_currentValue->SetValue( "Error" );
+            m_currentValue->SetValue( _( "Error" ) );
         }
     }
     else if( m_timeRadio->GetValue() )
@@ -161,7 +161,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
         }
         else
         {
-            m_timeValue->SetValue( "Error" );
+            m_timeValue->SetValue( _( "Error" ) );
         }
     }
     else
@@ -191,7 +191,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     }
     else
     {
-        m_comment->SetLabel( "Time is high compared to geometry: results might not be accurate. "
-                             "The track could handle much more current" );
+        m_comment->SetLabel( _( "Time is high compared to geometry: results might not be accurate."
+                                "The track could handle much more current" ) );
     }
 }
