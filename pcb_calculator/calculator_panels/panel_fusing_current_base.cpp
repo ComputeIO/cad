@@ -35,10 +35,10 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_ambientText->Wrap( -1 );
 	fgSizer11->Add( m_ambientText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_ambientValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("25"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ambientValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_ambientValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_ambientUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("°C"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ambientUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("deg C"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_ambientUnit->Wrap( -1 );
 	fgSizer11->Add( m_ambientUnit, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
@@ -50,7 +50,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_meltingText->Wrap( -1 );
 	fgSizer11->Add( m_meltingText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_meltingValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("1084"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_meltingValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_meltingValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	m_meltingUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("°C"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -64,7 +64,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_widthText->Wrap( -1 );
 	fgSizer11->Add( m_widthText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_widthValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_widthValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_widthValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	wxArrayString m_widthUnitChoices;
@@ -79,7 +79,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_thicknessText->Wrap( -1 );
 	fgSizer11->Add( m_thicknessText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_thicknessValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_thicknessValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_thicknessValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	wxArrayString m_thicknessUnitChoices;
@@ -94,7 +94,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_currentText->Wrap( -1 );
 	fgSizer11->Add( m_currentText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_currentValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_currentValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_currentValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	m_currentUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("A"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -108,7 +108,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_timeText->Wrap( -1 );
 	fgSizer11->Add( m_timeText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_timeValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, _("1"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_timeValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_timeValue, 0, wxALL, 5 );
 
 	m_timeUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("s"), wxDefaultPosition, wxDefaultSize, 0 );

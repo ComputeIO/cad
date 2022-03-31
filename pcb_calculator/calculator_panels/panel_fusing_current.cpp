@@ -40,6 +40,15 @@ PANEL_FUSING_CURRENT::PANEL_FUSING_CURRENT( wxWindow * parent, wxWindowID id,
                                             long style, const wxString& name ) :
 PANEL_FUSING_CURRENT_BASE( parent, id, pos, size, style, name )
 {
+    // Set some defaults
+    wxString wxs( "" );
+    m_ambientValue->SetValue( wxString::Format( wxT( "%i" ), 25 ) );
+    m_meltingValue->SetValue( wxString::Format( wxT( "%i" ), 1084 ) ); // Value for copper
+    m_widthValue->SetValue( wxString::Format( wxT( "%f" ), 0.1 ) );
+    m_thicknessValue->SetValue( wxString::Format( wxT( "%f" ), 0.035 ) );
+    m_currentValue->SetValue( wxString::Format( wxT( "%f" ), 10.0 ) );
+    m_timeValue->SetValue( wxString::Format( wxT( "%f" ), 0.01 ) );
+
     // show markdown formula explanation in lower help panel
     wxString msg;
     ConvertMarkdown2Html( fusing_current_help, msg );
