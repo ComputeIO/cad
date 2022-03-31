@@ -11,6 +11,7 @@
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
 class UNIT_SELECTOR_LEN;
+class UNIT_SELECTOR_THICKNESS;
 
 #include "html_window.h"
 #include "calculator_panels/calculator_panel.h"
@@ -58,7 +59,7 @@ class PANEL_FUSING_CURRENT_BASE : public CALCULATOR_PANEL
 		wxRadioButton* m_thicknessRadio;
 		wxStaticText* m_thicknessText;
 		wxTextCtrl* m_thicknessValue;
-		UNIT_SELECTOR_LEN* m_thicknessUnit;
+		UNIT_SELECTOR_THICKNESS* m_thicknessUnit;
 		wxRadioButton* m_currentRadio;
 		wxStaticText* m_currentText;
 		wxTextCtrl* m_currentValue;

@@ -83,7 +83,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	fgSizer11->Add( m_thicknessValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	wxArrayString m_thicknessUnitChoices;
-	m_thicknessUnit = new UNIT_SELECTOR_LEN( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_thicknessUnitChoices, 0 );
+	m_thicknessUnit = new UNIT_SELECTOR_THICKNESS( m_parametersSizer->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_thicknessUnitChoices, 0 );
 	m_thicknessUnit->SetSelection( 0 );
 	fgSizer11->Add( m_thicknessUnit, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
