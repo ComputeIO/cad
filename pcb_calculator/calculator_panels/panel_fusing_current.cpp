@@ -80,6 +80,7 @@ void PANEL_FUSING_CURRENT::LoadSettings( PCB_CALCULATOR_SETTINGS* aCfg )
 {
 }
 
+
 void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
 {
     double Tm, Ta, I, W, T, time;
@@ -108,8 +109,8 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
 
     if( valid_Tm && valid_Ta )
     {
-        valid_Tm &= Tm > Ta;
-        valid_Ta &= Tm > Ta;
+        valid_Tm &= ( Tm > Ta );
+        valid_Ta &= ( Tm > Ta ) && ( Ta > -234 );
     }
 
     valid_I    &= ( I > 0 );
@@ -120,12 +121,14 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     double A     = W * T;
     double ftemp = 1; // Temperature function
 
-    if( valid_Ta && valid_Tm ) // Avoid division by 0 and log of negative
-        ftemp = log10( ( Tm - Ta ) / ( 233 + Ta ) + 1 );
+    if( valid_Ta ) // Avoid division by 0 and log of negative
+        ftemp = log10( ( Tm - Ta ) / ( 234 + Ta ) + 1 );
+
+    bool valid = valid_I && valid_W && valid_Ta && valid_Tm && valid_time;
 
     if( m_widthRadio->GetValue() )
     {
-        if( valid_I && valid_T && valid_Ta && valid_Tm && valid_Tm && valid_time )
+        if( valid )
         {
             A = I / sqrt( ftemp / time / ONDERDONK_COEFF );
             W = A / T;
@@ -138,7 +141,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     }
     else if( m_thicknessRadio->GetValue() )
     {
-        if( valid_I && valid_W && valid_Ta && valid_Tm && valid_Tm && valid_time )
+        if( valid )
         {
             A = I / sqrt( ftemp / time / ONDERDONK_COEFF );
             T = A / W;
@@ -151,7 +154,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     }
     else if( m_currentRadio->GetValue() )
     {
-        if( valid_W && valid_T && valid_Ta && valid_Tm && valid_Tm && valid_time )
+        if( valid )
         {
             I = A * sqrt( ftemp / time / ONDERDONK_COEFF );
             m_currentValue->SetValue( wxString::Format( wxT( "%f" ), I ) );
@@ -163,7 +166,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     }
     else if( m_timeRadio->GetValue() )
     {
-        if( valid_I && valid_W && valid_T && valid_Ta && valid_Tm && valid_Tm )
+        if( valid )
         {
             time = ftemp / I / I * A * A / ONDERDONK_COEFF;
             m_timeValue->SetValue( wxString::Format( wxT( "%f" ), time ) );
