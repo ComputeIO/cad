@@ -268,23 +268,22 @@ class IbisDiffPin : IBIS_INPUT
 {
 public:
     IbisDiffPin( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ){};
-    std::vector<IbisDiffPinEntry*> m_entries;
+    std::vector<IbisDiffPinEntry> m_entries;
 };
 
 class IbisComponent : public IBIS_INPUT
 {
 public:
-    IbisComponent( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter )
+    IbisComponent( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ), m_package( aReporter )
     {
-        m_package = new IbisComponentPackage( m_reporter );
         m_diffPin = new IbisDiffPin( m_reporter );
     };
 
     std::string                             m_name = "";
     std::string                             m_manufacturer = "";
-    IbisComponentPackage*                   m_package;
-    std::vector<IbisComponentPin*>          m_pins;
-    std::vector<IbisComponentPinMapping*>   m_pinMappings;
+    IbisComponentPackage                    m_package;
+    std::vector<IbisComponentPin>           m_pins;
+    std::vector<IbisComponentPinMapping>    m_pinMappings;
     std::string                             m_packageModel;
     std::string                             m_busLabel;
     std::string                             m_dieSupplyPads;
@@ -329,7 +328,7 @@ class IVtable : public IBIS_INPUT
 {
 public:
     IVtable( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ){};
-    std::vector<IVtableEntry*> m_entries;
+    std::vector<IVtableEntry> m_entries;
 
     bool Check() override;
 
@@ -376,7 +375,7 @@ class VTtable : public IBIS_INPUT
 {
 public:
     VTtable( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ){};
-    std::vector<VTtableEntry*> m_entries;
+    std::vector<VTtableEntry> m_entries;
 };
 
 /*
@@ -569,10 +568,10 @@ public:
     };
 
     IbisHeader*                     m_header;
-    std::vector<IbisComponent*>     m_components;
-    std::vector<IbisModelSelector*> m_modelSelectors;
-    std::vector<IbisModel*>         m_models;
-    std::vector<IbisPackageModel*>  m_packageModels;
+    std::vector<IbisComponent>      m_components;
+    std::vector<IbisModelSelector>  m_modelSelectors;
+    std::vector<IbisModel>          m_models;
+    std::vector<IbisPackageModel>   m_packageModels;
 };
 
 

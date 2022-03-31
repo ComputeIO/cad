@@ -126,7 +126,7 @@ public:
 class KIBIS_FILE : KIBIS_ANY
 {
 public:
-    KIBIS_FILE( KIBIS* aTopLevel, IbisParser* aParser );
+    KIBIS_FILE( KIBIS* aTopLevel, IbisParser& aParser );
 
     std::string m_fileName;
     double   m_fileRev;
@@ -142,7 +142,7 @@ public:
 class KIBIS_MODEL : public KIBIS_ANY
 {
 public:
-    KIBIS_MODEL( KIBIS* aTopLevel, IbisModel* aSource, IbisParser* aParser );
+    KIBIS_MODEL( KIBIS* aTopLevel, IbisModel& aSource, IbisParser& aParser );
 
     std::string        m_name;
     std::string        m_description;
@@ -230,14 +230,14 @@ public:
      * @param aIn Input waveform
      * @return Output waveform
      */
-    IbisWaveform* TrimWaveform( IbisWaveform* aIn );
+    IbisWaveform TrimWaveform( IbisWaveform& aIn );
 };
 
 class KIBIS_PIN : public KIBIS_ANY
 {
 public:
-    KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin* aPin, IbisComponentPackage* aPackage,
-               IbisParser* aParser, std::vector<KIBIS_MODEL*> aModels );
+    KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin& aPin, IbisComponentPackage& aPackage,
+               IbisParser& aParser, std::vector<KIBIS_MODEL*> aModels );
     /** @brief Name of the pin
      *  Examples : "VCC", "GPIOA", "CLK", etc...
      */
@@ -338,7 +338,7 @@ public:
 class KIBIS_COMPONENT : public KIBIS_ANY
 {
 public:
-    KIBIS_COMPONENT( KIBIS* aToplevel, IbisComponent* aSource, IbisParser* aParser );
+    KIBIS_COMPONENT( KIBIS* aToplevel, IbisComponent& aSource, IbisParser& aParser );
     /** @brief Name of the component */
     std::string m_name;
     /** @brief Name of the manufacturer */
