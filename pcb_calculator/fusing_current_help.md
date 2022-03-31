@@ -1,4 +1,4 @@
-You can use the Onderkonk equation to check if a small track can handle huge current for a small amount of time.
+You can use the Onderdonk equation to check if a small track can handle huge current for a small amount of time.
 You may use it to help you design a track fuse, but results are not accurate and require further validation.
 
 <center>__8.9 * 10 <sup>-6</sup> * t * ( I / A ) <sup>2</sup>  = log<sub>10</sub> ( (T<sub>m</sub> - T<sub>a</sub> ) / ( 233 + T<sub>a</sub>  ) +1 )__</center>

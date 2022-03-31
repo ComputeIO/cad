@@ -20,9 +20,9 @@
 // See equation 9b in this paper:
 // https://adam-research.de/pdfs/TRM_WhitePaper10_AdiabaticWire.pdf
 
-// Onderkonk equation uses circular mils, but this constant uses mm^2
+// The Onderdonk equation uses circular mils, but this constant uses mm^2
 // 33 * 0.0005067075 ^2
-#define ONDERKONK_COEFF 8.472e-6
+#define ONDERDONK_COEFF 8.472e-6
 
 #include <calculator_panels/panel_fusing_current.h>
 #include <pcb_calculator_settings.h>
@@ -118,7 +118,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         if( valid_I && valid_T && valid_Ta && valid_Tm && valid_Tm && valid_time )
         {
-            A = I / sqrt( ftemp / time / ONDERKONK_COEFF );
+            A = I / sqrt( ftemp / time / ONDERDONK_COEFF );
             W = A / T;
             m_widthValue->SetValue( wxString::Format( wxT( "%f" ), W / scalingW ) );
         }
@@ -131,7 +131,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         if( valid_I && valid_W && valid_Ta && valid_Tm && valid_Tm && valid_time )
         {
-            A = I / sqrt( ftemp / time / ONDERKONK_COEFF );
+            A = I / sqrt( ftemp / time / ONDERDONK_COEFF );
             T = A / W;
             m_thicknessValue->SetValue( wxString::Format( wxT( "%f" ), T / scalingT ) );
         }
@@ -144,7 +144,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         if( valid_W && valid_T && valid_Ta && valid_Tm && valid_Tm && valid_time )
         {
-            I = A * sqrt( ftemp / time / ONDERKONK_COEFF );
+            I = A * sqrt( ftemp / time / ONDERDONK_COEFF );
             m_currentValue->SetValue( wxString::Format( wxT( "%f" ), I ) );
         }
         else
@@ -156,7 +156,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         if( valid_I && valid_W && valid_T && valid_Ta && valid_Tm && valid_Tm )
         {
-            time = ftemp / I / I * A * A / ONDERKONK_COEFF;
+            time = ftemp / I / I * A * A / ONDERDONK_COEFF;
             m_timeValue->SetValue( wxString::Format( wxT( "%f" ), time ) );
         }
         else
