@@ -71,16 +71,6 @@ void PANEL_FUSING_CURRENT::ThemeChanged()
 }
 
 
-void PANEL_FUSING_CURRENT::SaveSettings( PCB_CALCULATOR_SETTINGS* aCfg )
-{
-}
-
-
-void PANEL_FUSING_CURRENT::LoadSettings( PCB_CALCULATOR_SETTINGS* aCfg )
-{
-}
-
-
 void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
 {
     double Tm, Ta, I, W, T, time;
