@@ -44,7 +44,7 @@ DIALOG_SPICE_MODEL<T>::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbo
     : DIALOG_SPICE_MODEL_BASE( aParent ),
       m_symbol( aSymbol ),
       m_fields( aFields ),
-      m_library( std::make_unique<SIM_LIBRARY_SPICE>() ),
+      m_library( std::make_shared<SIM_LIBRARY_SPICE>() ),
       m_prevModel( nullptr ),
       m_firstCategory( nullptr )
 {
@@ -261,7 +261,7 @@ void DIALOG_SPICE_MODEL<T>::updateModelParamsTab()
     m_paramGrid->HideProperty( "Flags" );
 
     for( int i = 0; i < curModel().GetParamCount(); ++i )
-        addParamPropertyIfRelevant( curModel().GetParam( i ), curModel().ParamValue( i ) );
+        addParamPropertyIfRelevant( i );
 
     m_paramGrid->CollapseAll();
 }
@@ -396,61 +396,60 @@ void DIALOG_SPICE_MODEL<T>::loadLibrary( const wxString& aFilePath )
 
 
 template <typename T>
-void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const SIM_MODEL::PARAM& aParam,
-                                                        SIM_VALUE_BASE& aValue )
+void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( int aParamIndex )
 {
-    if( aParam.info.dir == SIM_MODEL::PARAM::DIR::OUT )
+    if( curModel().GetParam( aParamIndex ).info.dir == SIM_MODEL::PARAM::DIR::OUT )
         return;
 
-    switch( aParam.info.category )
+    switch( curModel().GetParam( aParamIndex ).info.category )
     {
     case CATEGORY::DC:
         m_paramGrid->HideProperty( "DC", false );
-        m_paramGrid->AppendIn( "DC", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "DC", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::CAPACITANCE:
         m_paramGrid->HideProperty( "Capacitance", false );
-        m_paramGrid->AppendIn( "Capacitance", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Capacitance", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::TEMPERATURE:
         m_paramGrid->HideProperty( "Temperature", false );
-        m_paramGrid->AppendIn( "Temperature", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Temperature", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::NOISE:
         m_paramGrid->HideProperty( "Noise", false );
-        m_paramGrid->AppendIn( "Noise", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Noise", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::DISTRIBUTED_QUANTITIES:
         m_paramGrid->HideProperty( "Distributed Quantities", false );
-        m_paramGrid->AppendIn( "Distributed Quantities", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Distributed Quantities", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::GEOMETRY:
         m_paramGrid->HideProperty( "Geometry", false );
-        m_paramGrid->AppendIn( "Geometry", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Geometry", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::LIMITING_VALUES:
         m_paramGrid->HideProperty( "Limiting Values", false );
-        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Limiting Values", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::ADVANCED:
         m_paramGrid->HideProperty( "Advanced", false );
-        m_paramGrid->AppendIn( "Advanced", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Advanced", newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::FLAGS:
         m_paramGrid->HideProperty( "Flags", false );
-        m_paramGrid->AppendIn( "Flags", newParamProperty( aParam, aValue ) );
+        m_paramGrid->AppendIn( "Flags", newParamProperty( aParamIndex ) );
         break;
 
     default:
-        m_paramGrid->Insert( m_firstCategory, newParamProperty( aParam, aValue ) );
+        m_paramGrid->Insert( m_firstCategory, newParamProperty( aParamIndex ) );
         break;
 
     case CATEGORY::INITIAL_CONDITIONS:
@@ -460,47 +459,47 @@ void DIALOG_SPICE_MODEL<T>::addParamPropertyIfRelevant( const SIM_MODEL::PARAM& 
 }
 
 template <typename T>
-wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& aParam,
-                                                       SIM_VALUE_BASE& aValue ) const
+wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( int aParamIndex ) const
 {
+    const SIM_MODEL::PARAM& param = curModel().GetParam( aParamIndex );
     wxString paramDescription = wxString::Format( "%s (%s)",
-                                                  aParam.info.description,
-                                                  aParam.info.name );
+                                                  param.info.description,
+                                                  param.info.name );
     wxPGProperty* prop = nullptr;
 
-    switch( aParam.info.type )
+    switch( param.info.type )
     {
     case TYPE::INT:
-        prop = new SIM_PROPERTY( paramDescription,aParam.info.name, aParam, aValue,
-                                 SIM_VALUE_BASE::TYPE::INT );
+        prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
+                                 aParamIndex, SIM_VALUE_BASE::TYPE::INT );
         break;
 
     case TYPE::FLOAT:
-        prop = new SIM_PROPERTY( paramDescription,aParam.info.name, aParam, aValue,
-                                 SIM_VALUE_BASE::TYPE::FLOAT );
+        prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
+                                 aParamIndex, SIM_VALUE_BASE::TYPE::FLOAT );
         break;
 
     case TYPE::BOOL:
-        prop = new wxBoolProperty( paramDescription, aParam.info.name );
+        prop = new wxBoolProperty( paramDescription, param.info.name );
         prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
         break;
 
     default:
-        prop = new wxStringProperty( paramDescription, aParam.info.name );
+        prop = new wxStringProperty( paramDescription, param.info.name );
         break;
     }
 
-    prop->SetAttribute( wxPG_ATTR_UNITS, aParam.info.unit );
+    prop->SetAttribute( wxPG_ATTR_UNITS, param.info.unit );
 
     // Legacy due to the way we extracted the parameters from Ngspice.
-    if( aParam.isOtherVariant )
-        prop->SetCell( 3, aParam.info.defaultValueOfOtherVariant );
+    if( param.isOtherVariant )
+        prop->SetCell( 3, param.info.defaultValueOfOtherVariant );
     else
-        prop->SetCell( 3, aParam.info.defaultValue );
+        prop->SetCell( 3, param.info.defaultValue );
 
     wxString typeStr;
 
-    switch( aParam.info.type )
+    switch( param.info.type )
     {
     case TYPE::BOOL:           typeStr = wxString( "Bool"           ); break;
     case TYPE::INT:            typeStr = wxString( "Int"            ); break;
@@ -517,7 +516,7 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
 
     if( m_useLibraryModelRadioButton->GetValue()
         && !m_overrideCheckbox->GetValue()
-        && aParam.info.category != SIM_MODEL::PARAM::CATEGORY::PRINCIPAL )
+        && param.info.category != SIM_MODEL::PARAM::CATEGORY::PRINCIPAL )
     {
         prop->Enable( false );
     }
@@ -529,13 +528,20 @@ wxPGProperty* DIALOG_SPICE_MODEL<T>::newParamProperty( const SIM_MODEL::PARAM& a
 template <typename T>
 SIM_MODEL& DIALOG_SPICE_MODEL<T>::curModel() const
 {
+    return *curModelSharedPtr();
+}
+
+
+template <typename T>
+std::shared_ptr<SIM_MODEL> DIALOG_SPICE_MODEL<T>::curModelSharedPtr() const
+{
     if( m_useLibraryModelRadioButton->GetValue()
         && m_modelNameCombobox->GetSelection() != wxNOT_FOUND )
     {
-        return *m_libraryModels.at( m_modelNameCombobox->GetSelection() );
+        return m_libraryModels.at( m_modelNameCombobox->GetSelection() );
     }
     else
-        return *m_models.at( static_cast<int>( m_curModelType ) );
+        return m_models.at( static_cast<int>( m_curModelType ) );
 }
 
 

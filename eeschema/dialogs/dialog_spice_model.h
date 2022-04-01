@@ -62,10 +62,12 @@ private:
 
     void loadLibrary( const wxString& aFilePath );
     
-    void addParamPropertyIfRelevant( const SIM_MODEL::PARAM& aParam, SIM_VALUE_BASE& aValue );
-    wxPGProperty* newParamProperty( const SIM_MODEL::PARAM& aParam, SIM_VALUE_BASE& aValue ) const;
+    void addParamPropertyIfRelevant( int aParamIndex );
+    wxPGProperty* newParamProperty( int aParamIndex ) const;
 
     SIM_MODEL& curModel() const;
+    std::shared_ptr<SIM_MODEL> curModelSharedPtr() const;
+
     wxString getSymbolPinString( int aSymbolPinNumber ) const;
     wxString getModelPinString( int aModelPinNumber ) const;
     int getModelPinNumber( const wxString& aModelPinString ) const;
@@ -93,12 +95,12 @@ private:
     SCH_SYMBOL& m_symbol;
     std::vector<T>& m_fields;
 
-    std::vector<std::unique_ptr<SIM_MODEL>> m_models;
+    std::vector<std::shared_ptr<SIM_MODEL>> m_models;
     std::map<SIM_MODEL::DEVICE_TYPE, SIM_MODEL::TYPE> m_curModelTypeOfDeviceType;
     SIM_MODEL::TYPE m_curModelType = SIM_MODEL::TYPE::NONE;
 
-    std::unique_ptr<SIM_LIBRARY> m_library;
-    std::vector<std::unique_ptr<SIM_MODEL>> m_libraryModels;
+    std::shared_ptr<SIM_LIBRARY> m_library;
+    std::vector<std::shared_ptr<SIM_MODEL>> m_libraryModels;
     const SIM_MODEL* m_prevModel;
 
     wxPGProperty* m_firstCategory; // Used to add principal parameters to root (any better ideas?)

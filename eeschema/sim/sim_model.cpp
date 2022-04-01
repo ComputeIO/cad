@@ -515,9 +515,6 @@ void SIM_MODEL::SetFieldValue( std::vector<T>& aFields, const wxString& aFieldNa
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
 
-    if( aValue.IsEmpty() )
-        return;
-
     auto fieldIt = std::find_if( aFields.begin(), aFields.end(),
                                  [&]( const T& f )
                                  {
@@ -526,10 +523,16 @@ void SIM_MODEL::SetFieldValue( std::vector<T>& aFields, const wxString& aFieldNa
 
     if( fieldIt != aFields.end() )
     {
-        fieldIt->SetText( aValue );
+        if( aValue.IsEmpty() )
+            aFields.erase( fieldIt );
+        else
+            fieldIt->SetText( aValue );
+
         return;
     }
 
+    if( aValue.IsEmpty() )
+        return;
 
     if constexpr( std::is_same<T, SCH_FIELD>::value )
     {
@@ -685,6 +688,15 @@ void SIM_MODEL::AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant )
 const SIM_MODEL::PARAM& SIM_MODEL::GetParam( int aIndex ) const
 {
     if( m_baseModel && m_params.at( aIndex ).value->ToString().IsEmpty() )
+        return m_baseModel->GetParam( aIndex );
+    else
+        return m_params.at( aIndex );
+}
+
+
+const SIM_MODEL::PARAM& SIM_MODEL::GetBaseParam( int aIndex ) const
+{
+    if( m_baseModel )
         return m_baseModel->GetParam( aIndex );
     else
         return m_params.at( aIndex );
@@ -947,6 +959,7 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
                                                         SIM_MODEL_PARSER::NOTATION::SI>>() )
         {
             wxASSERT( !paramName.IsEmpty() );
+            // TODO: Shouldn't be named "...fromSpiceCode" here...
             setParamFromSpiceCode( paramName, node->string() );
         }
         else

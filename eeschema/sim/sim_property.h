@@ -62,8 +62,12 @@ private:
 class SIM_PROPERTY : public wxStringProperty
 {
 public:
-    SIM_PROPERTY( const wxString& aLabel, const wxString& aName, const SIM_MODEL::PARAM& aParam,
-                  SIM_VALUE_BASE& aValue,
+    // We pass shared_ptrs because we need to make sure they are destroyed only after the last time
+    // SIM_PROPERTY uses them.
+    SIM_PROPERTY( const wxString& aLabel, const wxString& aName,
+                  std::shared_ptr<SIM_LIBRARY> aLibrary,
+                  std::shared_ptr<SIM_MODEL> aModel,
+                  int aParamIndex,
                   SIM_VALUE_BASE::TYPE aValueType = SIM_VALUE_BASE::TYPE::FLOAT,
                   SIM_VALUE_PARSER::NOTATION aNotation = SIM_VALUE_PARSER::NOTATION::SI );
 
@@ -72,13 +76,14 @@ public:
     bool StringToValue( wxVariant& aVariant, const wxString& aText, int aArgFlags = 0 )
         const override;
 
-    const SIM_MODEL::PARAM& GetParam() { return m_param; }
+    const SIM_MODEL::PARAM& GetParam() { return m_model->GetParam( m_paramIndex ); }
 
 protected:
-    SIM_VALUE_BASE::TYPE       m_valueType;
-    SIM_VALUE_PARSER::NOTATION m_notation;
-    const SIM_MODEL::PARAM&    m_param;
-    SIM_VALUE_BASE&            m_value;
+    SIM_VALUE_BASE::TYPE         m_valueType;
+    SIM_VALUE_PARSER::NOTATION   m_notation;
+    std::shared_ptr<SIM_LIBRARY> m_library;
+    std::shared_ptr<SIM_MODEL>   m_model;
+    int                          m_paramIndex;
 };
 
 #endif // SIM_PROPERTY_H

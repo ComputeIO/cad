@@ -554,7 +554,8 @@ public:
 
 
     int GetParamCount() const { return static_cast<int>( m_params.size() ); }
-    const PARAM& GetParam( int aIndex ) const;
+    const PARAM& GetParam( int aIndex ) const; // Return base parameter unless it's overridden.
+    const PARAM& GetBaseParam( int aIndex ) const; // Always return base parameter if it exists.
     SIM_VALUE_BASE& ParamValue( int aIndex ) { return *m_params.at( aIndex ).value; }
 
     bool IsNonPrincipalParamOverridden() const;
