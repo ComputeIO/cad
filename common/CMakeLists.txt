@@ -191,8 +191,6 @@ set( COMMON_DLG_SRCS
     dialogs/panel_color_settings.cpp
     dialogs/panel_common_settings.cpp
     dialogs/panel_common_settings_base.cpp
-    dialogs/panel_data_collection.cpp
-    dialogs/panel_data_collection_base.cpp
     dialogs/panel_hotkeys_editor.cpp
     dialogs/panel_mouse_settings.cpp
     dialogs/panel_mouse_settings_base.cpp
@@ -205,6 +203,12 @@ set( COMMON_DLG_SRCS
     dialogs/wx_html_report_panel.cpp
     dialogs/wx_html_report_panel_base.cpp
     )
+
+if( KICAD_USE_SENTRY )
+    list( APPEND COMMON_DLG_SRCS
+    dialogs/panel_data_collection.cpp
+    dialogs/panel_data_collection_base.cpp )
+endif()
 
 set( COMMON_WIDGET_SRCS
     widgets/app_progress_dialog.cpp
@@ -498,7 +502,6 @@ target_link_libraries( common
     scripting
     pybind11::embed
     compoundfilereader
-    sentry
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
     ${wxWidgets_LIBRARIES}
