@@ -163,7 +163,9 @@ SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString,
     try
     {
         for( const auto& node : root->children )
+        {
             CALL_INSTANCE( aValueType, aNotation, handleNodeForParse, *node, result );
+        }
     }
     catch( std::invalid_argument& e )
     {
@@ -482,14 +484,19 @@ wxString SIM_VALUE<long>::ToString() const
 
     if( m_value.has_value() )
     {
-        double exponent = std::log10( *m_value );
-        long reductionExponent = 0;
+        long value = *m_value;
+        long exponent = 0;
 
-        wxString metricSuffix = SIM_VALUE_PARSER::ExponentToMetricSuffix( exponent,
-                                                                          reductionExponent );
-        long reducedValue = *m_value / static_cast<long>( std::pow( 10, reductionExponent ) );
+        while( value % 1000 == 0 )
+        {
+            exponent += 3;
+            value /= 1000;
+        }
 
-        return wxString::Format( "%d%s", reducedValue, metricSuffix );
+        long dummy = 0;
+        wxString metricSuffix = SIM_VALUE_PARSER::ExponentToMetricSuffix(
+                static_cast<double>( exponent ), dummy );
+        return wxString::Format( "%d%s", value, metricSuffix );
     }
 
     return "";

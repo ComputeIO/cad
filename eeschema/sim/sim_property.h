@@ -25,7 +25,7 @@
 #ifndef SIM_PROPERTY_H
 #define SIM_PROPERTY_H
 
-#include <sim/sim_value.h>
+#include <sim/sim_model.h>
 #include <wx/propgrid/props.h>
 
 
@@ -62,7 +62,8 @@ private:
 class SIM_PROPERTY : public wxStringProperty
 {
 public:
-    SIM_PROPERTY( const wxString& aLabel, const wxString& aName, SIM_VALUE_BASE& aValue,
+    SIM_PROPERTY( const wxString& aLabel, const wxString& aName, const SIM_MODEL::PARAM& aParam,
+                  SIM_VALUE_BASE& aValue,
                   SIM_VALUE_BASE::TYPE aValueType = SIM_VALUE_BASE::TYPE::FLOAT,
                   SIM_VALUE_PARSER::NOTATION aNotation = SIM_VALUE_PARSER::NOTATION::SI );
 
@@ -71,9 +72,12 @@ public:
     bool StringToValue( wxVariant& aVariant, const wxString& aText, int aArgFlags = 0 )
         const override;
 
+    const SIM_MODEL::PARAM& GetParam() { return m_param; }
+
 protected:
     SIM_VALUE_BASE::TYPE       m_valueType;
     SIM_VALUE_PARSER::NOTATION m_notation;
+    const SIM_MODEL::PARAM&    m_param;
     SIM_VALUE_BASE&            m_value;
 };
 

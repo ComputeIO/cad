@@ -39,56 +39,6 @@
 using DEVICE_TYPE = SIM_MODEL::DEVICE_TYPE;
 using TYPE = SIM_MODEL::TYPE;
 
-namespace SIM_MODEL_PARSER
-{
-    using namespace SIM_VALUE_PARSER;
-
-    struct spaces : plus<space> {};
-
-
-    struct pinNumber : sor<digits, one<'X'>> {};
-
-    struct pinSequence : seq<opt<spaces>,
-                             opt<pinNumber, star<spaces, pinNumber>>,
-                             opt<spaces>> {};
-
-    struct pinSequenceGrammar : must<pinSequence, eof> {};
-
-    template <typename Rule> struct pinSequenceSelector : std::false_type {};
-    template <> struct pinSequenceSelector<pinNumber> : std::true_type {};
-
-
-    struct param : plus<alnum> {};
-
-    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
-    struct paramValuePair : seq<param,
-                                opt<spaces>,
-                                one<'='>,
-                                opt<spaces>,
-                                number<Type, Notation>> {};
-
-    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
-    struct paramValuePairs : seq<opt<spaces>,
-                                 opt<paramValuePair<Type, Notation>,
-                                     star<spaces, paramValuePair<Type, Notation>>>,
-                                 opt<spaces>> {};
-
-    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
-    struct paramValuePairsGrammar : must<paramValuePairs<Type, Notation>, eof> {};
-
-
-    template <typename Rule> struct paramValuePairsSelector : std::false_type {};
-    template <> struct paramValuePairsSelector<param> : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
-        : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
-        : std::true_type {};
-}
-
 
 SIM_MODEL::DEVICE_INFO SIM_MODEL::DeviceTypeInfo( DEVICE_TYPE aDeviceType )
 {
@@ -255,7 +205,195 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     }
 
     wxFAIL;
-    return {  };
+    return {};
+}
+
+
+SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
+{
+    switch( aType )
+    {
+    case TYPE::RESISTOR_IDEAL:       return { "R", ""        };
+    case TYPE::RESISTOR_ADVANCED:    return { "R", "R"       };
+    case TYPE::RESISTOR_BEHAVIORAL:  return { "R", "",       0,  true   };
+
+    case TYPE::CAPACITOR_IDEAL:      return { "C", ""        };
+    case TYPE::CAPACITOR_ADVANCED:   return { "C", "C",      };
+    case TYPE::CAPACITOR_BEHAVIORAL: return { "C", "",       0,  true   };
+
+    case TYPE::INDUCTOR_IDEAL:       return { "L", ""        };
+    case TYPE::INDUCTOR_ADVANCED:    return { "L", "L"       };
+    case TYPE::INDUCTOR_BEHAVIORAL:  return { "L", "",       0,  true   };
+    
+    case TYPE::TLINE_LOSSY:          return { "O", "LTRA"    };
+    case TYPE::TLINE_LOSSLESS:       return { "T"  };
+    case TYPE::TLINE_UNIFORM_RC:     return { "U"  };
+    case TYPE::TLINE_KSPICE:         return { "Y"  };
+    
+    case TYPE::SWITCH_VCTRL:         return { "S", "switch"  };
+    case TYPE::SWITCH_ICTRL:         return { "W", "cswitch" };
+
+    case TYPE::DIODE:                return { "D", "D"       };
+
+    case TYPE::NPN_GUMMEL_POON:      return { "Q", "NPN",    1   };
+    case TYPE::PNP_GUMMEL_POON:      return { "Q", "PNP",    1   };
+
+    case TYPE::NPN_VBIC:             return { "Q", "NPN",    4   };
+    case TYPE::PNP_VBIC:             return { "Q", "PNP",    4   };
+
+    case TYPE::NPN_HICUM_L2:         return { "Q", "NPN",    8   };
+    case TYPE::PNP_HICUM_L2:         return { "Q", "PNP",    8   };
+
+    case TYPE::NJF_SHICHMAN_HODGES:  return { "M", "NJF",    1   };
+    case TYPE::PJF_SHICHMAN_HODGES:  return { "M", "PJF",    1   };
+    case TYPE::NJF_PARKER_SKELLERN:  return { "M", "NJF",    2   };
+    case TYPE::PJF_PARKER_SKELLERN:  return { "M", "PJF",    2   };
+
+    case TYPE::NMES_STATZ:           return { "Z", "NMF",    1   };
+    case TYPE::PMES_STATZ:           return { "Z", "PMF",    1   };
+    case TYPE::NMES_YTTERDAL:        return { "Z", "NMF",    2   };
+    case TYPE::PMES_YTTERDAL:        return { "Z", "PMF",    2   };
+    case TYPE::NMES_HFET1:           return { "Z", "NMF",    5   };
+    case TYPE::PMES_HFET1:           return { "Z", "PMF",    5   };
+    case TYPE::PMES_HFET2:           return { "Z", "NMF",    6   };
+    case TYPE::NMES_HFET2:           return { "Z", "PMF",    6   };
+
+    case TYPE::NMOS_MOS1:            return { "M", "NMOS",   1   };
+    case TYPE::PMOS_MOS1:            return { "M", "PMOS",   1   };
+    case TYPE::NMOS_MOS2:            return { "M", "NMOS",   2   };
+    case TYPE::PMOS_MOS2:            return { "M", "PMOS",   2   };
+    case TYPE::NMOS_MOS3:            return { "M", "NMOS",   3   };
+    case TYPE::PMOS_MOS3:            return { "M", "PMOS",   3   };
+    case TYPE::NMOS_BSIM1:           return { "M", "NMOS",   4   };
+    case TYPE::PMOS_BSIM1:           return { "M", "PMOS",   4   };
+    case TYPE::NMOS_BSIM2:           return { "M", "NMOS",   5   };
+    case TYPE::PMOS_BSIM2:           return { "M", "PMOS",   5   };
+    case TYPE::NMOS_MOS6:            return { "M", "NMOS",   6   };
+    case TYPE::PMOS_MOS6:            return { "M", "PMOS",   6   };
+    case TYPE::NMOS_BSIM3:           return { "M", "NMOS",   8   };
+    case TYPE::PMOS_BSIM3:           return { "M", "PMOS",   8   };
+    case TYPE::NMOS_MOS9:            return { "M", "NMOS",   9   };
+    case TYPE::PMOS_MOS9:            return { "M", "PMOS",   9   };
+    case TYPE::NMOS_B4SOI:           return { "M", "NMOS",   10  };
+    case TYPE::PMOS_B4SOI:           return { "M", "PMOS",   10  };
+    case TYPE::NMOS_BSIM4:           return { "M", "NMOS",   14  };
+    case TYPE::PMOS_BSIM4:           return { "M", "PMOS",   14  };
+    //case TYPE::NMOS_EKV2_6:          return {};
+    //case TYPE::PMOS_EKV2_6:          return {};
+    //case TYPE::NMOS_PSP:             return {};
+    //case TYPE::PMOS_PSP:             return {};
+    case TYPE::NMOS_B3SOIFD:         return { "M", "NMOS",   55  };
+    case TYPE::PMOS_B3SOIFD:         return { "M", "PMOS",   55  };
+    case TYPE::NMOS_B3SOIDD:         return { "M", "NMOS",   56  };
+    case TYPE::PMOS_B3SOIDD:         return { "M", "PMOS",   56  };
+    case TYPE::NMOS_B3SOIPD:         return { "M", "NMOS",   57  };
+    case TYPE::PMOS_B3SOIPD:         return { "M", "PMOS",   57  };
+    //case TYPE::NMOS_STAG:            return {};
+    //case TYPE::PMOS_STAG:            return {};
+    case TYPE::NMOS_HISIM2:          return { "M", "NMOS",   68  };
+    case TYPE::PMOS_HISIM2:          return { "M", "PMOS",   68  };
+    case TYPE::NMOS_HISIM_HV1:       return { "M", "NMOS",   73, false, "1.2.4" };
+    case TYPE::PMOS_HISIM_HV1:       return { "M", "PMOS",   73, false, "1.2.4" };
+    case TYPE::NMOS_HISIM_HV2:       return { "M", "NMOS",   73, false, "2.2.0" };
+    case TYPE::PMOS_HISIM_HV2:       return { "M", "PMOS",   73, false, "2.2.0" };
+
+    case TYPE::VSOURCE_PULSE:
+    case TYPE::VSOURCE_SIN:
+    case TYPE::VSOURCE_EXP:
+    case TYPE::VSOURCE_SFAM:
+    case TYPE::VSOURCE_SFFM:
+    case TYPE::VSOURCE_PWL:
+    case TYPE::VSOURCE_WHITE_NOISE:
+    case TYPE::VSOURCE_PINK_NOISE:
+    case TYPE::VSOURCE_BURST_NOISE:
+    case TYPE::VSOURCE_RANDOM_UNIFORM:
+    case TYPE::VSOURCE_RANDOM_NORMAL:
+    case TYPE::VSOURCE_RANDOM_EXP:
+    case TYPE::VSOURCE_RANDOM_POISSON:
+    case TYPE::VSOURCE_BEHAVIORAL:
+        return { "V" };
+
+    case TYPE::ISOURCE_PULSE:
+    case TYPE::ISOURCE_SIN:
+    case TYPE::ISOURCE_EXP:
+    case TYPE::ISOURCE_SFAM:
+    case TYPE::ISOURCE_SFFM:
+    case TYPE::ISOURCE_PWL:
+    case TYPE::ISOURCE_WHITE_NOISE:
+    case TYPE::ISOURCE_PINK_NOISE:
+    case TYPE::ISOURCE_BURST_NOISE:
+    case TYPE::ISOURCE_RANDOM_UNIFORM:
+    case TYPE::ISOURCE_RANDOM_NORMAL:
+    case TYPE::ISOURCE_RANDOM_EXP:
+    case TYPE::ISOURCE_RANDOM_POISSON:
+    case TYPE::ISOURCE_BEHAVIORAL:
+        return { "I" };
+
+    case TYPE::SUBCIRCUIT:           return { "X" };
+    case TYPE::CODEMODEL:            return { "A" };
+
+    case TYPE::NONE:
+    case TYPE::RAWSPICE:
+        return {};
+
+    case TYPE::_ENUM_END:
+        break;
+    }
+
+    wxFAIL;
+    return {};
+}
+
+
+TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
+{
+    tao::pegtl::string_input<> in( aSpiceCode, "from_input" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::spiceUnitGrammar,
+                                             SIM_MODEL_PARSER::spiceUnitSelector>
+            ( in );
+    }
+    catch( tao::pegtl::parse_error& e )
+    {
+        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse '%s': %s" ), aSpiceCode,
+                                                e.what() ) );
+    }
+
+    wxASSERT( root );
+
+    for( const auto& node : root->children )
+    {
+        if( node->is_type<SIM_MODEL_PARSER::spiceModel>() )
+        {
+            for( const auto& subnode : node->children )
+            {
+                if( subnode->is_type<SIM_MODEL_PARSER::spiceName>() )
+                {
+                    // Do nothing.
+                }
+                else if( subnode->is_type<SIM_MODEL_PARSER::spiceModelType>() )
+                    return readTypeFromSpiceTypeString( subnode->string() );
+                else
+                {
+                    wxFAIL_MSG( "Unhandled parse tree subnode" );
+                    return TYPE::NONE;
+                }
+            }
+        }
+        else if( node->is_type<SIM_MODEL_PARSER::spiceSubckt>() )
+            return TYPE::SUBCIRCUIT;
+        else
+        {
+            wxFAIL_MSG( "Unhandled parse tree node" );
+            return TYPE::NONE;
+        }
+    }
+
+    wxFAIL_MSG( "Could not derive type from Spice code" );
+    return TYPE::NONE;
 }
 
 
@@ -265,8 +403,8 @@ template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<LIB_FIELD>& aFiel
 template <typename T>
 TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
 {
-    wxString typeFieldValue = getFieldValue( &aFields, TYPE_FIELD );
-    wxString deviceTypeFieldValue = getFieldValue( &aFields, DEVICE_TYPE_FIELD );
+    wxString typeFieldValue = GetFieldValue( &aFields, TYPE_FIELD );
+    wxString deviceTypeFieldValue = GetFieldValue( &aFields, DEVICE_TYPE_FIELD );
     bool typeFound = false;
 
     for( TYPE type : TYPE_ITERATOR() )
@@ -280,6 +418,8 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
         }
     }
 
+    // TODO: Return TYPE::NONE instead of throwing an exception.
+
     if( !typeFound )
         throw KI_PARAM_ERROR( wxString::Format( _( "Invalid '%s' field value: '%s'" ),
                                                 TYPE_FIELD, typeFieldValue ) );
@@ -289,343 +429,69 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
 }
 
 
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int symbolPinCount,
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType, int aSymbolPinCount )
+{
+    std::unique_ptr<SIM_MODEL> model = create( aType );
+
+    // Passing nullptr to ReadDataFields will make it act as if all fields were empty.
+    model->ReadDataFields( aSymbolPinCount, static_cast<const std::vector<void>*>( nullptr ) );
+    return model;
+}
+
+
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::string& aSpiceCode )
+{
+    std::unique_ptr<SIM_MODEL> model = create( ReadTypeFromSpiceCode( aSpiceCode ) );
+    
+    if( !model->ReadSpiceCode( aSpiceCode ) )
+    {
+        // Demote to raw Spice element and try again.
+        std::unique_ptr<SIM_MODEL> rawSpiceModel = create( TYPE::RAWSPICE );
+
+        rawSpiceModel->ReadSpiceCode( aSpiceCode );
+        return rawSpiceModel;
+    }
+
+    return model;
+}
+
+
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel )
+{
+    std::unique_ptr<SIM_MODEL> model = create( aBaseModel.GetType() );
+
+    model->SetBaseModel( aBaseModel );
+    return model;
+}
+
+
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int aSymbolPinCount,
                                                        const std::vector<SCH_FIELD>& aFields );
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int symbolPinCount,
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int aSymbolPinCount,
                                                        const std::vector<LIB_FIELD>& aFields );
 
 template <typename T>
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int symbolPinCount, const std::vector<T>& aFields )
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int aSymbolPinCount, const std::vector<T>& aFields )
 {
-    return SIM_MODEL::Create( ReadTypeFromFields( aFields ), symbolPinCount, &aFields );
-}
+    std::unique_ptr<SIM_MODEL> model = SIM_MODEL::create( ReadTypeFromFields( aFields ) );
 
-
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType,
-                                                       int symbolPinCount,
-                                                       const std::vector<void>* aFields );
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType,
-                                                       int symbolPinCount,
-                                                       const std::vector<SCH_FIELD>* aFields );
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType,
-                                                       int symbolPinCount,
-                                                       const std::vector<LIB_FIELD>* aFields );
-
-template <typename T>
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType, int symbolPinCount,
-                                              const std::vector<T>* aFields )
-{
-    switch( aType )
-    {
-    case TYPE::RESISTOR_IDEAL:
-    case TYPE::CAPACITOR_IDEAL:
-    case TYPE::INDUCTOR_IDEAL:
-        return std::make_unique<SIM_MODEL_IDEAL>( aType, symbolPinCount, aFields );
-
-    case TYPE::RESISTOR_BEHAVIORAL:
-    case TYPE::CAPACITOR_BEHAVIORAL:
-    case TYPE::INDUCTOR_BEHAVIORAL:
-    case TYPE::VSOURCE_BEHAVIORAL:
-    case TYPE::ISOURCE_BEHAVIORAL:
-        return std::make_unique<SIM_MODEL_BEHAVIORAL>( aType, symbolPinCount, aFields );
-
-    case TYPE::VSOURCE_PULSE:
-    case TYPE::ISOURCE_PULSE:
-    case TYPE::VSOURCE_SIN:
-    case TYPE::ISOURCE_SIN:
-    case TYPE::VSOURCE_EXP:
-    case TYPE::ISOURCE_EXP:
-    case TYPE::VSOURCE_SFAM:
-    case TYPE::ISOURCE_SFAM:
-    case TYPE::VSOURCE_SFFM:
-    case TYPE::ISOURCE_SFFM:
-    case TYPE::VSOURCE_PWL:
-    case TYPE::ISOURCE_PWL:
-    case TYPE::VSOURCE_WHITE_NOISE:
-    case TYPE::ISOURCE_WHITE_NOISE:
-    case TYPE::VSOURCE_PINK_NOISE:
-    case TYPE::ISOURCE_PINK_NOISE:
-    case TYPE::VSOURCE_BURST_NOISE:
-    case TYPE::ISOURCE_BURST_NOISE:
-    case TYPE::VSOURCE_RANDOM_UNIFORM:
-    case TYPE::ISOURCE_RANDOM_UNIFORM:
-    case TYPE::VSOURCE_RANDOM_NORMAL:
-    case TYPE::ISOURCE_RANDOM_NORMAL:
-    case TYPE::VSOURCE_RANDOM_EXP:
-    case TYPE::ISOURCE_RANDOM_EXP:
-    case TYPE::VSOURCE_RANDOM_POISSON:
-    case TYPE::ISOURCE_RANDOM_POISSON:
-        return std::make_unique<SIM_MODEL_SOURCE>( aType, symbolPinCount, aFields );
-
-    case TYPE::SUBCIRCUIT:
-        return std::make_unique<SIM_MODEL_SUBCIRCUIT>( aType, symbolPinCount, aFields );
-
-    case TYPE::CODEMODEL:
-        return std::make_unique<SIM_MODEL_CODEMODEL>( aType, symbolPinCount, aFields );
-
-    case TYPE::RAWSPICE:
-        return std::make_unique<SIM_MODEL_RAWSPICE>( aType, symbolPinCount, aFields );
-
-    default:
-        return std::make_unique<SIM_MODEL_NGSPICE>( aType, symbolPinCount, aFields );
-    }
-}
-
-
-SIM_MODEL::SIM_MODEL( TYPE aType ) : m_type( aType )
-{
-}
-
-
-template <>
-void SIM_MODEL::ReadDataFields( int symbolPinCount, const std::vector<void>* aFields )
-{
-    doReadDataFields( symbolPinCount, aFields );
-}
-
-
-template <>
-void SIM_MODEL::ReadDataFields( int symbolPinCount, const std::vector<SCH_FIELD>* aFields )
-{
-    ReadDataSchFields( symbolPinCount, aFields );
-}
-
-
-template <>
-void SIM_MODEL::ReadDataFields( int symbolPinCount, const std::vector<LIB_FIELD>* aFields )
-{
-    ReadDataLibFields( symbolPinCount, aFields );
-}
-
-
-void SIM_MODEL::ReadDataSchFields( int symbolPinCount, const std::vector<SCH_FIELD>* aFields )
-{
-    doReadDataFields( symbolPinCount, aFields );
-}
-
-
-void SIM_MODEL::ReadDataLibFields( int symbolPinCount, const std::vector<LIB_FIELD>* aFields )
-{
-    doReadDataFields( symbolPinCount, aFields );
-}
-
-
-template <>
-void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>& aFields )
-{
-    WriteDataSchFields( aFields );
-}
-
-
-template <>
-void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>& aFields )
-{
-    WriteDataLibFields( aFields );
-}
-
-
-void SIM_MODEL::WriteDataSchFields( std::vector<SCH_FIELD>& aFields )
-{
-    doWriteFields( aFields );
-}
-
-
-void SIM_MODEL::WriteDataLibFields( std::vector<LIB_FIELD>& aFields )
-{
-    doWriteFields( aFields );
+    model->ReadDataFields( aSymbolPinCount, &aFields );
+    return model;
 }
 
 
 template <typename T>
-void SIM_MODEL::doReadDataFields( int symbolPinCount, const std::vector<T>* aFields )
-{
-    SetFile( getFieldValue( aFields, FILE_FIELD ) );
-    parsePinSequence( symbolPinCount, getFieldValue( aFields, PIN_SEQUENCE_FIELD ) );
-    parseParamValuePairs( getFieldValue( aFields, PARAMS_FIELD ) );
-}
-
-
-template <typename T>
-void SIM_MODEL::doWriteFields( std::vector<T>& aFields )
-{
-    setFieldValue( aFields, DEVICE_TYPE_FIELD,
-                   DeviceTypeInfo( TypeInfo( m_type ).deviceType ).fieldValue );
-    setFieldValue( aFields, TYPE_FIELD, TypeInfo( m_type ).fieldValue );
-    setFieldValue( aFields, FILE_FIELD, GetFile() );
-    setFieldValue( aFields, PIN_SEQUENCE_FIELD, generatePinSequence() );
-    setFieldValue( aFields, PARAMS_FIELD, generateParamValuePairs() );
-}
-
-
-wxString SIM_MODEL::generatePinSequence()
-{
-    wxString result = "";
-    bool isFirst = true;
-
-    for( const PIN& modelPin : Pins() )
-    {
-        if( isFirst )
-            isFirst = false;
-        else
-            result << " ";
-
-        if( modelPin.symbolPinNumber == PIN::NOT_CONNECTED )
-            result << "X";
-        else
-            result << modelPin.symbolPinNumber;
-    }
-
-    return result;
-}
-
-
-void SIM_MODEL::parsePinSequence( int symbolPinCount, const wxString& aPinSequence )
-{
-    // Default pin sequence: model pins are the same as symbol pins.
-    // Excess model pins are set as Not Connected.
-    for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
-    {
-        if( i < symbolPinCount )
-            Pins().push_back( { i + 1, getPinNames().at( i ) } );
-        else
-            Pins().push_back( { PIN::NOT_CONNECTED, getPinNames().at( i ) } );
-    }
-
-    if( aPinSequence.IsEmpty() )
-        return;
-
-    LOCALE_IO toggle;
-
-    tao::pegtl::string_input<> in( aPinSequence.ToStdString(), "from_input" );
-    std::unique_ptr<tao::pegtl::parse_tree::node> root;
-
-    try
-    {
-        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::pinSequenceGrammar,
-                                             SIM_MODEL_PARSER::pinSequenceSelector>( in );
-    }
-    catch( tao::pegtl::parse_error& e )
-    {
-        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model pin sequence: %s" ),
-                                                e.what() ) );
-    }
-
-    wxASSERT( root );
-
-    if( root->children.size() != Pins().size() )
-        throw KI_PARAM_ERROR( wxString::Format(
-                              _( "The model pin sequence has a different number of values (%d) "
-                                 "than the number of model pins (%d)" ) ) );
-
-    for( unsigned int i = 0; i < root->children.size(); ++i )
-    {
-        if( root->children.at( i )->string() == "X" )
-            Pins().at( i ).symbolPinNumber = PIN::NOT_CONNECTED;
-        else
-            Pins().at( i ).symbolPinNumber = std::stoi( root->children.at( i )->string() );
-    }
-}
-
-
-wxString SIM_MODEL::generateParamValuePairs()
-{
-    bool isFirst = true;
-    wxString result = "";
-
-    for( const PARAM& param : m_params)
-    {
-        wxString valueStr = param.value->ToString();
-
-        if( valueStr.IsEmpty() )
-            continue;
-
-        if( isFirst )
-            isFirst = false;
-        else
-            result << " ";
-
-        result << param.info.name;
-        result << "=";
-        result << param.value->ToString();
-    }
-
-    return result;
-}
-
-
-void SIM_MODEL::parseParamValuePairs( const wxString& aParamValuePairs )
-{
-    LOCALE_IO toggle;
-    
-    tao::pegtl::string_input<> in( aParamValuePairs.ToStdString(), "from_input" );
-    std::unique_ptr<tao::pegtl::parse_tree::node> root;
-
-    try
-    {
-        root = tao::pegtl::parse_tree::parse<
-            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_VALUE_BASE::TYPE::FLOAT,
-                                                     SIM_MODEL_PARSER::NOTATION::SI>,
-            SIM_MODEL_PARSER::paramValuePairsSelector>
-                ( in );
-    }
-    catch( tao::pegtl::parse_error& e )
-    {
-        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters: %s" ),
-                                                e.what() ) );
-    }
-
-    wxASSERT( root );
-
-    wxString paramName = "";
-
-    for( const auto& node : root->children )
-    {
-        if( node->is_type<SIM_MODEL_PARSER::param>() )
-            paramName = node->string();
-        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE_BASE::TYPE::FLOAT,
-                                                        SIM_MODEL_PARSER::NOTATION::SI>>() )
-        {
-            wxASSERT( paramName != "" );
-
-            auto it = std::find_if( Params().begin(), Params().end(),
-                                    [paramName]( const PARAM& param )
-                                    {
-                                        return param.info.name == paramName;
-                                    } );
-
-            if( it == Params().end() )
-                throw KI_PARAM_ERROR( wxString::Format( _( "Unknown parameter '%s'" ),
-                                                        paramName ) );
-
-            try
-            {
-                it->value->FromString( wxString( node->string() ) );
-            }
-            catch( KI_PARAM_ERROR& e )
-            {
-                Params().clear();
-                throw KI_PARAM_ERROR( wxString::Format( _( "Invalid '%s' parameter value: %s" ),
-                                                        paramName, node->string() ) );
-            }
-        }
-        else
-            wxFAIL;
-    }
-}
-
-
-template <typename T>
-wxString SIM_MODEL::getFieldValue( const std::vector<T>* aFields, const wxString& aFieldName )
+wxString SIM_MODEL::GetFieldValue( const std::vector<T>* aFields, const wxString& aFieldName )
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
 
     if( !aFields )
-        return wxEmptyString; // Should not happen, T=void specialization should be called instead.
+        return wxEmptyString; // Should not happen, T=void specialization will be called instead.
 
     auto fieldIt = std::find_if( aFields->begin(), aFields->end(),
-                                 [&]( const T& f )
+                                 [aFieldName]( const T& field )
                                  {
-                                     return f.GetName() == aFieldName;
+                                     return field.GetName() == aFieldName;
                                  } );
 
     if( fieldIt != aFields->end() )
@@ -637,14 +503,14 @@ wxString SIM_MODEL::getFieldValue( const std::vector<T>* aFields, const wxString
 
 // This specialization is used when no fields are passed.
 template <>
-wxString SIM_MODEL::getFieldValue( const std::vector<void>* aFields, const wxString& aFieldName )
+wxString SIM_MODEL::GetFieldValue( const std::vector<void>* aFields, const wxString& aFieldName )
 {
     return wxEmptyString;
 }
 
 
 template <typename T>
-void SIM_MODEL::setFieldValue( std::vector<T>& aFields, const wxString& aFieldName,
+void SIM_MODEL::SetFieldValue( std::vector<T>& aFields, const wxString& aFieldName,
                                const wxString& aValue )
 {
     static_assert( std::is_same<T, SCH_FIELD>::value || std::is_same<T, LIB_FIELD>::value );
@@ -676,4 +542,444 @@ void SIM_MODEL::setFieldValue( std::vector<T>& aFields, const wxString& aFieldNa
         aFields.emplace_back( aFields.size(), aFieldName );
 
     aFields.back().SetText( aValue );
+}
+
+
+bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
+{
+    // The default behavior is to treat the Spice param=value pairs as the model parameters and
+    // values (for many models the correspondence is not exact, so this function is overridden).
+    
+    tao::pegtl::string_input<> in( aSpiceCode, "from_input" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+    
+    try
+    {
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::spiceUnitGrammar,
+                                             SIM_MODEL_PARSER::spiceUnitSelector>
+            ( in );
+    }
+    catch( tao::pegtl::parse_error& e )
+    {
+        return false;
+    }
+
+
+    wxASSERT( root );
+
+    for( const auto& node : root->children )
+    {
+        if( node->is_type<SIM_MODEL_PARSER::spiceModel>()
+            || node->is_type<SIM_MODEL_PARSER::spiceSubckt>() )
+        {
+            wxString paramName = "";
+
+            for( const auto& subnode : node->children )
+            {
+                if( subnode->is_type<SIM_MODEL_PARSER::spiceName>() )
+                {
+                    // Do nothing.
+                }
+                else if( subnode->is_type<SIM_MODEL_PARSER::spiceModelType>() )
+                {
+                    // Do nothing.
+                }
+                else if( subnode->is_type<SIM_MODEL_PARSER::param>() )
+                {
+                    paramName = subnode->string();
+                }
+                // TODO: Do something with number<SIM_VALUE_BASE::TYPE::INT, ...>.
+                // It doesn't seem too useful?
+                else if( subnode->is_type<
+                        SIM_MODEL_PARSER::number<SIM_VALUE_BASE::TYPE::FLOAT,
+                                                 SIM_MODEL_PARSER::NOTATION::SPICE>>() )
+                {
+                    wxASSERT( !paramName.IsEmpty() );
+
+                    if( !setParamFromSpiceCode( paramName, subnode->string() ) )
+                        return false;
+                }
+                else
+                {
+                    wxFAIL_MSG( "Unhandled parse tree subnode" );
+                    return false;
+                }
+            }
+        }
+        else
+        {
+            wxFAIL_MSG( "Unhandled parse tree node" );
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+template <typename T>
+void SIM_MODEL::ReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
+{
+    doReadDataFields( aSymbolPinCount, aFields );
+}
+
+
+template <>
+void SIM_MODEL::ReadDataFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
+{
+    ReadDataSchFields( aSymbolPinCount, aFields );
+}
+
+
+template <>
+void SIM_MODEL::ReadDataFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
+{
+    ReadDataLibFields( aSymbolPinCount, aFields );
+}
+
+
+void SIM_MODEL::ReadDataSchFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
+{
+    doReadDataFields( aSymbolPinCount, aFields );
+}
+
+
+void SIM_MODEL::ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
+{
+    doReadDataFields( aSymbolPinCount, aFields );
+}
+
+
+template <>
+void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>& aFields )
+{
+    WriteDataSchFields( aFields );
+}
+
+
+template <>
+void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>& aFields )
+{
+    WriteDataLibFields( aFields );
+}
+
+
+void SIM_MODEL::WriteDataSchFields( std::vector<SCH_FIELD>& aFields )
+{
+    doWriteFields( aFields );
+}
+
+
+void SIM_MODEL::WriteDataLibFields( std::vector<LIB_FIELD>& aFields )
+{
+    doWriteFields( aFields );
+}
+
+
+void SIM_MODEL::AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant )
+{
+    m_params.emplace_back( aInfo );
+}
+
+
+const SIM_MODEL::PARAM& SIM_MODEL::GetParam( int aIndex ) const
+{
+    if( m_baseModel && m_params.at( aIndex ).value->ToString().IsEmpty() )
+        return m_baseModel->GetParam( aIndex );
+    else
+        return m_params.at( aIndex );
+}
+
+
+bool SIM_MODEL::IsNonPrincipalParamOverridden() const
+{
+    for( const PARAM& param : m_params )
+    {
+        if( param.info.category != PARAM::CATEGORY::PRINCIPAL
+            && !param.value->ToString().IsEmpty() )
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+SIM_MODEL::SIM_MODEL( TYPE aType ) : m_baseModel( nullptr ), m_type( aType )
+{
+}
+
+
+std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
+{
+    switch( aType )
+    {
+    case TYPE::RESISTOR_IDEAL:
+    case TYPE::CAPACITOR_IDEAL:
+    case TYPE::INDUCTOR_IDEAL:
+        return std::make_unique<SIM_MODEL_IDEAL>( aType );
+
+    case TYPE::RESISTOR_BEHAVIORAL:
+    case TYPE::CAPACITOR_BEHAVIORAL:
+    case TYPE::INDUCTOR_BEHAVIORAL:
+    case TYPE::VSOURCE_BEHAVIORAL:
+    case TYPE::ISOURCE_BEHAVIORAL:
+        return std::make_unique<SIM_MODEL_BEHAVIORAL>( aType );
+
+    case TYPE::VSOURCE_PULSE:
+    case TYPE::ISOURCE_PULSE:
+    case TYPE::VSOURCE_SIN:
+    case TYPE::ISOURCE_SIN:
+    case TYPE::VSOURCE_EXP:
+    case TYPE::ISOURCE_EXP:
+    case TYPE::VSOURCE_SFAM:
+    case TYPE::ISOURCE_SFAM:
+    case TYPE::VSOURCE_SFFM:
+    case TYPE::ISOURCE_SFFM:
+    case TYPE::VSOURCE_PWL:
+    case TYPE::ISOURCE_PWL:
+    case TYPE::VSOURCE_WHITE_NOISE:
+    case TYPE::ISOURCE_WHITE_NOISE:
+    case TYPE::VSOURCE_PINK_NOISE:
+    case TYPE::ISOURCE_PINK_NOISE:
+    case TYPE::VSOURCE_BURST_NOISE:
+    case TYPE::ISOURCE_BURST_NOISE:
+    case TYPE::VSOURCE_RANDOM_UNIFORM:
+    case TYPE::ISOURCE_RANDOM_UNIFORM:
+    case TYPE::VSOURCE_RANDOM_NORMAL:
+    case TYPE::ISOURCE_RANDOM_NORMAL:
+    case TYPE::VSOURCE_RANDOM_EXP:
+    case TYPE::ISOURCE_RANDOM_EXP:
+    case TYPE::VSOURCE_RANDOM_POISSON:
+    case TYPE::ISOURCE_RANDOM_POISSON:
+        return std::make_unique<SIM_MODEL_SOURCE>( aType );
+
+    case TYPE::SUBCIRCUIT:
+        return std::make_unique<SIM_MODEL_SUBCIRCUIT>( aType );
+
+    case TYPE::CODEMODEL:
+        return std::make_unique<SIM_MODEL_CODEMODEL>( aType );
+
+    case TYPE::RAWSPICE:
+        return std::make_unique<SIM_MODEL_RAWSPICE>( aType );
+
+    default:
+        return std::make_unique<SIM_MODEL_NGSPICE>( aType );
+    }
+}
+
+
+TYPE SIM_MODEL::readTypeFromSpiceTypeString( const std::string& aTypeString )
+{
+    for( TYPE type : TYPE_ITERATOR() )
+    {
+        if( SpiceInfo( type ).typeString == aTypeString )
+            return type;
+    }
+
+    // If the type string is not recognized, demote to raw Spice element. This way the user won't
+    // have an error if there is a type KiCad does not recognize.
+    return TYPE::RAWSPICE;
+}
+
+
+template <typename T>
+void SIM_MODEL::doReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
+{
+    parsePinsField( aSymbolPinCount, GetFieldValue( aFields, PINS_FIELD ) );
+    parseParamsField( GetFieldValue( aFields, PARAMS_FIELD ) );
+}
+
+
+template <typename T>
+void SIM_MODEL::doWriteFields( std::vector<T>& aFields )
+{
+    SetFieldValue( aFields, DEVICE_TYPE_FIELD, generateDeviceTypeField() );
+    SetFieldValue( aFields, TYPE_FIELD, generateTypeField() );
+    SetFieldValue( aFields, PINS_FIELD, generatePinsField() );
+    SetFieldValue( aFields, PARAMS_FIELD, generateParamsField() );
+}
+
+
+wxString SIM_MODEL::generateDeviceTypeField()
+{
+    return DeviceTypeInfo( TypeInfo( m_type ).deviceType ).fieldValue;
+}
+
+
+wxString SIM_MODEL::generateTypeField()
+{
+    return TypeInfo( m_type ).fieldValue;
+}
+
+
+wxString SIM_MODEL::generatePinsField()
+{
+    wxString result = "";
+    bool isFirst = true;
+
+    for( int i = 0; i < GetPinCount(); ++i )
+    {
+        if( isFirst )
+            isFirst = false;
+        else
+            result << " ";
+
+        if( GetPin( i ).symbolPinNumber == PIN::NOT_CONNECTED )
+            result << "X";
+        else
+            result << GetPin( i ).symbolPinNumber;
+    }
+
+    return result;
+}
+
+
+void SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField )
+{
+    // Default pin sequence: model pins are the same as symbol pins.
+    // Excess model pins are set as Not Connected.
+    for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
+    {
+        if( i < aSymbolPinCount )
+            m_pins.push_back( { i + 1, getPinNames().at( i ) } );
+        else
+            m_pins.push_back( { PIN::NOT_CONNECTED, getPinNames().at( i ) } );
+    }
+
+    if( aPinsField.IsEmpty() )
+        return;
+
+    LOCALE_IO toggle;
+
+    tao::pegtl::string_input<> in( aPinsField.ToStdString(), "from_input" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::pinSequenceGrammar,
+                                             SIM_MODEL_PARSER::pinSequenceSelector>( in );
+    }
+    catch( tao::pegtl::parse_error& e )
+    {
+        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model pin sequence: %s" ),
+                                                e.what() ) );
+    }
+
+    wxASSERT( root );
+
+    if( static_cast<int>( root->children.size() ) != GetPinCount() )
+        throw KI_PARAM_ERROR( wxString::Format(
+                              _( "The model pin sequence has a different number of values (%d) "
+                                 "than the number of model pins (%d)" ) ) );
+
+    for( unsigned int i = 0; i < root->children.size(); ++i )
+    {
+        if( root->children.at( i )->string() == "X" )
+            SetPinSymbolPinNumber( static_cast<int>( i ), PIN::NOT_CONNECTED );
+        else
+            SetPinSymbolPinNumber( static_cast<int>( i ),
+                                   std::stoi( root->children.at( i )->string() ) );
+    }
+}
+
+
+wxString SIM_MODEL::generateParamsField()
+{
+    bool isFirst = true;
+    wxString result = "";
+
+    for( const PARAM& param : m_params )
+    {
+        wxString valueStr = param.value->ToString();
+
+        if( valueStr.IsEmpty() )
+            continue;
+
+        if( isFirst )
+            isFirst = false;
+        else
+            result << " ";
+
+        result << param.info.name;
+        result << "=";
+        result << param.value->ToString();
+    }
+
+    return result;
+}
+
+
+void SIM_MODEL::parseParamsField( const wxString& aParamsField )
+{
+    LOCALE_IO toggle;
+    
+    tao::pegtl::string_input<> in( aParamsField.ToStdString(), "from_input" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        // Using parse tree instead of actions because we don't care about performance that much,
+        // and having a tree greatly simplifies some things. 
+        root = tao::pegtl::parse_tree::parse<
+            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_MODEL_PARSER::NOTATION::SI>,
+            SIM_MODEL_PARSER::paramValuePairsSelector>
+                ( in );
+    }
+    catch( tao::pegtl::parse_error& e )
+    {
+        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters: %s" ),
+                                                e.what() ) );
+    }
+
+    wxASSERT( root );
+
+    wxString paramName = "";
+
+    for( const auto& node : root->children )
+    {
+        if( node->is_type<SIM_MODEL_PARSER::param>() )
+            paramName = node->string();
+        // TODO: Do something with number<SIM_VALUE_BASE::TYPE::INT, ...>.
+        // It doesn't seem too useful?
+        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE_BASE::TYPE::FLOAT,
+                                                        SIM_MODEL_PARSER::NOTATION::SI>>() )
+        {
+            wxASSERT( !paramName.IsEmpty() );
+            setParamFromSpiceCode( paramName, node->string() );
+        }
+        else
+        {
+            wxFAIL;
+            return;
+        }
+    }
+}
+
+
+bool SIM_MODEL::setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue )
+{
+    int i = 0;
+
+    for(; i < GetParamCount(); ++i )
+    {
+        if( GetParam( i ).info.name == aParamName.Lower() )
+            break;
+    }
+
+    if( i == GetParamCount() )
+        return false; // No parameter with this name exists.
+
+    try
+    {
+        ParamValue( i ).FromString( wxString( aParamValue ) );
+    }
+    catch( KI_PARAM_ERROR& e )
+    {
+        m_params.clear();
+        return false;
+    }
+
+    return true;
 }

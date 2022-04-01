@@ -31,10 +31,16 @@
 class SIM_MODEL_RAWSPICE : public SIM_MODEL
 {
 public:
-    template <typename T = void>
-    SIM_MODEL_RAWSPICE( TYPE aType, int symbolPinCount, const std::vector<T>* aFields = nullptr );
+    SIM_MODEL_RAWSPICE( TYPE aType );
 
+    //bool ReadSpiceCode( const std::string& aSpiceCode ) override;
     void WriteCode( wxString& aCode ) override;
+
+
+private:
+    bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue ) override;
+
+    std::vector<std::unique_ptr<PARAM::INFO>> m_paramInfos;
 };
 
 #endif // SIM_MODEL_RAWSPICE_H

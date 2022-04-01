@@ -25,16 +25,7 @@
 #include <sim/sim_model_behavioral.h>
 
 
-template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
-                                                     const std::vector<void>* aFields );
-template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
-                                                     const std::vector<SCH_FIELD>* aFields );
-template SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
-                                                     const std::vector<LIB_FIELD>* aFields );
-
-template <typename T>
-SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
-                                            const std::vector<T>* aFields )
+SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType )
     : SIM_MODEL( aType )
 {
     static PARAM::INFO resistor  = makeParamInfo( "r", "Expression for resistance",  "ohm" );
@@ -45,16 +36,14 @@ SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType, int symbolPinCount,
 
     switch( aType )
     {
-    case TYPE::RESISTOR_BEHAVIORAL:  Params().emplace_back( resistor  ); break;
-    case TYPE::CAPACITOR_BEHAVIORAL: Params().emplace_back( capacitor ); break;
-    case TYPE::INDUCTOR_BEHAVIORAL:  Params().emplace_back( inductor  ); break;
-    case TYPE::VSOURCE_BEHAVIORAL:   Params().emplace_back( vsource   ); break;
-    case TYPE::ISOURCE_BEHAVIORAL:   Params().emplace_back( isource   ); break;
+    case TYPE::RESISTOR_BEHAVIORAL:  AddParam( resistor  ); break;
+    case TYPE::CAPACITOR_BEHAVIORAL: AddParam( capacitor ); break;
+    case TYPE::INDUCTOR_BEHAVIORAL:  AddParam( inductor  ); break;
+    case TYPE::VSOURCE_BEHAVIORAL:   AddParam( vsource   ); break;
+    case TYPE::ISOURCE_BEHAVIORAL:   AddParam( isource   ); break;
     default:
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_IDEAL" );
     }
-
-    ReadDataFields( symbolPinCount, aFields );
 }
 
 

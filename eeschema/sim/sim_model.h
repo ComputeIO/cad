@@ -33,14 +33,183 @@
 #include <map>
 #include <stdexcept>
 
+class SIM_LIBRARY;
+
+
+namespace SIM_MODEL_PARSER
+{
+    using namespace SIM_VALUE_PARSER;
+
+
+    struct eolComment : seq<one<';'>, until<eol>> {};
+    struct commentLine : seq<one<'*'>, until<eol>> {};
+
+
+    struct linespaces : plus<not_at<eol>,
+                             space> {};
+    struct newline : seq<sor<eol,
+                             eolComment>,
+                         not_at<one<'+'>>> {};
+                         
+    struct continuation : seq<opt<linespaces>,
+                              sor<eol,
+                                  eolComment>,
+                              star<commentLine>,
+                              one<'+'>,
+                              opt<linespaces>> {};
+
+    struct sep : sor<continuation,
+                     linespaces> {};
+
+
+    struct pinNumber : sor<digits, one<'X'>> {};
+    struct pinSequence : seq<opt<pinNumber,
+                                 star<sep,
+                                      pinNumber>>> {};
+
+    struct pinSequenceGrammar : must<opt<sep>,
+                                     pinSequence,
+                                     opt<sep>,
+                                     eof> {};
+
+
+    template <typename Rule> struct pinSequenceSelector : std::false_type {};
+    template <> struct pinSequenceSelector<pinNumber> : std::true_type {};
+
+
+    struct param : plus<alnum> {};
+
+    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
+    struct paramValuePair : seq<param,
+                                opt<sep>,
+                                one<'='>,
+                                opt<sep>,
+                                number<Type, Notation>> {};
+
+    template <NOTATION Notation>
+    struct paramValuePairs : seq<opt<paramValuePair<SIM_VALUE_BASE::TYPE::FLOAT,
+                                                    Notation>,
+                                     star<sep,
+                                          paramValuePair<SIM_VALUE_BASE::TYPE::FLOAT,
+                                                         Notation>>>> {};
+
+    template <NOTATION Notation>
+    struct paramValuePairsGrammar : must<opt<sep>,
+                                         paramValuePairs<Notation>,
+                                         opt<sep>,
+                                         eof> {};
+
+
+    template <typename Rule> struct paramValuePairsSelector : std::false_type {};
+    template <> struct paramValuePairsSelector<param> : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
+        : std::true_type {};
+
+
+
+
+    struct spiceName : plus<alnum,
+                            star<sor<alnum,
+                                     one<'!', '#', '$', '%', '[', ']', '_'>>>> {};
+                     /*seq<alpha,
+                           star<sor<alnum,
+                                    one<'!', '#', '$', '%', '[', ']', '_'>>>> {};*/
+
+
+    struct spiceModelType : sor<TAO_PEGTL_ISTRING( "R" ),
+                                TAO_PEGTL_ISTRING( "C" ),
+                                TAO_PEGTL_ISTRING( "L" ),
+                                TAO_PEGTL_ISTRING( "SW" ),
+                                TAO_PEGTL_ISTRING( "CSW" ),
+                                TAO_PEGTL_ISTRING( "URC" ),
+                                TAO_PEGTL_ISTRING( "LTRA" ),
+                                TAO_PEGTL_ISTRING( "D" ),
+                                TAO_PEGTL_ISTRING( "NPN" ),
+                                TAO_PEGTL_ISTRING( "PNP" ),
+                                TAO_PEGTL_ISTRING( "NJF" ),
+                                TAO_PEGTL_ISTRING( "PJF" ),
+                                TAO_PEGTL_ISTRING( "NMOS" ),
+                                TAO_PEGTL_ISTRING( "PMOS" ),
+                                TAO_PEGTL_ISTRING( "NMF" ),
+                                TAO_PEGTL_ISTRING( "PMF" ),
+                                TAO_PEGTL_ISTRING( "VDMOS" )> {};
+    
+    struct spiceModel : seq<TAO_PEGTL_ISTRING( ".model" ),
+                            sep,
+                            spiceName,
+                            sep,
+                            spiceModelType,
+                            sor<seq<opt<sep>,
+                                    one<'('>,
+                                    opt<sep>,
+                                    paramValuePairs<NOTATION::SPICE>,
+                                    opt<sep>,
+                                    // Ngspice doesn't require the parentheses to match, though.
+                                    one<')'>>,
+                                seq<sep,
+                                    paramValuePairs<NOTATION::SPICE>>>,
+                            opt<sep>,
+                            newline> {};
+
+
+    struct spicePinNumber : digits {};
+    struct spicePinSequence : seq<opt<sep>,
+                                  opt<spicePinNumber,
+                                      star<sep,
+                                           spicePinNumber>>,
+                                  opt<sep>> {};
+
+    struct spiceSubcktEnd : seq<TAO_PEGTL_ISTRING( ".ends" ),
+                                opt<sep>,
+                                newline> {};
+
+    struct spiceSubckt : seq<TAO_PEGTL_ISTRING( ".subckt" ),
+                             sep,
+                             spiceName,
+                             sep,
+                             spicePinSequence,
+                             opt<sep>,
+                             newline,
+                             until<spiceSubcktEnd>> {};
+
+
+    struct spiceUnit : sor<spiceModel,
+                           spiceSubckt> {};
+
+    struct spiceUnitGrammar : must<spiceUnit, eof> {};
+
+
+    template <typename Rule> struct spiceUnitSelector : std::false_type {};
+
+    template <> struct spiceUnitSelector<spiceModel> : std::true_type {};
+    template <> struct spiceUnitSelector<spiceName> : std::true_type {};
+    template <> struct spiceUnitSelector<spiceModelType> : std::true_type {};
+    template <> struct spiceUnitSelector<param> : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
+        : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
+        : std::true_type {};
+
+    template <> struct spiceUnitSelector<spiceSubckt> : std::true_type {};
+}
+
 
 class SIM_MODEL
 {
 public:
     static constexpr auto DEVICE_TYPE_FIELD = "Model_Device";
     static constexpr auto TYPE_FIELD = "Model_Type";
-    static constexpr auto FILE_FIELD = "Model_File";
-    static constexpr auto PIN_SEQUENCE_FIELD = "Model_Pin_Sequence";
+    static constexpr auto PINS_FIELD = "Model_Pins";
     static constexpr auto PARAMS_FIELD = "Model_Params";
 
 
@@ -238,6 +407,16 @@ public:
     };
 
 
+    struct SPICE_INFO
+    {
+        wxString itemType;
+        wxString typeString = "";
+        int level = 0;
+        bool hasExpression = false;
+        wxString version = "";
+    };
+
+
     struct PIN
     {
         static constexpr auto NOT_CONNECTED = 0;
@@ -278,41 +457,52 @@ public:
         {
             wxString name;
             unsigned int id = 0; // Legacy.
-            DIR dir;
+            DIR dir = DIR::INOUT;
             SIM_VALUE_BASE::TYPE type;
             FLAGS flags = {}; // Legacy
-            wxString unit;
-            CATEGORY category;
+            wxString unit = "";
+            CATEGORY category = CATEGORY::PRINCIPAL;
             wxString defaultValue = "";
             wxString defaultValueOfOtherVariant = ""; // Legacy.
-            wxString description;
+            wxString description = "";
         };
 
         std::unique_ptr<SIM_VALUE_BASE> value;
         const INFO& info;
         bool isOtherVariant = false; // Legacy.
         
-        PARAM( const INFO& aInfo ) :
-            value( SIM_VALUE_BASE::Create( aInfo.type ) ),
-            info( aInfo )
+        PARAM( const INFO& aInfo, bool aIsOtherVariant = false )
+            : value( SIM_VALUE_BASE::Create( aInfo.type ) ),
+              info( aInfo ),
+              isOtherVariant( aIsOtherVariant )
         {}
     };
 
 
     static DEVICE_INFO DeviceTypeInfo( DEVICE_TYPE aDeviceType );
     static INFO TypeInfo( TYPE aType );
+    static SPICE_INFO SpiceInfo( TYPE aType );
+
+
+    static TYPE ReadTypeFromSpiceCode( const std::string& aSpiceCode );
 
     template <typename T>
     static TYPE ReadTypeFromFields( const std::vector<T>& aFields );
 
 
-    template <typename T>
-    static std::unique_ptr<SIM_MODEL> Create( int symbolPinCount, const std::vector<T>& aFields );
+    static std::unique_ptr<SIM_MODEL> Create( TYPE aType, int aSymbolPinCount = 0 );
+    static std::unique_ptr<SIM_MODEL> Create( const std::string& aSpiceCode );
+    static std::unique_ptr<SIM_MODEL> Create( const SIM_MODEL& aBaseModel );
 
-    template <typename T = void>
-    static std::unique_ptr<SIM_MODEL> Create( TYPE aType,
-                                              int symbolPinCount,
-                                              const std::vector<T>* aFields = nullptr );
+    template <typename T>
+    static std::unique_ptr<SIM_MODEL> Create( int aSymbolPinCount, const std::vector<T>& aFields );
+
+    template <typename T>
+    static wxString GetFieldValue( const std::vector<T>* aFields, const wxString& aFieldName );
+
+    template <typename T>
+    static void SetFieldValue( std::vector<T>& aFields, const wxString& aFieldName,
+                               const wxString& aValue );
 
 
     // Move semantics.
@@ -321,17 +511,17 @@ public:
     SIM_MODEL() = delete;
     SIM_MODEL( const SIM_MODEL& aOther ) = delete;
     SIM_MODEL( SIM_MODEL&& aOther ) = default;
-    SIM_MODEL& operator=(SIM_MODEL&& aOther ) = default;
+    SIM_MODEL& operator=(SIM_MODEL&& aOther ) = delete;
 
-    SIM_MODEL( TYPE aType );
 
+    virtual bool ReadSpiceCode( const std::string& aSpiceCode );
 
     template <typename T>
-    void ReadDataFields( int symbolPinCount, const std::vector<T>* aFields );
+    void ReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields );
 
     // C++ doesn't allow virtual template methods, so we do this:
-    virtual void ReadDataSchFields( int symbolPinCount, const std::vector<SCH_FIELD>* aFields );
-    virtual void ReadDataLibFields( int symbolPinCount, const std::vector<LIB_FIELD>* aFields );
+    virtual void ReadDataSchFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields );
+    virtual void ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields );
 
 
     template <typename T>
@@ -341,46 +531,71 @@ public:
     virtual void WriteDataSchFields( std::vector<SCH_FIELD>& aFields );
     virtual void WriteDataLibFields( std::vector<LIB_FIELD>& aFields );
 
+
     virtual void WriteCode( wxString& aCode ) = 0;
 
+    void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
 
-    TYPE GetType() { return m_type; }
 
-    virtual wxString GetFile() { return m_file; }
-    virtual void SetFile( const wxString& aFile ) { m_file = aFile; }
+    virtual wxString GetSpiceTypeString() { return SpiceInfo( GetType() ).typeString; }
 
-    std::vector<PIN>& Pins() { return m_pins; }
-    std::vector<PARAM>& Params() { return m_params; }
+    TYPE GetType() const { return m_type; }
+
+    const SIM_MODEL* GetBaseModel() const { return m_baseModel; }
+    void SetBaseModel( const SIM_MODEL& aBaseModel ) { m_baseModel = &aBaseModel; }
+
+    int GetPinCount() const { return static_cast<int>( m_pins.size() ); }
+    const PIN& GetPin( int aIndex ) const { return m_pins.at( aIndex ); }
+
+    void SetPinSymbolPinNumber( int aIndex, int aSymbolPinNumber )
+    {
+        m_pins.at( aIndex ).symbolPinNumber = aSymbolPinNumber;
+    }
+
+
+    int GetParamCount() const { return static_cast<int>( m_params.size() ); }
+    const PARAM& GetParam( int aIndex ) const;
+    SIM_VALUE_BASE& ParamValue( int aIndex ) { return *m_params.at( aIndex ).value; }
+
+    bool IsNonPrincipalParamOverridden() const;
+
+protected:
+    SIM_MODEL( TYPE aType );
 
 
 private:
-    TYPE m_type;
-    wxString m_file;
+    static std::unique_ptr<SIM_MODEL> create( TYPE aType );
+
+    static TYPE readTypeFromSpiceTypeString( const std::string& aTypeString );
+
+    const SIM_MODEL* m_baseModel;
+    wxString m_name;
+
+    const TYPE m_type;
     std::vector<PIN> m_pins;
     std::vector<PARAM> m_params;
 
 
     template <typename T>
-    void doReadDataFields( int symbolPinCount, const std::vector<T>* aFields );
+    void doReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields );
 
     template <typename T>
     void doWriteFields( std::vector<T>& aFields );
 
 
-    template <typename T>
-    static wxString getFieldValue( const std::vector<T>* aFields, const wxString& aFieldName );
-
-    template <typename T>
-    static void setFieldValue( std::vector<T>& aFields, const wxString& aFieldName,
-                               const wxString& aValue );
-
     virtual std::vector<wxString> getPinNames() { return {}; }
 
-    wxString generatePinSequence();
-    void parsePinSequence( int symbolPinCount, const wxString& aPinSequence );
+    wxString generateDeviceTypeField();
+    wxString generateTypeField();
 
-    virtual wxString generateParamValuePairs();
-    virtual void parseParamValuePairs( const wxString& aParamValuePairs );
+    wxString generatePinsField();
+    void parsePinsField( int aSymbolPinCount, const wxString& aPinsField );
+
+    
+    wxString generateParamsField();
+    void parseParamsField( const wxString& aParamsField );
+
+    virtual bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue );
 };
 
 #endif // SIM_MODEL_H

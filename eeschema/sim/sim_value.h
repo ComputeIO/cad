@@ -100,7 +100,6 @@ namespace SIM_VALUE_PARSER
     wxString allowedIntChars;
 
 
-    struct spaces : plus<space> {};
     struct digits : plus<tao::pegtl::digit> {}; // For some reason it fails on just "digit".
 
     struct sign : one<'+', '-'> {};

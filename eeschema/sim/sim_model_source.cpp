@@ -27,21 +27,17 @@
 using PARAM = SIM_MODEL::PARAM;
 
 
-template SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, int symbolPinCount,
-                                             const std::vector<void>* aFields );
-template SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, int symbolPinCount,
-                                             const std::vector<SCH_FIELD>* aFields );
-template SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, int symbolPinCount,
-                                             const std::vector<LIB_FIELD>* aFields );
-
-template <typename T>
-SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType, int symbolPinCount, const std::vector<T>* aFields ) 
+SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType )
     : SIM_MODEL( aType )
 {
     for( const PARAM::INFO& paramInfo : makeParams( aType ) )
-        Params().emplace_back( paramInfo );
+        AddParam( paramInfo );
+}
 
-    ReadDataFields( symbolPinCount, aFields );
+
+void SIM_MODEL_SOURCE::WriteCode( wxString& aCode )
+{
+    // TODO
 }
 
 
@@ -119,12 +115,6 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParams( TYPE aType )
         static std::vector<PARAM::INFO> empty;
         return empty;
     }
-}
-
-
-void SIM_MODEL_SOURCE::WriteCode( wxString& aCode )
-{
-    // TODO
 }
 
 
