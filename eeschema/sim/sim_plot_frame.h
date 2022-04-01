@@ -51,7 +51,7 @@ class SCH_SYMBOL;
 
 class SPICE_SIMULATOR;
 class SPICE_SIMULATOR_SETTINGS;
-class NETLIST_EXPORTER_PSPICE_SIM;
+class NGSPICE_CIRCUIT_MODEL;
 
 #include "sim_plot_panel.h"
 #include "sim_panel_base.h"
@@ -126,7 +126,7 @@ public:
     /**
      * Return the netlist exporter object used for simulations.
      */
-    const NETLIST_EXPORTER_PSPICE_SIM* GetExporter() const;
+    const NGSPICE_CIRCUIT_MODEL* GetExporter() const;
 
     /**
      * @return the current background option for plotting.
@@ -248,7 +248,7 @@ private:
     wxString getCurrentSimCommand() const
     {
         if( getCurrentPlotWindow() == nullptr )
-            return m_exporter->GetSheetSimCommand();
+            return m_circuitModel->GetSheetSimCommand();
         else
             return m_workbook->GetSimCommand( getCurrentPlotWindow() );
     }
@@ -333,7 +333,7 @@ private:
     wxToolBarToolBase* m_toolSettings;
 
     SCH_EDIT_FRAME* m_schematicFrame;
-    std::shared_ptr<NETLIST_EXPORTER_PSPICE_SIM> m_exporter;
+    std::shared_ptr<NGSPICE_CIRCUIT_MODEL> m_circuitModel;
     std::shared_ptr<SPICE_SIMULATOR> m_simulator;
     SIM_THREAD_REPORTER* m_reporter;
 
