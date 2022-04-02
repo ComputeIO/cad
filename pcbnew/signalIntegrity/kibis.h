@@ -114,29 +114,32 @@ enum class KIBIS_ACCURACY
     LEVEL_3,
 };
 
-class KIBIS : public KIBIS_ANY
-{
-public:
-    KIBIS( std::string aFileName );
-    std::vector<KIBIS_COMPONENT*> m_components;
-    std::vector<KIBIS_MODEL*>     m_models;
-    KIBIS_FILE*                   m_file;
-};
 
 class KIBIS_FILE : KIBIS_ANY
 {
 public:
-    KIBIS_FILE( KIBIS* aTopLevel, IbisParser& aParser );
+    KIBIS_FILE( KIBIS* aTopLevel );
 
     std::string m_fileName;
-    double   m_fileRev;
-    double   m_ibisVersion;
-
+    double      m_fileRev;
+    double      m_ibisVersion;
     std::string m_date;
     std::string m_source;
     std::string m_notes;
     std::string m_disclaimer;
     std::string m_copyright;
+
+    bool Init( IbisParser& aParser );
+};
+
+
+class KIBIS : public KIBIS_ANY
+{
+public:
+    KIBIS( std::string aFileName );
+    std::vector<KIBIS_COMPONENT> m_components;
+    std::vector<KIBIS_MODEL>     m_models;
+    KIBIS_FILE                   m_file;
 };
 
 class KIBIS_MODEL : public KIBIS_ANY
@@ -237,7 +240,7 @@ class KIBIS_PIN : public KIBIS_ANY
 {
 public:
     KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin& aPin, IbisComponentPackage& aPackage,
-               IbisParser& aParser, std::vector<KIBIS_MODEL*> aModels );
+               IbisParser& aParser, std::vector<KIBIS_MODEL>& aModels );
     /** @brief Name of the pin
      *  Examples : "VCC", "GPIOA", "CLK", etc...
      */
@@ -258,18 +261,18 @@ public:
 
     std::vector<KIBIS_MODEL*> m_models;
 
-    bool     writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
-                               IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
-                               KIBIS_WAVEFORM* aWave );
-    bool     writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL* aModel,
-                               IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+    bool writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
+                           IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
+                           KIBIS_WAVEFORM* aWave );
+    bool writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
+                           IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
     /** @brief Update m_Ku, m_Kd using no falling / rising waveform inputs ( low accuracy )
      *  @param aModel Model to be used
      *  @param aWave Waveform to generate
      *  @param aSupply Power supply corner
      */
-    void getKuKdNoWaveform( KIBIS_MODEL* aModel, KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply );
+    void getKuKdNoWaveform( KIBIS_MODEL& aModel, KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply );
 
     /** @brief Update m_Ku, m_Kd using with a single waveform input
      *  @param aModel Model to be used
@@ -278,7 +281,7 @@ public:
      *  @param aSupply Power supply corner
      *  @param aSpeed Speed corner
      */
-    void getKuKdOneWaveform( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+    void getKuKdOneWaveform( KIBIS_MODEL& aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                              KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
     /** @brief Update m_Ku, m_Kd using with two waveform inputs
@@ -291,7 +294,7 @@ public:
      *  @param aSupply Power supply corner
      *  @param aSpeed Speed corner
      */
-    void getKuKdTwoWaveforms( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair1,
+    void getKuKdTwoWaveforms( KIBIS_MODEL& aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair1,
                               std::pair<IbisWaveform*, IbisWaveform*> aPair2, KIBIS_WAVEFORM* aWave,
                               IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
 
@@ -307,7 +310,7 @@ public:
      * 
      *  @return A multiline string with spice directives
      */
-    std::string KuKdDriver( KIBIS_MODEL* aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
+    std::string KuKdDriver( KIBIS_MODEL& aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
                             KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
                             int aIndex );
 
@@ -321,7 +324,7 @@ public:
      *  @param aIndex Index for numbering ports
      *  @return A multiline string with spice directives
      */
-    std::string addDie( KIBIS_MODEL* aModel, IBIS_CORNER aSupply, int aIndex );
+    std::string addDie( KIBIS_MODEL& aModel, IBIS_CORNER aSupply, int aIndex );
 
 
     /** @brief Update m_Ku, m_Kd using with two waveform inputs
@@ -344,7 +347,7 @@ public:
     /** @brief Name of the manufacturer */
     std::string m_manufacturer;
 
-    std::vector<KIBIS_PIN*> m_pins;
+    std::vector<KIBIS_PIN> m_pins;
 
     /** @brief Get a pin by its number ( 1, 2, A1, A2, ... )
      *  

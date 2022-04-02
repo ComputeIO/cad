@@ -30,7 +30,7 @@ bool IbisParser::ibisToDouble( std::string& aString, double& aDest )
 {
     //Apparently stod does not check if there is an alpha character at the end.
     //This would prevent us for getting m,u,n,k,... modifiers
-    for ( char c: aString )
+    for( char c : aString )
     {
         if ( ! ( ( ( c >= '0' ) && ( c <= '9' ) ) || c == '.' || c== 'e' || c== '+' || c=='-' ) )
         {
@@ -293,13 +293,15 @@ std::string IVtable::Spice( int aN, std::string aPort1, std::string aPort2, std:
         result += ".model ";
         result += aModelName;
         result += " pwl(\n+ x_array=[";
-        for( auto entry : m_entries )
+
+        for( IVtableEntry& entry : m_entries )
         {
             result += doubleToString( entry.V );
             result += " ";
         }
         result += "]\n+ y_array=[";
-        for( auto entry : m_entries )
+
+        for( IVtableEntry& entry : m_entries )
         {
             result += doubleToString( entry.I->value[aCorner] );
             result += " ";
@@ -351,7 +353,7 @@ double IVtable::InterpolatedI( double aV, IBIS_CORNER aCorner )
 bool IVtable::Check()
 {
     bool status = true;
-    for( IVtableEntry entry : m_entries )
+    for( IVtableEntry& entry : m_entries )
     {
         if( std::isnan( entry.V ) )
         {
