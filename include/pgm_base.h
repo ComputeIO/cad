@@ -315,8 +315,8 @@ protected:
     bool setExecutablePath();
 
 #ifdef KICAD_USE_SENTRY
-    void sentryInit();
-    void sentryPrompt();
+    void     sentryInit();
+    void     sentryPrompt();
     wxString sentryCreateUid();
 #endif
 

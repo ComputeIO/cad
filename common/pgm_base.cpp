@@ -136,7 +136,7 @@ void PGM_BASE::Destroy()
 {
 #ifdef KICAD_USE_SENTRY
     sentry_close();
- #endif
+#endif
 
     // unlike a normal destructor, this is designed to be called more than once safely:
     delete m_locale;
@@ -252,7 +252,7 @@ void PGM_BASE::SetSentryOptIn( bool aOptIn )
 wxString PGM_BASE::sentryCreateUid()
 {
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    wxString userGuid = boost::uuids::to_string( uuid );
+    wxString           userGuid = boost::uuids::to_string( uuid );
 
     wxFFile sentryInitFile( m_sentry_uid_fn.GetFullPath(), "w" );
     sentryInitFile.Write( userGuid );
@@ -300,11 +300,11 @@ void PGM_BASE::sentryInit()
         sentry_options_set_symbolize_stacktraces( options, true );
         sentry_options_set_auto_session_tracking( options, false );
 
-        #if !KICAD_IS_NIGHTLY
+#if !KICAD_IS_NIGHTLY
         sentry_options_set_release( options, KICAD_SEMANTIC_VERSION );
-        #else
+#else
         sentry_options_set_release( options, KICAD_MAJOR_MINOR_VERSION );
-        #endif
+#endif
 
         sentry_init( options );
 
@@ -327,9 +327,9 @@ void PGM_BASE::sentryPrompt()
                    "data to developers in order to aid identifying critical bugs "
                    "across the user base more effectively and help profile "
                    "functionality to guide improvements. \n"
-                    "If you choose to voluntarily participate, KiCad will automatically "
-                    "handle sending said reports when crashes or events occur. \n"
-                    "Your design files such as schematic or PCB are not shared in this process." ),
+                   "If you choose to voluntarily participate, KiCad will automatically "
+                   "handle sending said reports when crashes or events occur. \n"
+                   "Your design files such as schematic or PCB are not shared in this process." ),
                 _( "Data collection opt in request" ), wxYES_NO | wxCENTRE );
 
         int result = optIn.ShowModal();
