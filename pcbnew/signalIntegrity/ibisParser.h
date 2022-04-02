@@ -742,15 +742,6 @@ private:
 
     IBIS_PARSER_CONTINUE m_continue = IBIS_PARSER_CONTINUE::NONE;
     IBIS_PARSER_CONTEXT  m_context = IBIS_PARSER_CONTEXT::HEADER;
-
-    // To be removed
-    /** @brief Basic string->double conversion
-     * 
-     * @param aString input string
-     * @param aDest destination
-     * @return True in case of success
-     */
-    bool ibisToDouble( std::string& aString, double& aDest );
 };
 
 #endif

@@ -26,29 +26,6 @@
 #include <sstream>
 
 
-bool IbisParser::ibisToDouble( std::string& aString, double& aDest )
-{
-    //Apparently stod does not check if there is an alpha character at the end.
-    //This would prevent us for getting m,u,n,k,... modifiers
-    for( char c : aString )
-    {
-        if ( ! ( ( ( c >= '0' ) && ( c <= '9' ) ) || c == '.' || c== 'e' || c== '+' || c=='-' ) )
-        {
-            return false;
-        }
-    }
-    try
-    {
-        aDest = std::stod( aString );
-    }
-    catch (...)
-    {
-        Report( "Cannot convert double value" );
-        return false;
-    }
-    return true;
-}
-
 bool IBIS_MATRIX_BANDED::Check()
 {
     bool status = true;
@@ -898,66 +875,50 @@ bool IbisParser::readDvdt( std::string& aString, dvdt& aDest )
 bool IbisParser::parseDouble( double& aDest, std::string& aStr, bool aAllowModifiers )
 {
     // "  an entry of the C matrix could be given as 1.23e-12 or as 1.23p or 1.23pF."
+    // Kibis: This implementation will also allow 1.23e-3n
+
     skipWhitespaces();
     bool status = true;
+    bool converted = false;
 
     std::string str = aStr;
 
     double result;
+    size_t size = 0;
 
-    if( str == "NA" )
+    try
     {
-        result = std::nan( NAN_NA );
+        result = std::stod( str, &size );
+        converted = true;
     }
-    else if( !ibisToDouble( str, result ) )
+    catch( ... )
     {
-        if( aAllowModifiers )
+        if( str == "NA" )
         {
-            int i;
-            // Start at 1 because the first character cannot be the modifier
-            for( i = 1; i < str.length(); i++ )
-            {
-                if( ( str.at( i ) == 'T' || str.at( i ) == 'G' || str.at( i ) == 'M'
-                      || str.at( i ) == 'k' || str.at( i ) == 'm' || str.at( i ) == 'u'
-                      || str.at( i ) == 'n' || str.at( i ) == 'p' || str.at( i ) == 'f' )
-                    || std::isalpha(
-                            str.at( i ) ) ) // Apparently some manufacturers could write "9.5V"
-                {
-                    break;
-                }
-            }
-            std::string str2 = str.substr( 0, i );
-
-            if( !ibisToDouble( str2, result ) )
-            {
-                status = false;
-            }
-            else
-            {
-                switch( static_cast<char>( str.at( i ) ) )
-                {
-                case 'T': result *= 1e12; break;
-                case 'G': result *= 1e9; break;
-                case 'M': result *= 1e6; break;
-                case 'k': result *= 1e3; break;
-                case 'm': result *= 1e-3; break;
-                case 'u': result *= 1e-6; break;
-                case 'n': result *= 1e-9; break;
-                case 'p': result *= 1e-12; break;
-                case 'f': result *= 1e-15; break;
-                default:
-                    break;
-                }
-            }
+            result = std::nan( NAN_NA );
         }
         else
         {
+            result = std::nan( NAN_INVALID );
             status = false;
         }
     }
-    if( status == false )
+
+    if( converted && ( size < str.length() ) )
     {
-        result = std::nan( NAN_INVALID );
+        switch( static_cast<char>( str.at( size ) ) )
+        {
+        case 'T': result *= 1e12; break;
+        case 'G': result *= 1e9; break;
+        case 'M': result *= 1e6; break;
+        case 'k': result *= 1e3; break;
+        case 'm': result *= 1e-3; break;
+        case 'u': result *= 1e-6; break;
+        case 'n': result *= 1e-9; break;
+        case 'p': result *= 1e-12; break;
+        case 'f': result *= 1e-15; break;
+        default: status = false; break;
+        }
     }
 
     aDest = result;
@@ -1026,10 +987,7 @@ bool IbisParser::readDouble( double& aDest )
 
     if( readWord( str ) )
     {
-        if ( parseDouble( aDest, str,  true ) )
-        {
-        }
-        else
+        if( !parseDouble( aDest, str, true ) )
         {
             Report( _( "Can't read double" ), RPT_SEVERITY_WARNING );
             status = false;
@@ -1053,24 +1011,33 @@ bool IbisParser::readInt( int& aDest )
 
     if( readWord( str ) )
     {
-        if( !ibisToDouble( str, buffer ) )
+        double result;
+        size_t size;
+
+        try
         {
-            int result = static_cast<int>( buffer );
-            if( buffer == static_cast<double>( result ) )
+            result = std::stoi( str, &size );
+        }
+        catch( ... )
+        {
+            if( str == "NA" )
             {
-                aDest = result;
+                result = std::nan( NAN_NA );
             }
             else
             {
+                result = std::nan( NAN_INVALID );
                 status = false;
-                Report( _( "Number is not an integer" ), RPT_SEVERITY_WARNING );
             }
         }
-        else
+
+        if( size != str.size() )
         {
             status = false;
-            Report( _( "Can't read number" ), RPT_SEVERITY_WARNING );
+            Report( _( "Number is not an integer" ), RPT_SEVERITY_WARNING );
         }
+
+        aDest = result;
     }
     else
     {
