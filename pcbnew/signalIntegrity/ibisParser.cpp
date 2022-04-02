@@ -222,7 +222,7 @@ bool IbisComponent::Check()
         status = false;
     }
 
-    for( IbisComponentPin pin : m_pins )
+    for( IbisComponentPin& pin : m_pins )
     {
         status &= pin.Check();
     }
