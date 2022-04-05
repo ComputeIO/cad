@@ -104,15 +104,8 @@ bool IBIS_MATRIX_SPARSE::Check()
 bool isNumberNA( double aNumber )
 {
     bool result = false;
-
     double NA = std::nan( NAN_NA );
-
-    std::uint64_t resultBinNA;
-    std::memcpy( &resultBinNA, &( NA ), sizeof NA );
-    std::uint64_t resultBin;
-    std::memcpy( &resultBin, &( aNumber ), sizeof aNumber );
-
-    return resultBin == resultBinNA;
+    return *reinterpret_cast<std::uint64_t*>(&aNumber) == *reinterpret_cast<std::uint64_t*>( &NA );
 }
 
 bool TypMinMaxValue::Check()
