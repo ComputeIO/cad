@@ -32,8 +32,6 @@ class SIM_MODEL_CODEMODEL : public SIM_MODEL
 {
 public:
     SIM_MODEL_CODEMODEL( TYPE aType );
-
-    void WriteCode( wxString& aCode ) override;
 };
 
 #endif // SIM_MODEL_CODEMODEL_H

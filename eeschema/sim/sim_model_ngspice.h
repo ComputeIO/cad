@@ -34,12 +34,10 @@ class SIM_MODEL_NGSPICE : public SIM_MODEL
 public:
     SIM_MODEL_NGSPICE( TYPE aType );
 
-    void WriteCode( wxString& aCode ) override;
-
 private:
-    std::vector<wxString> getPinNames() override;
+    std::vector<wxString> getPinNames() const override;
 
-    NGSPICE::MODEL_TYPE getModelType();
+    NGSPICE::MODEL_TYPE getModelType() const;
     bool getIsOtherVariant();
 };
 

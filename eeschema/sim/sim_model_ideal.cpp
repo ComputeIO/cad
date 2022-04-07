@@ -45,13 +45,28 @@ SIM_MODEL_IDEAL::SIM_MODEL_IDEAL( TYPE aType )
 }
 
 
-void SIM_MODEL_IDEAL::WriteCode( wxString& aCode )
+wxString SIM_MODEL_IDEAL::GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const
 {
-    // TODO
+    return "";
 }
 
 
-std::vector<wxString> SIM_MODEL_IDEAL::getPinNames()
+wxString SIM_MODEL_IDEAL::GenerateSpiceModelLine( const wxString& aModelName ) const
+{
+    return "";
+}
+
+
+wxString SIM_MODEL_IDEAL::GenerateSpiceItemLine( const wxString& aRefName,
+                                                 const wxString& aModelName,
+                                                 const std::vector<wxString>& aPinNetNames ) const
+{
+    return SIM_MODEL::GenerateSpiceItemLine( aRefName, GetParam( 0 ).value->ToString(),
+                                             aPinNetNames );
+}
+
+
+std::vector<wxString> SIM_MODEL_IDEAL::getPinNames() const
 {
     return { "+", "-" };
 }

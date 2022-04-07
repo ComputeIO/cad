@@ -163,7 +163,7 @@ SIM_PROPERTY::SIM_PROPERTY( const wxString& aLabel, const wxString& aName,
       m_model( aModel ),
       m_paramIndex( aParamIndex )
 {
-    SetValueFromString( aModel->ParamValue( m_paramIndex ).ToString() );
+    SetValueFromString( GetParam().value->ToString() );
 }
 
 
@@ -180,15 +180,15 @@ bool SIM_PROPERTY::StringToValue( wxVariant& aVariant, const wxString& aText, in
         wxString paramValueStr = m_model->GetBaseParam( m_paramIndex ).value->ToString();
 
         // TODO: Don't use string comparison.
-        if( aText.IsEmpty() || aText == paramValueStr )
+        if( m_model->GetBaseModel() && ( aText.IsEmpty() || aText == paramValueStr ) )
         {
-            m_model->ParamValue( m_paramIndex ).FromString( "" ); // Nullify.
+            m_model->SetParamValue( m_paramIndex, "" ); // Nullify.
             aVariant = paramValueStr; // Use the inherited value (if it exists) if null.
         }
         else
         {
-            m_model->ParamValue( m_paramIndex ).FromString( aText );
-            aVariant = m_model->ParamValue( m_paramIndex ).ToString();
+            m_model->SetParamValue( m_paramIndex, aText );
+            aVariant = GetParam().value->ToString();
         }
     }
     catch( KI_PARAM_ERROR& e )

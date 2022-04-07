@@ -29,9 +29,3 @@ SIM_MODEL_SUBCIRCUIT::SIM_MODEL_SUBCIRCUIT( TYPE aType )
     : SIM_MODEL( aType )
 {
 }
-
-
-void SIM_MODEL_SUBCIRCUIT::WriteCode( wxString& aCode )
-{
-    // TODO
-}

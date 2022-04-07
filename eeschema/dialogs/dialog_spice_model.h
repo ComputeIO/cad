@@ -78,6 +78,7 @@ private:
     void onOverrideCheckbox( wxCommandEvent& aEvent ) override;
     void onDeviceTypeChoice( wxCommandEvent& aEvent ) override;
     void onTypeChoice( wxCommandEvent& aEvent ) override;
+    void onParamGridChanged( wxPropertyGridEvent& aEvent ) override;
     void onPinAssignmentsGridCellChange( wxGridEvent& aEvent ) override;
     void onPinAssignmentsGridSize( wxSizeEvent& aEvent ) override;
 

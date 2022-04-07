@@ -34,8 +34,6 @@ public:
     SIM_MODEL_RAWSPICE( TYPE aType );
 
     //bool ReadSpiceCode( const std::string& aSpiceCode ) override;
-    void WriteCode( wxString& aCode ) override;
-
 
 private:
     bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue ) override;

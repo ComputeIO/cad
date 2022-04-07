@@ -42,7 +42,7 @@ namespace SIM_MODEL_PARSER
 
 
     struct eolComment : seq<one<';'>, until<eol>> {};
-    struct commentLine : seq<one<'*'>, until<eol>> {};
+    struct commentLine : seq<one<'*', ';'>, until<eol>> {};
 
 
     struct linespaces : plus<not_at<eol>,
@@ -140,7 +140,8 @@ namespace SIM_MODEL_PARSER
                                 TAO_PEGTL_ISTRING( "PMF" ),
                                 TAO_PEGTL_ISTRING( "VDMOS" )> {};
     
-    struct spiceModel : seq<TAO_PEGTL_ISTRING( ".model" ),
+    struct spiceModel : seq<star<commentLine>,
+                            TAO_PEGTL_ISTRING( ".model" ),
                             sep,
                             spiceName,
                             sep,
@@ -169,7 +170,8 @@ namespace SIM_MODEL_PARSER
                                 opt<sep>,
                                 newline> {};
 
-    struct spiceSubckt : seq<TAO_PEGTL_ISTRING( ".subckt" ),
+    struct spiceSubckt : seq<star<commentLine>,
+                             TAO_PEGTL_ISTRING( ".subckt" ),
                              sep,
                              spiceName,
                              sep,
@@ -411,6 +413,7 @@ public:
     {
         wxString itemType;
         wxString typeString = "";
+        wxString inlineTypeString = "";
         int level = 0;
         bool hasExpression = false;
         wxString version = "";
@@ -532,12 +535,20 @@ public:
     virtual void WriteDataLibFields( std::vector<LIB_FIELD>& aFields );
 
 
-    virtual void WriteCode( wxString& aCode ) = 0;
+    virtual wxString GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const;
+    virtual wxString GenerateSpiceModelLine( const wxString& aModelName ) const;
+
+    virtual SPICE_INFO GetSpiceInfo() const;
+
+    wxString GenerateSpiceItemLine( const wxString& aRefName, const wxString& aModelName ) const;
+    virtual wxString GenerateSpiceItemLine( const wxString& aRefName,
+                                            const wxString& aModelName,
+                                            const std::vector<wxString>& aPinNetNames ) const;
+
+    virtual wxString GenerateSpicePreview( const wxString& aModelName ) const;
+
 
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
-
-
-    virtual wxString GetSpiceTypeString() { return SpiceInfo( GetType() ).typeString; }
 
     TYPE GetType() const { return m_type; }
 
@@ -554,23 +565,26 @@ public:
 
 
     int GetParamCount() const { return static_cast<int>( m_params.size() ); }
-    const PARAM& GetParam( int aIndex ) const; // Return base parameter unless it's overridden.
-    const PARAM& GetBaseParam( int aIndex ) const; // Always return base parameter if it exists.
-    SIM_VALUE_BASE& ParamValue( int aIndex ) { return *m_params.at( aIndex ).value; }
+    const PARAM& GetParam( int aParamIndex ) const; // Return base parameter unless it's overridden.
+    const PARAM& GetUnderlyingParam( int aParamIndex ) const; // Return the actual parameter.
+    const PARAM& GetBaseParam( int aParamIndex ) const; // Always return base parameter if it exists.
+    virtual bool SetParamValue( int aParamIndex, const wxString& aValue );
 
-    bool IsNonPrincipalParamOverridden() const;
+    bool HasOverrides() const;
+    bool HasNonPrincipalOverrides() const;
+
+    // Can modifying a model parameter also modify other parameters?
+    virtual bool HasAutofill() const { return false; }
 
 protected:
     SIM_MODEL( TYPE aType );
 
-
 private:
     static std::unique_ptr<SIM_MODEL> create( TYPE aType );
-
     static TYPE readTypeFromSpiceTypeString( const std::string& aTypeString );
 
+    wxString m_spiceCode;
     const SIM_MODEL* m_baseModel;
-    wxString m_name;
 
     const TYPE m_type;
     std::vector<PIN> m_pins;
@@ -584,16 +598,16 @@ private:
     void doWriteFields( std::vector<T>& aFields );
 
 
-    virtual std::vector<wxString> getPinNames() { return {}; }
+    virtual std::vector<wxString> getPinNames() const { return {}; }
 
-    wxString generateDeviceTypeField();
-    wxString generateTypeField();
+    wxString generateDeviceTypeField() const;
+    wxString generateTypeField() const;
 
-    wxString generatePinsField();
+    wxString generatePinsField() const;
     void parsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
     
-    wxString generateParamsField();
+    wxString generateParamsField( const wxString& aPairSeparator ) const;
     void parseParamsField( const wxString& aParamsField );
 
     virtual bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue );

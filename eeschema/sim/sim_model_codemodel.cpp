@@ -29,9 +29,3 @@ SIM_MODEL_CODEMODEL::SIM_MODEL_CODEMODEL( TYPE aType )
     : SIM_MODEL( aType )
 {
 }
-
-
-void SIM_MODEL_CODEMODEL::WriteCode( wxString& aCode )
-{
-    // TODO
-}

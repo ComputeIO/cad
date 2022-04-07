@@ -35,9 +35,30 @@ SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType )
 }
 
 
-void SIM_MODEL_SOURCE::WriteCode( wxString& aCode )
+wxString SIM_MODEL_SOURCE::GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const
 {
-    // TODO
+    return "";
+}
+
+
+wxString SIM_MODEL_SOURCE::GenerateSpiceModelLine( const wxString& aModelName ) const
+{
+    return "";
+}
+
+
+wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
+                                                  const wxString& aModelName,
+                                                  const std::vector<wxString>& aPinNetNames ) const
+{
+    wxString argList = "";
+
+    for( int i = 0; i < GetParamCount(); ++i )
+        argList << GetParam( i ).value->ToString() << " ";
+
+    wxString model = wxString::Format( GetSpiceInfo().inlineTypeString + "( %s)", argList );
+
+    return SIM_MODEL::GenerateSpiceItemLine( aRefName, model, aPinNetNames );
 }
 
 
@@ -115,6 +136,34 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParams( TYPE aType )
         static std::vector<PARAM::INFO> empty;
         return empty;
     }
+}
+
+
+bool SIM_MODEL_SOURCE::SetParamValue( int aParamIndex, const wxString& aValue )
+{
+    // Sources are special. All preceding parameter values must be filled. If they are not, fill
+    // them out automatically. If a value is nulled, delete everything after it.
+    if( aValue.IsEmpty() )
+    {
+        for( int i = aParamIndex; i < GetParamCount(); ++i )
+            SIM_MODEL::SetParamValue( i, "" );
+    }
+    else
+    {
+        for( int i = 0; i < aParamIndex; ++i )
+        {
+            if( GetParam( i ).value->ToString().IsEmpty() )
+                SIM_MODEL::SetParamValue( i, "0" );
+        }
+    }
+
+    return SIM_MODEL::SetParamValue( aParamIndex, aValue );
+}
+
+
+std::vector<wxString> SIM_MODEL_SOURCE::getPinNames() const
+{
+    return { "+", "-" };
 }
 
 

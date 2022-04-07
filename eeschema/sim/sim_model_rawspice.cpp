@@ -33,12 +33,6 @@ SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType )
 }
 
 
-void SIM_MODEL_RAWSPICE::WriteCode( wxString& aCode )
-{
-    // TODO
-}
-
-
 bool SIM_MODEL_RAWSPICE::setParamFromSpiceCode( const wxString& aParamName,
                                                 const wxString& aParamValue )
 {

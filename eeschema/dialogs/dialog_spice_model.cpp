@@ -123,7 +123,7 @@ bool DIALOG_SPICE_MODEL<T>::TransferDataToWindow()
 
         curModel().ReadDataFields( m_symbol.GetAllPins().size(), &m_fields );
 
-        m_overrideCheckbox->SetValue( curModel().IsNonPrincipalParamOverridden() );
+        m_overrideCheckbox->SetValue( curModel().HasNonPrincipalOverrides() );
     }
     else
     {
@@ -182,96 +182,103 @@ void DIALOG_SPICE_MODEL<T>::updateWidgets()
 template <typename T>
 void DIALOG_SPICE_MODEL<T>::updateModelParamsTab()
 {
-    if( &curModel() == m_prevModel )
+    if( &curModel() != m_prevModel )
     {
-        // Either enable all properties or disable all except the principal ones.
+        SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( curModel().GetType() ).deviceType;
+        m_deviceTypeChoice->SetSelection( static_cast<int>( deviceType ) );
         
-        for( wxPropertyGridIterator it = m_paramGrid->GetIterator(); !it.AtEnd(); ++it )
+        m_typeChoice->Clear();
+
+        for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
         {
-            SIM_PROPERTY* prop = dynamic_cast<SIM_PROPERTY*>( *it );
-
-            if( !prop ) // Not all properties are SIM_PROPERTY yet.
-                continue;
-
-            prop->Enable( prop->GetParam().info.category == CATEGORY::PRINCIPAL
-                || m_overrideCheckbox->GetValue() );
-        }
-
-        return;
-    }
-
-    SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( curModel().GetType() ).deviceType;
-    m_deviceTypeChoice->SetSelection( static_cast<int>( deviceType ) );
-    
-    m_typeChoice->Clear();
-
-    for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
-    {
-        if( SIM_MODEL::TypeInfo( type ).deviceType == deviceType )
-        {
-            wxString description = SIM_MODEL::TypeInfo( type ).description;
-
-            if( !description.IsEmpty() )
-                m_typeChoice->Append( description );
-
-            if( type == curModel().GetType() )
+            if( SIM_MODEL::TypeInfo( type ).deviceType == deviceType )
             {
-                m_typeChoice->SetSelection( m_typeChoice->GetCount() - 1 );
+                wxString description = SIM_MODEL::TypeInfo( type ).description;
+
+                if( !description.IsEmpty() )
+                    m_typeChoice->Append( description );
+
+                if( type == curModel().GetType() )
+                    m_typeChoice->SetSelection( m_typeChoice->GetCount() - 1 );
             }
         }
+
+
+        // This wxPropertyGridManager column and header stuff has to be here because it segfaults in
+        // the constructor.
+
+        m_paramGridMgr->SetColumnCount( static_cast<int>( PARAM_COLUMN::END_ ) );
+
+        m_paramGridMgr->SetColumnTitle( static_cast<int>( PARAM_COLUMN::UNIT ), "Unit" );
+        m_paramGridMgr->SetColumnTitle( static_cast<int>( PARAM_COLUMN::DEFAULT ), "Default" );
+        m_paramGridMgr->SetColumnTitle( static_cast<int>( PARAM_COLUMN::TYPE ), "Type" );
+
+        m_paramGridMgr->ShowHeader();
+
+
+        m_paramGrid->Clear();
+
+        m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
+        m_paramGrid->HideProperty( "DC" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "Temperature" ) );
+        m_paramGrid->HideProperty( "Temperature" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "Noise" ) );
+        m_paramGrid->HideProperty( "Noise" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "Distributed Quantities" ) );
+        m_paramGrid->HideProperty( "Distributed Quantities" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "Geometry" ) );
+        m_paramGrid->HideProperty( "Geometry" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "Limiting Values" ) );
+        m_paramGrid->HideProperty( "Limiting Values" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "Advanced" ) );
+        m_paramGrid->HideProperty( "Advanced" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
+        m_paramGrid->HideProperty( "Flags" );
+
+        for( int i = 0; i < curModel().GetParamCount(); ++i )
+            addParamPropertyIfRelevant( i );
+
+        m_paramGrid->CollapseAll();
     }
 
+    // Either enable all properties or disable all except the principal ones.
+    for( wxPropertyGridIterator it = m_paramGrid->GetIterator(); !it.AtEnd(); ++it )
+    {
+        SIM_PROPERTY* prop = dynamic_cast<SIM_PROPERTY*>( *it );
 
-    // This wxPropertyGridManager column and header stuff has to be here because it segfaults in
-    // the constructor.
+        if( !prop ) // Not all properties are SIM_PROPERTY yet. TODO.
+            continue;
 
-    m_paramGridMgr->SetColumnCount( static_cast<int>( PARAM_COLUMN::END_ ) );
+        // Model values other than the currently edited value may have changed. Update them.
+        // This feature is called "autofill" and present only in certain models. Don't do it for
+        // models that don't have it for performance reasons.
+        if( curModel().HasAutofill() )
+            prop->SetValueFromString( prop->GetParam().value->ToString() );
 
-    m_paramGridMgr->SetColumnTitle( static_cast<int>( PARAM_COLUMN::UNIT ), "Unit" );
-    m_paramGridMgr->SetColumnTitle( static_cast<int>( PARAM_COLUMN::DEFAULT ), "Default" );
-    m_paramGridMgr->SetColumnTitle( static_cast<int>( PARAM_COLUMN::TYPE ), "Type" );
-
-    m_paramGridMgr->ShowHeader();
-
-
-    m_paramGrid->Clear();
-
-    m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
-    m_paramGrid->HideProperty( "DC" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "Temperature" ) );
-    m_paramGrid->HideProperty( "Temperature" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "Noise" ) );
-    m_paramGrid->HideProperty( "Noise" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "Distributed Quantities" ) );
-    m_paramGrid->HideProperty( "Distributed Quantities" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "Geometry" ) );
-    m_paramGrid->HideProperty( "Geometry" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "Limiting Values" ) );
-    m_paramGrid->HideProperty( "Limiting Values" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "Advanced" ) );
-    m_paramGrid->HideProperty( "Advanced" );
-
-    m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
-    m_paramGrid->HideProperty( "Flags" );
-
-    for( int i = 0; i < curModel().GetParamCount(); ++i )
-        addParamPropertyIfRelevant( i );
-
-    m_paramGrid->CollapseAll();
+        // Most of the values are disabled when the override checkbox is unchecked.
+        prop->Enable( m_useInstanceModelRadioButton->GetValue()
+            || prop->GetParam().info.category == CATEGORY::PRINCIPAL
+            || m_overrideCheckbox->GetValue() );
+    }
 }
 
 
 template <typename T>
 void DIALOG_SPICE_MODEL<T>::updateModelCodeTab()
 {
-    if( &curModel() == m_prevModel )
-        return;
+    wxString modelName = m_modelNameCombobox->GetStringSelection();
+
+    if( m_useInstanceModelRadioButton->GetValue() || modelName.IsEmpty() )
+        modelName = m_fields.at( REFERENCE_FIELD ).GetText();
+
+    m_codePreview->SetText( curModel().GenerateSpicePreview( modelName ) );
 }
 
 
@@ -282,7 +289,6 @@ void DIALOG_SPICE_MODEL<T>::updatePinAssignmentsTab()
         return;
 
     m_pinAssignmentsGrid->ClearRows();
-
     std::vector<SCH_PIN*> pinList = m_symbol.GetAllPins();
 
     m_pinAssignmentsGrid->AppendRows( static_cast<int>( pinList.size() ) );
@@ -658,6 +664,13 @@ void DIALOG_SPICE_MODEL<T>::onTypeChoice( wxCommandEvent& aEvent )
     }
 
     m_curModelTypeOfDeviceType.at( deviceType ) = m_curModelType;
+    updateWidgets();
+}
+
+
+template <typename T>
+void DIALOG_SPICE_MODEL<T>::onParamGridChanged( wxPropertyGridEvent& aEvent )
+{
     updateWidgets();
 }
 

@@ -76,7 +76,7 @@ public:
     bool StringToValue( wxVariant& aVariant, const wxString& aText, int aArgFlags = 0 )
         const override;
 
-    const SIM_MODEL::PARAM& GetParam() { return m_model->GetParam( m_paramIndex ); }
+    const SIM_MODEL::PARAM& GetParam() const { return m_model->GetParam( m_paramIndex ); }
 
 protected:
     SIM_VALUE_BASE::TYPE         m_valueType;

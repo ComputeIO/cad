@@ -40,19 +40,13 @@ SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType )
 }
 
 
-void SIM_MODEL_NGSPICE::WriteCode( wxString& aCode )
-{
-    // TODO
-}
-
-
-std::vector<wxString> SIM_MODEL_NGSPICE::getPinNames()
+std::vector<wxString> SIM_MODEL_NGSPICE::getPinNames() const
 {
     return NGSPICE::ModelInfo( getModelType() ).pinNames;
 }
 
 
-NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType()
+NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType() const
 {
     switch( GetType() )
     {

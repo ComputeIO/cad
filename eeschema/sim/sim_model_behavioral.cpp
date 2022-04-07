@@ -23,6 +23,7 @@
  */
 
 #include <sim/sim_model_behavioral.h>
+#include <locale_io.h>
 
 
 SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType )
@@ -47,9 +48,51 @@ SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType )
 }
 
 
-void SIM_MODEL_BEHAVIORAL::WriteCode( wxString& aCode )
+wxString SIM_MODEL_BEHAVIORAL::GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const
 {
-    // TODO
+    return "";
+}
+
+
+wxString SIM_MODEL_BEHAVIORAL::GenerateSpiceModelLine( const wxString& aModelName ) const
+{
+    return "";
+}
+
+
+wxString SIM_MODEL_BEHAVIORAL::GenerateSpiceItemLine( const wxString& aRefName,
+                                                      const wxString& aModelName,
+                                                      const std::vector<wxString>& aPinNetNames ) const
+{
+    LOCALE_IO toggle;
+
+    switch( GetType() )
+    {
+    case TYPE::RESISTOR_BEHAVIORAL:
+    case TYPE::CAPACITOR_BEHAVIORAL:
+    case TYPE::INDUCTOR_BEHAVIORAL:
+        return SIM_MODEL::GenerateSpiceItemLine( aRefName,
+                                                 GetParam( 0 ).value->ToString(),
+                                                 aPinNetNames );
+
+    case TYPE::VSOURCE_BEHAVIORAL:
+        return SIM_MODEL::GenerateSpiceItemLine( aRefName,
+                wxString::Format( "V=%s", GetParam( 0 ).value->ToString() ), aPinNetNames );
+
+    case TYPE::ISOURCE_BEHAVIORAL:
+        return SIM_MODEL::GenerateSpiceItemLine( aRefName,
+                wxString::Format( "I=%s", GetParam( 0 ).value->ToString() ), aPinNetNames );
+
+    default:
+        wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_BEHAVIORAL" );
+        return "";
+    }
+}
+
+
+std::vector<wxString> SIM_MODEL_BEHAVIORAL::getPinNames() const
+{
+    return { "+", "-" };
 }
 
 

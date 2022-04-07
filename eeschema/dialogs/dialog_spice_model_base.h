@@ -90,6 +90,7 @@ class DIALOG_SPICE_MODEL_BASE : public wxDialog
 		virtual void onDeviceTypeChoiceUpdate( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void onTypeChoice( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onTypeChoiceUpdate( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void onParamGridChanged( wxPropertyGridEvent& event ) { event.Skip(); }
 		virtual void onPinAssignmentsGridCellChange( wxGridEvent& event ) { event.Skip(); }
 		virtual void onPinAssignmentsGridSize( wxSizeEvent& event ) { event.Skip(); }
 
