@@ -20,9 +20,9 @@
 // See equation 9b in this paper:
 // https://adam-research.de/pdfs/TRM_WhitePaper10_AdiabaticWire.pdf
 
-// The Onderdonk equation uses circular mils, but this constant uses mm^2
-// 33 * 0.0005067075 ^2
-#define ONDERDONK_COEFF 8.472e-6
+// See equation 8
+//https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=Fusing+of+wires+by+electrical+current&btnG=
+#define ABS_ZERO ( -273.15 )
 
 #include <calculator_panels/panel_fusing_current.h>
 #include <pcb_calculator_settings.h>
@@ -44,6 +44,7 @@ PANEL_FUSING_CURRENT_BASE( parent, id, pos, size, style, name )
     wxString wxs( "" );
     m_ambientValue->SetValue( wxString::Format( wxT( "%i" ), 25 ) );
     m_meltingValue->SetValue( wxString::Format( wxT( "%i" ), 1084 ) ); // Value for copper
+    m_meltingValue->SetEditable( false ); // For now, this panel only works for copper.
     m_widthValue->SetValue( wxString::Format( wxT( "%f" ), 0.1 ) );
     m_thicknessValue->SetValue( wxString::Format( wxT( "%f" ), 0.035 ) );
     m_currentValue->SetValue( wxString::Format( wxT( "%f" ), 10.0 ) );
@@ -85,8 +86,8 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
 
     double scalingT, scalingW;
 
-    scalingT = m_thicknessUnit->GetUnitScale() * 1000;
-    scalingW = m_widthUnit->GetUnitScale() * 1000;
+    scalingT = m_thicknessUnit->GetUnitScale();
+    scalingW = m_widthUnit->GetUnitScale();
     T *= scalingT;
     W *= scalingW;
 
@@ -100,7 +101,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     if( valid_Tm && valid_Ta )
     {
         valid_Tm &= ( Tm > Ta );
-        valid_Ta &= ( Tm > Ta ) && ( Ta > -234 );
+        valid_Ta &= ( Tm > Ta ) && ( Ta > ABS_ZERO );
     }
 
     valid_I    &= ( I > 0 );
@@ -109,18 +110,52 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     valid_time &= ( time > 0 );
 
     double A     = W * T;
-    double ftemp = 1; // Temperature function
 
-    if( valid_Ta ) // Avoid division by 0 and log of negative
-        ftemp = log10( ( Tm - Ta ) / ( 234 + Ta ) + 1 );
+    // The energy required for copper to change phase ( fusion ) is 13.05 kJ / mol.
+    // Copper molar mass is 0.06355 kg/mol
+    // => The copper energy required for the phase change is 205.35 kJ / kg
 
-    bool valid = valid_I && valid_W && valid_Ta && valid_Tm && valid_time;
+    double latentHeat = 205350.0;
+
+    // The change in enthalpy is deltaH = deltaU + delta P * deltaV
+    // with U the internal energy, P the pressure and V the volume
+    // But for constant pressure, the change in enthalpy is simply the thermal energy
+
+    // Copper specific heat energy is 0.385 kJ / kg / K.
+    // The change in heat energy is then 0.385 kJ / kg per degree.
+
+    double cp = 385; // Heat capacity in J / kg / K
+    double deltaEnthalpy = ( Tm - Ta ) * cp;
+    double density = 8940; // Density of copper to kilogram per cubic meter;
+    double volumicEnergy = density * ( deltaEnthalpy + latentHeat );
+
+    // Equation (3) is equivalent to :
+    // VolumicEnergy * Volume = R * I^2 * t
+    // If we consider the resistivity of copper instead of its resistance:
+    // VolumicEnergy * Volume   = resistivity * length / Area  * I^2 * t
+    // For a unit length:
+    // VolumicEnergy * Area   = resistivity / Area  * I^2 * t
+    // We can rewrite it as:
+    // VolumicEnergy * ( Area / I )^2 / resistivity  =  t
+    // coeff * ( Area / I ) ^2 = t    with coeff = VolumicEnergy / resistivity
+
+    // Copper resistivity at 20C ( 293K ) is 1.72e-8 ohm m
+    // Copper temperature coefficient is 0.00393 per degree
+
+    double Ra = ( ( Ta - ABS_ZERO - 293 ) * 0.00393 + 1 ) * 1.72e-8;
+    double Rm = ( ( Tm - ABS_ZERO - 293 ) * 0.00393 + 1 ) * 1.72e-8;
+
+    // Let's consider the average resistivity
+    double R = ( Rm + Ra ) / 2;
+    double coeff = volumicEnergy / R;
+
+    bool valid = valid_I && valid_W && valid_T && valid_Ta && valid_Tm && valid_time;
 
     if( m_widthRadio->GetValue() )
     {
         if( valid )
         {
-            A = I / sqrt( ftemp / time / ONDERDONK_COEFF );
+            A = I / sqrt( coeff / time );
             W = A / T;
             m_widthValue->SetValue( wxString::Format( wxT( "%f" ), W / scalingW ) );
         }
@@ -133,7 +168,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         if( valid )
         {
-            A = I / sqrt( ftemp / time / ONDERDONK_COEFF );
+            A = I / sqrt( coeff / time );
             T = A / W;
             m_thicknessValue->SetValue( wxString::Format( wxT( "%f" ), T / scalingT ) );
         }
@@ -146,7 +181,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         if( valid )
         {
-            I = A * sqrt( ftemp / time / ONDERDONK_COEFF );
+            I = A * sqrt( coeff / time );
             m_currentValue->SetValue( wxString::Format( wxT( "%f" ), I ) );
         }
         else
@@ -158,7 +193,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     {
         if( valid )
         {
-            time = ftemp / I / I * A * A / ONDERDONK_COEFF;
+            time = coeff * A * A / I / I;
             m_timeValue->SetValue( wxString::Format( wxT( "%f" ), time ) );
         }
         else
@@ -175,17 +210,15 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     // https://adam-research.de/pdfs/TRM_WhitePaper10_AdiabaticWire.pdf
     // We approximate the track with a circle having the same area.
 
-    double cp      = 385;                     // Heat capacity in J / kg / K
-    double rho     = 3900;                    // Mass density in kg / m^3
-    double r       = sqrt( A / M_PI ) / 1000; //radius in m;
+    double r = sqrt( A / M_PI );              // radius in m;
     double epsilon = 5.67e-8;                 // Stefan-Boltzmann constant in W / ( m^2 K^4 )
     double sigma   = 0.5;                     // Surface radiative emissivity ( no unit )
     // sigma is according to paper, between polished and oxidized
 
-    double tmKelvin = Tm + 273;
+    double tmKelvin = Tm - ABS_ZERO;
     double frad = 0.5 * ( tmKelvin + 293 ) * ( tmKelvin + 293 ) * ( tmKelvin + 293 );
 
-    double tau = cp * rho * r / ( epsilon * sigma * frad * 2 );
+    double tau = cp * density * r / ( epsilon * sigma * frad * 2 );
 
     if( 2 * time < tau )
     {
@@ -193,7 +226,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     }
     else
     {
-        m_comment->SetLabel( _( "Time is high compared to geometry: results might not be accurate."
-                                "The track could handle much more current" ) );
+        m_comment->SetLabel( _( "The wire fuses too slowly, the adiabatic hypothesis does not hold "
+                                "and the wire could handle more current." ) );
     }
 }
