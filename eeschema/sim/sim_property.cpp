@@ -38,7 +38,7 @@ wxEND_EVENT_TABLE()
 
 
 SIM_VALIDATOR::SIM_VALIDATOR( SIM_VALUE_BASE::TYPE aValueType,
-                              SIM_VALUE_PARSER::NOTATION aNotation )
+                              SIM_VALUE_GRAMMAR::NOTATION aNotation )
     : wxValidator(),
       m_valueType( aValueType ),
       m_notation( aNotation )
@@ -85,7 +85,7 @@ bool SIM_VALIDATOR::TransferFromWindow()
 
 bool SIM_VALIDATOR::isValid( const wxString& aString )
 {
-    return SIM_VALUE_PARSER::IsValid( aString, m_valueType, m_notation );
+    return SIM_VALUE_GRAMMAR::IsValid( aString, m_valueType, m_notation );
 }
 
 
@@ -155,7 +155,7 @@ SIM_PROPERTY::SIM_PROPERTY( const wxString& aLabel, const wxString& aName,
                             std::shared_ptr<SIM_MODEL> aModel,
                             int aParamIndex,
                             SIM_VALUE_BASE::TYPE aValueType,
-                            SIM_VALUE_PARSER::NOTATION aNotation )
+                            SIM_VALUE_GRAMMAR::NOTATION aNotation )
     : wxStringProperty( aLabel, aName ),
       m_valueType( aValueType ),
       m_notation( aNotation ),

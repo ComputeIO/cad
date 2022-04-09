@@ -25,10 +25,10 @@
 #ifndef SIM_MODEL_H
 #define SIM_MODEL_H
 
+#include <sim/spice_grammar.h>
 #include <enum_vector.h>
 #include <sch_field.h>
 #include <lib_field.h>
-#include <sim/sim_value.h>
 #include <wx/string.h>
 #include <map>
 #include <stdexcept>
@@ -36,30 +36,9 @@
 class SIM_LIBRARY;
 
 
-namespace SIM_MODEL_PARSER
+namespace SIM_MODEL_GRAMMAR
 {
-    using namespace SIM_VALUE_PARSER;
-
-
-    struct eolComment : seq<one<';'>, until<eol>> {};
-    struct commentLine : seq<one<'*', ';'>, until<eol>> {};
-
-
-    struct linespaces : plus<not_at<eol>,
-                             space> {};
-    struct newline : seq<sor<eol,
-                             eolComment>,
-                         not_at<one<'+'>>> {};
-                         
-    struct continuation : seq<opt<linespaces>,
-                              sor<eol,
-                                  eolComment>,
-                              star<commentLine>,
-                              one<'+'>,
-                              opt<linespaces>> {};
-
-    struct sep : sor<continuation,
-                     linespaces> {};
+    using namespace SPICE_GRAMMAR;
 
 
     struct pinNumber : sor<digits, one<'X'>> {};
@@ -72,137 +51,11 @@ namespace SIM_MODEL_PARSER
                                      opt<sep>,
                                      eof> {};
 
-
-    template <typename Rule> struct pinSequenceSelector : std::false_type {};
-    template <> struct pinSequenceSelector<pinNumber> : std::true_type {};
-
-
-    struct param : plus<alnum> {};
-
-    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
-    struct paramValuePair : seq<param,
-                                opt<sep>,
-                                one<'='>,
-                                opt<sep>,
-                                number<Type, Notation>> {};
-
-    template <NOTATION Notation>
-    struct paramValuePairs : seq<opt<paramValuePair<SIM_VALUE_BASE::TYPE::FLOAT,
-                                                    Notation>,
-                                     star<sep,
-                                          paramValuePair<SIM_VALUE_BASE::TYPE::FLOAT,
-                                                         Notation>>>> {};
-
     template <NOTATION Notation>
     struct paramValuePairsGrammar : must<opt<sep>,
                                          paramValuePairs<Notation>,
                                          opt<sep>,
                                          eof> {};
-
-
-    template <typename Rule> struct paramValuePairsSelector : std::false_type {};
-    template <> struct paramValuePairsSelector<param> : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
-        : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
-        : std::true_type {};
-
-
-
-
-    struct spiceName : plus<alnum,
-                            star<sor<alnum,
-                                     one<'!', '#', '$', '%', '[', ']', '_'>>>> {};
-                     /*seq<alpha,
-                           star<sor<alnum,
-                                    one<'!', '#', '$', '%', '[', ']', '_'>>>> {};*/
-
-
-    struct spiceModelType : sor<TAO_PEGTL_ISTRING( "R" ),
-                                TAO_PEGTL_ISTRING( "C" ),
-                                TAO_PEGTL_ISTRING( "L" ),
-                                TAO_PEGTL_ISTRING( "SW" ),
-                                TAO_PEGTL_ISTRING( "CSW" ),
-                                TAO_PEGTL_ISTRING( "URC" ),
-                                TAO_PEGTL_ISTRING( "LTRA" ),
-                                TAO_PEGTL_ISTRING( "D" ),
-                                TAO_PEGTL_ISTRING( "NPN" ),
-                                TAO_PEGTL_ISTRING( "PNP" ),
-                                TAO_PEGTL_ISTRING( "NJF" ),
-                                TAO_PEGTL_ISTRING( "PJF" ),
-                                TAO_PEGTL_ISTRING( "NMOS" ),
-                                TAO_PEGTL_ISTRING( "PMOS" ),
-                                TAO_PEGTL_ISTRING( "NMF" ),
-                                TAO_PEGTL_ISTRING( "PMF" ),
-                                TAO_PEGTL_ISTRING( "VDMOS" )> {};
-    
-    struct spiceModel : seq<star<commentLine>,
-                            TAO_PEGTL_ISTRING( ".model" ),
-                            sep,
-                            spiceName,
-                            sep,
-                            spiceModelType,
-                            sor<seq<opt<sep>,
-                                    one<'('>,
-                                    opt<sep>,
-                                    paramValuePairs<NOTATION::SPICE>,
-                                    opt<sep>,
-                                    // Ngspice doesn't require the parentheses to match, though.
-                                    one<')'>>,
-                                seq<sep,
-                                    paramValuePairs<NOTATION::SPICE>>>,
-                            opt<sep>,
-                            newline> {};
-
-
-    struct spicePinNumber : digits {};
-    struct spicePinSequence : seq<opt<sep>,
-                                  opt<spicePinNumber,
-                                      star<sep,
-                                           spicePinNumber>>,
-                                  opt<sep>> {};
-
-    struct spiceSubcktEnd : seq<TAO_PEGTL_ISTRING( ".ends" ),
-                                opt<sep>,
-                                newline> {};
-
-    struct spiceSubckt : seq<star<commentLine>,
-                             TAO_PEGTL_ISTRING( ".subckt" ),
-                             sep,
-                             spiceName,
-                             sep,
-                             spicePinSequence,
-                             opt<sep>,
-                             newline,
-                             until<spiceSubcktEnd>> {};
-
-
-    struct spiceUnit : sor<spiceModel,
-                           spiceSubckt> {};
-
-    struct spiceUnitGrammar : must<spiceUnit, eof> {};
-
-
-    template <typename Rule> struct spiceUnitSelector : std::false_type {};
-
-    template <> struct spiceUnitSelector<spiceModel> : std::true_type {};
-    template <> struct spiceUnitSelector<spiceName> : std::true_type {};
-    template <> struct spiceUnitSelector<spiceModelType> : std::true_type {};
-    template <> struct spiceUnitSelector<param> : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
-        : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
-        : std::true_type {};
-
-    template <> struct spiceUnitSelector<spiceSubckt> : std::true_type {};
 }
 
 

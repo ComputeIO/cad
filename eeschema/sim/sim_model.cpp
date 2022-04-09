@@ -40,6 +40,47 @@ using DEVICE_TYPE = SIM_MODEL::DEVICE_TYPE;
 using TYPE = SIM_MODEL::TYPE;
 
 
+namespace SIM_MODEL_PARSER
+{
+    using namespace SIM_MODEL_GRAMMAR;
+
+
+    template <typename Rule> struct paramValuePairsSelector : std::false_type {};
+
+    template <> struct paramValuePairsSelector<param> : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
+        : std::true_type {};
+    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
+        : std::true_type {};
+
+
+    template <typename Rule> struct spiceUnitSelector : std::false_type {};
+
+    template <> struct spiceUnitSelector<modelName> : std::true_type {};
+    template <> struct spiceUnitSelector<dotModel> : std::true_type {};
+    template <> struct spiceUnitSelector<dotModelType> : std::true_type {};
+    template <> struct spiceUnitSelector<param> : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
+        : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
+        : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
+        : std::true_type {};
+
+    template <> struct spiceUnitSelector<dotSubckt> : std::true_type {};
+
+
+    template <typename Rule> struct pinSequenceSelector : std::false_type {};
+    template <> struct pinSequenceSelector<pinNumber> : std::true_type {};
+}
+
+
 SIM_MODEL::DEVICE_INFO SIM_MODEL::DeviceTypeInfo( DEVICE_TYPE aDeviceType )
 {
     switch( aDeviceType )
@@ -364,15 +405,15 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
 
     for( const auto& node : root->children )
     {
-        if( node->is_type<SIM_MODEL_PARSER::spiceModel>() )
+        if( node->is_type<SIM_MODEL_PARSER::dotModel>() )
         {
             for( const auto& subnode : node->children )
             {
-                if( subnode->is_type<SIM_MODEL_PARSER::spiceName>() )
+                if( subnode->is_type<SIM_MODEL_PARSER::modelName>() )
                 {
                     // Do nothing.
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::spiceModelType>() )
+                else if( subnode->is_type<SIM_MODEL_PARSER::dotModelType>() )
                     return readTypeFromSpiceTypeString( subnode->string() );
                 else
                 {
@@ -381,7 +422,7 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
                 }
             }
         }
-        else if( node->is_type<SIM_MODEL_PARSER::spiceSubckt>() )
+        else if( node->is_type<SIM_MODEL_PARSER::dotSubckt>() )
             return TYPE::SUBCIRCUIT;
         else
         {
@@ -568,20 +609,23 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
 
     wxASSERT( root );
 
+    std::cout << "BEGIN" << std::endl; // DEBUG TRACE
+
     for( const auto& node : root->children )
     {
-        if( node->is_type<SIM_MODEL_PARSER::spiceModel>()
-            || node->is_type<SIM_MODEL_PARSER::spiceSubckt>() )
+        std::cout << "node: " << node->string() << std::endl; // DEBUG TRACE
+        if( node->is_type<SIM_MODEL_PARSER::dotModel>()
+            || node->is_type<SIM_MODEL_PARSER::dotSubckt>() )
         {
             wxString paramName = "";
 
             for( const auto& subnode : node->children )
             {
-                if( subnode->is_type<SIM_MODEL_PARSER::spiceName>() )
+                if( subnode->is_type<SIM_MODEL_PARSER::modelName>() )
                 {
                     // Do nothing.
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::spiceModelType>() )
+                else if( subnode->is_type<SIM_MODEL_PARSER::dotModelType>() )
                 {
                     // Do nothing.
                 }
@@ -613,6 +657,8 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
             return false;
         }
     }
+
+    std::cout << "END" << std::endl; // DEBUG TRACE
 
     m_spiceCode = aSpiceCode;
     return true;

@@ -23,6 +23,7 @@
  */
 
 #include <sim/sim_library_spice.h>
+#include <sim/spice_grammar.h>
 #include <locale_io.h>
 #include <pegtl.hpp>
 #include <pegtl/contrib/parse_tree.hpp>
@@ -30,7 +31,7 @@
 
 namespace SIM_LIBRARY_SPICE_PARSER
 {
-    using namespace SIM_MODEL_PARSER;
+    using namespace SPICE_GRAMMAR;
 
     struct unknownLine : until<newline> {};
 
@@ -42,8 +43,8 @@ namespace SIM_LIBRARY_SPICE_PARSER
 
     template <typename Rule> struct librarySelector : std::false_type {};
 
-    template <> struct librarySelector<spiceUnit> : std::true_type {};
-    template <> struct librarySelector<spiceName> : std::true_type {};
+    template <> struct librarySelector<modelUnit> : std::true_type {};
+    template <> struct librarySelector<modelName> : std::true_type {};
     
     // For debugging.
     template <> struct librarySelector<unknownLine> : std::true_type {};
@@ -76,7 +77,7 @@ bool SIM_LIBRARY_SPICE::ReadFile( const wxString& aFilename )
 
     for( const auto& node : root->children )
     {
-        if( node->is_type<SIM_LIBRARY_SPICE_PARSER::spiceUnit>() )
+        if( node->is_type<SIM_LIBRARY_SPICE_PARSER::modelUnit>() )
         {
             m_models.push_back( SIM_MODEL::Create( node->string() ) );
 
