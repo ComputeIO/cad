@@ -64,10 +64,10 @@ public:
 
     struct CABLE_SIZE
     {
-        double current;
-        double length;
-        int    length_unit;
-        bool   imperial;
+        int diameterUnit;
+        int linResUnit;
+        int frequencyUnit;
+        int lengthUnit;
     };
 
     struct TRACK_WIDTH

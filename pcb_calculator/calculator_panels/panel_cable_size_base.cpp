@@ -19,96 +19,204 @@ PANEL_CABLE_SIZE_BASE::PANEL_CABLE_SIZE_BASE( wxWindow* parent, wxWindowID id, c
 	wxBoxSizer* bSizer9;
 	bSizer9 = new wxBoxSizer( wxHORIZONTAL );
 
-	wxString m_radioUnitsChoices[] = { _("Metric"), _("Imperial") };
-	int m_radioUnitsNChoices = sizeof( m_radioUnitsChoices ) / sizeof( wxString );
-	m_radioUnits = new wxRadioBox( this, wxID_ANY, _("Units"), wxDefaultPosition, wxDefaultSize, m_radioUnitsNChoices, m_radioUnitsChoices, 1, wxRA_SPECIFY_COLS );
-	m_radioUnits->SetSelection( 0 );
-	bSizer9->Add( m_radioUnits, 0, wxALL|wxEXPAND, 5 );
+	wxBoxSizer* bSizer4;
+	bSizer4 = new wxBoxSizer( wxHORIZONTAL );
+
+	wxStaticBoxSizer* sbSizer1;
+	sbSizer1 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Wire properties") ), wxVERTICAL );
 
 	wxGridSizer* gSizer1;
 	gSizer1 = new wxGridSizer( 0, 3, 0, 0 );
 
-	m_staticText16 = new wxStaticText( this, wxID_ANY, _("Current"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText162 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("Standard Size"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText162->Wrap( -1 );
+	gSizer1->Add( m_staticText162, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	wxArrayString m_sizeChoiceChoices;
+	m_sizeChoice = new wxChoice( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_sizeChoiceChoices, 0 );
+	m_sizeChoice->SetSelection( 0 );
+	gSizer1->Add( m_sizeChoice, 0, wxALL|wxEXPAND, 5 );
+
+
+	gSizer1->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	m_staticText16 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("Diameter"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText16->Wrap( -1 );
 	gSizer1->Add( m_staticText16, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_currentCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	gSizer1->Add( m_currentCtrl, 0, wxALL, 5 );
+	m_diameterCtrl = new wxTextCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer1->Add( m_diameterCtrl, 0, wxALL|wxEXPAND, 5 );
 
-	m_staticText21 = new wxStaticText( this, wxID_ANY, _("A"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText21->Wrap( -1 );
-	gSizer1->Add( m_staticText21, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 5 );
+	wxArrayString m_diameterUnitChoices;
+	m_diameterUnit = new UNIT_SELECTOR_LEN( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_diameterUnitChoices, 0 );
+	m_diameterUnit->SetSelection( 0 );
+	gSizer1->Add( m_diameterUnit, 0, wxALL, 5 );
 
-	m_staticText161 = new wxStaticText( this, wxID_ANY, _("Length"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText161 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("Area"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText161->Wrap( -1 );
 	gSizer1->Add( m_staticText161, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
-	m_lengthCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	gSizer1->Add( m_lengthCtrl, 0, wxALL, 5 );
+	m_areaCtrl = new wxTextCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer1->Add( m_areaCtrl, 0, wxALL|wxEXPAND, 5 );
 
-	wxArrayString m_choiceUnitChoices;
-	m_choiceUnit = new UNIT_SELECTOR_LEN( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choiceUnitChoices, 0 );
-	m_choiceUnit->SetSelection( 0 );
-	gSizer1->Add( m_choiceUnit, 0, wxALL, 5 );
+	m_staticText1641 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("mm^2"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1641->Wrap( -1 );
+	gSizer1->Add( m_staticText1641, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 5 );
+
+	m_staticText16411 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("Linear resistance"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText16411->Wrap( -1 );
+	gSizer1->Add( m_staticText16411, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_linResistanceCtrl = new wxTextCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer1->Add( m_linResistanceCtrl, 0, wxALL|wxEXPAND, 5 );
+
+	wxArrayString m_linResistanceUnitChoices;
+	m_linResistanceUnit = new UNIT_SELECTOR_LINEAR_RESISTANCE( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_linResistanceUnitChoices, 0 );
+	m_linResistanceUnit->SetSelection( 0 );
+	gSizer1->Add( m_linResistanceUnit, 0, wxALL, 5 );
+
+	m_staticText164 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("Frequency for 100% skin depth"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText164->Wrap( -1 );
+	gSizer1->Add( m_staticText164, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_frequencyCtrl = new wxTextCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer1->Add( m_frequencyCtrl, 0, wxALL|wxEXPAND, 5 );
+
+	wxArrayString m_frequencyUnitChoices;
+	m_frequencyUnit = new UNIT_SELECTOR_FREQUENCY( sbSizer1->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_frequencyUnitChoices, 0 );
+	m_frequencyUnit->SetSelection( 0 );
+	gSizer1->Add( m_frequencyUnit, 0, wxALL, 5 );
+
+	m_staticText1642 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("Ampacity"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1642->Wrap( -1 );
+	gSizer1->Add( m_staticText1642, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_AmpacityCtrl = new wxTextCtrl( sbSizer1->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer1->Add( m_AmpacityCtrl, 0, wxALL|wxEXPAND, 5 );
+
+	m_staticText16421 = new wxStaticText( sbSizer1->GetStaticBox(), wxID_ANY, _("A"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText16421->Wrap( -1 );
+	gSizer1->Add( m_staticText16421, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 
-	bSizer9->Add( gSizer1, 0, wxALL, 5 );
+	sbSizer1->Add( gSizer1, 0, wxALL, 5 );
+
+
+	bSizer4->Add( sbSizer1, 1, wxALL|wxEXPAND, 5 );
+
+	wxStaticBoxSizer* sbSizer12;
+	sbSizer12 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Application") ), wxVERTICAL );
+
+	wxGridSizer* gSizer12;
+	gSizer12 = new wxGridSizer( 0, 3, 0, 0 );
+
+	m_staticText163 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("Current"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText163->Wrap( -1 );
+	gSizer12->Add( m_staticText163, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_currentCtrl = new wxTextCtrl( sbSizer12->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer12->Add( m_currentCtrl, 1, wxALL|wxEXPAND, 5 );
+
+	m_staticText = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("A"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText->Wrap( -1 );
+	gSizer12->Add( m_staticText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_LEFT|wxALL, 5 );
+
+	m_staticText1612 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("Length"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1612->Wrap( -1 );
+	gSizer12->Add( m_staticText1612, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_lengthCtrl = new wxTextCtrl( sbSizer12->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer12->Add( m_lengthCtrl, 1, wxALL|wxEXPAND, 5 );
+
+	wxArrayString m_lengthUnitChoices;
+	m_lengthUnit = new UNIT_SELECTOR_LEN( sbSizer12->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_lengthUnitChoices, 0 );
+	m_lengthUnit->SetSelection( 0 );
+	gSizer12->Add( m_lengthUnit, 0, wxALL, 5 );
+
+	m_staticText16121 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("Resistance"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText16121->Wrap( -1 );
+	gSizer12->Add( m_staticText16121, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_resistanceCtrl = new wxTextCtrl( sbSizer12->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer12->Add( m_resistanceCtrl, 1, wxALL|wxEXPAND, 5 );
+
+	m_staticText161211 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("ohm"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText161211->Wrap( -1 );
+	gSizer12->Add( m_staticText161211, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+	m_staticText161212 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("Voltage drop"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText161212->Wrap( -1 );
+	gSizer12->Add( m_staticText161212, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_vDropCtrl = new wxTextCtrl( sbSizer12->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer12->Add( m_vDropCtrl, 0, wxALL|wxEXPAND, 5 );
+
+	m_staticText1612121 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("mV"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1612121->Wrap( -1 );
+	gSizer12->Add( m_staticText1612121, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+	m_staticText1612122 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("Dissipated power"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1612122->Wrap( -1 );
+	gSizer12->Add( m_staticText1612122, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
+
+	m_powerCtrl = new wxTextCtrl( sbSizer12->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer12->Add( m_powerCtrl, 0, wxALL|wxEXPAND, 5 );
+
+	m_staticText16121211 = new wxStaticText( sbSizer12->GetStaticBox(), wxID_ANY, _("mW"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText16121211->Wrap( -1 );
+	gSizer12->Add( m_staticText16121211, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+
+	sbSizer12->Add( gSizer12, 0, wxALL, 5 );
+
+
+	bSizer4->Add( sbSizer12, 1, wxALL|wxEXPAND, 5 );
+
+
+	bSizer9->Add( bSizer4, 1, wxEXPAND, 5 );
 
 
 	bSizer6->Add( bSizer9, 0, wxEXPAND, 5 );
-
-	m_scrolledWindow1 = new wxScrolledWindow( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxHSCROLL|wxVSCROLL );
-	m_scrolledWindow1->SetScrollRate( 5, 5 );
-	wxBoxSizer* bSizer8;
-	bSizer8 = new wxBoxSizer( wxVERTICAL );
-
-	m_table = new wxGrid( m_scrolledWindow1, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-
-	// Grid
-	m_table->CreateGrid( 5, 5 );
-	m_table->EnableEditing( true );
-	m_table->EnableGridLines( true );
-	m_table->EnableDragGridSize( false );
-	m_table->SetMargins( 0, 0 );
-
-	// Columns
-	m_table->EnableDragColMove( false );
-	m_table->EnableDragColSize( true );
-	m_table->SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
-
-	// Rows
-	m_table->EnableDragRowSize( true );
-	m_table->SetRowLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
-
-	// Label Appearance
-
-	// Cell Defaults
-	m_table->SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
-	bSizer8->Add( m_table, 0, wxALL, 5 );
-
-
-	m_scrolledWindow1->SetSizer( bSizer8 );
-	m_scrolledWindow1->Layout();
-	bSizer8->Fit( m_scrolledWindow1 );
-	bSizer6->Add( m_scrolledWindow1, 1, wxEXPAND | wxALL, 5 );
 
 
 	this->SetSizer( bSizer6 );
 	this->Layout();
 
 	// Connect Events
-	m_radioUnits->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUnitChange ), NULL, this );
+	m_sizeChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnSizeChange ), NULL, this );
+	m_diameterCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnDiameterChange ), NULL, this );
+	m_diameterUnit->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_areaCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnAreaChange ), NULL, this );
+	m_linResistanceCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnLinResistanceChange ), NULL, this );
+	m_linResistanceUnit->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_frequencyCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnFrequencyChange ), NULL, this );
+	m_frequencyUnit->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_AmpacityCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnAmpacityChange ), NULL, this );
 	m_currentCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnCurrentChange ), NULL, this );
 	m_lengthCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnLengthChange ), NULL, this );
-	m_choiceUnit->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnChangeUnitLen ), NULL, this );
+	m_lengthUnit->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_resistanceCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnResistanceChange ), NULL, this );
+	m_vDropCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnVDropChange ), NULL, this );
+	m_powerCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnPowerChange ), NULL, this );
 }
 
 PANEL_CABLE_SIZE_BASE::~PANEL_CABLE_SIZE_BASE()
 {
 	// Disconnect Events
-	m_radioUnits->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUnitChange ), NULL, this );
+	m_sizeChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnSizeChange ), NULL, this );
+	m_diameterCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnDiameterChange ), NULL, this );
+	m_diameterUnit->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_areaCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnAreaChange ), NULL, this );
+	m_linResistanceCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnLinResistanceChange ), NULL, this );
+	m_linResistanceUnit->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_frequencyCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnFrequencyChange ), NULL, this );
+	m_frequencyUnit->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_AmpacityCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnAmpacityChange ), NULL, this );
 	m_currentCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnCurrentChange ), NULL, this );
 	m_lengthCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnLengthChange ), NULL, this );
-	m_choiceUnit->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnChangeUnitLen ), NULL, this );
+	m_lengthUnit->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnUpdateUnit ), NULL, this );
+	m_resistanceCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnResistanceChange ), NULL, this );
+	m_vDropCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnVDropChange ), NULL, this );
+	m_powerCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_CABLE_SIZE_BASE::OnPowerChange ), NULL, this );
 
 }

@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KICAD, a free EDA CAD application.
  *
- * Copyright (C) 1992-2021 Kicad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2022 Kicad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,50 +22,17 @@
 #include <string_utils.h>
 #include <widgets/unit_selector.h>
 
-#define M_to_MM 1000
-#define M_to_IN 39.37008
-#define M_to_1000FT 0.00328084
-#define M2_to_MM2 1000000
-#define M_to_KM 0.001
+#define M2_to_MM2 1000000.0
 
 #define COPPER_RESISTIVITY 1.72e-8 // ohm meter
 #define VACCUM_PERMEABILITY 1.256637e-6
 #define RELATIVE_PERMEABILITY 1
 
-// Define the column ordering
-#define col_diameter 0
-#define col_area 1
-#define col_lin_res 2
-#define col_freq 3
-#define col_ampacity 4
-#define col_res 5
-#define col_Vdrop 6
-#define col_power 7
 
 CABLE_SIZE_ENTRY::CABLE_SIZE_ENTRY( wxString aName, double aRadius )
 {
     m_name = aName;
     m_radius = aRadius;
-}
-
-void PANEL_CABLE_SIZE::UpdateColLabels( bool aImperial )
-{
-    if( aImperial )
-    {
-        m_table->SetColLabelValue( col_diameter, _( "Diameter\n(inches)" ) );
-        m_table->SetColLabelValue( col_lin_res, _( "Linear Resistance\n(Ohm/1000ft)" ) );
-    }
-    else
-    {
-        m_table->SetColLabelValue( col_diameter, _( "Diameter\n(mm)" ) );
-        m_table->SetColLabelValue( col_lin_res, _( "Linear Resistance\n(Ohm/km)" ) );
-    }
-    m_table->SetColLabelValue( col_freq, _( "Frequency for 100% skin depth\n(Hz)" ) );
-    m_table->SetColLabelValue( col_area, _( "Area\n(mm^2)" ) );
-    m_table->SetColLabelValue( col_ampacity, _( "Ampacity\n(A)" ) );
-    m_table->SetColLabelValue( col_res, _( "Resistance\n(ohm)" ) );
-    m_table->SetColLabelValue( col_Vdrop, _( "Voltage Drop\n(V)" ) );
-    m_table->SetColLabelValue( col_power, _( "Power\n(W)" ) );
 }
 
 
@@ -109,249 +76,327 @@ PANEL_CABLE_SIZE::PANEL_CABLE_SIZE( wxWindow* parent, wxWindowID id, const wxPoi
     m_entries.push_back( CABLE_SIZE_ENTRY( _( "AWG29" ), 0.00014351 ) );
     m_entries.push_back( CABLE_SIZE_ENTRY( _( "AWG30" ), 0.000127 ) );
 
-    m_table->DeleteCols( 0, m_table->GetNumberCols() );
-    m_table->DeleteRows( 0, m_table->GetNumberRows() );
-
-    m_table->AppendCols( 8 );
-    m_table->AppendRows( m_entries.size() + 1 );
-
-    UpdateColLabels( m_imperial );
-
-    int i = 1;
-    for( CABLE_SIZE_ENTRY& entry : m_entries )
+    for( CABLE_SIZE_ENTRY entry : m_entries )
     {
-        m_table->SetRowLabelValue( i, entry.m_name );
-        updateRow( i, entry.m_radius );
-        m_table->SetReadOnly( i, col_diameter );
-        m_table->SetReadOnly( i, col_area );
-        m_table->SetReadOnly( i, col_lin_res );
-        m_table->SetReadOnly( i, col_ampacity );
-        m_table->SetReadOnly( i, col_freq );
-        m_table->SetReadOnly( i, col_res );
-        m_table->SetReadOnly( i, col_Vdrop );
-        m_table->SetReadOnly( i, col_power );
-        i++;
+        m_sizeChoice->Append( entry.m_name );
     }
-
-    m_table->SetRowLabelValue( 0, wxString( _( "Custom" ) ) );
-    m_table->SetReadOnly( 0, col_diameter, false );
-    m_table->SetReadOnly( 0, col_area, false );
-    m_table->SetReadOnly( 0, col_lin_res, false );
-    m_table->SetReadOnly( 0, col_ampacity, false );
-    m_table->SetReadOnly( 0, col_freq, false );
-    m_table->SetReadOnly( 0, col_res, false );
-    m_table->SetReadOnly( 0, col_Vdrop, false );
-    m_table->SetReadOnly( 0, col_power, false );
-
-    m_table->Connect( wxEVT_GRID_CELL_CHANGE,
-                      wxGridEventHandler( PANEL_CABLE_SIZE::onParameterUpdate ), NULL, this );
-    m_table->AutoSize();
 }
 
-void PANEL_CABLE_SIZE::onParameterUpdate( wxGridEvent& aEvent )
+
+void PANEL_CABLE_SIZE::OnUpdateUnit( wxCommandEvent& aEvent )
 {
-    double   value;
-    int      row = aEvent.GetRow();
-    int      col = aEvent.GetCol();
-    wxString str = m_table->GetCellValue( 0, aEvent.GetCol() );
-    bool     status = str.ToDouble( &value );
-    status &= ( row == 0 );
-    status &= ( value > 0 );
-
-    if( status )
-    {
-        switch( col )
-        {
-        case col_diameter: updateRow( 0, value / 2 / ( m_imperial ? M_to_IN : M_to_MM ) ); break;
-        case col_area: updateRow( 0, sqrt( value / M_PI ) / M_to_MM ); break;
-        case col_lin_res:
-            updateRow( 0, sqrt( COPPER_RESISTIVITY / value / M_PI )
-                                  / ( m_imperial ? M_to_1000FT : M_to_KM ) );
-            break;
-        case col_freq:
-            updateRow( 0, sqrt( COPPER_RESISTIVITY / value / M_PI / VACCUM_PERMEABILITY
-                                / RELATIVE_PERMEABILITY ) );
-            break;
-        // Based on the 700 circular mils per amp rule of the thumb
-        // The long number is the sq m to circular mils conversion
-        case col_ampacity: updateRow( 0, sqrt( value * 700 / 1973525241.77 / M_PI ) ); break;
-        case col_res: updateRow( 0, sqrt( COPPER_RESISTIVITY / value * m_length / M_PI ) ); break;
-        case col_Vdrop:
-            updateRow( 0, sqrt( COPPER_RESISTIVITY / value * m_length * m_current / M_PI ) );
-            break;
-        case col_power:
-            updateRow( 0, sqrt( COPPER_RESISTIVITY / value * m_length * m_current * m_current
-                                / M_PI ) );
-            break;
-        }
-    }
-    else
-    {
-        m_table->SetCellValue( 0, col_diameter, _( "Error" ) );
-        m_table->SetCellValue( 0, col_area, _( "Error" ) );
-        m_table->SetCellValue( 0, col_ampacity, _( "Error" ) );
-        m_table->SetCellValue( 0, col_freq, _( "Error" ) );
-        m_table->SetCellValue( 0, col_lin_res, _( "Error" ) );
-        m_table->SetCellValue( 0, col_res, _( "Error" ) );
-        m_table->SetCellValue( 0, col_Vdrop, _( "Error" ) );
-        m_table->SetCellValue( 0, col_power, _( "Error" ) );
-        m_table->SetCellValue( 0, col, str );
-    }
+    printAll();
 }
 
-void PANEL_CABLE_SIZE::OnChangeUnitLen( wxCommandEvent& event )
-{
-    OnLengthChange( event );
-}
-
-void PANEL_CABLE_SIZE::OnUnitChange( wxCommandEvent& event )
-{
-    bool new_imperial = ( m_radioUnits->GetSelection() == 1 );
-
-    if( m_imperial == new_imperial )
-    {
-        return;
-    }
-
-    m_imperial = new_imperial;
-    UpdateColLabels( m_imperial );
-
-    double diameter;
-    bool   status = m_table->GetCellValue( 0, col_diameter ).ToDouble( &diameter );
-
-    if( m_imperial )
-    {
-        diameter = diameter / M_to_MM * M_to_IN;
-    }
-    else
-    {
-        diameter = diameter * M_to_MM / M_to_IN;
-    }
-
-    m_table->SetCellValue( 0, col_diameter, wxString( "" ) << diameter );
-    updateRows();
-}
 
 PANEL_CABLE_SIZE::~PANEL_CABLE_SIZE()
 {
 }
 
 
-void PANEL_CABLE_SIZE::ThemeChanged()
-{
-}
-
-
 void PANEL_CABLE_SIZE::SaveSettings( PCB_CALCULATOR_SETTINGS* aCfg )
 {
-    aCfg->m_cableSize.current = m_current;
-    aCfg->m_cableSize.length = m_length;
-    aCfg->m_cableSize.imperial = m_imperial;
-    aCfg->m_cableSize.length_unit = m_choiceUnit->GetSelection();
+    aCfg->m_cableSize.diameterUnit = m_diameterUnit->GetSelection();
+    aCfg->m_cableSize.linResUnit = m_linResistanceUnit->GetSelection();
+    aCfg->m_cableSize.frequencyUnit = m_frequencyUnit->GetSelection();
+    aCfg->m_cableSize.lengthUnit = m_lengthUnit->GetSelection();
 }
 
 
 void PANEL_CABLE_SIZE::LoadSettings( PCB_CALCULATOR_SETTINGS* aCfg )
 {
-    m_current = aCfg->m_cableSize.current;
-    m_length = aCfg->m_cableSize.length;
-    m_imperial = aCfg->m_cableSize.imperial;
-    m_choiceUnit->SetSelection( aCfg->m_cableSize.length_unit );
-
-    m_currentCtrl->SetValue( wxString( "" ) << m_current );
-    m_lengthCtrl->SetValue( wxString( "" ) << m_length / m_choiceUnit->GetUnitScale() );
-    m_radioUnits->SetSelection( m_imperial ? 1 : 0 );
+    m_diameterUnit->SetSelection( aCfg->m_cableSize.diameterUnit );
+    m_linResistanceUnit->SetSelection( aCfg->m_cableSize.linResUnit );
+    m_frequencyUnit->SetSelection( aCfg->m_cableSize.frequencyUnit );
+    m_lengthUnit->SetSelection( aCfg->m_cableSize.lengthUnit );
 }
 
-void PANEL_CABLE_SIZE::OnCurrentChange( wxCommandEvent& event )
+void PANEL_CABLE_SIZE::OnSizeChange( wxCommandEvent& aEvent )
 {
-    double value;
-    bool   status = m_currentCtrl->GetValue().ToDouble( &value );
-    status &= value > 0;
-
-    m_current = status ? value : std::nan( "0" );
-    updateRows();
-}
-
-void PANEL_CABLE_SIZE::OnLengthChange( wxCommandEvent& event )
-{
-    double value;
-    bool   status = m_lengthCtrl->GetValue().ToDouble( &value );
-    status &= value > 0;
-
-    m_length = status ? value * m_choiceUnit->GetUnitScale() : std::nan( "0" );
-    updateRows();
-}
-
-void PANEL_CABLE_SIZE::updateRows()
-{
-    int    i = 1;
-    double value;
-    bool   status = ( m_table->GetCellValue( 0, col_diameter ).ToDouble( &value ) );
-    value /= ( m_imperial ? M_to_IN : M_to_MM );
-
-    if( status )
+    if( !m_updatingUI )
     {
-        updateRow( 0, value / 2 );
-    }
+        double   value;
+        int      index = m_sizeChoice->GetSelection();
+        wxString str;
 
-    for( CABLE_SIZE_ENTRY& entry : m_entries )
-    {
-        updateRow( i, entry.m_radius );
-        i++;
+        if( ( index >= 0 ) && ( index < m_entries.size() ) )
+        {
+            value = m_entries.at( index ).m_radius;
+            updateAll( value );
+        }
     }
 }
 
-void PANEL_CABLE_SIZE::updateRow( int aRow, double aRadius )
-{
-    double area;
-    double linearResistance;
-    double maxFrequency;
-    double resistance;
-    double voltageDrop;
-    double dissipatedPower;
 
+void PANEL_CABLE_SIZE::OnDiameterChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        m_updatingDiameter = true;
+        double value;
+
+        if( m_diameterCtrl->GetValue().ToDouble( &value ) )
+        {
+            updateAll( value / 2 * m_diameterUnit->GetUnitScale() );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingDiameter = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnLinResistanceChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        m_updatingLinResistance = true;
+        double value;
+
+        if( m_linResistanceCtrl->GetValue().ToDouble( &value ) )
+        {
+            updateAll( sqrt( COPPER_RESISTIVITY / ( value * m_linResistanceUnit->GetUnitScale() )
+                             / M_PI ) );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingLinResistance = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnAreaChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        m_updatingArea = true;
+        double value;
+
+        if( m_areaCtrl->GetValue().ToDouble( &value ) )
+        {
+            updateAll( sqrt( value / M_PI / M2_to_MM2 ) );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingArea = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnFrequencyChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        m_updatingFrequency = true;
+        double value;
+
+        if( m_frequencyCtrl->GetValue().ToDouble( &value ) )
+        {
+            updateAll( sqrt( COPPER_RESISTIVITY / value / m_frequencyUnit->GetUnitScale() / M_PI
+                             / VACCUM_PERMEABILITY / RELATIVE_PERMEABILITY ) );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingFrequency = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnAmpacityChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        m_updatingAmpacity = true;
+        double value;
+
+        if( m_AmpacityCtrl->GetValue().ToDouble( &value ) )
+        {
+            // Based on the 700 circular mils per amp rule of the thumb
+            // The long number is the sq m to circular mils conversion
+            updateAll( sqrt( value * 700 / 1973525241.77 / M_PI ) );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingAmpacity = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnCurrentChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        double value;
+        m_updatingCurrent = true;
+
+        if( m_currentCtrl->GetValue().ToDouble( &value ) )
+        {
+            m_current = value;
+            updateApplication();
+        }
+        m_updatingCurrent = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnLengthChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        double value;
+        m_updatingLength = true;
+
+        if( m_lengthCtrl->GetValue().ToDouble( &value ) )
+        {
+            m_length = value * m_lengthUnit->GetUnitScale();
+            updateApplication();
+        }
+        m_updatingLength = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnResistanceChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        double value;
+        m_updatingResistance = true;
+
+        if( m_resistanceCtrl->GetValue().ToDouble( &value ) )
+        {
+            updateAll( sqrt( COPPER_RESISTIVITY / value * m_length / M_PI ) );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingResistance = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnVDropChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        double value;
+        m_updatingRVdrop = true;
+
+        if( m_vDropCtrl->GetValue().ToDouble( &value ) )
+        {
+            updateAll( sqrt( COPPER_RESISTIVITY / value * m_length * m_current / M_PI ) );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingRVdrop = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::OnPowerChange( wxCommandEvent& aEvent )
+{
+    if( !m_updatingUI )
+    {
+        double value;
+        m_updatingPower = true;
+
+        if( m_powerCtrl->GetValue().ToDouble( &value ) )
+        {
+            updateAll(
+                    sqrt( COPPER_RESISTIVITY / value * m_length * m_current * m_current / M_PI ) );
+            m_sizeChoice->SetSelection( -1 );
+        }
+        m_updatingPower = false;
+    }
+}
+
+
+void PANEL_CABLE_SIZE::printAll()
+{
+    m_updatingUI = true;
+
+    wxString value;
+
+    if( !m_updatingDiameter )
+    {
+        value = wxString( "" ) << m_diameter / m_diameterUnit->GetUnitScale();
+        m_diameterCtrl->SetValue( value );
+    }
+
+    if( !m_updatingArea )
+    {
+        value = wxString( "" ) << m_area * M2_to_MM2;
+        m_areaCtrl->SetValue( value );
+    }
+
+    if( !m_updatingAmpacity )
+    {
+        value = wxString( "" ) << m_ampacity;
+        m_AmpacityCtrl->SetValue( value );
+    }
+
+    if( !m_updatingFrequency )
+    {
+        value = wxString( "" ) << m_maxFrequency / m_frequencyUnit->GetUnitScale();
+        m_frequencyCtrl->SetValue( value );
+    }
+
+    if( !m_updatingLinResistance )
+    {
+        value = wxString( "" ) << m_linearResistance / m_linResistanceUnit->GetUnitScale();
+        m_linResistanceCtrl->SetValue( value );
+    }
+
+    if( !m_updatingLength )
+    {
+        value = wxString( "" ) << m_length / m_lengthUnit->GetUnitScale();
+        m_lengthCtrl->SetValue( value );
+    }
+
+    if( !m_updatingCurrent )
+    {
+        value = wxString( "" ) << m_current;
+        m_currentCtrl->SetValue( value );
+    }
+
+    if( !m_updatingResistance )
+    {
+        value = wxString( "" ) << m_resistance;
+        m_resistanceCtrl->SetValue( value );
+    }
+
+    if( !m_updatingRVdrop )
+    {
+        value = wxString( "" ) << m_voltageDrop;
+        m_vDropCtrl->SetValue( value );
+    }
+
+    if( !m_updatingPower )
+    {
+        value = wxString( "" ) << m_dissipatedPower;
+        m_powerCtrl->SetValue( value );
+    }
+
+    m_updatingUI = false;
+}
+
+
+void PANEL_CABLE_SIZE::updateAll( double aRadius )
+{
     // Update wire properties
-    area = M_PI * aRadius * aRadius;
-    linearResistance = COPPER_RESISTIVITY / area;
+    m_diameter = aRadius * 2;
+    m_area = M_PI * aRadius * aRadius;
+    m_linearResistance = COPPER_RESISTIVITY / m_area;
     // max frequency is when skin depth = radius
-    maxFrequency = COPPER_RESISTIVITY
-                   / ( M_PI * aRadius * aRadius * VACCUM_PERMEABILITY * RELATIVE_PERMEABILITY );
+    m_maxFrequency = COPPER_RESISTIVITY
+                     / ( M_PI * aRadius * aRadius * VACCUM_PERMEABILITY * RELATIVE_PERMEABILITY );
 
     // Based on the 700 circular mils per amp rule of the thumb
     // The long number is the sq m to circular mils conversion
-    double ampacity = ( area * 1973525241.77 ) / 700;
+    m_ampacity = ( m_area * 1973525241.77 ) / 700;
     // Update application-specific values
-    resistance = linearResistance * m_length;
-    voltageDrop = resistance * m_current;
-    dissipatedPower = voltageDrop * m_current;
+    m_resistance = m_linearResistance * m_length;
+    m_voltageDrop = m_resistance * m_current;
+    m_dissipatedPower = m_voltageDrop * m_current;
+    printAll();
+}
 
-
-    wxString value = wxString( "" ) << aRadius * 2 * ( m_imperial ? M_to_IN : M_to_MM );
-    m_table->SetCellValue( aRow, col_diameter, value );
-    value = wxString( "" ) << area * M2_to_MM2;
-    m_table->SetCellValue( aRow, col_area, value );
-    value = wxString( "" ) << ampacity;
-    m_table->SetCellValue( aRow, col_ampacity, value );
-    value = wxString( "" ) << maxFrequency;
-    m_table->SetCellValue( aRow, col_freq, value );
-    value = wxString( "" ) << linearResistance / ( m_imperial ? M_to_1000FT : M_to_KM );
-    m_table->SetCellValue( aRow, col_lin_res, value );
-
-    if( m_length > 0 )
-    {
-        value = wxString( "" ) << resistance;
-        m_table->SetCellValue( aRow, col_res, value );
-        value = wxString( "" ) << voltageDrop;
-        m_table->SetCellValue( aRow, col_Vdrop, value );
-        value = wxString( "" ) << dissipatedPower;
-        m_table->SetCellValue( aRow, col_power, value );
-    }
-    else
-    {
-        value = "";
-        m_table->SetCellValue( aRow, col_res, value );
-        m_table->SetCellValue( aRow, col_Vdrop, value );
-        m_table->SetCellValue( aRow, col_power, value );
-    }
+void PANEL_CABLE_SIZE::updateApplication()
+{
+    m_resistance = m_linearResistance * m_length;
+    m_voltageDrop = m_resistance * m_current;
+    m_dissipatedPower = m_voltageDrop * m_current;
+    printAll();
 }

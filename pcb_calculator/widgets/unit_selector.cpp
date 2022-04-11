@@ -171,3 +171,32 @@ double UNIT_SELECTOR_RESISTOR::GetUnitScale()
     return 1.0;
 }
 
+
+UNIT_SELECTOR_LINEAR_RESISTANCE::UNIT_SELECTOR_LINEAR_RESISTANCE( wxWindow *parent, wxWindowID id,
+                  const wxPoint& pos, const wxSize& size,
+                  const wxArrayString& choices, long style )
+                : UNIT_SELECTOR( parent, id, pos, size, choices, style )
+{
+    Append( wxT( "Ω/m" ) );
+    Append( wxT( "Ω/km" ) );
+    Append( wxT( "Ω/ft" ) );
+    Append( wxT( "Ω/1000ft" ) );
+}
+
+
+/*
+ * Function GetUnitScale
+ * return the scaling factor to convert users units
+ * to normalized units ( ohm )
+ */
+double UNIT_SELECTOR_LINEAR_RESISTANCE::GetUnitScale()
+{
+    switch( GetCurrentSelection() )
+    {
+    case 0: return UNIT_OHM_PER_METER; break;
+    case 1: return UNIT_OHM_PER_KILOMETER; break;
+    case 2: return UNIT_OHM_PER_FEET; break;
+    case 3: return UNIT_OHM_PER_1000FEET; break;
+    }
+    return 1.0;
+}

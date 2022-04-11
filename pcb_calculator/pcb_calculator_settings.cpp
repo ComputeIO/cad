@@ -87,14 +87,15 @@ PCB_CALCULATOR_SETTINGS::PCB_CALCULATOR_SETTINGS() :
 
     m_params.emplace_back( new PARAM<int>( "regulators.last_param", &m_Regulators.last_param, 0 ) );
 
-    m_params.emplace_back( new PARAM<double>( "cable_size.current", &m_cableSize.current, 16 ) );
+    m_params.emplace_back(
+            new PARAM<int>( "cable_size.diameterUnit", &m_cableSize.diameterUnit, 0 ) );
 
-    m_params.emplace_back( new PARAM<double>( "cable_size.length", &m_cableSize.length, 100 ) );
+    m_params.emplace_back( new PARAM<int>( "cable_size.linResUnit", &m_cableSize.linResUnit, 0 ) );
 
-    m_params.emplace_back( new PARAM<bool>( "cable_size.imperial", &m_cableSize.imperial, false ) );
+    m_params.emplace_back(
+            new PARAM<int>( "cable_size.frequencyUnit", &m_cableSize.frequencyUnit, 0 ) );
 
-    m_params.emplace_back( new PARAM<int>( "cable_size.length_unit",
-             &m_cableSize.length_unit, 0 ) );
+    m_params.emplace_back( new PARAM<int>( "cable_size.lengthUnit", &m_cableSize.lengthUnit, 0 ) );
 
     m_params.emplace_back( new PARAM<wxString>( "track_width.current",
             &m_TrackWidth.current, "1.0" ) );

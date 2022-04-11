@@ -44,27 +44,56 @@ public:
     // Methods from CALCULATOR_PANEL that must be overriden
     void LoadSettings( PCB_CALCULATOR_SETTINGS* aCfg ) override;
     void SaveSettings( PCB_CALCULATOR_SETTINGS* aCfg ) override;
-    void ThemeChanged() override;
+    void ThemeChanged() override{};
 
+    void OnSizeChange( wxCommandEvent& aEvent );
+    void OnUpdateUnit( wxCommandEvent& aEvent );
 
-    void OnUnitChange( wxCommandEvent& event ) override;
-    void OnCurrentChange( wxCommandEvent& event ) override;
-    void OnLengthChange( wxCommandEvent& event ) override;
-    void OnChangeUnitLen( wxCommandEvent& event ) override;
+    void OnDiameterChange( wxCommandEvent& aEvent );
+    void OnAreaChange( wxCommandEvent& aEvent );
+    void OnLinResistanceChange( wxCommandEvent& aEvent );
+    void OnFrequencyChange( wxCommandEvent& aEvent );
+    void OnAmpacityChange( wxCommandEvent& aEvent );
+    void OnCurrentChange( wxCommandEvent& aEvent );
+    void OnLengthChange( wxCommandEvent& aEvent );
+    void OnResistanceChange( wxCommandEvent& aEvent );
+    void OnVDropChange( wxCommandEvent& aEvent );
+    void OnPowerChange( wxCommandEvent& aEvent );
 
 private:
-    bool m_imperial;
-    void updateRow( int aRow, double aRadius );
-    void updateRows();
-    void UpdateColLabels( bool aImperial );
+    bool m_updatingUI;
+    bool m_updatingDiameter;
+    bool m_updatingArea;
+    bool m_updatingLinResistance;
+    bool m_updatingFrequency;
+    bool m_updatingAmpacity;
+    bool m_updatingCurrent;
+    bool m_updatingLength;
+    bool m_updatingResistance;
+    bool m_updatingRVdrop;
+    bool m_updatingPower;
+    void updateAll( double aRadius );
+    void updateApplication();
+    void printAll();
 
-    double m_current;
-    double m_length;
+    bool m_imperial;
+
 
     std::vector<CABLE_SIZE_ENTRY> m_entries;
 
-    void onParameterUpdate( wxGridEvent& event );
+    void onParameterUpdate( wxCommandEvent& aEvent );
 
+    // Stored in normalized units
+    double m_diameter;
+    double m_current;
+    double m_length;
+    double m_area;
+    double m_linearResistance;
+    double m_maxFrequency;
+    double m_resistance;
+    double m_voltageDrop;
+    double m_dissipatedPower;
+    double m_ampacity;
     /*
     void updateRow( int aRow, bool aInit=false );
     void updateRows();
