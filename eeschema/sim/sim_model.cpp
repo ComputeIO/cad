@@ -386,7 +386,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
 
 TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
 {
-    tao::pegtl::string_input<> in( aSpiceCode, "from_input" );
+    tao::pegtl::string_input<> in( aSpiceCode, "from_content" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
 
     try
@@ -444,27 +444,33 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
 {
     wxString typeFieldValue = GetFieldValue( &aFields, TYPE_FIELD );
     wxString deviceTypeFieldValue = GetFieldValue( &aFields, DEVICE_TYPE_FIELD );
-    bool typeFound = false;
 
-    for( TYPE type : TYPE_ITERATOR() )
+    if( !typeFieldValue.IsEmpty() )
     {
-        if( typeFieldValue == TypeInfo( type ).fieldValue )
+        for( TYPE type : TYPE_ITERATOR() )
         {
-            typeFound = true;
-
-            if( deviceTypeFieldValue == DeviceTypeInfo( TypeInfo( type ).deviceType ).fieldValue )
-                return type;
+            if( typeFieldValue == TypeInfo( type ).fieldValue )
+            {
+                if( deviceTypeFieldValue == DeviceTypeInfo( TypeInfo( type ).deviceType ).fieldValue )
+                    return type;
+            }
         }
+
+        return TYPE::NONE;
     }
 
-    // TODO: Return TYPE::NONE instead of throwing an exception.
+    // No type information. For passives we infer the model from the mandatory fields in this case.
 
-    if( !typeFound )
-        throw KI_PARAM_ERROR( wxString::Format( _( "Invalid '%s' field value: '%s'" ),
-                                                TYPE_FIELD, typeFieldValue ) );
+    wxString ref = GetFieldValue( &aFields, REFERENCE_FIELD );
 
-    throw KI_PARAM_ERROR( wxString::Format( _( "Invalid '%s' field value: '%s'" ),
-                                            DEVICE_TYPE_FIELD, deviceTypeFieldValue ) );
+    if( ref.StartsWith( "R" ) )
+        return TYPE::RESISTOR_IDEAL;
+    else if( ref.StartsWith( "C" ) )
+        return TYPE::CAPACITOR_IDEAL;
+    else if( ref.StartsWith( "L" ) )
+        return TYPE::INDUCTOR_IDEAL;
+
+    return TYPE::NONE;
 }
 
 
@@ -592,7 +598,7 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
     // The default behavior is to treat the Spice param=value pairs as the model parameters and
     // values (for many models the correspondence is not exact, so this function is overridden).
     
-    tao::pegtl::string_input<> in( aSpiceCode, "from_input" );
+    tao::pegtl::string_input<> in( aSpiceCode, "from_content" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
     
     try
@@ -609,11 +615,8 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
 
     wxASSERT( root );
 
-    std::cout << "BEGIN" << std::endl; // DEBUG TRACE
-
     for( const auto& node : root->children )
     {
-        std::cout << "node: " << node->string() << std::endl; // DEBUG TRACE
         if( node->is_type<SIM_MODEL_PARSER::dotModel>()
             || node->is_type<SIM_MODEL_PARSER::dotSubckt>() )
         {
@@ -657,8 +660,6 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
             return false;
         }
     }
-
-    std::cout << "END" << std::endl; // DEBUG TRACE
 
     m_spiceCode = aSpiceCode;
     return true;
@@ -724,24 +725,17 @@ void SIM_MODEL::WriteDataLibFields( std::vector<LIB_FIELD>& aFields )
 }
 
 
-wxString SIM_MODEL::GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const
-{
-    LOCALE_IO toggle;
-
-    if( GetBaseModel() && !HasOverrides() )
-        return wxString::Format( ".include \"%s\"\n", aLibraryFilename );
-
-    return "";
-}
-
-
 wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
 {
     LOCALE_IO toggle;
+
+    if( !HasOverrides() )
+        return "";
+
     wxString result = "";
     wxString line = "";
 
-    line << wxString::Format( ".model %s %s(\n+", aModelName, GetSpiceInfo().typeString );
+    line << wxString::Format( ".model %s %s(\n+", aModelName, GetSpiceInfo().modelType );
 
     for( int paramIndex = 0; paramIndex < GetParamCount(); ++paramIndex )
     {
@@ -772,9 +766,12 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
 }
 
 
-SIM_MODEL::SPICE_INFO SIM_MODEL::GetSpiceInfo() const
+wxString SIM_MODEL::GenerateSpiceItemName( const wxString& aRefName ) const
 {
-    return SpiceInfo( GetType() );
+    if( aRefName.Length() >= 1 && aRefName.StartsWith( GetSpiceInfo().primitive) )
+        return aRefName;
+    else
+        return GetSpiceInfo().primitive + aRefName;
 }
 
 
@@ -790,18 +787,21 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
                                            const std::vector<wxString>& aPinNetNames ) const
 {
     wxString result = "";
-
-    if( aRefName.Length() >= 1 && aRefName.StartsWith( GetSpiceInfo().itemType ) )
-        result << aRefName << " ";
-    else
-        result << GetSpiceInfo().itemType << aRefName << " ";
+    result << GenerateSpiceItemName( aRefName ) << " ";
 
     for( const wxString& pinNetName : aPinNetNames )
         result << pinNetName << " ";
 
-    result << aModelName;
+    result << aModelName << "\n";
 
     return result;
+}
+
+
+wxString SIM_MODEL::GenerateSpiceTuningLine( const wxString& aSymbol ) const
+{
+    // TODO.
+    return "";
 }
 
 
@@ -819,6 +819,19 @@ wxString SIM_MODEL::GenerateSpicePreview( const wxString& aModelName ) const
         return modelLine;
 
     return GenerateSpiceItemLine( "", aModelName );
+}
+
+
+SIM_MODEL::SPICE_INFO SIM_MODEL::GetSpiceInfo() const
+{
+    return SpiceInfo( GetType() );
+}
+
+
+std::vector<wxString> SIM_MODEL::GetSpiceCurrentNames( const wxString& aRefName ) const
+{
+    LOCALE_IO toggle;
+    return { wxString::Format( "I(%s)", aRefName ) };
 }
 
 
@@ -852,13 +865,14 @@ const SIM_MODEL::PARAM& SIM_MODEL::GetBaseParam( int aParamIndex ) const
 }
 
 
-bool SIM_MODEL::SetParamValue( int aParamIndex, const wxString& aValue )
+bool SIM_MODEL::SetParamValue( int aParamIndex, const wxString& aValue,
+                               SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
     // Models sourced from a library are immutable.
     if( !m_spiceCode.IsEmpty() )
         return false;
 
-    m_params.at( aParamIndex ).value->FromString( aValue );
+    m_params.at( aParamIndex ).value->FromString( aValue, aNotation );
     return true;
 }
 
@@ -958,11 +972,11 @@ TYPE SIM_MODEL::readTypeFromSpiceTypeString( const std::string& aTypeString )
 {
     for( TYPE type : TYPE_ITERATOR() )
     {
-        if( SpiceInfo( type ).typeString == aTypeString )
+        if( SpiceInfo( type ).modelType == aTypeString )
             return type;
     }
 
-    // If the type string is not recognized, demote to raw Spice element. This way the user won't
+    // If the type string is not recognized, demote to a raw Spice element. This way the user won't
     // have an error if there is a type KiCad does not recognize.
     return TYPE::RAWSPICE;
 }
@@ -1037,7 +1051,7 @@ void SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField 
 
     LOCALE_IO toggle;
 
-    tao::pegtl::string_input<> in( aPinsField.ToStdString(), "from_input" );
+    tao::pegtl::string_input<> in( aPinsField.ToStdString(), "from_content" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
 
     try
@@ -1045,7 +1059,7 @@ void SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField 
         root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::pinSequenceGrammar,
                                              SIM_MODEL_PARSER::pinSequenceSelector>( in );
     }
-    catch( tao::pegtl::parse_error& e )
+    catch( const tao::pegtl::parse_error& e )
     {
         throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model pin sequence: %s" ),
                                                 e.what() ) );
@@ -1099,7 +1113,7 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
 {
     LOCALE_IO toggle;
     
-    tao::pegtl::string_input<> in( aParamsField.ToStdString(), "from_input" );
+    tao::pegtl::string_input<> in( aParamsField.ToStdString(), "from_content" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
 
     try
@@ -1111,7 +1125,7 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
             SIM_MODEL_PARSER::paramValuePairsSelector>
                 ( in );
     }
-    catch( tao::pegtl::parse_error& e )
+    catch( const tao::pegtl::parse_error& e )
     {
         throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters: %s" ),
                                                 e.what() ) );
@@ -1132,7 +1146,7 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
         {
             wxASSERT( !paramName.IsEmpty() );
             // TODO: Shouldn't be named "...fromSpiceCode" here...
-            setParamFromSpiceCode( paramName, node->string() );
+            setParamFromSpiceCode( paramName, node->string(), SIM_VALUE_GRAMMAR::NOTATION::SI );
         }
         else
         {
@@ -1143,7 +1157,8 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
 }
 
 
-bool SIM_MODEL::setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue )
+bool SIM_MODEL::setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
+                                       SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
     int i = 0;
 
@@ -1158,9 +1173,9 @@ bool SIM_MODEL::setParamFromSpiceCode( const wxString& aParamName, const wxStrin
 
     try
     {
-        SetParamValue( i, wxString( aParamValue ) );
+        SetParamValue( i, wxString( aParamValue ), aNotation );
     }
-    catch( KI_PARAM_ERROR& e )
+    catch( const KI_PARAM_ERROR& e )
     {
         m_params.clear();
         return false;

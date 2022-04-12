@@ -78,6 +78,8 @@ namespace SIM_VALUE_PARSER
     template <typename Rule>
     struct numberSelector : std::false_type {};
 
+    // TODO: Reorder. NOTATION should be before TYPE.
+
     template <> struct numberSelector<SIM_VALUE_GRAMMAR::significand<SIM_VALUE_BASE::TYPE::INT>>
         : std::true_type {};
     template <> struct numberSelector<SIM_VALUE_GRAMMAR::significand<SIM_VALUE_BASE::TYPE::FLOAT>>
@@ -105,8 +107,8 @@ namespace SIM_VALUE_PARSER
     };
 
     PARSE_RESULT Parse( const wxString& aString,
-                        SIM_VALUE_BASE::TYPE aValueType = SIM_VALUE_BASE::TYPE::FLOAT,
-                        NOTATION aNotation = NOTATION::SI );
+                        NOTATION aNotation = NOTATION::SI,
+                        SIM_VALUE_BASE::TYPE aValueType = SIM_VALUE_BASE::TYPE::FLOAT );
 
     long MetricSuffixToExponent( std::string aMetricSuffix, NOTATION aNotation = NOTATION::SI );
     wxString ExponentToMetricSuffix( double aExponent, long& aReductionExponent,
@@ -120,11 +122,12 @@ static inline void doIsValid( tao::pegtl::string_input<>& aIn )
     tao::pegtl::parse<SIM_VALUE_PARSER::numberGrammar<ValueType, Notation>>( aIn );
 }
 
+
 bool SIM_VALUE_GRAMMAR::IsValid( const wxString& aString,
                                 SIM_VALUE_BASE::TYPE aValueType,
                                 NOTATION aNotation )
 {
-    tao::pegtl::string_input<> in( aString, "from_input" );
+    tao::pegtl::string_input<> in( aString.ToStdString(), "from_content" );
 
     try
     {
@@ -147,6 +150,7 @@ static inline std::unique_ptr<tao::pegtl::parse_tree::node> doParse(
                                          SIM_VALUE_PARSER::numberSelector>
         ( aIn );
 }
+
 
 template <SIM_VALUE_BASE::TYPE ValueType, SIM_VALUE_PARSER::NOTATION Notation>
 static inline void handleNodeForParse( tao::pegtl::parse_tree::node& aNode,
@@ -180,13 +184,14 @@ static inline void handleNodeForParse( tao::pegtl::parse_tree::node& aNode,
         wxFAIL_MSG( "Unhandled parse tree node" );
 }
 
+
 SIM_VALUE_PARSER::PARSE_RESULT SIM_VALUE_PARSER::Parse( const wxString& aString,
-                                                        SIM_VALUE_BASE::TYPE aValueType,
-                                                        NOTATION aNotation )
+                                                        NOTATION aNotation,
+                                                        SIM_VALUE_BASE::TYPE aValueType )
 {
     LOCALE_IO toggle;
 
-    tao::pegtl::string_input<> in( aString.ToStdString(), "from_input" );
+    tao::pegtl::string_input<> in( aString.ToStdString(), "from_content" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
 
     try
@@ -395,9 +400,9 @@ SIM_VALUE<T>::SIM_VALUE( const T& aValue ) : m_value( aValue )
 
 
 template <>
-void SIM_VALUE<bool>::FromString( const wxString& aString )
+void SIM_VALUE<bool>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
-    SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString );
+    SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
 
     if( parseResult.isEmpty )
     {
@@ -413,7 +418,6 @@ void SIM_VALUE<bool>::FromString( const wxString& aString )
     {
         throw KI_PARAM_ERROR( wxString::Format( _( "Invalid Bool simulator value string: '%s'" ),
                                                 aString ) );
-                                                
     }
 
     m_value = *parseResult.intPart;
@@ -421,9 +425,9 @@ void SIM_VALUE<bool>::FromString( const wxString& aString )
 
 
 template <>
-void SIM_VALUE<long>::FromString( const wxString& aString )
+void SIM_VALUE<long>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
-    SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString );
+    SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
 
     if( parseResult.isEmpty )
     {
@@ -445,9 +449,9 @@ void SIM_VALUE<long>::FromString( const wxString& aString )
 
 
 template <>
-void SIM_VALUE<double>::FromString( const wxString& aString )
+void SIM_VALUE<double>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
-    SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString );
+    SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
 
     // Single dot should be allowed in fields.
     // TODO: disallow single dot in models.
@@ -469,7 +473,8 @@ void SIM_VALUE<double>::FromString( const wxString& aString )
 
 
 template <>
-void SIM_VALUE<std::complex<double>>::FromString( const wxString& aString )
+void SIM_VALUE<std::complex<double>>::FromString( const wxString& aString,
+                                                  SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
     // TODO
 
@@ -485,7 +490,7 @@ void SIM_VALUE<std::complex<double>>::FromString( const wxString& aString )
 
 
 template <>
-void SIM_VALUE<wxString>::FromString( const wxString& aString )
+void SIM_VALUE<wxString>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
     m_value = aString;
 }

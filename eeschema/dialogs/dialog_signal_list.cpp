@@ -59,10 +59,10 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
     if( m_circuitModel )
     {
         // Voltage list
-        for( const auto& net : m_circuitModel->GetNetIndexMap() )
+        for( const auto& net : m_circuitModel->GetNets() )
         {
             // netnames are escaped (can contain "{slash}" for '/') Unscape them:
-            wxString netname = UnescapeString( net.first );
+            wxString netname = UnescapeString( net );
 
             if( netname != "GND" && netname != "0" )
                 m_signals->Append( wxString::Format( "V(%s)", netname ) );
@@ -74,12 +74,9 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
         {
             for( const auto& item : m_circuitModel->GetSpiceItems() )
             {
-                // Add all possible currents for the primitive
-                for( const auto& current :
-                     NGSPICE_CIRCUIT_MODEL::GetCurrents( (SPICE_PRIMITIVE) item.m_primitive ) )
-                {
-                    m_signals->Append( wxString::Format( "%s(%s)", current, item.m_refName ) );
-                }
+                // Add all possible currents for the primitive.
+                for( const auto& currentName : item.model->GetSpiceCurrentNames( item.refName ) )
+                    m_signals->Append( currentName );
             }
         }
     }

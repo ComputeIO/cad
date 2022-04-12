@@ -62,6 +62,9 @@ namespace SIM_MODEL_GRAMMAR
 class SIM_MODEL
 {
 public:
+    static constexpr auto REFERENCE_FIELD = "Reference";
+    static constexpr auto VALUE_FIELD = "Value";
+
     static constexpr auto DEVICE_TYPE_FIELD = "Model_Device";
     static constexpr auto TYPE_FIELD = "Model_Type";
     static constexpr auto PINS_FIELD = "Model_Pins";
@@ -86,6 +89,7 @@ public:
 
         NMES,
         PMES,
+
         NMOS,
         PMOS,
 
@@ -264,8 +268,8 @@ public:
 
     struct SPICE_INFO
     {
-        wxString itemType;
-        wxString typeString = "";
+        wxString primitive;
+        wxString modelType = "";
         wxString inlineTypeString = "";
         int level = 0;
         bool hasExpression = false;
@@ -388,21 +392,27 @@ public:
     virtual void WriteDataLibFields( std::vector<LIB_FIELD>& aFields );
 
 
-    virtual wxString GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const;
+    virtual bool HasToIncludeSpiceLibrary() const { return GetBaseModel() && !HasOverrides(); }
+
     virtual wxString GenerateSpiceModelLine( const wxString& aModelName ) const;
 
-    virtual SPICE_INFO GetSpiceInfo() const;
-
+    virtual wxString GenerateSpiceItemName( const wxString& aRefName ) const;
     wxString GenerateSpiceItemLine( const wxString& aRefName, const wxString& aModelName ) const;
     virtual wxString GenerateSpiceItemLine( const wxString& aRefName,
                                             const wxString& aModelName,
                                             const std::vector<wxString>& aPinNetNames ) const;
 
+    virtual wxString GenerateSpiceTuningLine( const wxString& aSymbol ) const;
+
     virtual wxString GenerateSpicePreview( const wxString& aModelName ) const;
+
+    SPICE_INFO GetSpiceInfo() const;
+    virtual std::vector<wxString> GetSpiceCurrentNames( const wxString& aRefName ) const;
 
 
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
 
+    DEVICE_TYPE GetDeviceType() const { return TypeInfo( GetType() ).deviceType; }
     TYPE GetType() const { return m_type; }
 
     const SIM_MODEL* GetBaseModel() const { return m_baseModel; }
@@ -421,7 +431,9 @@ public:
     const PARAM& GetParam( int aParamIndex ) const; // Return base parameter unless it's overridden.
     const PARAM& GetUnderlyingParam( int aParamIndex ) const; // Return the actual parameter.
     const PARAM& GetBaseParam( int aParamIndex ) const; // Always return base parameter if it exists.
-    virtual bool SetParamValue( int aParamIndex, const wxString& aValue );
+    virtual bool SetParamValue( int aParamIndex, const wxString& aValue,
+                                SIM_VALUE_GRAMMAR::NOTATION aNotation
+                                    = SIM_VALUE_GRAMMAR::NOTATION::SI );
 
     bool HasOverrides() const;
     bool HasNonPrincipalOverrides() const;
@@ -435,13 +447,6 @@ protected:
 private:
     static std::unique_ptr<SIM_MODEL> create( TYPE aType );
     static TYPE readTypeFromSpiceTypeString( const std::string& aTypeString );
-
-    wxString m_spiceCode;
-    const SIM_MODEL* m_baseModel;
-
-    const TYPE m_type;
-    std::vector<PIN> m_pins;
-    std::vector<PARAM> m_params;
 
 
     template <typename T>
@@ -463,7 +468,18 @@ private:
     wxString generateParamsField( const wxString& aPairSeparator ) const;
     void parseParamsField( const wxString& aParamsField );
 
-    virtual bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue );
+    // TODO: Rename.
+    virtual bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
+                                        SIM_VALUE_GRAMMAR::NOTATION aNotation
+                                            = SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+
+
+    wxString m_spiceCode;
+    const SIM_MODEL* m_baseModel;
+
+    const TYPE m_type;
+    std::vector<PIN> m_pins;
+    std::vector<PARAM> m_params;
 };
 
 #endif // SIM_MODEL_H

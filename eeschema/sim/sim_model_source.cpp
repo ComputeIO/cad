@@ -35,12 +35,6 @@ SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType )
 }
 
 
-wxString SIM_MODEL_SOURCE::GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const
-{
-    return "";
-}
-
-
 wxString SIM_MODEL_SOURCE::GenerateSpiceModelLine( const wxString& aModelName ) const
 {
     return "";
@@ -139,25 +133,26 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParams( TYPE aType )
 }
 
 
-bool SIM_MODEL_SOURCE::SetParamValue( int aParamIndex, const wxString& aValue )
+bool SIM_MODEL_SOURCE::SetParamValue( int aParamIndex, const wxString& aValue,
+                                      SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
     // Sources are special. All preceding parameter values must be filled. If they are not, fill
     // them out automatically. If a value is nulled, delete everything after it.
     if( aValue.IsEmpty() )
     {
         for( int i = aParamIndex; i < GetParamCount(); ++i )
-            SIM_MODEL::SetParamValue( i, "" );
+            SIM_MODEL::SetParamValue( i, "", aNotation );
     }
     else
     {
         for( int i = 0; i < aParamIndex; ++i )
         {
             if( GetParam( i ).value->ToString().IsEmpty() )
-                SIM_MODEL::SetParamValue( i, "0" );
+                SIM_MODEL::SetParamValue( i, "0", aNotation );
         }
     }
 
-    return SIM_MODEL::SetParamValue( aParamIndex, aValue );
+    return SIM_MODEL::SetParamValue( aParamIndex, aValue, aNotation );
 }
 
 

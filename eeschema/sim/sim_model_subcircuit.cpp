@@ -29,3 +29,14 @@ SIM_MODEL_SUBCIRCUIT::SIM_MODEL_SUBCIRCUIT( TYPE aType )
     : SIM_MODEL( aType )
 {
 }
+
+
+std::vector<wxString> SIM_MODEL_SUBCIRCUIT::GetSpiceCurrentNames( const wxString& aRefName ) const
+{
+    std::vector<wxString> currentNames;
+
+    for( int i = 0; i < GetPinCount(); ++i )
+        currentNames.push_back( wxString::Format( "I(%s:%d)", aRefName, i ) );
+
+    return currentNames;
+}

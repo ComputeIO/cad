@@ -23,6 +23,7 @@
  */
 
 #include <sim/sim_model_ngspice.h>
+#include <locale_io.h>
 
 using TYPE = SIM_MODEL::TYPE;
 
@@ -37,6 +38,41 @@ SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType )
 
     for( const SIM_MODEL::PARAM::INFO& paramInfo : modelInfo.instanceParams )
         AddParam( paramInfo, getIsOtherVariant() );
+}
+
+
+std::vector<wxString> SIM_MODEL_NGSPICE::GetSpiceCurrentNames( const wxString& aRefName ) const
+{
+    LOCALE_IO toggle;
+
+    switch( TypeInfo( GetType() ).deviceType )
+    {
+        case DEVICE_TYPE::NPN:
+        case DEVICE_TYPE::PNP:
+            return { wxString::Format( "I(%s:c)", aRefName ),
+                     wxString::Format( "I(%s:b)", aRefName ),
+                     wxString::Format( "I(%s:e)", aRefName ) };
+
+        case DEVICE_TYPE::NJF:
+        case DEVICE_TYPE::PJF:
+        case DEVICE_TYPE::NMES:
+        case DEVICE_TYPE::PMES:
+        case DEVICE_TYPE::NMOS:
+        case DEVICE_TYPE::PMOS:
+            return { wxString::Format( "I(%s:d)", aRefName ),
+                     wxString::Format( "I(%s:g)", aRefName ),
+                     wxString::Format( "I(%s:s)", aRefName ) };
+
+        case DEVICE_TYPE::RESISTOR:
+        case DEVICE_TYPE::CAPACITOR:
+        case DEVICE_TYPE::INDUCTOR:
+        case DEVICE_TYPE::DIODE:
+            return SIM_MODEL::GetSpiceCurrentNames( aRefName );
+
+        default:
+            wxFAIL_MSG( "Unhandled model device type" );
+            return {};
+    }
 }
 
 

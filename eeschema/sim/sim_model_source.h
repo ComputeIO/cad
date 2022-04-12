@@ -33,13 +33,13 @@ class SIM_MODEL_SOURCE : public SIM_MODEL
 public:
     SIM_MODEL_SOURCE( TYPE aType );
 
-    wxString GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const override;
     wxString GenerateSpiceModelLine( const wxString& aModelName ) const override;
     wxString GenerateSpiceItemLine( const wxString& aRefName,
                                     const wxString& aModelName,
                                     const std::vector<wxString>& aPinNetNames ) const override;
 
-    bool SetParamValue( int aParamIndex, const wxString& aValue ) override;
+    bool SetParamValue( int aParamIndex, const wxString& aValue,
+                        SIM_VALUE_GRAMMAR::NOTATION aNotation ) override;
 
     bool HasAutofill() const override { return true; }
 

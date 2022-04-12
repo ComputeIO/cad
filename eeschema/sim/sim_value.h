@@ -31,6 +31,18 @@
 #include <pegtl.hpp>
 
 
+namespace SIM_VALUE_GRAMMAR
+{
+    using namespace tao::pegtl;
+
+    enum class NOTATION
+    {
+        SI,
+        SPICE
+    };
+}
+
+
 class SIM_VALUE_BASE
 {
 public:
@@ -57,7 +69,10 @@ public:
     void operator=( const wxString& aString );
     virtual bool operator==( const SIM_VALUE_BASE& aOther ) const = 0;
 
-    virtual void FromString( const wxString& aString ) = 0;
+    virtual void FromString( const wxString& aString,
+                             SIM_VALUE_GRAMMAR::NOTATION aNotation
+                                = SIM_VALUE_GRAMMAR::NOTATION::SI )
+        = 0;
     virtual wxString ToString() const = 0;
 
     // For parsers that don't accept strings with our suffixes.
@@ -72,7 +87,9 @@ public:
     SIM_VALUE() = default;
     SIM_VALUE( const T& aValue );
 
-    void FromString( const wxString& aString ) override;
+    void FromString( const wxString& aString,
+                     SIM_VALUE_GRAMMAR::NOTATION aNotation = SIM_VALUE_GRAMMAR::NOTATION::SI )
+        override;
     wxString ToString() const override;
     wxString ToSimpleString() const override;
 
@@ -80,22 +97,14 @@ public:
     bool operator==( const SIM_VALUE_BASE& aOther ) const override;
 
 private:
-    OPT<T> m_value = NULLOPT;
-
     wxString getMetricSuffix();
+
+    OPT<T> m_value = NULLOPT;
 };
 
 
 namespace SIM_VALUE_GRAMMAR
 {
-    using namespace tao::pegtl;
-
-    enum class NOTATION
-    {
-        SI,
-        SPICE
-    };
-
     template <NOTATION Notation>
     wxString allowedIntChars;
 

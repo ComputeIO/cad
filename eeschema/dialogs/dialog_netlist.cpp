@@ -42,7 +42,7 @@
 #include <dialogs/dialog_netlist_base.h>
 #include <wildcards_and_files_ext.h>
 #include <invoke_sch_dialog.h>
-#include <netlist_exporters/netlist_exporter_pspice.h>
+#include <netlist_exporters/netlist_exporter_spice.h>
 #include <eeschema_settings.h>
 #include <schematic.h>
 #include <paths.h>
@@ -289,7 +289,7 @@ void NETLIST_DIALOG::OnRunExternSpiceCommand( wxCommandEvent& event )
     fn.SetExt( wxT( "cir" ) );
 
     if( settings.m_SpiceAdjustPassiveValues )
-        netlist_opt |= NET_ADJUST_PASSIVE_VALS;
+        netlist_opt |= NETLIST_EXPORTER_SPICE::OPTION_ADJUST_PASSIVE_VALS;
 
     // Build the command line
     wxString commandLine = simulatorCommand;
@@ -455,7 +455,7 @@ bool NETLIST_DIALOG::TransferDataFromWindow()
     case NET_TYPE_SPICE:
         // Set spice netlist options:
         if( currPage->m_AdjustPassiveValues->GetValue() )
-            netlist_opt |= NET_ADJUST_PASSIVE_VALS;
+            netlist_opt |= NETLIST_EXPORTER_SPICE::OPTION_ADJUST_PASSIVE_VALS;
         break;
 
     case NET_TYPE_CADSTAR:

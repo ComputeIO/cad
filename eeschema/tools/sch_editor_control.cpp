@@ -36,7 +36,7 @@
 #include <string_utils.h>
 #include <kiway.h>
 #include <kiway_player.h>
-#include <netlist_exporters/netlist_exporter_pspice.h>
+#include <netlist_exporters/netlist_exporter_spice.h>
 #include <project/project_file.h>
 #include <project/net_settings.h>
 #include <sch_edit_frame.h>
@@ -776,9 +776,9 @@ int SCH_EDITOR_CONTROL::SimProbe( const TOOL_EVENT& aEvent )
                     SCH_SYMBOL* symbol = (SCH_SYMBOL*) item->GetParent();
                     wxString    ref = symbol->GetRef( &m_frame->GetCurrentSheet() );
                     wxString    param;
-                    wxString    primitive;
+                    //wxString    primitive;
 
-                    primitive = NETLIST_EXPORTER_PSPICE::GetSpiceField( SF_PRIMITIVE, symbol, 0 );
+                    /*primitive = NETLIST_EXPORTER_SPICE::GetSpiceField( SF_PRIMITIVE, symbol, 0 );
                     primitive.LowerCase();
 
                     if( primitive == "c" || primitive == "l" || primitive == "r" )
@@ -786,8 +786,11 @@ int SCH_EDITOR_CONTROL::SimProbe( const TOOL_EVENT& aEvent )
                     else if( primitive == "d" )
                         param = wxT( "Id" );
                     else
-                        param = wxString::Format( wxT( "I%s" ), pin->GetShownName().Lower() );
+                        param = wxString::Format( wxT( "I%s" ), pin->GetShownName().Lower() );*/
 
+                    // TODO.
+                    
+                    param = wxT( "I" );
                     simFrame->AddCurrentPlot( ref, param );
                 }
 

@@ -48,12 +48,6 @@ SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType )
 }
 
 
-wxString SIM_MODEL_BEHAVIORAL::GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const
-{
-    return "";
-}
-
-
 wxString SIM_MODEL_BEHAVIORAL::GenerateSpiceModelLine( const wxString& aModelName ) const
 {
     return "";
@@ -87,12 +81,6 @@ wxString SIM_MODEL_BEHAVIORAL::GenerateSpiceItemLine( const wxString& aRefName,
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_BEHAVIORAL" );
         return "";
     }
-}
-
-
-std::vector<wxString> SIM_MODEL_BEHAVIORAL::getPinNames() const
-{
-    return { "+", "-" };
 }
 
 

@@ -540,12 +540,20 @@ void SIM_PLOT_FRAME::AddTuner( SCH_SYMBOL* aSymbol )
     if( !plotPanel )
         return;
 
-    // For now limit the tuner tool to RLC and code model components
-    char primitiveType = NETLIST_EXPORTER_PSPICE::GetSpiceField( SF_PRIMITIVE, aSymbol, 0 )[0];
+    SIM_MODEL::TYPE type = SIM_MODEL::ReadTypeFromFields( aSymbol->GetFields() );
+    SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( type ).deviceType;
 
-    if( primitiveType != SP_RESISTOR && primitiveType != SP_CAPACITOR
-        && primitiveType != SP_INDUCTOR && primitiveType != SP_CODEMODEL )
+    switch( deviceType )
+    {
+    case SIM_MODEL::DEVICE_TYPE::RESISTOR:
+    case SIM_MODEL::DEVICE_TYPE::CAPACITOR:
+    case SIM_MODEL::DEVICE_TYPE::INDUCTOR:
+    case SIM_MODEL::DEVICE_TYPE::CODEMODEL:
+        break;
+
+    default:
         return;
+    }
 
     const wxString componentName = aSymbol->GetField( REFERENCE_FIELD )->GetText();
 
@@ -889,7 +897,7 @@ void SIM_PLOT_FRAME::updateTuners()
 
         if( std::find_if( spiceItems.begin(), spiceItems.end(), [&]( const SPICE_ITEM& item )
                 {
-                    return item.m_refName == ref;
+                    return item.refName == ref;
                 }) == spiceItems.end() )
         {
             // The component does not exist anymore, remove the associated tuner
@@ -1467,7 +1475,7 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
     if( !m_settingsDlg )
         m_settingsDlg = new DIALOG_SIM_SETTINGS( this, m_circuitModel, m_simulator->Settings() );
 
-    if( !m_circuitModel->ProcessNetlist( NET_ALL_FLAGS ) )
+    if( !m_circuitModel->ReadSchematicAndLibraries( NETLIST_EXPORTER_SPICE::OPTION_ALL_FLAGS ) )
     {
         DisplayErrorMessage( this, _( "There were errors during netlist export, aborted." ) );
         return;

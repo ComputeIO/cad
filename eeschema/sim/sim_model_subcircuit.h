@@ -32,6 +32,8 @@ class SIM_MODEL_SUBCIRCUIT : public SIM_MODEL
 {
 public:
     SIM_MODEL_SUBCIRCUIT( TYPE aType );
+
+    std::vector<wxString> GetSpiceCurrentNames( const wxString& aRefName ) const override;
 };
 
 #endif // SIM_MODEL_SUBCIRCUIT_H

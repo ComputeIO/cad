@@ -45,9 +45,23 @@ SIM_MODEL_IDEAL::SIM_MODEL_IDEAL( TYPE aType )
 }
 
 
-wxString SIM_MODEL_IDEAL::GenerateSpiceIncludeLine( const wxString& aLibraryFilename ) const
+void SIM_MODEL_IDEAL::ReadDataSchFields( int aSymbolPinCount,
+                                         const std::vector<SCH_FIELD>* aFields )
 {
-    return "";
+    if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
+        SIM_MODEL::ReadDataSchFields( aSymbolPinCount, aFields );
+    else
+        SetParamValue( 0, GetFieldValue( aFields, VALUE_FIELD ) );
+}
+
+
+void SIM_MODEL_IDEAL::ReadDataLibFields( int aSymbolPinCount,
+                                         const std::vector<LIB_FIELD>* aFields )
+{
+    if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
+        SIM_MODEL::ReadDataLibFields( aSymbolPinCount, aFields );
+    else
+        SetParamValue( 0, GetFieldValue( aFields, VALUE_FIELD ) );
 }
 
 
@@ -63,12 +77,6 @@ wxString SIM_MODEL_IDEAL::GenerateSpiceItemLine( const wxString& aRefName,
 {
     return SIM_MODEL::GenerateSpiceItemLine( aRefName, GetParam( 0 ).value->ToString(),
                                              aPinNetNames );
-}
-
-
-std::vector<wxString> SIM_MODEL_IDEAL::getPinNames() const
-{
-    return { "+", "-" };
 }
 
 

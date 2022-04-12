@@ -36,7 +36,9 @@ public:
     //bool ReadSpiceCode( const std::string& aSpiceCode ) override;
 
 private:
-    bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue ) override;
+    bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
+                                SIM_VALUE_GRAMMAR::NOTATION aNotation
+                                    = SIM_VALUE_GRAMMAR::NOTATION::SPICE ) override;
 
     std::vector<std::unique_ptr<PARAM::INFO>> m_paramInfos;
 };

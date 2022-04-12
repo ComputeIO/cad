@@ -247,7 +247,7 @@ set( EESCHEMA_SRCS
     netlist_exporters/netlist_exporter_cadstar.cpp
     netlist_exporters/netlist_exporter_kicad.cpp
     netlist_exporters/netlist_exporter_orcadpcb2.cpp
-    netlist_exporters/netlist_exporter_pspice.cpp
+    netlist_exporters/netlist_exporter_spice.cpp
     netlist_exporters/netlist_exporter_xml.cpp
     netlist_exporters/netlist_generator.cpp
 
@@ -306,8 +306,8 @@ if( KICAD_SPICE )
         dialogs/dialog_signal_list_base.cpp
         dialogs/dialog_sim_settings.cpp
         dialogs/dialog_sim_settings_base.cpp
-        dialogs/dialog_spice_model.cpp
-        dialogs/dialog_spice_model_base.cpp
+        dialogs/dialog_sim_model.cpp
+        dialogs/dialog_sim_model_base.cpp
         sim/ngspice_helpers.cpp
         sim/ngspice.cpp
         sim/ngspice_models.cpp
