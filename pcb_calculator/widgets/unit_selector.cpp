@@ -200,3 +200,35 @@ double UNIT_SELECTOR_LINEAR_RESISTANCE::GetUnitScale()
     }
     return 1.0;
 }
+
+
+UNIT_SELECTOR_LEN_CABLE::UNIT_SELECTOR_LEN_CABLE( wxWindow *parent, wxWindowID id,
+                                      const wxPoint& pos, const wxSize& size,
+                                      const wxArrayString& choices, long style ) :
+        UNIT_SELECTOR( parent, id, pos, size, choices, style )
+{
+    Append( _( "cm" ) );
+    Append( _( "m" ) );
+    Append( _( "km" ) );
+    Append( _( "inch" ) );
+    Append( _( "feet" ) );
+}
+
+
+/*
+ * Function GetUnitScale
+ * return the scaling factor to convert users units
+ * to normalized units (meter)
+ */
+double UNIT_SELECTOR_LEN_CABLE::GetUnitScale()
+{
+    switch( GetCurrentSelection() )
+    {
+    case 0: return UNIT_CM;     break;
+    case 1: return UNIT_M;      break;
+    case 2: return UNIT_KM;     break;
+    case 3: return UNIT_INCH;    break;
+    case 4: return UNIT_FEET;   break;
+    }
+    return 1.0;
+}

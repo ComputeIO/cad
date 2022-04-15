@@ -28,11 +28,14 @@
 #ifndef UNITS_SCALES_H
 #define UNITS_SCALES_H
 
-#define UNIT_MM 1e-3            // mm to meter
+#define UNIT_KM 1e3             // km to meter
+#define UNIT_M 1                // m to meter
 #define UNIT_CM 1e-2            // cm to meter
+#define UNIT_MM 1e-3            // mm to meter
 #define UNIT_MICRON 1e-6        // um to meter
 #define UNIT_INCH (1e-2*2.54)   // inch to meter
 #define UNIT_MIL (1e-5*2.54)    // mil (or thou) to meter
+#define UNIT_FEET 0.3048        // feet to meter
 #define UNIT_OZSQFT (34.40*UNIT_MICRON) // 1 oz/ft^2 is 34.30 microns nominal, 30.90 minimum
 
 #define UNIT_GHZ 1e9

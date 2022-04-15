@@ -12,6 +12,7 @@
 #include <wx/intl.h>
 class UNIT_SELECTOR_FREQUENCY;
 class UNIT_SELECTOR_LEN;
+class UNIT_SELECTOR_LEN_CABLE;
 class UNIT_SELECTOR_LINEAR_RESISTANCE;
 
 #include "calculator_panels/calculator_panel.h"
@@ -60,7 +61,7 @@ class PANEL_CABLE_SIZE_BASE : public CALCULATOR_PANEL
 		wxStaticText* m_staticText;
 		wxStaticText* m_staticText1612;
 		wxTextCtrl* m_lengthCtrl;
-		UNIT_SELECTOR_LEN* m_lengthUnit;
+		UNIT_SELECTOR_LEN_CABLE* m_lengthUnit;
 		wxStaticText* m_staticText16121;
 		wxTextCtrl* m_resistanceCtrl;
 		wxStaticText* m_staticText161211;

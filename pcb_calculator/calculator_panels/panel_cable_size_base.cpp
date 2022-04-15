@@ -129,7 +129,7 @@ PANEL_CABLE_SIZE_BASE::PANEL_CABLE_SIZE_BASE( wxWindow* parent, wxWindowID id, c
 	gSizer12->Add( m_lengthCtrl, 1, wxALL|wxEXPAND, 5 );
 
 	wxArrayString m_lengthUnitChoices;
-	m_lengthUnit = new UNIT_SELECTOR_LEN( sbSizer12->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_lengthUnitChoices, 0 );
+	m_lengthUnit = new UNIT_SELECTOR_LEN_CABLE( sbSizer12->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_lengthUnitChoices, 0 );
 	m_lengthUnit->SetSelection( 0 );
 	gSizer12->Add( m_lengthUnit, 0, wxALL, 5 );
 
