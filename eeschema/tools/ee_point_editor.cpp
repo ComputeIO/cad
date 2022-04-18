@@ -964,30 +964,7 @@ void EE_POINT_EDITOR::updateParentItem() const
         VECTOR2I originDelta = sheet->GetPosition() - topLeft;
 
         sheet->SetPosition( topLeft );
-        sheet->SetSize( wxSize( botRight.x - topLeft.x, botRight.y - topLeft.y ) );
-
-        // Update the fields if we're in autoplace mode
-        if( sheet->GetFieldsAutoplaced() == FIELDS_AUTOPLACED_AUTO )
-            sheet->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
-
-        // Keep sheet pins attached to edges:
-        for( SCH_SHEET_PIN* pin : sheet->GetPins() )
-        {
-            VECTOR2I pos = pin->GetPosition();
-
-            pos += originDelta;
-
-            switch( pin->GetSide() )
-            {
-            case SHEET_SIDE::LEFT:      pos.x = topLeft.x;  break;
-            case SHEET_SIDE::RIGHT:     pos.x = topRight.x; break;
-            case SHEET_SIDE::TOP:       pos.y = topLeft.y;  break;
-            case SHEET_SIDE::BOTTOM:    pos.y = botLeft.y;  break;
-            case SHEET_SIDE::UNDEFINED:                     break;
-            }
-
-            pin->SetPosition( pos );
-        }
+        sheet->Resize( wxSize( botRight.x - topLeft.x, botRight.y - topLeft.y ) );
 
         break;
     }
