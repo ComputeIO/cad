@@ -24,7 +24,7 @@
 
 #include "ibisParser.h"
 #include <sstream>
-
+#include <iterator>
 
 bool IBIS_MATRIX_BANDED::Check()
 {
@@ -752,12 +752,13 @@ bool IbisParser::parseFile( std::string& aFileName )
 
     err_msg = std::string( "Reading file " ) + aFileName + std::string( "..." );
     Report( err_msg, RPT_SEVERITY_ACTION );
-    std::filebuf* pbuf = ibisFile.rdbuf();
-    long          size = pbuf->pubseekoff( 0, ibisFile.end );
-    pbuf->pubseekoff( 0, ibisFile.beg ); // rewind
 
-    m_buffer = new char[size];
-    pbuf->sgetn( m_buffer, size );
+    std::ostringstream ss;
+    ss << ibisFile.rdbuf();
+    const std::string& s = ss.str();
+    m_buffer = std::vector<char>( s.begin(), s.end() );
+
+    long size = m_buffer.size();
 
     m_lineCounter = 0;
     m_bufferIndex = 0;
@@ -790,13 +791,13 @@ bool IbisParser::parseFile( std::string& aFileName )
         }
     }
 
-    delete m_buffer;
+    m_buffer.clear();
     return status;
 }
 
 void IbisParser::skipWhitespaces()
 {
-    while( ( isspace( m_line[m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
+    while( ( isspace( m_buffer[m_lineOffset + m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
     {
         m_lineIndex++;
     }
@@ -819,7 +820,7 @@ bool IbisParser::isLineEmptyFromCursor()
 {
     int cursor = m_lineIndex;
 
-    while( ( isspace( m_line[cursor] ) ) && ( cursor < m_lineLength ) )
+    while( ( isspace( m_buffer[m_lineOffset + cursor] ) ) && ( cursor < m_lineLength ) )
     {
         cursor++;
     }
@@ -926,7 +927,7 @@ bool IbisParser::GetNextLine()
 
     long tmpIndex = m_bufferIndex;
 
-    m_line = m_buffer + m_bufferIndex;
+    m_lineOffset = m_bufferIndex;
 
     char c = m_buffer[m_bufferIndex++];
 
@@ -968,7 +969,7 @@ void IbisParser::PrintLine()
 {
     for( int i = 0; i < m_lineLength; i++ )
     {
-        std::cout << m_line[i];
+        std::cout << m_buffer[m_lineOffset + i];
     }
     std::cout << std::endl;
 }
@@ -1045,14 +1046,16 @@ bool IbisParser::readWord( std::string& aDest )
 {
     skipWhitespaces();
 
-    int m_start = m_lineIndex;
+    int startIndex = m_lineIndex;
 
-    while( ( !isspace( m_line[m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
+    while( ( !isspace( m_buffer[m_lineOffset + m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
     {
         m_lineIndex++;
     }
 
-    aDest = std::string( m_line + m_start, m_lineIndex - m_start );
+    std::vector<char>::iterator start = std::next( m_buffer.begin(), m_lineOffset + startIndex );
+    std::vector<char>::iterator end = std::next( m_buffer.begin(), m_lineOffset + m_lineIndex );
+    aDest = std::string( start, end );
 
     return ( aDest.size() > 0 );
 }
@@ -1061,7 +1064,7 @@ bool IbisParser::readString( std::string& aDest )
 {
     while( m_lineIndex < m_lineLength )
     {
-        aDest += m_line[m_lineIndex++];
+        aDest += m_buffer[m_lineOffset + m_lineIndex++];
     }
 
     // Remove extra whitespace characters
@@ -1102,7 +1105,7 @@ bool IbisParser::ChangeCommentChar()
     // We cannot stop at m_lineLength here, because lineLength could stop before |_char
     // if the char is remains the same
 
-    char c = m_line[m_lineIndex++];
+    char c = m_buffer[m_lineOffset + m_lineIndex++];
     char d = c;
 
     if( !( c == '!' || c == '"' || c == '#' || c == '$' || c == '%' || c == '&' || c == '\''
@@ -1113,12 +1116,12 @@ bool IbisParser::ChangeCommentChar()
         Report( _( "New comment character is invalid." ), RPT_SEVERITY_ERROR );
     }
 
-    c = m_line[m_lineIndex++];
+    c = m_buffer[m_lineOffset + m_lineIndex++];
 
     while( ( !isspace( c ) ) && c != 0 && c != '\n' )
     {
         strChar += c;
-        c = m_line[m_lineIndex++];
+        c = m_buffer[m_lineOffset + m_lineIndex++];
     }
 
     if( !strcmp( strChar.c_str(), "_char" ) )
@@ -1130,7 +1133,7 @@ bool IbisParser::ChangeCommentChar()
     int i = 0;
     while( isspace( c ) && c != 0 && c != '\n' && c != d )
     {
-        c = m_line[m_lineIndex++];
+        c = m_buffer[m_lineOffset + m_lineIndex++];
     }
 
     if( ( !isspace( c ) ) && c != d )
@@ -1154,7 +1157,7 @@ std::string IbisParser::getKeyword()
     //"No space or tab is allowed immediately after the opening bracket “[” or immediately"
     // "before the closing bracket “]"
 
-    if( m_line[m_lineIndex] != '[' )
+    if( m_buffer[m_lineOffset + m_lineIndex] != '[' )
     {
         // We return an empty keyword, this should stop the parser.
         return "";
@@ -1163,7 +1166,7 @@ std::string IbisParser::getKeyword()
     m_lineIndex++;
 
     char c;
-    c = m_line[m_lineIndex++];
+    c = m_buffer[m_lineOffset + m_lineIndex++];
 
     while( ( c != ']' )
            && ( m_lineIndex
@@ -1174,10 +1177,12 @@ std::string IbisParser::getKeyword()
         {
             c = '_';
         }
+        std::cout << c << std::endl;
         keyword += c;
-        c = m_line[m_lineIndex++];
+        c = m_buffer[m_lineOffset + m_lineIndex++];
     }
 
+    std::cout << "Global keyword: " << keyword << std::endl;
     return keyword;
 }
 
@@ -1776,13 +1781,13 @@ bool IbisParser::readNumericSubparam( std::string aSubparam, double& aDest )
     {
         for( int i = 0; i < aSubparam.size(); i++ )
         {
-            paramName += m_line[m_lineIndex++];
+            paramName += m_buffer[m_lineOffset + m_lineIndex++];
         }
 
         if( !strcmp( paramName.c_str(), aSubparam.c_str() ) )
         {
             skipWhitespaces();
-            if( m_line[m_lineIndex++] == '=' )
+            if( m_buffer[m_lineOffset + m_lineIndex++] == '=' )
             {
                 skipWhitespaces();
 
@@ -1870,7 +1875,7 @@ bool IbisParser::readTypMinMaxValueSubparam( std::string aSubparam, TypMinMaxVal
     {
         for( int i = 0; i < aSubparam.size(); i++ )
         {
-            paramName += m_line[m_lineIndex++];
+            paramName += m_buffer[m_lineOffset + m_lineIndex++];
         }
 
         if( !strcmp( paramName.c_str(), aSubparam.c_str() ) )
@@ -2074,6 +2079,7 @@ bool IbisParser::parseHeader( std::string& aKeyword )
     }
     else
     {
+        std::cout << "Header Keyword: " << aKeyword << std::endl;
         if( !changeContext( aKeyword ) )
         {
             status = false;
@@ -2133,15 +2139,16 @@ bool IbisParser::ReadTableLine( std::vector<std::string>& aDest )
     {
         std::string str;
 
-        while( ( !isspace( m_line[m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
+        while( ( !isspace( m_buffer[m_lineOffset + m_lineIndex] ) )
+               && ( m_lineIndex < m_lineLength ) )
         {
-            str += m_line[m_lineIndex++];
+            str += m_buffer[m_lineOffset + m_lineIndex++];
         }
         if( str.size() > 0 )
         {
             aDest.push_back( str );
         }
-        while( isspace( m_line[m_lineIndex] ) && ( m_lineIndex < m_lineLength ) )
+        while( isspace( m_buffer[m_lineOffset + m_lineIndex] ) && ( m_lineIndex < m_lineLength ) )
         {
             m_lineIndex++;
         }
@@ -2584,11 +2591,11 @@ bool IbisParser::onNewLine()
             break;
         }
     }
-    c = m_line[m_lineIndex];
+    c = m_buffer[m_lineOffset + m_lineIndex];
 
     while( ( c != '\n' ) && ( c != 0 ) ) // Go to the end of line
     {
-        c = m_line[m_lineIndex++];
+        c = m_buffer[m_lineOffset + m_lineIndex++];
     }
     return status;
 }

@@ -610,13 +610,13 @@ class IbisParser : public IBIS_INPUT
 public:
     IbisParser( IBIS_REPORTER* aReporter ) : IBIS_INPUT( aReporter ), m_ibisFile( aReporter ){};
 
-    bool m_parrot = false; // Write back all lines.
+    bool m_parrot = true; // Write back all lines.
 
     long  m_lineCounter;
     char  m_commentChar = '|';
-    char* m_buffer;
+    std::vector<char> m_buffer;
     int   m_bufferIndex;
-    char* m_line;
+    int   m_lineOffset;
     int   m_lineIndex;
     int   m_lineLength;
 
