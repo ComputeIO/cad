@@ -57,7 +57,7 @@ namespace SPICE_GRAMMAR
     struct param : plus<alnum> {};
     struct suffixUnit : plus<alpha> {};
 
-    template <SIM_VALUE_BASE::TYPE Type, NOTATION Notation>
+    template <SIM_VALUE::TYPE Type, NOTATION Notation>
     struct paramValuePair : seq<param,
                                 opt<sep>,
                                 one<'='>,
@@ -65,10 +65,10 @@ namespace SPICE_GRAMMAR
                                 number<Type, Notation>,
                                 opt<suffixUnit>> {};
     template <NOTATION Notation>
-    struct paramValuePairs : seq<opt<paramValuePair<SIM_VALUE_BASE::TYPE::FLOAT,
+    struct paramValuePairs : seq<opt<paramValuePair<SIM_VALUE::TYPE::FLOAT,
                                                     Notation>,
                                      star<sep,
-                                          paramValuePair<SIM_VALUE_BASE::TYPE::FLOAT,
+                                          paramValuePair<SIM_VALUE::TYPE::FLOAT,
                                                          Notation>>>> {};
     struct modelName : plus<alnum,
                             star<sor<alnum,

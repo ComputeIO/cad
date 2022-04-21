@@ -318,7 +318,7 @@ public:
             wxString name;
             unsigned int id = 0; // Legacy.
             DIR dir = DIR::INOUT;
-            SIM_VALUE_BASE::TYPE type;
+            SIM_VALUE::TYPE type;
             FLAGS flags = {}; // Legacy
             wxString unit = "";
             CATEGORY category = CATEGORY::PRINCIPAL;
@@ -327,12 +327,12 @@ public:
             wxString description = "";
         };
 
-        std::unique_ptr<SIM_VALUE_BASE> value;
+        std::unique_ptr<SIM_VALUE> value;
         const INFO& info;
         bool isOtherVariant = false; // Legacy.
         
         PARAM( const INFO& aInfo, bool aIsOtherVariant = false )
-            : value( SIM_VALUE_BASE::Create( aInfo.type ) ),
+            : value( SIM_VALUE::Create( aInfo.type ) ),
               info( aInfo ),
               isOtherVariant( aIsOtherVariant )
         {}
@@ -462,11 +462,11 @@ private:
     wxString generateTypeField() const;
 
     wxString generatePinsField() const;
-    void parsePinsField( int aSymbolPinCount, const wxString& aPinsField );
+    bool parsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
     
     wxString generateParamsField( const wxString& aPairSeparator ) const;
-    void parseParamsField( const wxString& aParamsField );
+    bool parseParamsField( const wxString& aParamsField );
 
     // TODO: Rename.
     virtual bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,

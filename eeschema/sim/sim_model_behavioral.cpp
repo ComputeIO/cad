@@ -90,7 +90,7 @@ SIM_MODEL::PARAM::INFO SIM_MODEL_BEHAVIORAL::makeParamInfo( wxString name, wxStr
     SIM_MODEL::PARAM::INFO paramInfo = {};
 
     paramInfo.name = name;
-    paramInfo.type = SIM_VALUE_BASE::TYPE::FLOAT;
+    paramInfo.type = SIM_VALUE::TYPE::FLOAT;
     paramInfo.unit = unit;
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.description = description;

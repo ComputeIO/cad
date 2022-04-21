@@ -43,7 +43,7 @@ namespace SIM_VALUE_GRAMMAR
 }
 
 
-class SIM_VALUE_BASE
+class SIM_VALUE
 {
 public:
     enum class TYPE
@@ -60,16 +60,16 @@ public:
         COMPLEX_VECTOR
     };
 
-    static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType, wxString aString );
-    static std::unique_ptr<SIM_VALUE_BASE> Create( TYPE aType );
+    static std::unique_ptr<SIM_VALUE> Create( TYPE aType, wxString aString );
+    static std::unique_ptr<SIM_VALUE> Create( TYPE aType );
 
-    virtual ~SIM_VALUE_BASE() = default;
-    SIM_VALUE_BASE() = default;
+    virtual ~SIM_VALUE() = default;
+    SIM_VALUE() = default;
 
     void operator=( const wxString& aString );
-    virtual bool operator==( const SIM_VALUE_BASE& aOther ) const = 0;
+    virtual bool operator==( const SIM_VALUE& aOther ) const = 0;
 
-    virtual void FromString( const wxString& aString,
+    virtual bool FromString( const wxString& aString,
                              SIM_VALUE_GRAMMAR::NOTATION aNotation
                                 = SIM_VALUE_GRAMMAR::NOTATION::SI )
         = 0;
@@ -81,20 +81,20 @@ public:
 
 
 template <typename T>
-class SIM_VALUE : public SIM_VALUE_BASE
+class SIM_VALUE_INSTANCE : public SIM_VALUE
 {
 public:
-    SIM_VALUE() = default;
-    SIM_VALUE( const T& aValue );
+    SIM_VALUE_INSTANCE() = default;
+    SIM_VALUE_INSTANCE( const T& aValue );
 
-    void FromString( const wxString& aString,
+    bool FromString( const wxString& aString,
                      SIM_VALUE_GRAMMAR::NOTATION aNotation = SIM_VALUE_GRAMMAR::NOTATION::SI )
         override;
     wxString ToString() const override;
     wxString ToSimpleString() const override;
 
     void operator=( const T& aValue );
-    bool operator==( const SIM_VALUE_BASE& aOther ) const override;
+    bool operator==( const SIM_VALUE& aOther ) const override;
 
 private:
     wxString getMetricSuffix();
@@ -120,17 +120,17 @@ namespace SIM_VALUE_GRAMMAR
     //struct fracPartWithPrefix : seq<fracPartPrefix, fracPart> {};
 
 
-    template <SIM_VALUE_BASE::TYPE ValueType>
+    template <SIM_VALUE::TYPE ValueType>
     struct significand;
     
-    template <> struct significand<SIM_VALUE_BASE::TYPE::FLOAT> :
+    template <> struct significand<SIM_VALUE::TYPE::FLOAT> :
         sor<seq<intPart, one<'.'>, fracPart>,
             seq<intPart, one<'.'>>,
             intPart,
             seq<one<'.'>, fracPart>,
             one<'.'>> {};
 
-    template <> struct significand<SIM_VALUE_BASE::TYPE::INT> : intPart {};
+    template <> struct significand<SIM_VALUE::TYPE::INT> : intPart {};
 
 
     struct exponentPrefix : one<'e', 'E'> {};
@@ -138,20 +138,20 @@ namespace SIM_VALUE_GRAMMAR
     struct exponentWithPrefix : seq<exponentPrefix, exponent> {};
 
 
-    template <SIM_VALUE_BASE::TYPE ValueType, NOTATION Notation>
+    template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct metricSuffix;
 
-    template <> struct metricSuffix<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::INT, NOTATION::SI>
         : one<'k', 'K', 'M', 'G', 'T', 'P', 'E'> {};
-    template <> struct metricSuffix<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::INT, NOTATION::SPICE>
         : sor<TAO_PEGTL_ISTRING( "k" ),
               TAO_PEGTL_ISTRING( "Meg" ),
               TAO_PEGTL_ISTRING( "G" ),
               TAO_PEGTL_ISTRING( "T" )> {};
 
-    template <> struct metricSuffix<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>
         : one<'a', 'f', 'p', 'n', 'u', 'm', 'k', 'K', 'M', 'G', 'T', 'P', 'E'> {};
-    template <> struct metricSuffix<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>
         : sor<TAO_PEGTL_ISTRING( "f" ),
               TAO_PEGTL_ISTRING( "p" ),
               TAO_PEGTL_ISTRING( "n" ),
@@ -164,17 +164,17 @@ namespace SIM_VALUE_GRAMMAR
               TAO_PEGTL_ISTRING( "T" )> {};
 
 
-    template <SIM_VALUE_BASE::TYPE ValueType, NOTATION Notation>
+    template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct number : seq<significand<ValueType>,
                         opt<exponentWithPrefix>,
                         opt<metricSuffix<ValueType, Notation>>> {};
 
-    template <SIM_VALUE_BASE::TYPE ValueType, NOTATION Notation>
+    template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct numberGrammar : must<opt<number<ValueType, Notation>>, eof> {};
 
 
     bool IsValid( const wxString& aString,
-                  SIM_VALUE_BASE::TYPE aValueType = SIM_VALUE_BASE::TYPE::FLOAT,
+                  SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE::FLOAT,
                   NOTATION aNotation = NOTATION::SI );
 }
 

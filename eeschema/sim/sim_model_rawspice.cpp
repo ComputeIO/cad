@@ -52,7 +52,7 @@ bool SIM_MODEL_RAWSPICE::setParamFromSpiceCode( const wxString& aParamName,
         std::unique_ptr<PARAM::INFO> paramInfo = std::make_unique<PARAM::INFO>();
 
         paramInfo->name = aParamName.Lower();
-        paramInfo->type = SIM_VALUE_BASE::TYPE::STRING;
+        paramInfo->type = SIM_VALUE::TYPE::STRING;
         m_paramInfos.push_back( std::move( paramInfo ) );
 
         AddParam( *m_paramInfos.back() );

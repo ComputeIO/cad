@@ -48,13 +48,13 @@ namespace SIM_MODEL_PARSER
     template <typename Rule> struct paramValuePairsSelector : std::false_type {};
 
     template <> struct paramValuePairsSelector<param> : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
+    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SI>>
         : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
+    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>>
         : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
+    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SPICE>>
         : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
+    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>>
         : std::true_type {};
 
 
@@ -64,13 +64,13 @@ namespace SIM_MODEL_PARSER
     template <> struct spiceUnitSelector<dotModel> : std::true_type {};
     template <> struct spiceUnitSelector<dotModelType> : std::true_type {};
     template <> struct spiceUnitSelector<param> : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SI>>
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SI>>
         : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SI>>
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>>
         : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::INT, NOTATION::SPICE>>
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SPICE>>
         : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE_BASE::TYPE::FLOAT, NOTATION::SPICE>>
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>>
         : std::true_type {};
 
     template <> struct spiceUnitSelector<dotSubckt> : std::true_type {};
@@ -395,10 +395,10 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
                                              SIM_MODEL_PARSER::spiceUnitSelector>
             ( in );
     }
-    catch( tao::pegtl::parse_error& e )
+    catch( const tao::pegtl::parse_error& e )
     {
-        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse '%s': %s" ), aSpiceCode,
-                                                e.what() ) );
+        // TODO: Maybe announce an error somehow?
+        return TYPE::NONE;
     }
 
     wxASSERT( root );
@@ -636,10 +636,10 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
                 {
                     paramName = subnode->string();
                 }
-                // TODO: Do something with number<SIM_VALUE_BASE::TYPE::INT, ...>.
+                // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
                 // It doesn't seem too useful?
                 else if( subnode->is_type<
-                        SIM_MODEL_PARSER::number<SIM_VALUE_BASE::TYPE::FLOAT,
+                        SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
                                                  SIM_MODEL_PARSER::NOTATION::SPICE>>() )
                 {
                     wxASSERT( !paramName.IsEmpty() );
@@ -872,8 +872,7 @@ bool SIM_MODEL::SetParamValue( int aParamIndex, const wxString& aValue,
     if( !m_spiceCode.IsEmpty() )
         return false;
 
-    m_params.at( aParamIndex ).value->FromString( aValue, aNotation );
-    return true;
+    return m_params.at( aParamIndex ).value->FromString( aValue, aNotation );
 }
 
 
@@ -1034,7 +1033,7 @@ wxString SIM_MODEL::generatePinsField() const
 }
 
 
-void SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField )
+bool SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField )
 {
     // Default pin sequence: model pins are the same as symbol pins.
     // Excess model pins are set as Not Connected.
@@ -1047,7 +1046,7 @@ void SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField 
     }
 
     if( aPinsField.IsEmpty() )
-        return;
+        return true;
 
     LOCALE_IO toggle;
 
@@ -1061,16 +1060,13 @@ void SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField 
     }
     catch( const tao::pegtl::parse_error& e )
     {
-        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model pin sequence: %s" ),
-                                                e.what() ) );
+        return false;
     }
 
     wxASSERT( root );
 
     if( static_cast<int>( root->children.size() ) != GetPinCount() )
-        throw KI_PARAM_ERROR( wxString::Format(
-                              _( "The model pin sequence has a different number of values (%d) "
-                                 "than the number of model pins (%d)" ) ) );
+        return false;
 
     for( unsigned int i = 0; i < root->children.size(); ++i )
     {
@@ -1080,6 +1076,8 @@ void SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField 
             SetPinSymbolPinNumber( static_cast<int>( i ),
                                    std::stoi( root->children.at( i )->string() ) );
     }
+
+    return true;
 }
 
 
@@ -1109,7 +1107,7 @@ wxString SIM_MODEL::generateParamsField( const wxString& aPairSeparator ) const
 }
 
 
-void SIM_MODEL::parseParamsField( const wxString& aParamsField )
+bool SIM_MODEL::parseParamsField( const wxString& aParamsField )
 {
     LOCALE_IO toggle;
     
@@ -1127,8 +1125,7 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
     }
     catch( const tao::pegtl::parse_error& e )
     {
-        throw KI_PARAM_ERROR( wxString::Format( _( "Failed to parse model parameters: %s" ),
-                                                e.what() ) );
+        return false;
     }
 
     wxASSERT( root );
@@ -1139,9 +1136,9 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
     {
         if( node->is_type<SIM_MODEL_PARSER::param>() )
             paramName = node->string();
-        // TODO: Do something with number<SIM_VALUE_BASE::TYPE::INT, ...>.
+        // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
         // It doesn't seem too useful?
-        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE_BASE::TYPE::FLOAT,
+        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
                                                         SIM_MODEL_PARSER::NOTATION::SI>>() )
         {
             wxASSERT( !paramName.IsEmpty() );
@@ -1151,9 +1148,11 @@ void SIM_MODEL::parseParamsField( const wxString& aParamsField )
         else
         {
             wxFAIL;
-            return;
+            return false;
         }
     }
+
+    return true;
 }
 
 
@@ -1171,15 +1170,5 @@ bool SIM_MODEL::setParamFromSpiceCode( const wxString& aParamName, const wxStrin
     if( i == GetParamCount() )
         return false; // No parameter with this name exists.
 
-    try
-    {
-        SetParamValue( i, wxString( aParamValue ), aNotation );
-    }
-    catch( const KI_PARAM_ERROR& e )
-    {
-        m_params.clear();
-        return false;
-    }
-
-    return true;
+    return SetParamValue( i, wxString( aParamValue ), aNotation );
 }

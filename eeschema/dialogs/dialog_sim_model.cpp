@@ -31,7 +31,7 @@
 #include <locale_io.h>
 #include <wx/filedlg.h>
 
-using TYPE = SIM_VALUE_BASE::TYPE;
+using TYPE = SIM_VALUE::TYPE;
 using CATEGORY = SIM_MODEL::PARAM::CATEGORY;
 
 
@@ -48,22 +48,14 @@ DIALOG_SIM_MODEL<T>::DIALOG_SIM_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
       m_prevModel( nullptr ),
       m_firstCategory( nullptr )
 {
-    try
+    for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
     {
-        for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
-        {
-            m_models.push_back( SIM_MODEL::Create( type, m_symbol.GetAllPins().size() ) );
+        m_models.push_back( SIM_MODEL::Create( type, m_symbol.GetAllPins().size() ) );
 
-            SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( type ).deviceType;
-            
-            if( !m_curModelTypeOfDeviceType.count( deviceType ) )
-                m_curModelTypeOfDeviceType[deviceType] = type;
-        }
-    }
-    catch( KI_PARAM_ERROR& e )
-    {
-        DisplayErrorMessage( this, e.What() );
-        return;
+        SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( type ).deviceType;
+        
+        if( !m_curModelTypeOfDeviceType.count( deviceType ) )
+            m_curModelTypeOfDeviceType[deviceType] = type;
     }
 
 
@@ -481,12 +473,12 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
     {
     case TYPE::INT:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE_BASE::TYPE::INT );
+                                 aParamIndex, SIM_VALUE::TYPE::INT );
         break;
 
     case TYPE::FLOAT:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE_BASE::TYPE::FLOAT );
+                                 aParamIndex, SIM_VALUE::TYPE::FLOAT );
         break;
 
     case TYPE::BOOL:
