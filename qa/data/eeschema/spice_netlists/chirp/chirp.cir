@@ -1,0 +1,7 @@
+.title KiCad schematic
+.include "chirp.lib"
+.tran 10u 100m
+
+V1 Net-_V1-E1_ Net-_V1-E2_ 
+R1 Net-_V1-E1_ Net-_V1-E2_ 10k
+.end

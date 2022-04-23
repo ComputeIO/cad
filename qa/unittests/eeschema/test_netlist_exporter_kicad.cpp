@@ -18,10 +18,10 @@
  */
 
 #include <qa_utils/wx_utils/unit_test_utils.h>
-#include "eeschema_test_utils.h"
+#include <eeschema_test_utils.h>
 
 
-class TEST_NETLIST_EXPORTER_KICAD_FIXTURE : publc TEST_NETLIST_EXPORTER_FIXTURE<NETLIST_EXPORTER_KICAD>
+class TEST_NETLIST_EXPORTER_KICAD_FIXTURE : public TEST_NETLIST_EXPORTER_FIXTURE<NETLIST_EXPORTER_KICAD>
 {
 public:
     void CompareNetlists() override
@@ -31,14 +31,14 @@ public:
 
         {
             std::unique_ptr<NETLIST_READER> netlistReader( NETLIST_READER::GetNetlistReader(
-                                                &golden, getNetlistFileName(), wxEmptyString ) );
+                                                &golden, GetNetlistPath(), wxEmptyString ) );
 
             BOOST_REQUIRE_NO_THROW( netlistReader->LoadNetlist() );
         }
 
         {
             std::unique_ptr<NETLIST_READER> netlistReader( NETLIST_READER::GetNetlistReader(
-                                                &test, getNetlistFileName( true ), wxEmptyString ) );
+                                                &test, GetNetlistPath( true ), wxEmptyString ) );
 
             BOOST_REQUIRE_NO_THROW( netlistReader->LoadNetlist() );
         }
@@ -102,73 +102,74 @@ BOOST_AUTO_TEST_CASE( FindPlugin )
 
 BOOST_AUTO_TEST_CASE( GlobalPromotion )
 {
-    doNetlistTest( "test_global_promotion" );
+    TestNetlist( "test_global_promotion" );
 }
 
 
 BOOST_AUTO_TEST_CASE( GlobalPromotion2 )
 {
-    doNetlistTest( "test_global_promotion_2" );
+    TestNetlist( "test_global_promotion_2" );
 }
 
 
 BOOST_AUTO_TEST_CASE( Video )
 {
-    doNetlistTest( "video" );
+    TestNetlist( "video" );
 }
 
 
 BOOST_AUTO_TEST_CASE( ComplexHierarchy )
 {
-    doNetlistTest( "complex_hierarchy" );
+    TestNetlist( "complex_hierarchy" );
 }
 
 
 BOOST_AUTO_TEST_CASE( WeakVectorBusDisambiguation )
 {
-    doNetlistTest( "weak_vector_bus_disambiguation" );
+    TestNetlist( "weak_vector_bus_disambiguation" );
 }
 
 
 BOOST_AUTO_TEST_CASE( BusJunctions )
 {
-    doNetlistTest( "bus_junctions" );
+    TestNetlist( "bus_junctions" );
 }
 
 
 BOOST_AUTO_TEST_CASE( HierRenaming )
 {
-    doNetlistTest( "test_hier_renaming" );
+    TestNetlist( "test_hier_renaming" );
 }
 
 
 BOOST_AUTO_TEST_CASE( NoConnects )
 {
-    doNetlistTest( "noconnects" );
+    TestNetlist( "noconnects" );
 }
 
 
 BOOST_AUTO_TEST_CASE( PrefixBusAlias )
 {
-    doNetlistTest( "prefix_bus_alias" );
+    TestNetlist( "prefix_bus_alias" );
 }
 
 
 BOOST_AUTO_TEST_CASE( GroupBusMatching )
 {
-    doNetlistTest( "group_bus_matching" );
+    TestNetlist( "group_bus_matching" );
 }
 
 
 BOOST_AUTO_TEST_CASE( TopLevelHierPins )
 {
-    doNetlistTest( "top_level_hier_pins" );
+    TestNetlist( "top_level_hier_pins" );
 }
 
 
 BOOST_AUTO_TEST_CASE( BusEntries )
 {
-    doNetlistTest( "bus_entries" );
+    TestNetlist( "bus_entries" );
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()

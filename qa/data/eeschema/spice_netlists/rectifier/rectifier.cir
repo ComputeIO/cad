@@ -1,0 +1,7 @@
+.title KiCad schematic
+.include "diodes.lib"
+C1 Net-_D1-K_ GND 10u
+R1 Net-_D1-K_ GND 100k
+V1 Net-_D1-A_ GND SIN( 0 5 50    )
+D1 Net-_D1-K_ Net-_D1-A_ DIODE1
+.end
