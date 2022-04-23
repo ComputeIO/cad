@@ -154,8 +154,14 @@ bool DIALOG_SIM_MODEL<T>::TransferDataFromWindow()
     {
         SIM_MODEL::SetFieldValue( m_fields, SIM_LIBRARY_SPICE::NAME_FIELD,
                                   m_modelNameCombobox->GetValue() );
-        SIM_MODEL::SetFieldValue( m_fields, SIM_LIBRARY_SPICE::LIBRARY_FIELD,
-                                  m_library->GetFilename() );
+
+        wxString path = m_library->GetFilePath();
+        wxFileName fn( path );
+
+        if( fn.MakeRelativeTo( Prj().GetProjectPath() ) && !fn.GetFullPath().StartsWith( ".." ) )
+            path = fn.GetFullPath();
+
+        SIM_MODEL::SetFieldValue( m_fields, SIM_LIBRARY_SPICE::LIBRARY_FIELD, path );
     }
 
     curModel().WriteFields( m_fields );
@@ -382,8 +388,8 @@ void DIALOG_SIM_MODEL<T>::updatePinAssignmentsGridEditors()
 template <typename T>
 void DIALOG_SIM_MODEL<T>::loadLibrary( const wxString& aFilePath )
 {
-    m_library->ReadFile( aFilePath );
-    m_libraryFilenameInput->SetValue( aFilePath );
+    m_library->ReadFile( Prj().AbsolutePath( aFilePath ) );
+    m_libraryPathInput->SetValue( aFilePath );
 
     m_libraryModels.clear();
     for( const SIM_MODEL& baseModel : m_library->GetModels() )
@@ -607,12 +613,18 @@ void DIALOG_SIM_MODEL<T>::onRadioButton( wxCommandEvent& aEvent )
 template <typename T>
 void DIALOG_SIM_MODEL<T>::onBrowseButtonClick( wxCommandEvent& aEvent )
 {
-    wxFileDialog dlg( this, _( "Browse Models" ) );
+    wxFileDialog dlg( this, _( "Browse Models" ), Prj().GetProjectPath() );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return;
 
-    loadLibrary( dlg.GetPath() );
+    wxString path = dlg.GetPath();
+    wxFileName fn( path );
+
+    if( fn.MakeRelativeTo( Prj().GetProjectPath() ) && !fn.GetFullPath().StartsWith( ".." ) )
+        path = fn.GetFullPath();
+
+    loadLibrary( path );
 }
 
 

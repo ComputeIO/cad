@@ -208,12 +208,12 @@ void NETLIST_EXPORTER_SPICE::readLibraryField( SCH_SYMBOL& aSymbol, SPICE_ITEM& 
     if( !field )
         return;
 
-    wxString filename = field->GetShownText();
+    wxString path = field->GetShownText();
 
-    if( !m_libraries.count( filename ) )
-        m_libraries[filename] = SIM_LIBRARY::Create( filename );
+    if( auto library = SIM_LIBRARY::Create( m_schematic->Prj().AbsolutePath( path ) ) )
+        m_libraries.try_emplace( path, std::move( library ) );
 
-    aItem.libraryPath = filename;
+    aItem.libraryPath = path;
 }
 
 

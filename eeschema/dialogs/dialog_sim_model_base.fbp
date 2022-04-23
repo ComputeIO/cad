@@ -49,7 +49,7 @@
             <property name="pos"></property>
             <property name="size">600,800</property>
             <property name="style">wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP</property>
-            <property name="subclass">; ; forward_declare</property>
+            <property name="subclass">DIALOG_SHIM; dialog_shim.h; forward_declare</property>
             <property name="title">Spice Model Editor</property>
             <property name="tooltip"></property>
             <property name="two_step_creation">0</property>
@@ -376,7 +376,7 @@
                                                             <property name="minimize_button">0</property>
                                                             <property name="minimum_size"></property>
                                                             <property name="moveable">1</property>
-                                                            <property name="name">m_libraryFilenameInput</property>
+                                                            <property name="name">m_libraryPathInput</property>
                                                             <property name="pane_border">1</property>
                                                             <property name="pane_position"></property>
                                                             <property name="pane_size"></property>

@@ -11,7 +11,7 @@
 
 ///////////////////////////////////////////////////////////////////////////
 
-DIALOG_SIM_MODEL_BASE::DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+DIALOG_SIM_MODEL_BASE::DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DIALOG_SHIM( parent, id, title, pos, size, style )
 {
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
@@ -38,8 +38,8 @@ DIALOG_SIM_MODEL_BASE::DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id, c
 	m_useLibraryModelRadioButton = new wxRadioButton( sbSizer4->GetStaticBox(), wxID_ANY, wxT("Library:"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer15->Add( m_useLibraryModelRadioButton, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_libraryFilenameInput = new wxTextCtrl( sbSizer4->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizer15->Add( m_libraryFilenameInput, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
+	m_libraryPathInput = new wxTextCtrl( sbSizer4->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer15->Add( m_libraryPathInput, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 
 	m_browseButton = new wxBitmapButton( sbSizer4->GetStaticBox(), wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
 	fgSizer15->Add( m_browseButton, 0, wxALL, 5 );
@@ -232,7 +232,7 @@ DIALOG_SIM_MODEL_BASE::DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id, c
 	// Connect Events
 	m_useInstanceModelRadioButton->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onRadioButton ), NULL, this );
 	m_useLibraryModelRadioButton->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onRadioButton ), NULL, this );
-	m_libraryFilenameInput->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_SIM_MODEL_BASE::onLibraryFilenameInputUpdate ), NULL, this );
+	m_libraryPathInput->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_SIM_MODEL_BASE::onLibraryFilenameInputUpdate ), NULL, this );
 	m_browseButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onBrowseButtonClick ), NULL, this );
 	m_browseButton->Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_SIM_MODEL_BASE::onBrowseButtonUpdate ), NULL, this );
 	m_modelNameCombobox->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onModelNameCombobox ), NULL, this );
@@ -253,7 +253,7 @@ DIALOG_SIM_MODEL_BASE::~DIALOG_SIM_MODEL_BASE()
 	// Disconnect Events
 	m_useInstanceModelRadioButton->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onRadioButton ), NULL, this );
 	m_useLibraryModelRadioButton->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onRadioButton ), NULL, this );
-	m_libraryFilenameInput->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_SIM_MODEL_BASE::onLibraryFilenameInputUpdate ), NULL, this );
+	m_libraryPathInput->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_SIM_MODEL_BASE::onLibraryFilenameInputUpdate ), NULL, this );
 	m_browseButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onBrowseButtonClick ), NULL, this );
 	m_browseButton->Disconnect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( DIALOG_SIM_MODEL_BASE::onBrowseButtonUpdate ), NULL, this );
 	m_modelNameCombobox->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( DIALOG_SIM_MODEL_BASE::onModelNameCombobox ), NULL, this );

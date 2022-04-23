@@ -11,6 +11,7 @@
 #include <wx/xrc/xmlres.h>
 class WX_GRID;
 
+#include "dialog_shim.h"
 #include <wx/string.h>
 #include <wx/radiobut.h>
 #include <wx/gdicmn.h>
@@ -45,7 +46,7 @@ class WX_GRID;
 ///////////////////////////////////////////////////////////////////////////////
 /// Class DIALOG_SIM_MODEL_BASE
 ///////////////////////////////////////////////////////////////////////////////
-class DIALOG_SIM_MODEL_BASE : public wxDialog
+class DIALOG_SIM_MODEL_BASE : public DIALOG_SHIM
 {
 	private:
 
@@ -54,7 +55,7 @@ class DIALOG_SIM_MODEL_BASE : public wxDialog
 		wxPanel* m_modelPanel;
 		wxRadioButton* m_useInstanceModelRadioButton;
 		wxRadioButton* m_useLibraryModelRadioButton;
-		wxTextCtrl* m_libraryFilenameInput;
+		wxTextCtrl* m_libraryPathInput;
 		wxBitmapButton* m_browseButton;
 		wxStaticText* m_modelNameLabel;
 		wxComboBox* m_modelNameCombobox;

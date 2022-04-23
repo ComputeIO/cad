@@ -37,22 +37,22 @@ public:
     virtual ~SIM_LIBRARY() = default;
     SIM_LIBRARY() = default;
 
-    static std::unique_ptr<SIM_LIBRARY> Create( wxString aFilename );
+    static std::unique_ptr<SIM_LIBRARY> Create( wxString aFilePath );
 
-    virtual bool ReadFile( const wxString& aFilename ) = 0;
-    virtual void WriteFile( const wxString& aFilename ) = 0;
+    virtual bool ReadFile( const wxString& aFilePath ) = 0;
+    virtual void WriteFile( const wxString& aFilePath ) = 0;
 
     std::vector<std::reference_wrapper<SIM_MODEL>> GetModels() const;
     const std::vector<wxString>& GetModelNames() const { return m_modelNames; }
 
-    wxString GetFilename() const { return m_filename; }
+    wxString GetFilePath() const { return m_filePath; }
     wxString GetErrorMessage() const { return m_errorMessage; }
     
 protected:
     std::vector<std::unique_ptr<SIM_MODEL>> m_models;
     std::vector<wxString> m_modelNames;
 
-    wxString m_filename;
+    wxString m_filePath;
     wxString m_errorMessage;
 };
 

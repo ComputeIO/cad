@@ -50,16 +50,19 @@ namespace SIM_LIBRARY_SPICE_PARSER
 };
 
 
-bool SIM_LIBRARY_SPICE::ReadFile( const wxString& aFilename )
+bool SIM_LIBRARY_SPICE::ReadFile( const wxString& aFilePath )
 {
-    if( !SIM_LIBRARY::ReadFile( aFilename ) )
+    LOCALE_IO toggle;
+
+    if( !SIM_LIBRARY::ReadFile( aFilePath ) )
         return false;
 
-    LOCALE_IO toggle;
+    m_models.clear();
+    m_modelNames.clear();
 
     try
     {
-        tao::pegtl::file_input in( aFilename.ToStdString() );
+        tao::pegtl::file_input in( aFilePath.ToStdString() );
         auto root = tao::pegtl::parse_tree::parse<SIM_LIBRARY_SPICE_PARSER::libraryGrammar,
                                                   SIM_LIBRARY_SPICE_PARSER::librarySelector>
             ( in );
@@ -107,7 +110,7 @@ bool SIM_LIBRARY_SPICE::ReadFile( const wxString& aFilename )
 }
 
 
-void SIM_LIBRARY_SPICE::WriteFile( const wxString& aFileName )
+void SIM_LIBRARY_SPICE::WriteFile( const wxString& aFilePath )
 {
     
 }
