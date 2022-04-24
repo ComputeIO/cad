@@ -281,8 +281,8 @@ public:
     {
         static constexpr auto NOT_CONNECTED = 0;
 
-        int symbolPinNumber;
         const wxString name;
+        int symbolPinNumber;
     };
 
 
@@ -352,7 +352,10 @@ public:
 
     static std::unique_ptr<SIM_MODEL> Create( TYPE aType, int aSymbolPinCount = 0 );
     static std::unique_ptr<SIM_MODEL> Create( const std::string& aSpiceCode );
-    static std::unique_ptr<SIM_MODEL> Create( const SIM_MODEL& aBaseModel );
+
+    template <typename T>
+    static std::unique_ptr<SIM_MODEL> Create( const SIM_MODEL& aBaseModel, int aSymbolPinCount,
+                                              const std::vector<T>& aFields );
 
     template <typename T>
     static std::unique_ptr<SIM_MODEL> Create( int aSymbolPinCount, const std::vector<T>& aFields );
@@ -409,6 +412,7 @@ public:
     SPICE_INFO GetSpiceInfo() const;
     virtual std::vector<wxString> GetSpiceCurrentNames( const wxString& aRefName ) const;
 
+    bool ParsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
 
@@ -462,7 +466,6 @@ private:
     wxString generateTypeField() const;
 
     wxString generatePinsField() const;
-    bool parsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
     
     wxString generateParamsField( const wxString& aPairSeparator ) const;

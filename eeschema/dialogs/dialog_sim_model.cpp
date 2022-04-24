@@ -115,8 +115,6 @@ bool DIALOG_SIM_MODEL<T>::TransferDataToWindow()
         m_modelNameCombobox->SetStringSelection(
                 SIM_MODEL::GetFieldValue( &m_fields, SIM_LIBRARY_SPICE::NAME_FIELD ) );
 
-        curModel().ReadDataFields( m_symbol.GetAllPins().size(), &m_fields );
-
         m_overrideCheckbox->SetValue( curModel().HasNonPrincipalOverrides() );
     }
     else
@@ -393,7 +391,8 @@ void DIALOG_SIM_MODEL<T>::loadLibrary( const wxString& aFilePath )
 
     m_libraryModels.clear();
     for( const SIM_MODEL& baseModel : m_library->GetModels() )
-        m_libraryModels.push_back( SIM_MODEL::Create( baseModel ) );
+        m_libraryModels.push_back( SIM_MODEL::Create( baseModel, m_symbol.GetAllPins().size(),
+                                                      m_fields ) );
 
     m_modelNameCombobox->Clear();
     for( const wxString& name : m_library->GetModelNames() )

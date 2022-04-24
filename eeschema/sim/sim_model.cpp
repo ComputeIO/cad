@@ -501,11 +501,22 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::string& aSpiceCode )
 }
 
 
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel )
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel,
+                                                       int aSymbolPinCount,
+                                                       const std::vector<SCH_FIELD>& aFields );
+
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel,
+                                                       int aSymbolPinCount,
+                                                       const std::vector<LIB_FIELD>& aFields );
+
+template <typename T>
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel, int aSymbolPinCount,
+                                              const std::vector<T>& aFields )
 {
     std::unique_ptr<SIM_MODEL> model = create( aBaseModel.GetType() );
 
     model->SetBaseModel( aBaseModel );
+    model->ReadDataFields( aSymbolPinCount, &aFields );
     return model;
 }
 
@@ -789,11 +800,18 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
     wxString result = "";
     result << GenerateSpiceItemName( aRefName ) << " ";
 
-    for( const wxString& pinNetName : aPinNetNames )
-        result << pinNetName << " ";
+    for( int i = 0; i < GetPinCount(); ++i )
+    {
+        for( int j = 0; j < ( int ) aPinNetNames.size(); ++j )
+        {
+            int symbolPinNumber = j + 1;
+
+            if( symbolPinNumber == GetPin( i ).symbolPinNumber )
+                result << aPinNetNames[j] << " ";
+        }
+    }
 
     result << aModelName << "\n";
-
     return result;
 }
 
@@ -832,6 +850,54 @@ std::vector<wxString> SIM_MODEL::GetSpiceCurrentNames( const wxString& aRefName 
 {
     LOCALE_IO toggle;
     return { wxString::Format( "I(%s)", aRefName ) };
+}
+
+
+bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField )
+{
+    // Default pin sequence: model pins are the same as symbol pins.
+    // Excess model pins are set as Not Connected.
+    for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
+    {
+        if( i < aSymbolPinCount )
+            m_pins.push_back( { getPinNames().at( i ), i + 1 } );
+        else
+            m_pins.push_back( { getPinNames().at( i ), PIN::NOT_CONNECTED } );
+    }
+
+    if( aPinsField.IsEmpty() )
+        return true;
+
+    LOCALE_IO toggle;
+
+    tao::pegtl::string_input<> in( aPinsField.ToStdString(), "from_content" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::pinSequenceGrammar,
+                                             SIM_MODEL_PARSER::pinSequenceSelector>( in );
+    }
+    catch( const tao::pegtl::parse_error& e )
+    {
+        return false;
+    }
+
+    wxASSERT( root );
+
+    if( static_cast<int>( root->children.size() ) != GetPinCount() )
+        return false;
+
+    for( unsigned int i = 0; i < root->children.size(); ++i )
+    {
+        if( root->children.at( i )->string() == "X" )
+            SetPinSymbolPinNumber( static_cast<int>( i ), PIN::NOT_CONNECTED );
+        else
+            SetPinSymbolPinNumber( static_cast<int>( i ),
+                                   std::stoi( root->children.at( i )->string() ) );
+    }
+
+    return true;
 }
 
 
@@ -984,7 +1050,7 @@ TYPE SIM_MODEL::readTypeFromSpiceTypeString( const std::string& aTypeString )
 template <typename T>
 void SIM_MODEL::doReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
 {
-    parsePinsField( aSymbolPinCount, GetFieldValue( aFields, PINS_FIELD ) );
+    ParsePinsField( aSymbolPinCount, GetFieldValue( aFields, PINS_FIELD ) );
     parseParamsField( GetFieldValue( aFields, PARAMS_FIELD ) );
 }
 
@@ -1030,54 +1096,6 @@ wxString SIM_MODEL::generatePinsField() const
     }
 
     return result;
-}
-
-
-bool SIM_MODEL::parsePinsField( int aSymbolPinCount, const wxString& aPinsField )
-{
-    // Default pin sequence: model pins are the same as symbol pins.
-    // Excess model pins are set as Not Connected.
-    for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
-    {
-        if( i < aSymbolPinCount )
-            m_pins.push_back( { i + 1, getPinNames().at( i ) } );
-        else
-            m_pins.push_back( { PIN::NOT_CONNECTED, getPinNames().at( i ) } );
-    }
-
-    if( aPinsField.IsEmpty() )
-        return true;
-
-    LOCALE_IO toggle;
-
-    tao::pegtl::string_input<> in( aPinsField.ToStdString(), "from_content" );
-    std::unique_ptr<tao::pegtl::parse_tree::node> root;
-
-    try
-    {
-        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::pinSequenceGrammar,
-                                             SIM_MODEL_PARSER::pinSequenceSelector>( in );
-    }
-    catch( const tao::pegtl::parse_error& e )
-    {
-        return false;
-    }
-
-    wxASSERT( root );
-
-    if( static_cast<int>( root->children.size() ) != GetPinCount() )
-        return false;
-
-    for( unsigned int i = 0; i < root->children.size(); ++i )
-    {
-        if( root->children.at( i )->string() == "X" )
-            SetPinSymbolPinNumber( static_cast<int>( i ), PIN::NOT_CONNECTED );
-        else
-            SetPinSymbolPinNumber( static_cast<int>( i ),
-                                   std::stoi( root->children.at( i )->string() ) );
-    }
-
-    return true;
 }
 
 

@@ -51,7 +51,11 @@ void SIM_MODEL_IDEAL::ReadDataSchFields( int aSymbolPinCount,
     if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
         SIM_MODEL::ReadDataSchFields( aSymbolPinCount, aFields );
     else
+    {
+        // Inferred model.
+        ParsePinsField( aSymbolPinCount, PINS_FIELD );
         SetParamValue( 0, GetFieldValue( aFields, VALUE_FIELD ) );
+    }
 }
 
 
@@ -61,7 +65,11 @@ void SIM_MODEL_IDEAL::ReadDataLibFields( int aSymbolPinCount,
     if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
         SIM_MODEL::ReadDataLibFields( aSymbolPinCount, aFields );
     else
+    {
+        // Inferred model.
+        ParsePinsField( aSymbolPinCount, PINS_FIELD );
         SetParamValue( 0, GetFieldValue( aFields, VALUE_FIELD ) );
+    }
 }
 
 

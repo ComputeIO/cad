@@ -236,7 +236,9 @@ void NETLIST_EXPORTER_SPICE::readNameField( SCH_SYMBOL& aSymbol, SPICE_ITEM& aIt
 
             if( curModelName == modelName )
             {
-                aItem.model = SIM_MODEL::Create( library.GetModels().at( i ) );
+                aItem.model = SIM_MODEL::Create( library.GetModels().at( i ),
+                                                 static_cast<int>( m_sortedSymbolPinList.size() ),
+                                                 aSymbol.GetFields() );
                 aItem.modelName = modelName;
             }
         }
