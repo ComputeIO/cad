@@ -545,10 +545,10 @@ void SIM_PLOT_FRAME::AddTuner( SCH_SYMBOL* aSymbol )
 
     switch( deviceType )
     {
-    case SIM_MODEL::DEVICE_TYPE::RESISTOR:
-    case SIM_MODEL::DEVICE_TYPE::CAPACITOR:
-    case SIM_MODEL::DEVICE_TYPE::INDUCTOR:
-    case SIM_MODEL::DEVICE_TYPE::CODEMODEL:
+    case SIM_MODEL::DEVICE_TYPE::R:
+    case SIM_MODEL::DEVICE_TYPE::C:
+    case SIM_MODEL::DEVICE_TYPE::L:
+    case SIM_MODEL::DEVICE_TYPE::XSPICE:
         break;
 
     default:

@@ -22,7 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <sim/sim_model_rawspice.h>
+#include <sim/sim_model_spice.h>
 #include <pegtl.hpp>
 #include <pegtl/contrib/parse_tree.hpp>
 

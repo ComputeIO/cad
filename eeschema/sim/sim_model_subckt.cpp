@@ -22,7 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <sim/sim_model_subcircuit.h>
+#include <sim/sim_model_subckt.h>
 
 
 SIM_MODEL_SUBCIRCUIT::SIM_MODEL_SUBCIRCUIT( TYPE aType )

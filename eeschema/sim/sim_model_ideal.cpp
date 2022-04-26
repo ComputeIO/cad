@@ -36,9 +36,9 @@ SIM_MODEL_IDEAL::SIM_MODEL_IDEAL( TYPE aType )
 
     switch( aType )
     {
-    case TYPE::RESISTOR_IDEAL:  AddParam( resistor  ); break;
-    case TYPE::CAPACITOR_IDEAL: AddParam( capacitor ); break;
-    case TYPE::INDUCTOR_IDEAL:  AddParam( inductor  ); break;
+    case TYPE::R:  AddParam( resistor  ); break;
+    case TYPE::C: AddParam( capacitor ); break;
+    case TYPE::L:  AddParam( inductor  ); break;
     default:
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_IDEAL" );
     }

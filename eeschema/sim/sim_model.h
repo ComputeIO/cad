@@ -74,18 +74,18 @@ public:
     DEFINE_ENUM_CLASS_WITH_ITERATOR( DEVICE_TYPE, 
         NONE,
 
-        RESISTOR,
-        CAPACITOR,
-        INDUCTOR,
+        R,
+        C,
+        L,
         TLINE,
-        SWITCH,
+        SW,
 
-        DIODE,
+        D,
         NPN,
         PNP,
 
-        NJF,
-        PJF,
+        NJFET,
+        PJFET,
 
         NMES,
         PMES,
@@ -93,12 +93,12 @@ public:
         NMOS,
         PMOS,
 
-        VSOURCE,
-        ISOURCE,
+        V,
+        I,
 
-        SUBCIRCUIT,
-        CODEMODEL,
-        RAWSPICE
+        SUBCKT,
+        XSPICE,
+        SPICE
     )
 
     struct DEVICE_INFO
@@ -111,44 +111,44 @@ public:
     DEFINE_ENUM_CLASS_WITH_ITERATOR( TYPE,
         NONE,
 
-        RESISTOR_IDEAL,
-        RESISTOR_ADVANCED,
-        RESISTOR_BEHAVIORAL,
+        R,
+        R_ADV,
+        R_BEHAVIORAL,
 
-        CAPACITOR_IDEAL,
-        CAPACITOR_ADVANCED,
-        CAPACITOR_BEHAVIORAL,
+        C,
+        C_ADV,
+        C_BEHAVIORAL,
 
-        INDUCTOR_IDEAL,
-        INDUCTOR_ADVANCED,
-        INDUCTOR_BEHAVIORAL,
+        L,
+        L_ADV,
+        L_BEHAVIORAL,
 
         TLINE_LOSSY,
         TLINE_LOSSLESS,
-        TLINE_UNIFORM_RC,
+        TLINE_URC,
         TLINE_KSPICE,
 
-        SWITCH_VCTRL,
-        SWITCH_ICTRL,
+        SW_V,
+        SW_I,
 
-        DIODE,
+        D,
 
-        NPN_GUMMEL_POON,
-        PNP_GUMMEL_POON,
+        NPN_GUMMELPOON,
+        PNP_GUMMELPOON,
         NPN_VBIC,
         PNP_VBIC,
         //NPN_MEXTRAM,
         //PNP_MEXTRAM,
-        NPN_HICUM_L2,
-        PNP_HICUM_L2,
+        NPN_HICUML2,
+        PNP_HICUML2,
         //NPN_HICUM_L0,
         //PNP_HICUM_L0,
 
-        NJF_SHICHMAN_HODGES,
-        PJF_SHICHMAN_HODGES,
+        NJFET_SHICHMANHODGES,
+        PJFET_SHICHMANHODGES,
 
-        NJF_PARKER_SKELLERN,
-        PJF_PARKER_SKELLERN,
+        NJFET_PARKERSKELLERN,
+        PJFET_PARKERSKELLERN,
 
 
         NMES_STATZ,
@@ -215,47 +215,47 @@ public:
         NMOS_HISIM2,
         PMOS_HISIM2,
 
-        NMOS_HISIM_HV1,
-        PMOS_HISIM_HV1,
+        NMOS_HISIMHV1,
+        PMOS_HISIMHV1,
 
-        NMOS_HISIM_HV2,
-        PMOS_HISIM_HV2,
-
-
-        VSOURCE_PULSE,
-        VSOURCE_SIN,
-        VSOURCE_EXP,
-        VSOURCE_SFAM,
-        VSOURCE_SFFM,
-        VSOURCE_PWL,
-        VSOURCE_WHITE_NOISE,
-        VSOURCE_PINK_NOISE,
-        VSOURCE_BURST_NOISE,
-        VSOURCE_RANDOM_UNIFORM,
-        VSOURCE_RANDOM_NORMAL,
-        VSOURCE_RANDOM_EXP,
-        VSOURCE_RANDOM_POISSON,
-        VSOURCE_BEHAVIORAL,
-
-        ISOURCE_PULSE,
-        ISOURCE_SIN,
-        ISOURCE_EXP,
-        ISOURCE_SFAM,
-        ISOURCE_SFFM,
-        ISOURCE_PWL,
-        ISOURCE_WHITE_NOISE,
-        ISOURCE_PINK_NOISE,
-        ISOURCE_BURST_NOISE,
-        ISOURCE_RANDOM_UNIFORM,
-        ISOURCE_RANDOM_NORMAL,
-        ISOURCE_RANDOM_EXP,
-        ISOURCE_RANDOM_POISSON,
-        ISOURCE_BEHAVIORAL,
+        NMOS_HISIMHV2,
+        PMOS_HISIMHV2,
 
 
-        SUBCIRCUIT,
-        CODEMODEL,
-        RAWSPICE
+        V_SIN,
+        V_PULSE,
+        V_EXP,
+        V_SFAM,
+        V_SFFM,
+        V_PWL,
+        V_WHITENOISE,
+        V_PINKNOISE,
+        V_BURSTNOISE,
+        V_RANDUNIFORM,
+        V_RANDNORMAL,
+        V_RANDEXP,
+        V_RANDPOISSON,
+        V_BEHAVIORAL,
+
+        I_SIN,
+        I_PULSE,
+        I_EXP,
+        I_SFAM,
+        I_SFFM,
+        I_PWL,
+        I_WHITENOISE,
+        I_PINKNOISE,
+        I_BURSTNOISE,
+        I_RANDUNIFORM,
+        I_RANDNORMAL,
+        I_RANDEXP,
+        I_RANDPOISSON,
+        I_BEHAVIORAL,
+
+
+        SUBCKT,
+        XSPICE,
+        SPICE
     )
 
     struct INFO

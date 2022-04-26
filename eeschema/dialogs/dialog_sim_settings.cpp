@@ -403,9 +403,9 @@ void DIALOG_SIM_SETTINGS::updateDCSources( wxChar aType, wxChoice* aSource )
     {
         for( const auto& item : m_circuitModel->GetSpiceItems() )
         {
-            if( ( aType == 'R' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::RESISTOR )
-            ||  ( aType == 'C' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::CAPACITOR )
-            ||  ( aType == 'L' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::INDUCTOR ) )
+            if( ( aType == 'R' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::R )
+            ||  ( aType == 'C' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::C )
+            ||  ( aType == 'L' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::L ) )
             {
                 // TODO: VSOURCE, ISOURCE.
                 sourcesList.insert( item.refName );
