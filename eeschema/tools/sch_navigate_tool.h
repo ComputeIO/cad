@@ -42,30 +42,47 @@ public:
 
     ~SCH_NAVIGATE_TOOL() { }
 
+    ///< Reset navigation history. Must be done when schematic changes
     void ResetHistory();
+    ///< Remove deleted pages from history. Must be done when schematic
+    // hierarchy changes.
+    void CleanHistory();
 
+    ///< Enter child sheet
     int EnterSheet( const TOOL_EVENT& aEvent );
+    ///< Return to parent sheet. Synonymous with Up
     int LeaveSheet( const TOOL_EVENT& aEvent );
+    ///< Navigate up in sheet hierarchy
     int Up( const TOOL_EVENT& aEvent );
+    ///< Navigate forward in sheet history
     int Forward( const TOOL_EVENT& aEvent );
+    ///< Navigate back in sheet history
     int Back( const TOOL_EVENT& aEvent );
+    ///< Navigate to previous sheet by numeric sheet number
+    int Previous( const TOOL_EVENT& aEvent );
+    ///< Navigate to next sheet by numeric sheet number
+    int Next( const TOOL_EVENT& aEvent );
     int NavigateHierarchy( const TOOL_EVENT& aEvent );
     int HypertextCommand( const TOOL_EVENT& aEvent );
 
     bool CanGoBack();
     bool CanGoForward();
     bool CanGoUp();
+    bool CanGoPrevious();
+    bool CanGoNext();
 
 private:
     ///< Set up handlers for various events.
     void setTransitions() override;
-    ///< Clear history after this nav index and push new history point
-    void pushToHistory( SCH_SHEET_PATH path );
+    ///< Clear history after this nav index and pushes aPath to history
+    void pushToHistory( SCH_SHEET_PATH aPath );
+    ///< Change current sheet to aPath and handle history, zooming, etc.
+    void changeSheet( SCH_SHEET_PATH aPath );
 
 private:
-    std::stack<wxString>                  m_hypertextStack;
-    std::vector<SCH_SHEET_PATH>           m_navHistory;
-    std::vector<SCH_SHEET_PATH>::iterator m_navIndex;
+    std::stack<wxString>                m_hypertextStack;
+    std::list<SCH_SHEET_PATH>           m_navHistory;
+    std::list<SCH_SHEET_PATH>::iterator m_navIndex;
 };
 
 

@@ -172,6 +172,8 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     viewMenu->Add( EE_ACTIONS::navigateBack );
     viewMenu->Add( EE_ACTIONS::navigateUp );
     viewMenu->Add( EE_ACTIONS::navigateForward );
+    viewMenu->Add( EE_ACTIONS::navigatePrevious );
+    viewMenu->Add( EE_ACTIONS::navigateNext );
 
     viewMenu->AppendSeparator();
     viewMenu->Add( ACTIONS::zoomInCenter );
