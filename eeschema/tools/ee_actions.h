@@ -191,6 +191,9 @@ public:
     // Hierarchy navigation
     static TOOL_ACTION enterSheet;
     static TOOL_ACTION leaveSheet;
+    static TOOL_ACTION navigateUp;
+    static TOOL_ACTION navigateForward;
+    static TOOL_ACTION navigateBack;
     static TOOL_ACTION navigateHierarchy;
     static TOOL_ACTION hypertextCommand;
     static TOOL_ACTION importSingleSheetPin;

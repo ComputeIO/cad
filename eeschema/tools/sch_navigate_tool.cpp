@@ -28,6 +28,14 @@
 #include <tools/sch_navigate_tool.h>
 
 
+void SCH_NAVIGATE_TOOL::ResetHistory()
+{
+    m_navHistory.clear();
+    m_navHistory.push_back( m_frame->GetCurrentSheet() );
+    m_navIndex = m_navHistory.begin();
+}
+
+
 int SCH_NAVIGATE_TOOL::NavigateHierarchy( const TOOL_EVENT& aEvent )
 {
     m_frame->UpdateHierarchyNavigator( true );
@@ -77,6 +85,66 @@ int SCH_NAVIGATE_TOOL::HypertextCommand( const TOOL_EVENT& aEvent )
 }
 
 
+int SCH_NAVIGATE_TOOL::Up( const TOOL_EVENT& aEvent )
+{
+    // Checks for CanGoUp()
+    LeaveSheet( aEvent );
+    return 0;
+}
+
+
+int SCH_NAVIGATE_TOOL::Forward( const TOOL_EVENT& aEvent )
+{
+    if( CanGoForward() )
+    {
+        m_navIndex++;
+
+        m_frame->GetToolManager()->RunAction( ACTIONS::cancelInteractive, true );
+        m_frame->GetToolManager()->RunAction( EE_ACTIONS::clearSelection, true );
+
+        m_frame->SetCurrentSheet( *m_navIndex );
+        m_frame->DisplayCurrentSheet();
+    }
+
+    return 0;
+}
+
+
+int SCH_NAVIGATE_TOOL::Back( const TOOL_EVENT& aEvent )
+{
+    if( CanGoBack() )
+    {
+        m_navIndex--;
+
+        m_frame->GetToolManager()->RunAction( ACTIONS::cancelInteractive, true );
+        m_frame->GetToolManager()->RunAction( EE_ACTIONS::clearSelection, true );
+
+        m_frame->SetCurrentSheet( *m_navIndex );
+        m_frame->DisplayCurrentSheet();
+    }
+
+    return 0;
+}
+
+
+bool SCH_NAVIGATE_TOOL::CanGoBack()
+{
+    return m_navIndex != m_navHistory.begin();
+}
+
+
+bool SCH_NAVIGATE_TOOL::CanGoForward()
+{
+    return m_navIndex != ( m_navHistory.end() - 1 );
+}
+
+
+bool SCH_NAVIGATE_TOOL::CanGoUp()
+{
+    return m_frame->GetCurrentSheet().Last() != &m_frame->Schematic().Root();
+}
+
+
 int SCH_NAVIGATE_TOOL::EnterSheet( const TOOL_EVENT& aEvent )
 {
     EE_SELECTION_TOOL*  selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
@@ -89,8 +157,13 @@ int SCH_NAVIGATE_TOOL::EnterSheet( const TOOL_EVENT& aEvent )
         m_toolMgr->RunAction( ACTIONS::cancelInteractive, true );
         m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
 
+        // Store the current zoom level into the current screen before switching
+        m_frame->GetScreen()->m_LastZoomLevel = m_frame->GetCanvas()->GetView()->GetScale();
+
         m_frame->GetCurrentSheet().push_back( sheet );
         m_frame->DisplayCurrentSheet();
+
+        pushToHistory( m_frame->GetCurrentSheet() );
     }
 
     return 0;
@@ -99,13 +172,18 @@ int SCH_NAVIGATE_TOOL::EnterSheet( const TOOL_EVENT& aEvent )
 
 int SCH_NAVIGATE_TOOL::LeaveSheet( const TOOL_EVENT& aEvent )
 {
-    if( m_frame->GetCurrentSheet().Last() != &m_frame->Schematic().Root() )
+    if( CanGoUp() )
     {
         m_toolMgr->RunAction( ACTIONS::cancelInteractive, true );
         m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
 
+        // Store the current zoom level into the current screen before switching
+        m_frame->GetScreen()->m_LastZoomLevel = m_frame->GetCanvas()->GetView()->GetScale();
+
         m_frame->GetCurrentSheet().pop_back();
         m_frame->DisplayCurrentSheet();
+
+        pushToHistory( m_frame->GetCurrentSheet() );
     }
 
     return 0;
@@ -118,4 +196,18 @@ void SCH_NAVIGATE_TOOL::setTransitions()
     Go( &SCH_NAVIGATE_TOOL::LeaveSheet,            EE_ACTIONS::leaveSheet.MakeEvent() );
     Go( &SCH_NAVIGATE_TOOL::NavigateHierarchy,     EE_ACTIONS::navigateHierarchy.MakeEvent() );
     Go( &SCH_NAVIGATE_TOOL::HypertextCommand,      EE_ACTIONS::hypertextCommand.MakeEvent() );
+
+    Go( &SCH_NAVIGATE_TOOL::Up,                    EE_ACTIONS::navigateUp.MakeEvent() );
+    Go( &SCH_NAVIGATE_TOOL::Forward,               EE_ACTIONS::navigateForward.MakeEvent() );
+    Go( &SCH_NAVIGATE_TOOL::Back,                  EE_ACTIONS::navigateBack.MakeEvent() );
+}
+
+
+void SCH_NAVIGATE_TOOL::pushToHistory( SCH_SHEET_PATH path )
+{
+    if( CanGoForward() )
+        m_navHistory.erase( m_navIndex + 1, m_navHistory.end() );
+
+    m_navHistory.push_back( m_frame->GetCurrentSheet() );
+    m_navIndex = ( m_navHistory.end() - 1 );
 }
