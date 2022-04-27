@@ -756,6 +756,18 @@ TOOL_ACTION EE_ACTIONS::navigateForward( "eeschema.NavigateTool.forward",
         _( "Navigate Forward" ), _( "Move backward in sheet navigation history" ),
         BITMAPS::right );
 
+TOOL_ACTION EE_ACTIONS::navigatePrevious( "eeschema.NavigateTool.previous",
+        AS_GLOBAL,
+        WXK_PAGEUP, "",
+        _( "Previous Sheet" ), _( "Move to previous sheet by number" ),
+        BITMAPS::left );
+
+TOOL_ACTION EE_ACTIONS::navigateNext( "eeschema.NavigateTool.next",
+        AS_GLOBAL,
+        WXK_PAGEDOWN, "",
+        _( "Next Sheet" ), _( "Move to next sheet by number" ),
+        BITMAPS::right );
+
 TOOL_ACTION EE_ACTIONS::navigateHierarchy( "eeschema.NavigateTool.navigateHierarchy",
         AS_GLOBAL, 0, "",
         _( "Hierarchy Navigator" ), _( "Show schematic sheet hierarchy" ),

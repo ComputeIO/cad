@@ -509,10 +509,24 @@ void SCH_EDIT_FRAME::setupUIConditions()
                 return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoBack();
             };
 
+    auto navSchematicHasPreviousSheet =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoPrevious();
+            };
+
+    auto navSchematicHasNextSheet =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoNext();
+            };
+
     mgr->SetConditions( EE_ACTIONS::leaveSheet,          ENABLE( belowRootSheetCondition ) );
     mgr->SetConditions( EE_ACTIONS::navigateUp,          ENABLE( belowRootSheetCondition ) );
     mgr->SetConditions( EE_ACTIONS::navigateForward,     ENABLE( navHistoryHasForward ) );
     mgr->SetConditions( EE_ACTIONS::navigateBack,        ENABLE( navHistoryHasBackward ) );
+    mgr->SetConditions( EE_ACTIONS::navigatePrevious,    ENABLE( navSchematicHasPreviousSheet ) );
+    mgr->SetConditions( EE_ACTIONS::navigateNext,        ENABLE( navSchematicHasNextSheet ) );
     mgr->SetConditions( EE_ACTIONS::remapSymbols,        ENABLE( remapSymbolsCondition ) );
     mgr->SetConditions( EE_ACTIONS::toggleHiddenPins,    CHECK( showHiddenPinsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleHiddenFields,  CHECK( showHiddenFieldsCond ) );
@@ -965,6 +979,8 @@ HIERARCHY_NAVIG_DLG* SCH_EDIT_FRAME::FindHierarchyNavigator()
 
 void SCH_EDIT_FRAME::UpdateHierarchyNavigator( bool aForceUpdate )
 {
+    m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CleanHistory();
+
     if( aForceUpdate )
     {
         if( FindHierarchyNavigator() )
