@@ -734,6 +734,23 @@ TOOL_ACTION EE_ACTIONS::leaveSheet( "eeschema.NavigateTool.leaveSheet",
         _( "Leave Sheet" ), _( "Display the parent sheet in the schematic editor" ),
         BITMAPS::leave_sheet );
 
+TOOL_ACTION EE_ACTIONS::navigateUp( "eeschema.NavigateTool.up",
+        AS_GLOBAL, MD_ALT + WXK_UP, "",
+        _( "Navigate Up" ), _( "Navigate up one sheet in the hierarchy" ),
+        BITMAPS::up );
+
+TOOL_ACTION EE_ACTIONS::navigateBack( "eeschema.NavigateTool.back",
+        AS_GLOBAL,
+        MD_ALT + WXK_LEFT, "",
+        _( "Navigate Back" ), _( "Move forward in sheet navigation history" ),
+        BITMAPS::left );
+
+TOOL_ACTION EE_ACTIONS::navigateForward( "eeschema.NavigateTool.forward",
+        AS_GLOBAL,
+        MD_ALT + WXK_RIGHT, "",
+        _( "Navigate Forward" ), _( "Move backward in sheet navigation history" ),
+        BITMAPS::right );
+
 TOOL_ACTION EE_ACTIONS::navigateHierarchy( "eeschema.NavigateTool.navigateHierarchy",
         AS_GLOBAL, 0, "",
         _( "Hierarchy Navigator" ), _( "Show schematic sheet hierarchy" ),

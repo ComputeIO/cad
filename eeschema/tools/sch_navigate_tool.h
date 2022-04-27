@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,23 +38,34 @@ class SCH_EDIT_FRAME;
 class SCH_NAVIGATE_TOOL : public wxEvtHandler, public EE_TOOL_BASE<SCH_EDIT_FRAME>
 {
 public:
-    SCH_NAVIGATE_TOOL()  :
-            EE_TOOL_BASE<SCH_EDIT_FRAME>( "eeschema.NavigateTool" )
-    { }
+    SCH_NAVIGATE_TOOL() : EE_TOOL_BASE<SCH_EDIT_FRAME>( "eeschema.NavigateTool" ) {}
 
     ~SCH_NAVIGATE_TOOL() { }
 
+    void ResetHistory();
+
     int EnterSheet( const TOOL_EVENT& aEvent );
     int LeaveSheet( const TOOL_EVENT& aEvent );
+    int Up( const TOOL_EVENT& aEvent );
+    int Forward( const TOOL_EVENT& aEvent );
+    int Back( const TOOL_EVENT& aEvent );
     int NavigateHierarchy( const TOOL_EVENT& aEvent );
     int HypertextCommand( const TOOL_EVENT& aEvent );
+
+    bool CanGoBack();
+    bool CanGoForward();
+    bool CanGoUp();
 
 private:
     ///< Set up handlers for various events.
     void setTransitions() override;
+    ///< Clear history after this nav index and push new history point
+    void pushToHistory( SCH_SHEET_PATH path );
 
 private:
-    std::stack<wxString> m_hypertextStack;
+    std::stack<wxString>                  m_hypertextStack;
+    std::vector<SCH_SHEET_PATH>           m_navHistory;
+    std::vector<SCH_SHEET_PATH>::iterator m_navIndex;
 };
 
 

@@ -91,6 +91,9 @@ void SCH_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( EE_ACTIONS::navigateHierarchy );
     m_mainToolBar->Add( EE_ACTIONS::leaveSheet );
+    m_mainToolBar->Add( EE_ACTIONS::navigateBack );
+    m_mainToolBar->Add( EE_ACTIONS::navigateUp );
+    m_mainToolBar->Add( EE_ACTIONS::navigateForward );
 
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( EE_ACTIONS::rotateCCW );

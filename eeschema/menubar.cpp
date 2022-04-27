@@ -169,6 +169,9 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     viewMenu->Add( ACTIONS::showSymbolBrowser );
     viewMenu->Add( EE_ACTIONS::navigateHierarchy );
     viewMenu->Add( EE_ACTIONS::leaveSheet );
+    viewMenu->Add( EE_ACTIONS::navigateBack );
+    viewMenu->Add( EE_ACTIONS::navigateUp );
+    viewMenu->Add( EE_ACTIONS::navigateForward );
 
     viewMenu->AppendSeparator();
     viewMenu->Add( ACTIONS::zoomInCenter );

@@ -297,6 +297,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     DefaultExecFlags();
 
     UpdateTitle();
+    m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->ResetHistory();
 
     // Default shutdown reason until a file is loaded
     KIPLATFORM::APP::SetShutdownBlockReason( this, _( "New schematic file is unsaved" ) );
@@ -486,10 +487,25 @@ void SCH_EDIT_FRAME::setupUIConditions()
     auto belowRootSheetCondition =
             [this]( const SELECTION& aSel )
             {
-                return GetCurrentSheet().Last() != &Schematic().Root();
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoUp();
+            };
+
+    auto navHistoryHasForward =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoForward();
+            };
+
+    auto navHistoryHasBackward =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoBack();
             };
 
     mgr->SetConditions( EE_ACTIONS::leaveSheet,          ENABLE( belowRootSheetCondition ) );
+    mgr->SetConditions( EE_ACTIONS::navigateUp,          ENABLE( belowRootSheetCondition ) );
+    mgr->SetConditions( EE_ACTIONS::navigateForward,     ENABLE( navHistoryHasForward ) );
+    mgr->SetConditions( EE_ACTIONS::navigateBack,        ENABLE( navHistoryHasBackward ) );
     mgr->SetConditions( EE_ACTIONS::remapSymbols,        ENABLE( remapSymbolsCondition ) );
     mgr->SetConditions( EE_ACTIONS::toggleHiddenPins,    CHECK( showHiddenPinsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleHiddenFields,  CHECK( showHiddenFieldsCond ) );
