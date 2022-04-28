@@ -48,7 +48,9 @@ public:
     // hierarchy changes.
     void CleanHistory();
 
-    ///< Enter child sheet
+    ///< Enter sheet provided in aEvent
+    int ChangeSheet( const TOOL_EVENT& aEvent );
+    ///< Enter selected sheet
     int EnterSheet( const TOOL_EVENT& aEvent );
     ///< Return to parent sheet. Synonymous with Up
     int LeaveSheet( const TOOL_EVENT& aEvent );
@@ -62,7 +64,6 @@ public:
     int Previous( const TOOL_EVENT& aEvent );
     ///< Navigate to next sheet by numeric sheet number
     int Next( const TOOL_EVENT& aEvent );
-    int NavigateHierarchy( const TOOL_EVENT& aEvent );
     int HypertextCommand( const TOOL_EVENT& aEvent );
 
     bool CanGoBack();

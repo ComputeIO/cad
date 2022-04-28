@@ -132,6 +132,7 @@ public:
     int DrawSheetOnClipboard( const TOOL_EVENT& aEvent );
 
     int ShowBusManager( const TOOL_EVENT& aEvent );
+    int ShowHierarchy( const TOOL_EVENT& aEvent );
 
     int ToggleHiddenPins( const TOOL_EVENT& aEvent );
     int ToggleHiddenFields( const TOOL_EVENT& aEvent );

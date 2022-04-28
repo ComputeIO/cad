@@ -53,13 +53,6 @@ void SCH_NAVIGATE_TOOL::CleanHistory()
 }
 
 
-int SCH_NAVIGATE_TOOL::NavigateHierarchy( const TOOL_EVENT& aEvent )
-{
-    m_frame->UpdateHierarchyNavigator( true );
-    return 0;
-}
-
-
 int SCH_NAVIGATE_TOOL::HypertextCommand( const TOOL_EVENT& aEvent )
 {
     wxString* page = aEvent.Parameter<wxString*>();
@@ -181,6 +174,17 @@ bool SCH_NAVIGATE_TOOL::CanGoNext()
 }
 
 
+int SCH_NAVIGATE_TOOL::ChangeSheet( const TOOL_EVENT& aEvent )
+{
+    SCH_SHEET_PATH* path = aEvent.Parameter<SCH_SHEET_PATH*>();
+    wxCHECK( path, 0 );
+
+    changeSheet( *path );
+
+    return 0;
+}
+
+
 int SCH_NAVIGATE_TOOL::EnterSheet( const TOOL_EVENT& aEvent )
 {
     EE_SELECTION_TOOL*  selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
@@ -214,9 +218,9 @@ int SCH_NAVIGATE_TOOL::LeaveSheet( const TOOL_EVENT& aEvent )
 
 void SCH_NAVIGATE_TOOL::setTransitions()
 {
+    Go( &SCH_NAVIGATE_TOOL::ChangeSheet,           EE_ACTIONS::changeSheet.MakeEvent() );
     Go( &SCH_NAVIGATE_TOOL::EnterSheet,            EE_ACTIONS::enterSheet.MakeEvent() );
     Go( &SCH_NAVIGATE_TOOL::LeaveSheet,            EE_ACTIONS::leaveSheet.MakeEvent() );
-    Go( &SCH_NAVIGATE_TOOL::NavigateHierarchy,     EE_ACTIONS::navigateHierarchy.MakeEvent() );
     Go( &SCH_NAVIGATE_TOOL::HypertextCommand,      EE_ACTIONS::hypertextCommand.MakeEvent() );
 
     Go( &SCH_NAVIGATE_TOOL::Up,                    EE_ACTIONS::navigateUp.MakeEvent() );
