@@ -610,32 +610,11 @@ bool IbisPackageModel::Check()
         }
     }
     // resistance matrix is not required
-    switch( m_resistanceMatrix->m_type )
+
+    if( !( m_resistanceMatrix )->Check() )
     {
-    case IBIS_MATRIX_TYPE::BANDED:
-
-        if( !( static_cast<IBIS_MATRIX_BANDED*>( m_resistanceMatrix ) )->Check() )
-        {
-            Report( _( "Package Model: Resistance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-            status = false;
-        }
-        break;
-    case IBIS_MATRIX_TYPE::FULL:
-
-        if( !( static_cast<IBIS_MATRIX_FULL*>( m_resistanceMatrix ) )->Check() )
-        {
-            Report( _( "Package Model: Resistance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-            status = false;
-        }
-        break;
-    case IBIS_MATRIX_TYPE::SPARSE:
-
-        if( !( static_cast<IBIS_MATRIX_SPARSE*>( m_resistanceMatrix ) )->Check() )
-        {
-            Report( _( "Package Model: Resistance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-            status = false;
-        }
-        break;
+        Report( _( "Package Model: Resistance matrix is incorrect" ), RPT_SEVERITY_ERROR );
+        status = false;
     }
 
     if( m_capacitanceMatrix != nullptr )
@@ -646,37 +625,10 @@ bool IbisPackageModel::Check()
             status = false;
         }
 
-        switch( m_capacitanceMatrix->m_type )
+        if( !m_capacitanceMatrix->Check() )
         {
-        case IBIS_MATRIX_TYPE::BANDED:
-
-            if( !( static_cast<IBIS_MATRIX_BANDED*>( m_capacitanceMatrix ) )->Check() )
-            {
-                Report( _( "Package Model: Capacitance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
-            break;
-        case IBIS_MATRIX_TYPE::FULL:
-
-            if( !( static_cast<IBIS_MATRIX_FULL*>( m_capacitanceMatrix ) )->Check() )
-            {
-                Report( _( "Package Model: Capacitance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
-            break;
-        case IBIS_MATRIX_TYPE::SPARSE:
-
-            if( !( static_cast<IBIS_MATRIX_SPARSE*>( m_capacitanceMatrix ) )->Check() )
-            {
-                Report( _( "Package Model: Capacitance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
-            break;
-        default:
-        {
-            Report( _( "Package Model: Capacitance matrix is undefined" ), RPT_SEVERITY_ERROR );
+            Report( _( "Package Model: Capacitance matrix is incorrect" ), RPT_SEVERITY_ERROR );
             status = false;
-        }
         }
     }
     else
@@ -693,37 +645,10 @@ bool IbisPackageModel::Check()
             status = false;
         }
 
-        switch( m_inductanceMatrix->m_type )
+        if( !m_inductanceMatrix->Check() )
         {
-        case IBIS_MATRIX_TYPE::BANDED:
-
-            if( !( static_cast<IBIS_MATRIX_BANDED*>( m_inductanceMatrix ) )->Check() )
-            {
-                Report( _( "Package Model: Inductance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
-            break;
-        case IBIS_MATRIX_TYPE::FULL:
-
-            if( !( static_cast<IBIS_MATRIX_FULL*>( m_inductanceMatrix ) )->Check() )
-            {
-                Report( _( "Package Model: Inductance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
-            break;
-        case IBIS_MATRIX_TYPE::SPARSE:
-
-            if( !( static_cast<IBIS_MATRIX_SPARSE*>( m_inductanceMatrix ) )->Check() )
-            {
-                Report( _( "Package Model: Inductance matrix is incorrect" ), RPT_SEVERITY_ERROR );
-                status = false;
-            }
-            break;
-        default:
-        {
-            Report( _( "Package Model: Inductance matrix is undefined" ), RPT_SEVERITY_ERROR );
+            Report( _( "Package Model: Inductance matrix is incorrect" ), RPT_SEVERITY_ERROR );
             status = false;
-        }
         }
     }
     else
@@ -1177,12 +1102,10 @@ std::string IbisParser::getKeyword()
         {
             c = '_';
         }
-        std::cout << c << std::endl;
         keyword += c;
         c = m_buffer[m_lineOffset + m_lineIndex++];
     }
 
-    std::cout << "Global keyword: " << keyword << std::endl;
     return keyword;
 }
 
@@ -1251,9 +1174,9 @@ bool IbisParser::changeContext( std::string& aKeyword )
         else if( !strcasecmp( aKeyword.c_str(), "Define_Package_Model" ) )
         {
             IbisPackageModel PM( m_reporter );
-            PM.m_resistanceMatrix = new IBIS_MATRIX( m_reporter );
-            PM.m_capacitanceMatrix = new IBIS_MATRIX( m_reporter );
-            PM.m_inductanceMatrix = new IBIS_MATRIX( m_reporter );
+            PM.m_resistanceMatrix = std::unique_ptr<IBIS_MATRIX>( new IBIS_MATRIX( m_reporter ) );
+            PM.m_capacitanceMatrix = std::unique_ptr<IBIS_MATRIX>( new IBIS_MATRIX( m_reporter ) );
+            PM.m_inductanceMatrix = std::unique_ptr<IBIS_MATRIX>( new IBIS_MATRIX( m_reporter ) );
 
             PM.m_resistanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
             PM.m_capacitanceMatrix->m_type = IBIS_MATRIX_TYPE::UNDEFINED;
@@ -1560,17 +1483,17 @@ bool IbisParser::readMatrixSparse( std::string aKeyword, IBIS_MATRIX_SPARSE& aDe
     return status;
 }
 
-bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
+bool IbisParser::readMatrix( std::shared_ptr<IBIS_MATRIX> aDest )
 {
     bool     status = true;
     std::string str;
 
     bool init = false;
 
-    if( aSource != nullptr )
+    if( aDest != nullptr )
     {
-        if( aSource->m_type != IBIS_MATRIX_TYPE::BANDED && aSource->m_type != IBIS_MATRIX_TYPE::FULL
-            && aSource->m_type != IBIS_MATRIX_TYPE::SPARSE )
+        if( aDest->m_type != IBIS_MATRIX_TYPE::BANDED && aDest->m_type != IBIS_MATRIX_TYPE::FULL
+            && aDest->m_type != IBIS_MATRIX_TYPE::SPARSE )
         {
             init = false;
         }
@@ -1591,33 +1514,30 @@ bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
         {
             if( readWord( str ) )
             {
+                IBIS_MATRIX* matrix;
+
                 if( !strcasecmp( str.c_str(), "Banded_Matrix" ) )
                 {
-                    IBIS_MATRIX_BANDED* matrix = new IBIS_MATRIX_BANDED( m_reporter );
-                    matrix->m_dim = m_currentPackageModel->m_numberOfPins;
-                    aSource = static_cast<IBIS_MATRIX*>( matrix );
-                    m_currentMatrix = aSource;
+                    matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_BANDED( m_reporter ) );
+                    aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
+                    m_currentMatrix = aDest;
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::BANDED;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
                 if( !strcasecmp( str.c_str(), "Full_Matrix" ) )
                 {
-                    IBIS_MATRIX_FULL* matrix = new IBIS_MATRIX_FULL( m_reporter );
-                    aSource = static_cast<IBIS_MATRIX*>( matrix );
-                    m_currentMatrix = aSource;
-                    m_currentMatrix->m_dim = m_currentPackageModel->m_numberOfPins;
-
+                    matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_FULL( m_reporter ) );
+                    aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
+                    m_currentMatrix = aDest;
                     matrix->m_dim = m_currentPackageModel->m_numberOfPins;
-                    m_currentMatrix->m_data.resize( matrix->m_dim * matrix->m_dim );
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::FULL;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
                 if( !strcasecmp( str.c_str(), "Sparse_Matrix" ) )
                 {
-                    IBIS_MATRIX_SPARSE* matrix = new IBIS_MATRIX_SPARSE( m_reporter );
-                    aSource = static_cast<IBIS_MATRIX*>( matrix );
-                    m_currentMatrix = aSource;
-                    matrix->m_dim = m_currentPackageModel->m_numberOfPins;
+                    matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_SPARSE( m_reporter ) );
+                    aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
+                    m_currentMatrix = aDest;
                     m_currentMatrix->m_data.resize( matrix->m_dim * matrix->m_dim );
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::SPARSE;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
@@ -1627,6 +1547,7 @@ bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
                     status = false;
                     Report( _( "Matrix: unknown type." ), RPT_SEVERITY_ERROR );
                     Report( str, RPT_SEVERITY_INFO );
+                    m_currentMatrix->m_dim = m_currentPackageModel->m_numberOfPins;
                 }
             }
             else
@@ -1643,22 +1564,22 @@ bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
     }
     else
     {
-        if( aSource != nullptr )
+        if( aDest != nullptr )
         {
             // If m_continue is set, ( and no keyword ) then it is a row
-            switch( aSource->m_type )
+            switch( aDest->m_type )
             {
             case IBIS_MATRIX_TYPE::BANDED:
                 readMatrixBanded( std::string( "Dummy" ),
-                                  *static_cast<IBIS_MATRIX_BANDED*>( aSource ) );
+                                  *static_cast<IBIS_MATRIX_BANDED*>( aDest.get() ) );
                 break;
             case IBIS_MATRIX_TYPE::FULL:
                 readMatrixFull( std::string( "Dummy" ),
-                                *static_cast<IBIS_MATRIX_FULL*>( aSource ) );
+                                *static_cast<IBIS_MATRIX_FULL*>( aDest.get() ) );
                 break;
             case IBIS_MATRIX_TYPE::SPARSE:
                 readMatrixSparse( std::string( "Dummy" ),
-                                  *static_cast<IBIS_MATRIX_SPARSE*>( aSource ) );
+                                  *static_cast<IBIS_MATRIX_SPARSE*>( aDest.get() ) );
                 break;
             case IBIS_MATRIX_TYPE::UNDEFINED:
             default:
@@ -1695,8 +1616,8 @@ bool IbisParser::parsePackageModelModelData( std::string& aKeyword )
     }
     else if( !strcasecmp( aKeyword.c_str(), "Bandwidth" ) )
     {
-        status &=
-                readMatrixBanded( aKeyword, *static_cast<IBIS_MATRIX_BANDED*>( m_currentMatrix ) );
+        status &= readMatrixBanded( aKeyword,
+                                    *static_cast<IBIS_MATRIX_BANDED*>( m_currentMatrix.get() ) );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Row" ) )
     {
@@ -2079,7 +2000,6 @@ bool IbisParser::parseHeader( std::string& aKeyword )
     }
     else
     {
-        std::cout << "Header Keyword: " << aKeyword << std::endl;
         if( !changeContext( aKeyword ) )
         {
             status = false;

@@ -552,9 +552,9 @@ public:
     int                   m_numberOfPins;
     std::vector<std::string> m_pins;
 
-    IBIS_MATRIX* m_resistanceMatrix;
-    IBIS_MATRIX* m_capacitanceMatrix;
-    IBIS_MATRIX* m_inductanceMatrix;
+    std::shared_ptr<IBIS_MATRIX> m_resistanceMatrix;
+    std::shared_ptr<IBIS_MATRIX> m_capacitanceMatrix;
+    std::shared_ptr<IBIS_MATRIX> m_inductanceMatrix;
 
     bool Check() override;
 };
@@ -625,7 +625,7 @@ public:
     IbisModelSelector* m_currentModelSelector;
     IbisModel*         m_currentModel;
     IbisPackageModel*  m_currentPackageModel;
-    IBIS_MATRIX*       m_currentMatrix;
+    std::shared_ptr<IBIS_MATRIX> m_currentMatrix;
     int                m_currentMatrixRow;
     int                m_currentMatrixRowIndex;
     IVtable*           m_currentIVtable;
@@ -710,7 +710,7 @@ private:
     bool readDouble( double& aDest );
     bool readWord( std::string& aDest );
     bool readDvdt( std::string& aString, dvdt& aDest );
-    bool readMatrix( IBIS_MATRIX* aDest );
+    bool readMatrix( std::shared_ptr<IBIS_MATRIX> aDest );
     bool readMatrixBanded( std::string, IBIS_MATRIX_BANDED& aDest );
     bool readMatrixFull( std::string, IBIS_MATRIX_FULL& aDest );
     bool readMatrixSparse( std::string, IBIS_MATRIX_SPARSE& aDest );
