@@ -80,7 +80,6 @@ private:
     void changeSheet( SCH_SHEET_PATH aPath );
 
 private:
-    std::stack<wxString>                m_hypertextStack;
     std::list<SCH_SHEET_PATH>           m_navHistory;
     std::list<SCH_SHEET_PATH>::iterator m_navIndex;
 };

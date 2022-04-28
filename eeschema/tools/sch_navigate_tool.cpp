@@ -80,18 +80,9 @@ int SCH_NAVIGATE_TOOL::HypertextCommand( const TOOL_EVENT& aEvent )
             };
 
     if( *page == "HYPERTEXT_BACK" )
-    {
-        if( m_hypertextStack.size() > 0 )
-        {
-            goToPage( &m_hypertextStack.top() );
-            m_hypertextStack.pop();
-        }
-    }
+        Back( aEvent );
     else
-    {
-        m_hypertextStack.push( m_frame->GetCurrentSheet().GetPageNumber() );
         goToPage( page );
-    }
 
     return 0;
 }
