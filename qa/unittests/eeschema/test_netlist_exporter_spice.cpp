@@ -85,4 +85,10 @@ BOOST_AUTO_TEST_CASE( Rectifier )
 }
 
 
+BOOST_AUTO_TEST_CASE( Chirp )
+{
+    TestNetlist( "chirp" );
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()

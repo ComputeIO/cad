@@ -157,6 +157,8 @@ wxString NETLIST_EXPORTER_SPICE::GetItemName( const wxString& aRefName ) const
 
 void NETLIST_EXPORTER_SPICE::ReadDirectives()
 {
+    m_directives.clear();
+
     for( unsigned int sheetIndex = 0; sheetIndex < m_schematic->GetSheets().size(); ++sheetIndex )
     {
         for( SCH_ITEM* item : m_schematic->GetSheets().at( sheetIndex ).LastScreen()->Items() )

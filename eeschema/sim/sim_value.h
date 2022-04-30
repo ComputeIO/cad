@@ -46,6 +46,8 @@ namespace SIM_VALUE_GRAMMAR
 class SIM_VALUE
 {
 public:
+    using NOTATION = SIM_VALUE_GRAMMAR::NOTATION;
+
     enum class TYPE
     {
         BOOL,
@@ -69,11 +71,8 @@ public:
     void operator=( const wxString& aString );
     virtual bool operator==( const SIM_VALUE& aOther ) const = 0;
 
-    virtual bool FromString( const wxString& aString,
-                             SIM_VALUE_GRAMMAR::NOTATION aNotation
-                                = SIM_VALUE_GRAMMAR::NOTATION::SI )
-        = 0;
-    virtual wxString ToString() const = 0;
+    virtual bool FromString( const wxString& aString, NOTATION aNotation = NOTATION::SI ) = 0;
+    virtual wxString ToString( NOTATION aNotation = NOTATION::SI ) const = 0;
 
     // For parsers that don't accept strings with our suffixes.
     virtual wxString ToSimpleString() const = 0;
@@ -87,10 +86,9 @@ public:
     SIM_VALUE_INSTANCE() = default;
     SIM_VALUE_INSTANCE( const T& aValue );
 
-    bool FromString( const wxString& aString,
-                     SIM_VALUE_GRAMMAR::NOTATION aNotation = SIM_VALUE_GRAMMAR::NOTATION::SI )
-        override;
-    wxString ToString() const override;
+    // TODO: Don't pass aNotation. Make a FromSpiceString() function instead.
+    bool FromString( const wxString& aString, NOTATION aNotation = NOTATION::SI ) override;
+    wxString ToString( NOTATION aNotation = NOTATION::SI ) const override;
     wxString ToSimpleString() const override;
 
     void operator=( const T& aValue );

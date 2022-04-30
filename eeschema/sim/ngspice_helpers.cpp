@@ -116,10 +116,10 @@ wxString NGSPICE_CIRCUIT_MODEL::GetSheetSimCommand()
 
     ReadDirectives();
 
-    for( const auto& dir : GetDirectives() )
+    for( const auto& directive : GetDirectives() )
     {
-        if( IsSimCommand( dir ) )
-            simCmd += wxString::Format( "%s\r\n", dir );
+        if( IsSimCommand( directive ) )
+            simCmd += wxString::Format( "%s\r\n", directive );
     }
 
     return simCmd;

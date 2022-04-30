@@ -112,12 +112,11 @@ namespace SPICE_GRAMMAR
                           newline> {};
 
 
-    struct dotSubcktPinNumber : digits {};
-    struct dotSubcktPinSequence : seq<opt<sep>,
-                                      opt<dotSubcktPinNumber,
+    struct dotSubcktPinName : seq<not_at<TAO_PEGTL_ISTRING( "params:" )>,
+                                  alnum> {};
+    struct dotSubcktPinSequence : seq<opt<dotSubcktPinName,
                                           star<sep,
-                                               dotSubcktPinNumber>>,
-                                      opt<sep>> {};
+                                               dotSubcktPinName>>> {};
     struct dotSubcktEnd : seq<TAO_PEGTL_ISTRING( ".ends" ),
                               opt<sep>,
                               newline> {};
@@ -127,6 +126,10 @@ namespace SPICE_GRAMMAR
                            modelName,
                            sep,
                            dotSubcktPinSequence,
+                           opt<sep,
+                               TAO_PEGTL_ISTRING( "params:" ),
+                               sep,
+                               paramValuePairs<NOTATION::SPICE>>,
                            opt<sep>,
                            newline,
                            until<dotSubcktEnd>> {};

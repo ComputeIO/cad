@@ -23,15 +23,103 @@
  */
 
 #include <sim/sim_model_subckt.h>
+#include <pegtl.hpp>
+#include <pegtl/contrib/parse_tree.hpp>
 
 
-SIM_MODEL_SUBCIRCUIT::SIM_MODEL_SUBCIRCUIT( TYPE aType )
+namespace SIM_MODEL_SUBCKT_PARSER
+{
+    using namespace SIM_MODEL_GRAMMAR;
+
+    template <typename Rule> struct spiceUnitSelector : std::false_type {};
+
+    template <> struct spiceUnitSelector<dotSubckt> : std::true_type {};
+    template <> struct spiceUnitSelector<modelName> : std::true_type {};
+    template <> struct spiceUnitSelector<dotSubcktPinName> : std::true_type {};
+    template <> struct spiceUnitSelector<param> : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SPICE>>
+        : std::true_type {};
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>>
+        : std::true_type {};
+}
+
+
+SIM_MODEL_SUBCKT::SIM_MODEL_SUBCKT( TYPE aType )
     : SIM_MODEL( aType )
 {
 }
 
 
-std::vector<wxString> SIM_MODEL_SUBCIRCUIT::GetSpiceCurrentNames( const wxString& aRefName ) const
+bool SIM_MODEL_SUBCKT::ReadSpiceCode( const std::string& aSpiceCode )
+{
+    tao::pegtl::string_input<> in( aSpiceCode, "from_content" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_SUBCKT_PARSER::spiceUnitGrammar,
+                                             SIM_MODEL_SUBCKT_PARSER::spiceUnitSelector>
+            ( in );
+    }
+    catch( const tao::pegtl::parse_error& e )
+    {
+        return false;
+    }
+
+    wxASSERT( root );
+
+    for( const auto& node : root->children )
+    {
+        if( node->is_type<SIM_MODEL_SUBCKT_PARSER::dotSubckt>() )
+        {
+            for( const auto& subnode : node->children )
+            {
+                if( subnode->is_type<SIM_MODEL_SUBCKT_PARSER::modelName>() )
+                {
+                }
+                else if( subnode->is_type<SIM_MODEL_SUBCKT_PARSER::dotSubcktPinName>() )
+                {
+                    AddPin( { subnode->string(), GetPinCount() + 1 } );
+                }
+                else if( subnode->is_type<SIM_MODEL_SUBCKT_PARSER::param>() )
+                {
+                    m_paramInfos.push_back( std::make_unique<PARAM::INFO>() );
+                    m_paramInfos.back()->name = subnode->string();
+                    m_paramInfos.back()->isInstanceParam = true;
+
+                    AddParam( *m_paramInfos.back() );
+                }
+                else if( subnode->is_type<
+                        SIM_MODEL_SUBCKT_PARSER::number<SIM_VALUE::TYPE::INT,
+                                                        SIM_MODEL_SUBCKT_PARSER::NOTATION::SPICE>>()
+                    || subnode->is_type<
+                        SIM_MODEL_SUBCKT_PARSER::number<SIM_VALUE::TYPE::FLOAT,
+                                                        SIM_MODEL_SUBCKT_PARSER::NOTATION::SPICE>>() )
+                {
+                    wxASSERT( m_paramInfos.size() > 0 );
+                    m_paramInfos.back()->defaultValue = subnode->string();
+                }
+            }
+        }
+        else
+        {
+            wxFAIL_MSG( "Unhandled parse tree node" );
+            return false;
+        }
+    }
+
+    m_spiceCode = aSpiceCode;
+    return true;
+}
+
+
+wxString SIM_MODEL_SUBCKT::GenerateSpiceModelLine( const wxString& aModelName ) const
+{
+    return "";
+}
+
+
+std::vector<wxString> SIM_MODEL_SUBCKT::GetSpiceCurrentNames( const wxString& aRefName ) const
 {
     std::vector<wxString> currentNames;
 
@@ -39,4 +127,18 @@ std::vector<wxString> SIM_MODEL_SUBCIRCUIT::GetSpiceCurrentNames( const wxString
         currentNames.push_back( wxString::Format( "I(%s:%d)", aRefName, i ) );
 
     return currentNames;
+}
+
+
+void SIM_MODEL_SUBCKT::SetBaseModel( const SIM_MODEL& aBaseModel )
+{
+    SIM_MODEL::SetBaseModel( aBaseModel );
+
+    // Pins aren't constant for subcircuits, so they need to be copied from the base model.
+    for( int i = 0; i < GetBaseModel()->GetPinCount(); ++i )
+        AddPin( GetBaseModel()->GetPin( i ) );
+
+    // Same for parameters.
+    for( int i = 0; i < GetBaseModel()->GetParamCount(); ++i )
+        AddParam( GetBaseModel()->GetParam( i ).info );
 }

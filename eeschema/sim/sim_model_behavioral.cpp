@@ -37,11 +37,11 @@ SIM_MODEL_BEHAVIORAL::SIM_MODEL_BEHAVIORAL( TYPE aType )
 
     switch( aType )
     {
-    case TYPE::R_BEHAVIORAL:  AddParam( resistor  ); break;
+    case TYPE::R_BEHAVIORAL: AddParam( resistor  ); break;
     case TYPE::C_BEHAVIORAL: AddParam( capacitor ); break;
-    case TYPE::L_BEHAVIORAL:  AddParam( inductor  ); break;
-    case TYPE::V_BEHAVIORAL:   AddParam( vsource   ); break;
-    case TYPE::I_BEHAVIORAL:   AddParam( isource   ); break;
+    case TYPE::L_BEHAVIORAL: AddParam( inductor  ); break;
+    case TYPE::V_BEHAVIORAL: AddParam( vsource   ); break;
+    case TYPE::I_BEHAVIORAL: AddParam( isource   ); break;
     default:
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_IDEAL" );
     }

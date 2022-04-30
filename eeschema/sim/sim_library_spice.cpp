@@ -33,8 +33,6 @@ namespace SIM_LIBRARY_SPICE_PARSER
 {
     using namespace SPICE_GRAMMAR;
 
-    struct unknownLine : until<newline> {};
-
     // TODO: unknownLine is already handled in spiceUnit.
     struct library : spiceSource {};
     struct libraryGrammar : must<library, eof> {};

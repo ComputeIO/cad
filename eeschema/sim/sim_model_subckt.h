@@ -28,12 +28,18 @@
 #include <sim/sim_model.h>
 
 
-class SIM_MODEL_SUBCIRCUIT : public SIM_MODEL
+class SIM_MODEL_SUBCKT : public SIM_MODEL
 {
 public:
-    SIM_MODEL_SUBCIRCUIT( TYPE aType );
+    SIM_MODEL_SUBCKT( TYPE aType );
 
+    bool ReadSpiceCode( const std::string& aSpiceCode ) override;
+    wxString GenerateSpiceModelLine( const wxString& aModelName ) const;
     std::vector<wxString> GetSpiceCurrentNames( const wxString& aRefName ) const override;
+    void SetBaseModel( const SIM_MODEL& aBaseModel ) override;
+
+private:
+    std::vector<std::unique_ptr<PARAM::INFO>> m_paramInfos;
 };
 
 #endif // SIM_MODEL_SUBCIRCUIT_H

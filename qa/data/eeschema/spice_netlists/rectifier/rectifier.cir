@@ -5,5 +5,5 @@
 C1 /out GND 10u
 R1 /out GND 100k
 D1 /in /out DIODE1
-V1 /in GND SIN( 0 5 1k    )
+V1 /in GND SIN( 0 5 10k    )
 .end

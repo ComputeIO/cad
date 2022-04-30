@@ -60,14 +60,10 @@ namespace SIM_MODEL_PARSER
 
     template <typename Rule> struct spiceUnitSelector : std::false_type {};
 
-    template <> struct spiceUnitSelector<modelName> : std::true_type {};
     template <> struct spiceUnitSelector<dotModel> : std::true_type {};
+    template <> struct spiceUnitSelector<modelName> : std::true_type {};
     template <> struct spiceUnitSelector<dotModelType> : std::true_type {};
     template <> struct spiceUnitSelector<param> : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>>
-        : std::true_type {};
     template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SPICE>>
         : std::true_type {};
     template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>>
@@ -628,8 +624,7 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
 
     for( const auto& node : root->children )
     {
-        if( node->is_type<SIM_MODEL_PARSER::dotModel>()
-            || node->is_type<SIM_MODEL_PARSER::dotSubckt>() )
+        if( node->is_type<SIM_MODEL_PARSER::dotModel>() )
         {
             wxString paramName = "";
 
@@ -650,6 +645,9 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
                 // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
                 // It doesn't seem too useful?
                 else if( subnode->is_type<
+                        SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::INT,
+                                                 SIM_MODEL_PARSER::NOTATION::SPICE>>()
+                    || subnode->is_type<
                         SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
                                                  SIM_MODEL_PARSER::NOTATION::SPICE>>() )
                 {
@@ -756,12 +754,7 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
         if( valueStr.IsEmpty() )
             continue;
         
-        wxString append = "";
-
-        append << " ";
-        append << param.info.name;
-        append << "=";
-        append << param.value->ToString();
+        wxString append = " " + param.info.name + "=" + param.value->ToString();
 
         if( line.Length() + append.Length() > 60 )
         {
@@ -811,7 +804,17 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
         }
     }
 
-    result << aModelName << "\n";
+    result << aModelName << " ";
+
+    for( int i = 0; i < GetParamCount(); ++i )
+    {
+        const PARAM& param = GetParam( i );
+
+        if( param.info.isInstanceParam )
+            result << param.info.name << "=" << param.value->ToString() << " ";
+    }
+
+    result << "\n";
     return result;
 }
 
@@ -860,9 +863,9 @@ bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField 
     for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
     {
         if( i < aSymbolPinCount )
-            m_pins.push_back( { getPinNames().at( i ), i + 1 } );
+            AddPin( { getPinNames().at( i ), i + 1 } );
         else
-            m_pins.push_back( { getPinNames().at( i ), PIN::NOT_CONNECTED } );
+            AddPin( { getPinNames().at( i ), PIN::NOT_CONNECTED } );
     }
 
     if( aPinsField.IsEmpty() )
@@ -898,6 +901,12 @@ bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField 
     }
 
     return true;
+}
+
+
+void SIM_MODEL::AddPin( const PIN& aPin )
+{
+    m_pins.push_back( aPin );
 }
 
 
@@ -1019,10 +1028,10 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
         return std::make_unique<SIM_MODEL_SOURCE>( aType );
 
     case TYPE::SUBCKT:
-        return std::make_unique<SIM_MODEL_SUBCIRCUIT>( aType );
+        return std::make_unique<SIM_MODEL_SUBCKT>( aType );
 
     case TYPE::XSPICE:
-        return std::make_unique<SIM_MODEL_CODEMODEL>( aType );
+        return std::make_unique<SIM_MODEL_XSPICE>( aType );
 
     case TYPE::SPICE:
         return std::make_unique<SIM_MODEL_RAWSPICE>( aType );

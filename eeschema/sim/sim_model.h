@@ -318,13 +318,14 @@ public:
             wxString name;
             unsigned int id = 0; // Legacy.
             DIR dir = DIR::INOUT;
-            SIM_VALUE::TYPE type;
+            SIM_VALUE::TYPE type = SIM_VALUE::TYPE::FLOAT;
             FLAGS flags = {}; // Legacy
             wxString unit = "";
             CATEGORY category = CATEGORY::PRINCIPAL;
             wxString defaultValue = "";
             wxString defaultValueOfOtherVariant = ""; // Legacy.
             wxString description = "";
+            bool isInstanceParam = false;
         };
 
         std::unique_ptr<SIM_VALUE> value;
@@ -414,13 +415,14 @@ public:
 
     bool ParsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
+    void AddPin( const PIN& aPin );
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
 
     DEVICE_TYPE GetDeviceType() const { return TypeInfo( GetType() ).deviceType; }
     TYPE GetType() const { return m_type; }
 
     const SIM_MODEL* GetBaseModel() const { return m_baseModel; }
-    void SetBaseModel( const SIM_MODEL& aBaseModel ) { m_baseModel = &aBaseModel; }
+    virtual void SetBaseModel( const SIM_MODEL& aBaseModel ) { m_baseModel = &aBaseModel; }
 
     int GetPinCount() const { return static_cast<int>( m_pins.size() ); }
     const PIN& GetPin( int aIndex ) const { return m_pins.at( aIndex ); }
@@ -447,6 +449,8 @@ public:
 
 protected:
     SIM_MODEL( TYPE aType );
+
+    wxString m_spiceCode;
 
 private:
     static std::unique_ptr<SIM_MODEL> create( TYPE aType );
@@ -477,7 +481,6 @@ private:
                                             = SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
 
-    wxString m_spiceCode;
     const SIM_MODEL* m_baseModel;
 
     const TYPE m_type;

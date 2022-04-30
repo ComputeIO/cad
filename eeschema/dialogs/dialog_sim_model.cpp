@@ -469,9 +469,15 @@ template <typename T>
 wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
 {
     const SIM_MODEL::PARAM& param = curModel().GetParam( aParamIndex );
-    wxString paramDescription = wxString::Format( "%s (%s)",
-                                                  param.info.description,
-                                                  param.info.name );
+    wxString paramDescription;
+
+    if( !param.info.description.IsEmpty() )
+        paramDescription = wxString::Format( "%s (%s)",
+                                             param.info.description,
+                                             param.info.name );
+    else
+        paramDescription = wxString::Format( "%s", param.info.name );
+
     wxPGProperty* prop = nullptr;
 
     switch( param.info.type )

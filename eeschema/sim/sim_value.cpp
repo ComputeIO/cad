@@ -400,7 +400,7 @@ SIM_VALUE_INSTANCE<T>::SIM_VALUE_INSTANCE( const T& aValue ) : m_value( aValue )
 
 
 template <>
-bool SIM_VALUE_INSTANCE<bool>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
+bool SIM_VALUE_INSTANCE<bool>::FromString( const wxString& aString, NOTATION aNotation )
 {
     SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
     m_value = NULLOPT;
@@ -426,7 +426,7 @@ bool SIM_VALUE_INSTANCE<bool>::FromString( const wxString& aString, SIM_VALUE_GR
 
 
 template <>
-bool SIM_VALUE_INSTANCE<long>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
+bool SIM_VALUE_INSTANCE<long>::FromString( const wxString& aString, NOTATION aNotation )
 {
     SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
     m_value = NULLOPT;
@@ -449,7 +449,7 @@ bool SIM_VALUE_INSTANCE<long>::FromString( const wxString& aString, SIM_VALUE_GR
 
 
 template <>
-bool SIM_VALUE_INSTANCE<double>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
+bool SIM_VALUE_INSTANCE<double>::FromString( const wxString& aString, NOTATION aNotation )
 {
     SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
     m_value = NULLOPT;
@@ -483,7 +483,7 @@ bool SIM_VALUE_INSTANCE<double>::FromString( const wxString& aString, SIM_VALUE_
 
 template <>
 bool SIM_VALUE_INSTANCE<std::complex<double>>::FromString( const wxString& aString,
-                                                  SIM_VALUE_GRAMMAR::NOTATION aNotation )
+                                                           NOTATION aNotation )
 {
     // TODO
 
@@ -500,7 +500,7 @@ bool SIM_VALUE_INSTANCE<std::complex<double>>::FromString( const wxString& aStri
 
 
 template <>
-bool SIM_VALUE_INSTANCE<wxString>::FromString( const wxString& aString, SIM_VALUE_GRAMMAR::NOTATION aNotation )
+bool SIM_VALUE_INSTANCE<wxString>::FromString( const wxString& aString, NOTATION aNotation )
 {
     m_value = aString;
     return true;
@@ -508,7 +508,7 @@ bool SIM_VALUE_INSTANCE<wxString>::FromString( const wxString& aString, SIM_VALU
 
 
 template <typename T>
-wxString SIM_VALUE_INSTANCE<T>::ToString() const
+wxString SIM_VALUE_INSTANCE<T>::ToString( NOTATION aNotation ) const
 {
     static_assert( std::is_same<T, std::vector<T>>::value );
 
@@ -525,7 +525,7 @@ wxString SIM_VALUE_INSTANCE<T>::ToString() const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<bool>::ToString() const
+wxString SIM_VALUE_INSTANCE<bool>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -537,7 +537,7 @@ wxString SIM_VALUE_INSTANCE<bool>::ToString() const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<long>::ToString() const
+wxString SIM_VALUE_INSTANCE<long>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -554,7 +554,7 @@ wxString SIM_VALUE_INSTANCE<long>::ToString() const
 
         long dummy = 0;
         wxString metricSuffix = SIM_VALUE_PARSER::ExponentToMetricSuffix(
-                static_cast<double>( exponent ), dummy );
+                static_cast<double>( exponent ), dummy, aNotation );
         return wxString::Format( "%d%s", value, metricSuffix );
     }
 
@@ -563,7 +563,7 @@ wxString SIM_VALUE_INSTANCE<long>::ToString() const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<double>::ToString() const
+wxString SIM_VALUE_INSTANCE<double>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -584,7 +584,7 @@ wxString SIM_VALUE_INSTANCE<double>::ToString() const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToString() const
+wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -596,7 +596,7 @@ wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToString() const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<wxString>::ToString() const
+wxString SIM_VALUE_INSTANCE<wxString>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
