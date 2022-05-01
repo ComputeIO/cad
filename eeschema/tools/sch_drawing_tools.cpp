@@ -1194,8 +1194,8 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
                 {
                     wxString netName;
 
-                    for( SCH_ITEM* overlapItem : m_frame->GetScreen()->Items().Overlapping(
-                                 m_frame->GetNearestGridPosition( cursorPos ) ) )
+                    for( SCH_ITEM* overlapItem :
+                         m_frame->GetScreen()->Items().Overlapping( cursorPos ) )
                     {
                         if( overlapItem->GetEditFlags() & STRUCT_DELETED )
                             continue;
@@ -1229,16 +1229,16 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
                         SCHEMATIC*          schematic = getModel<SCHEMATIC>();
                         SCHEMATIC_SETTINGS& settings = schematic->Settings();
                         SCH_LABEL_BASE*     labelItem = nullptr;
-                        VECTOR2I            gridPos = m_frame->GetNearestGridPosition( cursorPos );
                         if( isGlobalLabel )
                         {
-                            labelItem = new SCH_GLOBALLABEL( gridPos );
+                            labelItem = new SCH_GLOBALLABEL( cursorPos );
                             labelItem->SetShape( m_lastGlobalLabelShape );
+                            // make intersheets reference visible based on settings
                             labelItem->GetFields()[0].SetVisible( settings.m_IntersheetRefsShow );
                         }
                         else
                         {
-                            labelItem = new SCH_LABEL( gridPos );
+                            labelItem = new SCH_LABEL( cursorPos );
                         }
 
                         labelItem->SetParent( getModel<SCHEMATIC>() );
