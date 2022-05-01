@@ -1193,16 +1193,18 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
                 else if( isNetLabel || isGlobalLabel )
                 {
                     wxString netName;
+
                     for( SCH_ITEM* overlapItem : m_frame->GetScreen()->Items().Overlapping(
-                                 m_frame->GetNearestGridPosition( evt->Position() ) ) )
+                                 m_frame->GetNearestGridPosition( cursorPos ) ) )
                     {
                         if( overlapItem->GetEditFlags() & STRUCT_DELETED )
                             continue;
 
                         if( overlapItem->Type() == SCH_LINE_T )
                         {
-                            auto line = static_cast<SCH_LINE*>( overlapItem );
-                            if (line->IsWire()) {
+                            SCH_LINE* line = static_cast<SCH_LINE*>( overlapItem );
+                            if( line->IsWire() )
+                            {
                                 netName = line->GetNetname(m_frame->GetCurrentSheet());
                                 break;
                             }
@@ -1227,12 +1229,12 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
                         SCHEMATIC*          schematic = getModel<SCHEMATIC>();
                         SCHEMATIC_SETTINGS& settings = schematic->Settings();
                         SCH_LABEL_BASE*     labelItem = nullptr;
-                        auto gridPos = m_frame->GetNearestGridPosition( evt->Position() );
+                        VECTOR2I            gridPos = m_frame->GetNearestGridPosition( cursorPos );
                         if( isGlobalLabel )
                         {
                             labelItem = new SCH_GLOBALLABEL( gridPos );
                             labelItem->SetShape( m_lastGlobalLabelShape );
-                            labelItem->GetFields()[0].SetVisible( true );
+                            labelItem->GetFields()[0].SetVisible( settings.m_IntersheetRefsShow );
                         }
                         else
                         {
