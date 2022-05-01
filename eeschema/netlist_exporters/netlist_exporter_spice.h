@@ -51,6 +51,8 @@ public:
     {
         OPTION_ADJUST_INCLUDE_PATHS = 8,
         OPTION_ADJUST_PASSIVE_VALS = 16,
+        OPTION_SAVE_ALL_VOLTAGES = 16,
+        OPTION_SAVE_ALL_CURRENTS = 32,
         OPTION_ALL_FLAGS = 0xFFFF
     };
 

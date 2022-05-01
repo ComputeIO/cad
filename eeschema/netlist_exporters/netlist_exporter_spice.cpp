@@ -75,6 +75,12 @@ bool NETLIST_EXPORTER_SPICE::GenerateNetlist( OUTPUTFORMATTER& aFormatter, unsig
 
     aFormatter.Print( 0, ".title %s\n", TO_UTF8( m_title ) );
 
+    if( aNetlistOptions & OPTION_SAVE_ALL_VOLTAGES )
+        aFormatter.Print( 0, ".save all\n" );
+
+    if( aNetlistOptions & OPTION_SAVE_ALL_CURRENTS )
+        aFormatter.Print( 0, ".probe alli\n" );
+
     writeIncludes( aFormatter, aNetlistOptions );
     writeModels( aFormatter );
     writeDirectives( aFormatter );
