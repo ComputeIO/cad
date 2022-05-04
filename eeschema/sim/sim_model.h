@@ -222,6 +222,7 @@ public:
         PMOS_HISIMHV2,
 
 
+        V_DC,
         V_SIN,
         V_PULSE,
         V_EXP,
@@ -237,6 +238,7 @@ public:
         V_RANDPOISSON,
         V_BEHAVIORAL,
 
+        I_DC,
         I_SIN,
         I_PULSE,
         I_EXP,
@@ -411,11 +413,12 @@ public:
     virtual wxString GenerateSpicePreview( const wxString& aModelName ) const;
 
     SPICE_INFO GetSpiceInfo() const;
-    virtual std::vector<wxString> GetSpiceCurrentNames( const wxString& aRefName ) const;
+    virtual std::vector<wxString> GenerateSpiceCurrentNames( const wxString& aRefName ) const;
 
     bool ParsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
     void AddPin( const PIN& aPin );
+    int FindModelPinNumber( int aSymbolPinNumber );
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
 
     DEVICE_TYPE GetDeviceType() const { return TypeInfo( GetType() ).deviceType; }

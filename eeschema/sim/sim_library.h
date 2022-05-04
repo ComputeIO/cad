@@ -42,6 +42,8 @@ public:
     virtual bool ReadFile( const wxString& aFilePath ) = 0;
     virtual void WriteFile( const wxString& aFilePath ) = 0;
 
+    SIM_MODEL* FindModel( const wxString& aModelName ) const;
+
     std::vector<std::reference_wrapper<SIM_MODEL>> GetModels() const;
     const std::vector<wxString>& GetModelNames() const { return m_modelNames; }
 

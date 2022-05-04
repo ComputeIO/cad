@@ -55,7 +55,7 @@ bool DIALOG_SIGNAL_LIST::TransferDataFromWindow()
 bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
 {
     // Create a list of possible signals
-    /// @todo it could include separated mag & phase for AC analysis
+    /// TODO: it could include separated mag & phase for AC analysis
     if( m_circuitModel )
     {
         // Voltage list
@@ -72,10 +72,10 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
 
         if( simType == ST_TRANSIENT || simType == ST_DC )
         {
-            for( const auto& item : m_circuitModel->GetSpiceItems() )
+            for( const auto& item : m_circuitModel->GetItems() )
             {
                 // Add all possible currents for the primitive.
-                for( const auto& currentName : item.model->GetSpiceCurrentNames( item.refName ) )
+                for( const auto& currentName : item.model->GenerateSpiceCurrentNames( item.refName ) )
                     m_signals->Append( currentName );
             }
         }
@@ -101,22 +101,14 @@ bool DIALOG_SIGNAL_LIST::addSignalToPlotFrame( const wxString& aPlotName )
         wxUniChar firstChar = aPlotName[0];
 
         if( firstChar == 'V' || firstChar == 'v' )
-        {
-            m_plotFrame->AddVoltagePlot( name );
-        }
+            m_plotFrame->AddVoltagePlot( aPlotName );
         else if( firstChar == 'I' || firstChar == 'i' )
-        {
-            m_plotFrame->AddCurrentPlot( name, aPlotName.BeforeFirst( '(' ) );
-        }
+            m_plotFrame->AddCurrentPlot( aPlotName );
         else
-        {
             return false;
-        }
     }
     else
-    {
         return false;
-    }
 
     return true;
 }

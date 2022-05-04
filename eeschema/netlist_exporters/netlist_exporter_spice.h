@@ -79,12 +79,12 @@ public:
     /**
      * Replace illegal spice net name characters with underscores.
      */
-    void ReplaceForbiddenChars( wxString& aNetName ) const;
+    static void ReplaceForbiddenChars( wxString& aNetName );
 
     /**
      * Return the list of nets.
      */
-    const std::vector<wxString>& GetNets() const { return m_nets; }
+    const std::set<wxString>& GetNets() const { return m_nets; }
 
     /**
      * Return name of Spice device corresponding to a schematic symbol.
@@ -100,7 +100,7 @@ public:
     /**
      * Return the list of items representing schematic components in the Spice world.
      */
-    const std::list<SPICE_ITEM>& GetSpiceItems() const { return m_items; }
+    const std::list<SPICE_ITEM>& GetItems() const { return m_items; }
 
     /**
      * Convert typical boolean string values (no/yes, true/false, 1/0) to a boolean value.
@@ -132,12 +132,12 @@ private:
     void writeIncludes( OUTPUTFORMATTER& aFormatter, unsigned aNetlistOptions );
     void writeModels( OUTPUTFORMATTER& aFormatter );
     void writeItems( OUTPUTFORMATTER& aFormatter );
-    void writeDirectives( OUTPUTFORMATTER& aFormatter );
+    void writeDirectives( OUTPUTFORMATTER& aFormatter, unsigned aNetlistOptions );
 
     wxString                m_title;       ///< Spice simulation title found in the schematic sheet
     std::vector<wxString>   m_directives;  ///< Spice directives found in the schematic sheet
     std::map<wxString, std::unique_ptr<SIM_LIBRARY>> m_libraries; ///< Spice libraries
-    std::vector<wxString>   m_nets;
+    std::set<wxString>      m_nets;
     std::list<SPICE_ITEM>   m_items;  ///< Items representing schematic symbols in Spice world
 };
 

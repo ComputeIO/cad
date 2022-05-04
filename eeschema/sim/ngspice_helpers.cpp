@@ -29,50 +29,7 @@
 #include <macros.h>     // for TO_UTF8 def
 #include <wx/regex.h>
 #include <wx/tokenzr.h>
-
-wxString NGSPICE_CIRCUIT_MODEL::ComponentToVector(
-        const wxString& aName, SIM_PLOT_TYPE aType, const wxString& aParam ) const
-{
-    wxString res;
-
-    // Some of the flags should exclude mutually
-    wxASSERT( ( ( aType & SPT_VOLTAGE ) == 0 ) != ( ( aType & SPT_CURRENT ) == 0 ) );
-    wxASSERT( ( ( aType & SPT_AC_PHASE ) == 0 ) || ( ( aType & SPT_AC_MAG ) == 0 ) );
-
-    if( aType & SPT_VOLTAGE )
-    {
-        // netnames are escaped (can contain "{slash}" for '/') Unscape them:
-        wxString spicenet = UnescapeString( aName );
-
-        // Spice netlist netnames does not accept some chars, which are replaced
-        // by eeschema netlist generator.
-        // Replace these forbidden chars to find the actual spice net name
-        NETLIST_EXPORTER_SPICE::ReplaceForbiddenChars( spicenet );
-
-        return wxString::Format( "V(%s)", spicenet );
-    }
-
-    else if( aType & SPT_CURRENT )
-    {
-        // TODO.
-
-        /*wxString device = GetSpiceDevice( aName ).Lower();
-        wxString param = aParam.Lower();*/
-
-        /*if( device.length() > 0 && device[0] == 'x' )
-        {
-            return "current probe of .subckt not yet implemented";
-        }
-        else
-        {
-            return wxString::Format( "@%s[%s]",
-                                     device,
-                                     param.IsEmpty() ? "i" : param );
-        }*/
-    }
-
-    return res;
-}
+#include <locale_io.h>
 
 
 SIM_PLOT_TYPE NGSPICE_CIRCUIT_MODEL::VectorToSignal(

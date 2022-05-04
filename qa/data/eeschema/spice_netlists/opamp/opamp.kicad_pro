@@ -240,7 +240,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "rectifier.kicad_pro",
+    "filename": "opamp.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -323,7 +323,7 @@
   },
   "sheets": [
     [
-      "0c9c3a92-6a4e-4a5b-b607-2cfe0f3c4b2e",
+      "fd5567b0-04f0-4d9e-b647-1775367d8ff4",
       ""
     ]
   ],

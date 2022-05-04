@@ -119,12 +119,14 @@ wxString SIM_MODEL_SUBCKT::GenerateSpiceModelLine( const wxString& aModelName ) 
 }
 
 
-std::vector<wxString> SIM_MODEL_SUBCKT::GetSpiceCurrentNames( const wxString& aRefName ) const
+std::vector<wxString> SIM_MODEL_SUBCKT::GenerateSpiceCurrentNames( const wxString& aRefName ) const
 {
     std::vector<wxString> currentNames;
 
     for( int i = 0; i < GetPinCount(); ++i )
-        currentNames.push_back( wxString::Format( "I(%s:%d)", aRefName, i ) );
+        currentNames.push_back( wxString::Format( "I(%s:%s)",
+                                                  GenerateSpiceItemName( aRefName ),
+                                                  GetPin( i ).name ) );
 
     return currentNames;
 }

@@ -113,7 +113,8 @@ namespace SPICE_GRAMMAR
 
 
     struct dotSubcktPinName : seq<not_at<TAO_PEGTL_ISTRING( "params:" )>,
-                                  alnum> {};
+                                  plus<not_at<space>,
+                                       any>> {};
     struct dotSubcktPinSequence : seq<opt<dotSubcktPinName,
                                           star<sep,
                                                dotSubcktPinName>>> {};

@@ -58,6 +58,9 @@ wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
 
 const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParams( TYPE aType )
 {
+    static std::vector<PARAM::INFO> vdc = makeDc( "v", "V" );
+    static std::vector<PARAM::INFO> idc = makeDc( "i", "A" );
+
     static std::vector<PARAM::INFO> vsin = makeSin( "v", "V" );
     static std::vector<PARAM::INFO> isin = makeSin( "i", "A" );
 
@@ -99,6 +102,8 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParams( TYPE aType )
 
     switch( aType )
     {
+    case TYPE::V_DC:          return vdc;
+    case TYPE::I_DC:          return idc;
     case TYPE::V_SIN:         return vsin;
     case TYPE::I_SIN:         return isin;
     case TYPE::V_PULSE:       return vpulse;
@@ -159,6 +164,23 @@ bool SIM_MODEL_SOURCE::SetParamValue( int aParamIndex, const wxString& aValue,
 std::vector<wxString> SIM_MODEL_SOURCE::getPinNames() const
 {
     return { "+", "-" };
+}
+
+
+std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeDc( wxString aPrefix, wxString aUnit )
+{
+    std::vector<PARAM::INFO> paramInfos;
+    PARAM::INFO paramInfo;
+
+    paramInfo.name = "dc";
+    paramInfo.type = SIM_VALUE::TYPE::FLOAT;
+    paramInfo.unit = aUnit;
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "DC value";
+    paramInfos.push_back( paramInfo );
+
+    return paramInfos;
 }
 
 

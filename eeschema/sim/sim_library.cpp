@@ -44,6 +44,20 @@ bool SIM_LIBRARY::ReadFile( const wxString& aFilePath )
 }
 
 
+SIM_MODEL* SIM_LIBRARY::FindModel( const wxString& aModelName ) const
+{
+    for( unsigned i = 0; i < GetModelNames().size(); ++i )
+    {
+        wxString curModelName = GetModelNames().at( i );
+
+        if( curModelName == aModelName )
+            return m_models.at( i ).get();
+    }
+
+    return nullptr;
+}
+
+
 std::vector<std::reference_wrapper<SIM_MODEL>> SIM_LIBRARY::GetModels() const
 {
     std::vector<std::reference_wrapper<SIM_MODEL>> ret;

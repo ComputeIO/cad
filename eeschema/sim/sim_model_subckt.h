@@ -35,7 +35,7 @@ public:
 
     bool ReadSpiceCode( const std::string& aSpiceCode ) override;
     wxString GenerateSpiceModelLine( const wxString& aModelName ) const;
-    std::vector<wxString> GetSpiceCurrentNames( const wxString& aRefName ) const override;
+    std::vector<wxString> GenerateSpiceCurrentNames( const wxString& aRefName ) const override;
     void SetBaseModel( const SIM_MODEL& aBaseModel ) override;
 
 private:

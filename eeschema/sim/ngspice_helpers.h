@@ -56,19 +56,6 @@ public:
     /**
      * Return name of Spice dataset for a specific plot.
      *
-     * @param aName is name of the measured net or device
-     * @param aType describes the type of expected plot
-     * @param aParam is an optional parameter for devices, if absent it will return current (only
-     *               for passive devices).
-     * @return Empty string if query is invalid, otherwise a plot name that
-     *         can be requested from the simulator.
-     */
-    wxString ComponentToVector( const wxString& aName, SIM_PLOT_TYPE aType,
-            const wxString& aParam = wxEmptyString ) const;
-
-    /**
-     * Return name of Spice dataset for a specific plot.
-     *
      * @param aVector is name of the vector produced by ngspice
      * @param [out] aSignal is output in form: V(R1), Ib(Q2), I(L8)
      * @return [SPT_VOLTAGE, SPT_CURRENT]. Otherwise SPT_UNKNOWN if vector is

@@ -401,7 +401,7 @@ void DIALOG_SIM_SETTINGS::updateDCSources( wxChar aType, wxChoice* aSource )
 
     if( aType != 'T' )
     {
-        for( const auto& item : m_circuitModel->GetSpiceItems() )
+        for( const auto& item : m_circuitModel->GetItems() )
         {
             if( ( aType == 'R' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::R )
             ||  ( aType == 'C' && item.model->GetDeviceType() == SIM_MODEL::DEVICE_TYPE::C )

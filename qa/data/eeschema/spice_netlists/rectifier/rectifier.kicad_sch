@@ -390,7 +390,7 @@
     (property "Model_Name" "DIODE1" (id 6) (at 151.765 96.52 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Model_Library" "diodes.lib" (id 7) (at 151.765 96.52 0)
+    (property "Model_Library" "diode.lib" (id 7) (at 151.765 96.52 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Model_Pins" "2 1" (id 8) (at 151.765 96.52 0)

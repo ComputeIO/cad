@@ -1,5 +1,7 @@
 .title KiCad schematic
-.include "diodes.lib"
+.include "diode.lib"
+.save all
+.probe alli
 .tran 1u 10m
 
 C1 /out GND 10u 

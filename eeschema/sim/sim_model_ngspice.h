@@ -34,7 +34,7 @@ class SIM_MODEL_NGSPICE : public SIM_MODEL
 public:
     SIM_MODEL_NGSPICE( TYPE aType );
 
-    std::vector<wxString> GetSpiceCurrentNames( const wxString& aRefName ) const override;
+    std::vector<wxString> GenerateSpiceCurrentNames( const wxString& aRefName ) const override;
 
 private:
     std::vector<wxString> getPinNames() const override;

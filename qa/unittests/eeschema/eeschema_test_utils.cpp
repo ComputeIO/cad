@@ -174,7 +174,8 @@ template <typename Exporter>
 void TEST_NETLIST_EXPORTER_FIXTURE<Exporter>::WriteNetlist()
 {
     auto exporter = std::make_unique<Exporter>( &m_schematic );
-    BOOST_REQUIRE_EQUAL( exporter->WriteNetlist( GetNetlistPath( true ), 0 ), true );
+    BOOST_REQUIRE_EQUAL( exporter->WriteNetlist( GetNetlistPath( true ), GetNetlistOptions() ),
+                                                 true );
 }
 
 

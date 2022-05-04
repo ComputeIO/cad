@@ -240,7 +240,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "rectifier.kicad_pro",
+    "filename": "npn_ce_amp.kicad_pro",
     "version": 1
   },
   "net_settings": {
@@ -323,7 +323,7 @@
   },
   "sheets": [
     [
-      "0c9c3a92-6a4e-4a5b-b607-2cfe0f3c4b2e",
+      "48817d43-3f4d-4e7e-ae5d-40c9da0e33d5",
       ""
     ]
   ],

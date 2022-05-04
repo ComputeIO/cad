@@ -110,6 +110,7 @@ public:
 
     virtual wxString GetSchematicPath( const wxString& aBaseName );
     virtual wxString GetNetlistPath( bool aTest = false );
+    virtual unsigned GetNetlistOptions() { return 0; }
 
     void WriteNetlist();
 

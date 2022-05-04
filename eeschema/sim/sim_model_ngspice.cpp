@@ -41,7 +41,7 @@ SIM_MODEL_NGSPICE::SIM_MODEL_NGSPICE( TYPE aType )
 }
 
 
-std::vector<wxString> SIM_MODEL_NGSPICE::GetSpiceCurrentNames( const wxString& aRefName ) const
+std::vector<wxString> SIM_MODEL_NGSPICE::GenerateSpiceCurrentNames( const wxString& aRefName ) const
 {
     LOCALE_IO toggle;
 
@@ -67,7 +67,7 @@ std::vector<wxString> SIM_MODEL_NGSPICE::GetSpiceCurrentNames( const wxString& a
         case DEVICE_TYPE::C:
         case DEVICE_TYPE::L:
         case DEVICE_TYPE::D:
-            return SIM_MODEL::GetSpiceCurrentNames( aRefName );
+            return SIM_MODEL::GenerateSpiceCurrentNames( aRefName );
 
         default:
             wxFAIL_MSG( "Unhandled model device type" );

@@ -73,6 +73,12 @@ public:
         BOOST_REQUIRE_EQUAL( std::string( refReader.Line() ),
                              std::string( resultReader.Line() ) );
     }
+
+    unsigned GetNetlistOptions() override
+    {
+        return NETLIST_EXPORTER_SPICE::OPTION_SAVE_ALL_VOLTAGES
+               | NETLIST_EXPORTER_SPICE::OPTION_SAVE_ALL_CURRENTS;
+    }
 };
 
 
@@ -88,6 +94,18 @@ BOOST_AUTO_TEST_CASE( Rectifier )
 BOOST_AUTO_TEST_CASE( Chirp )
 {
     TestNetlist( "chirp" );
+}
+
+
+BOOST_AUTO_TEST_CASE( Opamp )
+{
+    TestNetlist( "opamp" );
+}
+
+
+BOOST_AUTO_TEST_CASE( NpnCeAmp )
+{
+    TestNetlist( "npn_ce_amp" );
 }
 
 

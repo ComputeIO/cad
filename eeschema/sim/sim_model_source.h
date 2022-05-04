@@ -48,8 +48,9 @@ private:
 
     static const std::vector<PARAM::INFO>& makeParams( TYPE aType );
 
-    static std::vector<PARAM::INFO> makePulse( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makeDc( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeSin( wxString aPrefix, wxString aUnit );
+    static std::vector<PARAM::INFO> makePulse( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeExp( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeSfam( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeSffm( wxString aPrefix, wxString aUnit );

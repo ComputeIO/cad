@@ -75,19 +75,13 @@ bool NETLIST_EXPORTER_SPICE::GenerateNetlist( OUTPUTFORMATTER& aFormatter, unsig
 
     aFormatter.Print( 0, ".title %s\n", TO_UTF8( m_title ) );
 
-    if( aNetlistOptions & OPTION_SAVE_ALL_VOLTAGES )
-        aFormatter.Print( 0, ".save all\n" );
-
-    if( aNetlistOptions & OPTION_SAVE_ALL_CURRENTS )
-        aFormatter.Print( 0, ".probe alli\n" );
-
     writeIncludes( aFormatter, aNetlistOptions );
     writeModels( aFormatter );
-    writeDirectives( aFormatter );
+    writeDirectives( aFormatter, aNetlistOptions );
     writeItems( aFormatter );
 
     aFormatter.Print( 0, ".end\n" );
-    
+
     return true;
 }
 
@@ -98,6 +92,9 @@ bool NETLIST_EXPORTER_SPICE::ReadSchematicAndLibraries( unsigned aNetlistOptions
     int notConnectedCounter = 1;
 
     ReadDirectives();
+
+    m_nets.clear();
+    m_items.clear();
 
     for( unsigned int sheetIndex = 0; sheetIndex < m_schematic->GetSheets().size(); ++sheetIndex )
     {
@@ -120,7 +117,7 @@ bool NETLIST_EXPORTER_SPICE::ReadSchematicAndLibraries( unsigned aNetlistOptions
             readLibraryField( *symbol, item );
             readNameField( *symbol, item );
             readEnabledField( *symbol, item );
-            
+
             if( !readRefName( sheet, *symbol, item, refNames ) )
                 return false;
 
@@ -136,7 +133,7 @@ bool NETLIST_EXPORTER_SPICE::ReadSchematicAndLibraries( unsigned aNetlistOptions
 }
 
 
-void NETLIST_EXPORTER_SPICE::ReplaceForbiddenChars( wxString& aNetName ) const
+void NETLIST_EXPORTER_SPICE::ReplaceForbiddenChars( wxString& aNetName )
 {
     aNetName.Replace( "(", "_" );
     aNetName.Replace( ")", "_" );
@@ -146,7 +143,7 @@ void NETLIST_EXPORTER_SPICE::ReplaceForbiddenChars( wxString& aNetName ) const
 
 wxString NETLIST_EXPORTER_SPICE::GetItemName( const wxString& aRefName ) const
 {
-    const std::list<SPICE_ITEM>& spiceItems = GetSpiceItems();
+    const std::list<SPICE_ITEM>& spiceItems = GetItems();
 
     auto it = std::find_if( spiceItems.begin(), spiceItems.end(),
                             [aRefName]( const SPICE_ITEM& aItem )
@@ -237,18 +234,15 @@ void NETLIST_EXPORTER_SPICE::readNameField( SCH_SYMBOL& aSymbol, SPICE_ITEM& aIt
     if( m_libraries.count( aItem.libraryPath ) )
     {
         const SIM_LIBRARY& library = *m_libraries.at( aItem.libraryPath );
+        const SIM_MODEL* baseModel = library.FindModel( modelName );
 
-        for( unsigned int i = 0; i < library.GetModelNames().size(); ++i )
+        if( baseModel )
         {
-            wxString curModelName = library.GetModelNames().at( i );
-
-            if( curModelName == modelName )
-            {
-                aItem.model = SIM_MODEL::Create( library.GetModels().at( i ),
-                                                 static_cast<int>( m_sortedSymbolPinList.size() ),
-                                                 aSymbol.GetFields() );
-                aItem.modelName = modelName;
-            }
+            aItem.model = SIM_MODEL::Create( *baseModel,
+                                             static_cast<int>( m_sortedSymbolPinList.size() ),
+                                             aSymbol.GetFields() );
+            aItem.modelName = modelName;
+            return;
         }
     }
 }
@@ -297,6 +291,7 @@ void NETLIST_EXPORTER_SPICE::readPins( SCH_SYMBOL& aSymbol, SPICE_ITEM& aItem,
             netName = wxString::Format( wxT( "NC_%.2u" ), notConnectedCounter++ );
 
         aItem.pins.push_back( netName );
+        m_nets.insert( netName );
     }
 }
 
@@ -356,8 +351,14 @@ void NETLIST_EXPORTER_SPICE::writeItems( OUTPUTFORMATTER& aFormatter )
 }
 
 
-void NETLIST_EXPORTER_SPICE::writeDirectives( OUTPUTFORMATTER& aFormatter )
+void NETLIST_EXPORTER_SPICE::writeDirectives( OUTPUTFORMATTER& aFormatter, unsigned aNetlistOptions )
 {
+    if( aNetlistOptions & OPTION_SAVE_ALL_VOLTAGES )
+        aFormatter.Print( 0, ".save all\n" );
+
+    if( aNetlistOptions & OPTION_SAVE_ALL_CURRENTS )
+        aFormatter.Print( 0, ".probe alli\n" );
+
     for( const wxString& directive : m_directives )
         aFormatter.Print( 0, "%s\n", TO_UTF8( directive ) );
 }

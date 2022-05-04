@@ -204,6 +204,7 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::NMOS_HISIMHV2:        return { DEVICE_TYPE::NMOS,   "HISIMHV2",       "HiSIM_HV2"                  };
     case TYPE::PMOS_HISIMHV2:        return { DEVICE_TYPE::PMOS,   "HISIMHV2",       "HiSIM_HV2"                  };
 
+    case TYPE::V_DC:                 return { DEVICE_TYPE::V,      "DC",             "DC",                        };
     case TYPE::V_SIN:                return { DEVICE_TYPE::V,      "SIN",            "Sine"                       };
     case TYPE::V_PULSE:              return { DEVICE_TYPE::V,      "PULSE",          "Pulse"                      };
     case TYPE::V_EXP:                return { DEVICE_TYPE::V,      "EXP",            "Exponential"                };
@@ -219,6 +220,7 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::V_RANDPOISSON:        return { DEVICE_TYPE::V,      "RANDPOISSON",    "Random Poisson"             };
     case TYPE::V_BEHAVIORAL:         return { DEVICE_TYPE::V,      "=",              "Behavioral"                 };
 
+    case TYPE::I_DC:                 return { DEVICE_TYPE::I,      "DC",             "DC",                        };
     case TYPE::I_SIN:                return { DEVICE_TYPE::I,      "SIN",            "Sine"                       };
     case TYPE::I_PULSE:              return { DEVICE_TYPE::I,      "PULSE",          "Pulse"                      };
     case TYPE::I_EXP:                return { DEVICE_TYPE::I,      "EXP",            "Exponential"                };
@@ -334,6 +336,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::NMOS_HISIMHV2:        return { "M", "NMOS",   "",        73, false, "2.2.0" };
     case TYPE::PMOS_HISIMHV2:        return { "M", "PMOS",   "",        73, false, "2.2.0" };
 
+    case TYPE::V_DC:                 return { "V", ""        };
     case TYPE::V_SIN:                return { "V", "",       "SIN"      };
     case TYPE::V_PULSE:              return { "V", "",       "PULSE"    };
     case TYPE::V_EXP:                return { "V", "",       "EXP"      };
@@ -349,6 +352,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::V_RANDPOISSON:        return { "V", "",       "TRRANDOM" };
     case TYPE::V_BEHAVIORAL:         return { "B"  };
 
+    case TYPE::I_DC:                 return { "V", ""        };
     case TYPE::I_PULSE:              return { "V", "",       "PULSE"    };
     case TYPE::I_SIN:                return { "V", "",       "SIN"      };
     case TYPE::I_EXP:                return { "V", "",       "EXP"      };
@@ -772,7 +776,7 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
 
 wxString SIM_MODEL::GenerateSpiceItemName( const wxString& aRefName ) const
 {
-    if( aRefName.Length() >= 1 && aRefName.StartsWith( GetSpiceInfo().primitive) )
+    if( !aRefName.IsEmpty() && aRefName.StartsWith( GetSpiceInfo().primitive ) )
         return aRefName;
     else
         return GetSpiceInfo().primitive + aRefName;
@@ -849,10 +853,10 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::GetSpiceInfo() const
 }
 
 
-std::vector<wxString> SIM_MODEL::GetSpiceCurrentNames( const wxString& aRefName ) const
+std::vector<wxString> SIM_MODEL::GenerateSpiceCurrentNames( const wxString& aRefName ) const
 {
     LOCALE_IO toggle;
-    return { wxString::Format( "I(%s)", aRefName ) };
+    return { wxString::Format( "I(%s)", GenerateSpiceItemName( aRefName ) ) };
 }
 
 
@@ -907,6 +911,18 @@ bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField 
 void SIM_MODEL::AddPin( const PIN& aPin )
 {
     m_pins.push_back( aPin );
+}
+
+
+int SIM_MODEL::FindModelPinNumber( int aSymbolPinNumber )
+{
+    for( int i = 0; i < GetPinCount(); ++i )
+    {
+        if( GetPin( i ).symbolPinNumber == aSymbolPinNumber )
+            return i + 1;
+    }
+
+    return 0;
 }
 
 
@@ -999,6 +1015,8 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
     case TYPE::I_BEHAVIORAL:
         return std::make_unique<SIM_MODEL_BEHAVIORAL>( aType );
 
+    case TYPE::V_DC:
+    case TYPE::I_DC:
     case TYPE::V_SIN:
     case TYPE::I_SIN:
     case TYPE::V_PULSE:
