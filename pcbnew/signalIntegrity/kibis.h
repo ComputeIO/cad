@@ -202,9 +202,10 @@ public:
      * 
      *  @param aSupply Power supply corner
      *  @param aSpeed Speed corner
+     *  @param aIndex Index used to offset spice nodes / directives
      *  @return A multiline string with spice directives
      */
-    std::string SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+    std::string SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int aIndex );
 
     /** @brief Create waveform pairs
      * 

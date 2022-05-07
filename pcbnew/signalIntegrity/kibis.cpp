@@ -302,38 +302,68 @@ std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs(
     return pairs;
 }
 
-std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int aIndex )
 {
     std::string result;
+
+    std::string GC_GND = "GC_GND";
+    std::string PC_PWR = "PC_PWR";
+    std::string PU_PWR = "PU_PWR";
+    std::string PD_GND = "PD_GND";
+    std::string DIE = "DIE";
+    std::string DIEBUFF = "DIEBUFF";
+
+    GC_GND += std::to_string( aIndex );
+    PC_PWR += std::to_string( aIndex );
+    PU_PWR += std::to_string( aIndex );
+    PD_GND += std::to_string( aIndex );
+    DIE += std::to_string( aIndex );
+    DIEBUFF += std::to_string( aIndex );
+
+
+    std::string GC = "GC";
+    std::string PC = "PC";
+    std::string PU = "PU";
+    std::string PD = "PD";
+
+    GC += std::to_string( aIndex );
+    PC += std::to_string( aIndex );
+    PU += std::to_string( aIndex );
+    PD += std::to_string( aIndex );
 
     result = "\n";
     result += "VPWR POWER GND ";
     result += doubleToString( m_voltageRange->value[aSupply] );
     result += "\n";
-    result += "CCPOMP DIE GND ";
+    result += "CCPOMP " + DIE + " GND ";
     result += doubleToString( m_C_comp->value[ReverseLogic( aSpeed )] );
     result += "\n";
 
     if( HasGNDClamp() )
     {
-        result += m_GNDClamp->Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
+        result += m_GNDClamp->Spice( aIndex * 4 + 1, DIE, GC_GND, GC, aSupply );
+        result += "VmeasGC GND " + GC_GND + " 0\n";
     }
     if( HasPOWERClamp() )
     {
-        result += m_POWERClamp->Spice( 2, "PWR", "GND", "PWRClampDiode", aSupply );
+        result += m_POWERClamp->Spice( aIndex * 4 + 2, "POWER", DIE, PC, aSupply );
+        result += "VmeasPC POWER " + PC_PWR + " 0\n";
     }
     if( HasPulldown() )
     {
-        result += m_pulldown->Spice( 3, "DIE", "GND", "Pulldown", aSupply );
+        result += m_pulldown->Spice( aIndex * 4 + 3, DIEBUFF, PD_GND, PD, aSupply );
+        result += "VmeasPD GND " + PD_GND + " 0\n";
+        result += "BKD GND " + DIE + " i=( -i(VmeasPU) * v(KU) )\n";
     }
     if( HasPullup() )
     {
-        result += m_pullup->Spice( 4, "PWR", "DIE", "Pullup", aSupply );
+        result += m_pullup->Spice( aIndex * 4 + 4, PU_PWR, DIEBUFF, PU, aSupply );
+        result += "VmeasPU POWER " + PU_PWR + " 0\n";
+        result += "BKU POWER " + DIE + " i=( i(VmeasPD) * v(KD) )\n";
     }
 
-    result += "BKU POWER DIE i=( i(VmeasPD) * v(KD) )\n";
-    result += "BKD GND DIE i=( -i(VmeasPU) * v(KU) )\n";
-    result += "BDIE_M DIE_M GND v=v(DIE)\n";
+    result += "BDIEBUFF " + DIEBUFF + " GND v=v(" + DIE + ")\n";
+    result += "BDIE_M DIE_M GND v=v(" + DIE + ")\n";
 
     return result;
 }
@@ -1033,7 +1063,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         result += "RPIN 1 PIN ";
         result += doubleToString( R_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
-        result += "LPIN DIE 1 ";
+        result += "LPIN DIE0 1 ";
         result += doubleToString( L_pin->value[ReverseLogic( aSpeed )] );
         result += "\n";
         result += "CPIN PIN GND ";
@@ -1087,7 +1117,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
 
         result += ") \n";
 
-        result += aModel.SpiceDie( aSupply, aSpeed );
+        result += aModel.SpiceDie( aSupply, aSpeed, 0 );
 
         result += "\n.ENDS DRIVER\n\n";
 
@@ -1141,7 +1171,7 @@ bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_M
         result += "Vku KU GND pwl ( 0 0 )\n";
         result += "Vkd KD GND pwl ( 0 0 )\n";
 
-        result += aModel.SpiceDie( aSupply, aSpeed );
+        result += aModel.SpiceDie( aSupply, aSpeed, 0 );
 
         result += "\n.ENDS DRIVER\n\n";
 
