@@ -472,12 +472,12 @@ public:
     double             m_R_dut;
     double             m_C_dut;
     double             m_L_dut;
-    double             m_R_fixture;
-    double             m_C_fixture;
-    double             m_L_fixture;
-    double             m_V_fixture;
-    double             m_V_fixture_min;
-    double             m_V_fixture_max;
+    double             m_R_fixture = 0;
+    double             m_C_fixture = 0;
+    double             m_L_fixture = 0;
+    double             m_V_fixture = 0;
+    double             m_V_fixture_min = 0;
+    double             m_V_fixture_max = 0;
 };
 
 enum class IBIS_MODEL_POLARITY

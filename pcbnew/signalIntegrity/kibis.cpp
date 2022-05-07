@@ -76,8 +76,14 @@ KIBIS::KIBIS( std::string aFileName ) : KIBIS_ANY( this ), m_file( this )
     for( IbisComponent& iComponent : parser.m_ibisFile.m_components )
     {
         KIBIS_COMPONENT kComponent( this, iComponent, parser );
+
         status &= kComponent.m_valid;
         m_components.push_back( kComponent );
+
+        for( KIBIS_PIN& pin : m_components.back().m_pins )
+        {
+            pin.m_parent = &( m_components.back() );
+        }
     }
 
     m_valid = status;
@@ -105,11 +111,13 @@ bool KIBIS_FILE::Init( IbisParser& aParser )
 }
 
 KIBIS_PIN::KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin& aPin, IbisComponentPackage& aPackage,
-                      IbisParser& aParser, std::vector<KIBIS_MODEL>& aModels ) :
+                      IbisParser& aParser, KIBIS_COMPONENT* aParent,
+                      std::vector<KIBIS_MODEL>& aModels ) :
         KIBIS_ANY( aTopLevel )
 {
     m_signalName = aPin.m_signalName;
     m_pinNumber = aPin.m_pinName;
+    m_parent = aParent;
 
     R_pin = aPackage.m_Rpkg;
     L_pin = aPackage.m_Lpkg;
@@ -243,7 +251,8 @@ KIBIS_COMPONENT::KIBIS_COMPONENT( KIBIS* aTopLevel, IbisComponent& aSource, Ibis
             continue;
         }
 
-        KIBIS_PIN kPin( aTopLevel, iPin, aSource.m_package, aParser, m_topLevel->m_models );
+        KIBIS_PIN kPin( aTopLevel, iPin, aSource.m_package, aParser, nullptr,
+                        m_topLevel->m_models );
         status &= kPin.m_valid;
         m_pins.push_back( kPin );
     }
@@ -304,18 +313,27 @@ std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
     result += "CCPOMP DIE GND ";
     result += doubleToString( m_C_comp->value[ReverseLogic( aSpeed )] );
     result += "\n";
-    result += m_GNDClamp->Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
-    result += m_POWERClamp->Spice( 2, "DIE", "POWER", "POWERClampDiode", aSupply );
-    result += m_pulldown->Spice( 3, "DIEBUFF", "GND2", "Pulldown", aSupply );
-    result += m_pullup->Spice( 4, "POWER2", "DIEBUFF", "Pullup", aSupply );
-    result += "BDIEBUFF DIEBUFF GND v=v(DIE)\n";
 
-    result += "VmeasPD GND GND2 0\n";
-    result += "VmeasPU POWER POWER2 0\n";
+    if( HasGNDClamp() )
+    {
+        result += m_GNDClamp->Spice( 1, "DIE", "GND", "GNDClampDiode", aSupply );
+    }
+    if( HasPOWERClamp() )
+    {
+        result += m_POWERClamp->Spice( 2, "PWR", "GND", "PWRClampDiode", aSupply );
+    }
+    if( HasPulldown() )
+    {
+        result += m_pulldown->Spice( 3, "DIE", "GND", "Pulldown", aSupply );
+    }
+    if( HasPullup() )
+    {
+        result += m_pullup->Spice( 4, "PWR", "DIE", "Pullup", aSupply );
+    }
+
     result += "BKU POWER DIE i=( i(VmeasPD) * v(KD) )\n";
     result += "BKD GND DIE i=( -i(VmeasPU) * v(KU) )\n";
     result += "BDIE_M DIE_M GND v=v(DIE)\n";
-
 
     return result;
 }
@@ -428,7 +446,8 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
             VTtableEntry entry1 = risingWF.m_table->m_entries.at( 1 );
             double       deltaT = entry1.t - entry0.t;
 
-            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) - deltaT );
+            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) - deltaT
+                                     + aWave->m_delay );
             simul += " ";
             simul += "0";
             simul += " ";
@@ -436,7 +455,8 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
 
         for( VTtableEntry& entry : risingWF.m_table->m_entries )
         {
-            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) );
+            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff )
+                                     + aWave->m_delay );
             simul += " ";
             simul += doubleToString( entry.V->value[aSupply] - delta );
             simul += " ";
@@ -462,7 +482,7 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
             double       deltaT = entry1.t - entry0.t;
 
             simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton
-                                     - deltaT );
+                                     + aWave->m_delay - deltaT );
             simul += " ";
             simul += "0";
             simul += " ";
@@ -470,8 +490,8 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
 
         for( VTtableEntry& entry : fallingWF.m_table->m_entries )
         {
-            simul +=
-                    doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton );
+            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton
+                                     + aWave->m_delay );
             simul += " ";
             simul += doubleToString( entry.V->value[aSupply] );
             simul += " ";
@@ -534,7 +554,7 @@ std::string KIBIS_PIN::addDie( KIBIS_MODEL& aModel, IBIS_CORNER aSupply, int aIn
     }
     if( aModel.HasPOWERClamp() )
     {
-        simul += aModel.m_POWERClamp->Spice( aIndex * 4 + 2, DIE, PC_PWR, PC, aSupply );
+        simul += aModel.m_POWERClamp->Spice( aIndex * 4 + 2, PC_PWR, DIE, PC, aSupply );
     }
     if( aModel.HasPulldown() )
     {
@@ -740,8 +760,8 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL&                            aMod
         {
             Report( _( "Model has only one waveform pair, reduced accuracy" ),
                     RPT_SEVERITY_WARNING );
-            simul += "Bku KU 0 v=( (i(VmeasIout)+i(VmeasPC)+i(VmeasGC)+i(VmeasPD) "
-                     ")/(i(VmeasPD)-i(VmeasPU)))\n";
+            simul += "Bku KU 0 v=( (i(VmeasIout)-i(VmeasPC)-i(VmeasGC)-i(VmeasPD) "
+                     ")/(i(VmeasPU)-i(VmeasPD)))\n";
             simul += "Bkd KD 0 v=(1-v(KU))\n";
         }
 
@@ -776,11 +796,10 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL&                            aMod
         simul += ".control run \n";
         simul += "set filetype=ascii\n";
         simul += "run \n";
-        //simul += "plot v(x1.DIE) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC) "
-        //         "v(x1.POWER2)\n";
-        //simul += "plot v(KU) v(KD)\n";
+        simul += "plot v(x1.DIE0) i(VmeasIout) i(VmeasPD) i(VmeasPU) i(VmeasPC) i(VmeasGC)\n";
+        simul += "plot v(KU) v(KD)\n";
         simul += "write temp_output.spice v(KU) v(KD)\n"; // @TODO we might want to remove this...
-        simul += "quit\n";
+        //simul += "quit\n";
         simul += ".endc \n";
         simul += ".end \n";
 
@@ -989,8 +1008,23 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         std::string result;
         std::string tmp;
 
-        result += "\n";
-        result = "*Driver model generated by Kicad using Ibis data. ";
+        result = "\n*Driver model generated by Kicad using Ibis data. ";
+        result += "\n*Component: ";
+        if( m_parent )
+        {
+            result += m_parent->m_name;
+        }
+        result += "\n*Manufacturer: ";
+        if( m_parent )
+        {
+            result += m_parent->m_manufacturer;
+        }
+        result += "\n*Pin number: ";
+        result += m_pinNumber;
+        result += "\n*Signal name: ";
+        result += m_signalName;
+        result += "\n*Model: ";
+        result += aModel.m_name;
         result += "\n.SUBCKT ";
         result += aName;
         result += " PIN GND DIE_M \n"; // 1: POWER, 2:GND, 3:PIN

@@ -3,10 +3,10 @@
 
 int main( void )
 {
-    KIBIS* k1 = new KIBIS( "ibis_v1_1.ibs" );
-    KIBIS* k2 = new KIBIS( "ibis_v2_1.ibs" );
-    KIBIS* k3 = new KIBIS( "ibis_v2_1.pkg" );
-    KIBIS* k4 = new KIBIS( "sn74lvc541a.ibs" );
+    //KIBIS* k1 = new KIBIS( "ibis_v1_1.ibs" );
+    //KIBIS* k2 = new KIBIS( "ibis_v2_1.ibs" );
+    //KIBIS* k4 = new KIBIS( "sn74lvc541a.ibs" );
+    KIBIS* k4 = new KIBIS( "ibis_lan8670_1_2_1v3.ibs" );
 
     KIBIS_COMPONENT& comp = k4->m_components.at( 0 );
 
@@ -18,8 +18,11 @@ int main( void )
     }
 
 
-    KIBIS_PIN* pin1 = comp.getPin( "11" );
-    KIBIS_PIN* pin2 = comp.getPin( "2" );
+    //KIBIS_PIN* pin1 = comp.getPin( "11" );
+    //KIBIS_PIN* pin2 = comp.getPin( "2" );
+    KIBIS_PIN* pin1 = comp.getPin( "30" );
+    KIBIS_PIN* pin2 = comp.getPin( "31" );
+
 
     std::cout << "pin1 name: " << pin1->m_signalName << std::endl;
     std::cout << "pin2 name: " << pin2->m_signalName << std::endl;
@@ -31,17 +34,21 @@ int main( void )
     std::string*  tmp4 = new std::string();
 
     KIBIS_WAVEFORM_RECTANGULAR* wave = new KIBIS_WAVEFORM_RECTANGULAR();
-    wave->m_ton = 60e-9;
-    wave->m_toff = 60e-9;
+    wave->m_ton = 80e-9;
+    wave->m_toff = 80e-9;
     wave->m_cycles = 10;
+    wave->m_delay = 80e-9;
     //KIBIS_WAVEFORM_STUCK_HIGH* wave = new KIBIS_WAVEFORM_STUCK_HIGH();
 
     std::cout << "WAVEFORM TYPE IN QA: " << wave->GetType() << std::endl;
     std::cout << pin2->m_models.at(0)->m_name << std::endl;
     pin2->writeSpiceDevice( tmp4, "device_typ", *( pin2->m_models.at( 0 ) ), IBIS_CORNER::TYP,
                             IBIS_CORNER::TYP );
-    pin1->writeSpiceDriver( tmp1, "driver_typ", *( pin1->m_models.at( 0 ) ), IBIS_CORNER::TYP,
-                            IBIS_CORNER::TYP, KIBIS_ACCURACY::LEVEL_2, wave );
+
+    KIBIS_MODEL* model1 = pin1->m_models.at( 0 );
+    std::cout << "Model used for driver: " << model1->m_name << std::endl;
+    pin1->writeSpiceDriver( tmp1, "driver_typ", *( model1 ), IBIS_CORNER::TYP, IBIS_CORNER::TYP,
+                            KIBIS_ACCURACY::LEVEL_2, wave );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )

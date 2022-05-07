@@ -431,7 +431,7 @@ bool IbisModel::Check()
     }
     if ( isnan( m_vinl ) && !isNumberNA( m_vinl ) )
     {
-        Report( _( "Model: Vinh is invalid." ), RPT_SEVERITY_ERROR );
+        Report( _( "Model: Vinl is invalid." ), RPT_SEVERITY_ERROR );
         status = false;
     }
     if ( isnan( m_rref ) && !isNumberNA( m_rref ) )
@@ -843,7 +843,9 @@ bool IbisParser::parseDouble( double& aDest, std::string& aStr, bool aAllowModif
         case 'n': result *= 1e-9; break;
         case 'p': result *= 1e-12; break;
         case 'f': result *= 1e-15; break;
-        default: status = false; break;
+        default:
+            break;
+            // In some files, "vinh = 3.0V", therefore we can't return false in the default case
         }
     }
 
@@ -1001,6 +1003,13 @@ bool IbisParser::readString( std::string& aDest )
 
     // Remove extra whitespace characters
     int  len = aDest.length();
+
+    if( len < 1 )
+    {
+        Report( _( "Unable to read string, input is empty." ), RPT_SEVERITY_ERROR );
+        return false;
+    }
+
     char c = aDest[len - 1];
     int i = 0;
 
@@ -1146,7 +1155,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
         }
     }
 
-    if( aKeyword != "END" && status )
+    if( strcasecmp( aKeyword.c_str(), "End" ) && status )
     {
         //New context
         if( !strcasecmp( aKeyword.c_str(), "Component" ) )
@@ -1523,7 +1532,7 @@ bool IbisParser::readMatrix( std::shared_ptr<IBIS_MATRIX> aDest )
             {
                 IBIS_MATRIX* matrix;
 
-                if( !strcasecmp( str.c_str(), "Banded_Matrix" ) )
+                if( !strcasecmp( str.c_str(), "Banded_matrix" ) )
                 {
                     matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_BANDED( m_reporter ) );
                     aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
@@ -1531,7 +1540,7 @@ bool IbisParser::readMatrix( std::shared_ptr<IBIS_MATRIX> aDest )
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::BANDED;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
-                if( !strcasecmp( str.c_str(), "Full_Matrix" ) )
+                else if( !strcasecmp( str.c_str(), "Full_matrix" ) )
                 {
                     matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_FULL( m_reporter ) );
                     aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
@@ -1540,7 +1549,7 @@ bool IbisParser::readMatrix( std::shared_ptr<IBIS_MATRIX> aDest )
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::FULL;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
-                if( !strcasecmp( str.c_str(), "Sparse_Matrix" ) )
+                else if( !strcasecmp( str.c_str(), "Sparse_matrix" ) )
                 {
                     matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_SPARSE( m_reporter ) );
                     aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
@@ -2162,6 +2171,9 @@ bool IbisParser::readPin()
             pin.m_pinName = fields.at( 0 );
             pin.m_signalName = fields.at( 1 );
             pin.m_modelName = fields.at( 2 );
+            pin.m_Rcol = m_currentComponent->m_pins.back().m_Rcol;
+            pin.m_Lcol = m_currentComponent->m_pins.back().m_Lcol;
+            pin.m_Ccol = m_currentComponent->m_pins.back().m_Ccol;
 
             m_currentComponent->m_pins.push_back( pin );
         }
@@ -2184,6 +2196,7 @@ bool IbisParser::readPin()
 
             if( pin.m_Rcol == 0 || pin.m_Lcol == 0 || pin.m_Ccol == 0 )
             {
+                Report( _( "[Pin]: 6 values from a table with only 3" ), RPT_SEVERITY_ERROR );
                 status = false; // Did we just try to go from a 3 column table to a 6 ?
             }
             else
@@ -2192,6 +2205,7 @@ bool IbisParser::readPin()
                     || !parseDouble( pin.m_Lpin, fields.at( pin.m_Lcol ), true )
                     || !parseDouble( pin.m_Cpin, fields.at( pin.m_Ccol ), true ) )
                 {
+                    Report( _( "[Pin]: Can't read a R, L or C value" ), RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }

@@ -75,6 +75,7 @@ public:
     double m_ton;
     double m_toff;
     int    m_cycles;
+    double m_delay = 0;
 };
 
 class KIBIS_WAVEFORM_STUCK_HIGH : public KIBIS_WAVEFORM
@@ -247,7 +248,7 @@ class KIBIS_PIN : public KIBIS_ANY
 {
 public:
     KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin& aPin, IbisComponentPackage& aPackage,
-               IbisParser& aParser, std::vector<KIBIS_MODEL>& aModels );
+               IbisParser& aParser, KIBIS_COMPONENT* aParent, std::vector<KIBIS_MODEL>& aModels );
     /** @brief Name of the pin
      *  Examples : "VCC", "GPIOA", "CLK", etc...
      */
@@ -263,6 +264,8 @@ public:
     TypMinMaxValue* L_pin;
     /** @brief Capacitance from pin to GND */
     TypMinMaxValue* C_pin;
+
+    KIBIS_COMPONENT* m_parent;
 
     std::vector<double> m_t, m_Ku, m_Kd;
 
