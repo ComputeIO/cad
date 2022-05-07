@@ -65,13 +65,13 @@ int main( void )
     file.AddLine( *tmp4 );
 
     wxString simul = "";
-    simul += "\n x1 OUT_1 0 DIE_1 driver_typ \n";
+    simul += "\n x1 OUT_1 0 driver_typ \n";
     simul += "R1 OUT_1 GND 1k\n";
     simul += ".tran 0.1n 200n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
-    simul += "plot v(OUT_1) v(DIE_1) \n";
+    simul += "plot v(OUT_1)\n";
     //simul += "plot v(x1.KU) v(x1.KD) v(1) v(x1.DIEBUFF) \n";
     simul += ".endc \n";
     simul += ".end \n";
