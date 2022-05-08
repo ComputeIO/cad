@@ -28,10 +28,10 @@
 #include <sim/sim_model.h>
 
 
-class SIM_MODEL_RAWSPICE : public SIM_MODEL
+class SIM_MODEL_SPICE : public SIM_MODEL
 {
 public:
-    SIM_MODEL_RAWSPICE( TYPE aType );
+    SIM_MODEL_SPICE( TYPE aType );
 
     //bool ReadSpiceCode( const std::string& aSpiceCode ) override;
 

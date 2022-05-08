@@ -352,6 +352,8 @@ public:
     template <typename T>
     static TYPE ReadTypeFromFields( const std::vector<T>& aFields );
 
+    static TYPE InferTypeFromRef( const wxString& aRef );
+
 
     static std::unique_ptr<SIM_MODEL> Create( TYPE aType, int aSymbolPinCount = 0 );
     static std::unique_ptr<SIM_MODEL> Create( const std::string& aSpiceCode );
@@ -391,11 +393,11 @@ public:
 
 
     template <typename T>
-    void WriteFields( std::vector<T>& aFields );
+    void WriteFields( std::vector<T>& aFields ) const;
 
     // C++ doesn't allow virtual template methods, so we do this:
-    virtual void WriteDataSchFields( std::vector<SCH_FIELD>& aFields );
-    virtual void WriteDataLibFields( std::vector<LIB_FIELD>& aFields );
+    virtual void WriteDataSchFields( std::vector<SCH_FIELD>& aFields ) const;
+    virtual void WriteDataLibFields( std::vector<LIB_FIELD>& aFields ) const;
 
 
     virtual bool HasToIncludeSpiceLibrary() const { return GetBaseModel() && !HasOverrides(); }
@@ -453,7 +455,13 @@ public:
 protected:
     SIM_MODEL( TYPE aType );
 
+    template <typename T>
+    void WriteInferredDataFields( std::vector<T>& aFields, const wxString& aValue ) const;
+
     virtual wxString GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const;
+
+    wxString GenerateParamsField( const wxString& aPairSeparator ) const;
+    bool ParseParamsField( const wxString& aParamsField );
 
     wxString m_spiceCode;
 
@@ -466,7 +474,7 @@ private:
     void doReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields );
 
     template <typename T>
-    void doWriteFields( std::vector<T>& aFields );
+    void doWriteFields( std::vector<T>& aFields ) const;
 
 
     virtual std::vector<wxString> getPinNames() const { return {}; }
@@ -475,10 +483,6 @@ private:
     wxString generateTypeField() const;
 
     wxString generatePinsField() const;
-
-    
-    wxString generateParamsField( const wxString& aPairSeparator ) const;
-    bool parseParamsField( const wxString& aParamsField );
 
     // TODO: Rename.
     virtual bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,

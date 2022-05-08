@@ -442,10 +442,10 @@ template TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<LIB_FIELD>& aFiel
 template <typename T>
 TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
 {
-    wxString typeFieldValue = GetFieldValue( &aFields, TYPE_FIELD );
     wxString deviceTypeFieldValue = GetFieldValue( &aFields, DEVICE_TYPE_FIELD );
+    wxString typeFieldValue = GetFieldValue( &aFields, TYPE_FIELD );
 
-    if( !typeFieldValue.IsEmpty() )
+    if( !deviceTypeFieldValue.IsEmpty() )
     {
         for( TYPE type : TYPE_ITERATOR() )
         {
@@ -455,20 +455,59 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
                     return type;
             }
         }
-
-        return TYPE::NONE;
     }
 
+    if( !typeFieldValue.IsEmpty() )
+        return TYPE::NONE;
+
     // No type information. For passives we infer the model from the mandatory fields in this case.
+    return InferTypeFromRef( GetFieldValue( &aFields, REFERENCE_FIELD ) );
+}
 
-    wxString ref = GetFieldValue( &aFields, REFERENCE_FIELD );
 
-    if( ref.StartsWith( "R" ) )
-        return TYPE::R;
-    else if( ref.StartsWith( "C" ) )
-        return TYPE::C;
-    else if( ref.StartsWith( "L" ) )
-        return TYPE::L;
+TYPE SIM_MODEL::InferTypeFromRef( const wxString& aRef )
+{
+    static std::map<wxString, TYPE> refPrefixToType = {
+        { "R", TYPE::R },
+        { "C", TYPE::C },
+        { "L", TYPE::L },
+        { "VDC", TYPE::V_DC },
+        { "VSIN", TYPE::V_SIN },
+        { "VPULSE", TYPE::V_PULSE },
+        { "VEXP", TYPE::V_EXP },
+        { "VSFAM", TYPE::V_SFAM },
+        { "VSFFM", TYPE::V_SFFM },
+        { "VPWL", TYPE::V_PWL },
+        { "VWHITENOISE", TYPE::V_WHITENOISE },
+        { "VPINKNOISE", TYPE::V_PINKNOISE },
+        { "VBURSTNOISE", TYPE::V_BURSTNOISE },
+        { "VRANDUNIFORM", TYPE::V_RANDUNIFORM },
+        { "VRANDNORMAL", TYPE::V_RANDNORMAL },
+        { "VRANDEXP", TYPE::V_RANDEXP },
+        { "VRANDPOISSON", TYPE::V_RANDPOISSON },
+        { "VBEHAVIORAL", TYPE::V_BEHAVIORAL },
+        { "IDC", TYPE::I_DC },
+        { "ISIN", TYPE::I_SIN },
+        { "IPULSE", TYPE::I_PULSE },
+        { "IEXP", TYPE::I_EXP },
+        { "ISFAM", TYPE::I_SFAM },
+        { "ISFFM", TYPE::I_SFFM },
+        { "IPWL", TYPE::I_PWL },
+        { "IWHITENOISE", TYPE::I_WHITENOISE },
+        { "IPINKNOISE", TYPE::I_PINKNOISE },
+        { "IBURSTNOISE", TYPE::I_BURSTNOISE },
+        { "IRANDUNIFORM", TYPE::I_RANDUNIFORM },
+        { "IRANDNORMAL", TYPE::I_RANDNORMAL },
+        { "IRANDEXP", TYPE::I_RANDEXP },
+        { "IRANDPOISSON", TYPE::I_RANDPOISSON },
+        { "IBEHAVIORAL", TYPE::I_BEHAVIORAL }
+    };
+    
+    for( auto&& [prefix, type] : refPrefixToType )
+    {
+        if( aRef.StartsWith( prefix ) )
+            return type;
+    }
 
     return TYPE::NONE;
 }
@@ -713,26 +752,26 @@ void SIM_MODEL::ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FI
 
 
 template <>
-void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>& aFields )
+void SIM_MODEL::WriteFields( std::vector<SCH_FIELD>& aFields ) const
 {
     WriteDataSchFields( aFields );
 }
 
 
 template <>
-void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>& aFields )
+void SIM_MODEL::WriteFields( std::vector<LIB_FIELD>& aFields ) const
 {
     WriteDataLibFields( aFields );
 }
 
 
-void SIM_MODEL::WriteDataSchFields( std::vector<SCH_FIELD>& aFields )
+void SIM_MODEL::WriteDataSchFields( std::vector<SCH_FIELD>& aFields ) const
 {
     doWriteFields( aFields );
 }
 
 
-void SIM_MODEL::WriteDataLibFields( std::vector<LIB_FIELD>& aFields )
+void SIM_MODEL::WriteDataLibFields( std::vector<LIB_FIELD>& aFields ) const
 {
     doWriteFields( aFields );
 }
@@ -999,6 +1038,110 @@ SIM_MODEL::SIM_MODEL( TYPE aType ) : m_baseModel( nullptr ), m_type( aType )
 }
 
 
+template void SIM_MODEL::WriteInferredDataFields( std::vector<SCH_FIELD>& aFields,
+                                                  const wxString& aValue ) const;
+template void SIM_MODEL::WriteInferredDataFields( std::vector<LIB_FIELD>& aFields,
+                                                  const wxString& aValue ) const;
+
+template <typename T>
+void SIM_MODEL::WriteInferredDataFields( std::vector<T>& aFields, const wxString& aValue ) const
+{
+    if( GetPinCount() == 2
+        && GetPin( 0 ).symbolPinNumber == 1
+        && GetPin( 1 ).symbolPinNumber == 2 )
+    {
+        SetFieldValue( aFields, PINS_FIELD, "" );
+    }
+
+    SetFieldValue( aFields, VALUE_FIELD, aValue );
+    SetFieldValue( aFields, DEVICE_TYPE_FIELD, "" );
+    SetFieldValue( aFields, TYPE_FIELD, "" );
+    SetFieldValue( aFields, PARAMS_FIELD, "" );
+}
+
+
+wxString SIM_MODEL::GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const
+{
+    wxString result = "";
+
+    if( aIsFirst )
+        aIsFirst = false;
+    else
+        result << " ";
+
+    result << aParam.info.name + "=" + aParam.value->ToString();
+    return result;
+}
+
+
+wxString SIM_MODEL::GenerateParamsField( const wxString& aPairSeparator ) const
+{
+    bool isFirst = true;
+    wxString result = "";
+
+    for( const PARAM& param : m_params )
+    {
+        wxString valueStr = param.value->ToString();
+
+        if( valueStr.IsEmpty() )
+            continue;
+
+        result << GenerateParamValuePair( param, isFirst );
+    }
+
+    return result;
+}
+
+
+bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
+{
+    LOCALE_IO toggle;
+    
+    tao::pegtl::string_input<> in( aParamsField.ToStdString(), "from_content" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        // Using parse tree instead of actions because we don't care about performance that much,
+        // and having a tree greatly simplifies some things. 
+        root = tao::pegtl::parse_tree::parse<
+            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_MODEL_PARSER::NOTATION::SI>,
+            SIM_MODEL_PARSER::paramValuePairsSelector>
+                ( in );
+    }
+    catch( const tao::pegtl::parse_error& e )
+    {
+        return false;
+    }
+
+    wxASSERT( root );
+
+    wxString paramName = "";
+
+    for( const auto& node : root->children )
+    {
+        if( node->is_type<SIM_MODEL_PARSER::param>() )
+            paramName = node->string();
+        // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
+        // It doesn't seem too useful?
+        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
+                                                        SIM_MODEL_PARSER::NOTATION::SI>>() )
+        {
+            wxASSERT( !paramName.IsEmpty() );
+            // TODO: Shouldn't be named "...fromSpiceCode" here...
+            setParamFromSpiceCode( paramName, node->string(), SIM_VALUE_GRAMMAR::NOTATION::SI );
+        }
+        else
+        {
+            wxFAIL;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
 std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
 {
     switch( aType )
@@ -1052,7 +1195,7 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
         return std::make_unique<SIM_MODEL_XSPICE>( aType );
 
     case TYPE::SPICE:
-        return std::make_unique<SIM_MODEL_RAWSPICE>( aType );
+        return std::make_unique<SIM_MODEL_SPICE>( aType );
 
     default:
         return std::make_unique<SIM_MODEL_NGSPICE>( aType );
@@ -1078,17 +1221,17 @@ template <typename T>
 void SIM_MODEL::doReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
 {
     ParsePinsField( aSymbolPinCount, GetFieldValue( aFields, PINS_FIELD ) );
-    parseParamsField( GetFieldValue( aFields, PARAMS_FIELD ) );
+    ParseParamsField( GetFieldValue( aFields, PARAMS_FIELD ) );
 }
 
 
 template <typename T>
-void SIM_MODEL::doWriteFields( std::vector<T>& aFields )
+void SIM_MODEL::doWriteFields( std::vector<T>& aFields ) const
 {
     SetFieldValue( aFields, DEVICE_TYPE_FIELD, generateDeviceTypeField() );
     SetFieldValue( aFields, TYPE_FIELD, generateTypeField() );
     SetFieldValue( aFields, PINS_FIELD, generatePinsField() );
-    SetFieldValue( aFields, PARAMS_FIELD, generateParamsField( " " ) );
+    SetFieldValue( aFields, PARAMS_FIELD, GenerateParamsField( " " ) );
 }
 
 
@@ -1123,88 +1266,6 @@ wxString SIM_MODEL::generatePinsField() const
     }
 
     return result;
-}
-
-
-wxString SIM_MODEL::generateParamsField( const wxString& aPairSeparator ) const
-{
-    bool isFirst = true;
-    wxString result = "";
-
-    for( const PARAM& param : m_params )
-    {
-        wxString valueStr = param.value->ToString();
-
-        if( valueStr.IsEmpty() )
-            continue;
-
-        result << GenerateParamValuePair( param, isFirst );
-    }
-
-    return result;
-}
-
-
-wxString SIM_MODEL::GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const
-{
-    wxString result = "";
-
-    if( aIsFirst )
-        aIsFirst = false;
-    else
-        result << " ";
-
-    result << aParam.info.name + "=" + aParam.value->ToString();
-    return result;
-}
-
-
-bool SIM_MODEL::parseParamsField( const wxString& aParamsField )
-{
-    LOCALE_IO toggle;
-    
-    tao::pegtl::string_input<> in( aParamsField.ToStdString(), "from_content" );
-    std::unique_ptr<tao::pegtl::parse_tree::node> root;
-
-    try
-    {
-        // Using parse tree instead of actions because we don't care about performance that much,
-        // and having a tree greatly simplifies some things. 
-        root = tao::pegtl::parse_tree::parse<
-            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_MODEL_PARSER::NOTATION::SI>,
-            SIM_MODEL_PARSER::paramValuePairsSelector>
-                ( in );
-    }
-    catch( const tao::pegtl::parse_error& e )
-    {
-        return false;
-    }
-
-    wxASSERT( root );
-
-    wxString paramName = "";
-
-    for( const auto& node : root->children )
-    {
-        if( node->is_type<SIM_MODEL_PARSER::param>() )
-            paramName = node->string();
-        // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
-        // It doesn't seem too useful?
-        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
-                                                        SIM_MODEL_PARSER::NOTATION::SI>>() )
-        {
-            wxASSERT( !paramName.IsEmpty() );
-            // TODO: Shouldn't be named "...fromSpiceCode" here...
-            setParamFromSpiceCode( paramName, node->string(), SIM_VALUE_GRAMMAR::NOTATION::SI );
-        }
-        else
-        {
-            wxFAIL;
-            return false;
-        }
-    }
-
-    return true;
 }
 
 

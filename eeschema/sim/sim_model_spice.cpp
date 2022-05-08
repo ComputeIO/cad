@@ -27,13 +27,13 @@
 #include <pegtl/contrib/parse_tree.hpp>
 
 
-SIM_MODEL_RAWSPICE::SIM_MODEL_RAWSPICE( TYPE aType )
+SIM_MODEL_SPICE::SIM_MODEL_SPICE( TYPE aType )
     : SIM_MODEL( aType )
 {
 }
 
 
-bool SIM_MODEL_RAWSPICE::setParamFromSpiceCode( const wxString& aParamName,
+bool SIM_MODEL_SPICE::setParamFromSpiceCode( const wxString& aParamName,
                                                 const wxString& aParamValue,
                                                 SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {

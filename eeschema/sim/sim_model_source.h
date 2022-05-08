@@ -33,6 +33,12 @@ class SIM_MODEL_SOURCE : public SIM_MODEL
 public:
     SIM_MODEL_SOURCE( TYPE aType );
 
+    void ReadDataSchFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields ) override;
+    void ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields ) override;
+
+    void WriteDataSchFields( std::vector<SCH_FIELD>& aFields ) const override;
+    void WriteDataLibFields( std::vector<LIB_FIELD>& aFields ) const override;
+
     wxString GenerateSpiceModelLine( const wxString& aModelName ) const override;
     wxString GenerateSpiceItemLine( const wxString& aRefName,
                                     const wxString& aModelName,
@@ -47,6 +53,12 @@ protected:
     wxString GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const override;
 
 private:
+    template <typename T>
+    void inferredReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields );
+
+    template <typename T>
+    void inferredWriteDataFields( std::vector<T>& aFields ) const;
+
     std::vector<wxString> getPinNames() const override;
 
     static const std::vector<PARAM::INFO>& makeParams( TYPE aType );
@@ -65,6 +77,8 @@ private:
     static std::vector<PARAM::INFO> makeRandomNormal( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeRandomExp( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeRandomPoisson( wxString aPrefix, wxString aUnit );
+
+    bool m_isInferred;
 };
 
 #endif // SIM_MODEL_SOURCE_H
