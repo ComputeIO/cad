@@ -453,6 +453,8 @@ public:
 protected:
     SIM_MODEL( TYPE aType );
 
+    virtual wxString GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const;
+
     wxString m_spiceCode;
 
 private:

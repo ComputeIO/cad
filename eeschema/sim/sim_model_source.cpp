@@ -161,6 +161,15 @@ bool SIM_MODEL_SOURCE::SetParamValue( int aParamIndex, const wxString& aValue,
 }
 
 
+wxString SIM_MODEL_SOURCE::GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const
+{
+    if( aParam.value->ToString() == "0" )
+        return "";
+
+    return SIM_MODEL::GenerateParamValuePair( aParam, aIsFirst );
+}
+
+
 std::vector<wxString> SIM_MODEL_SOURCE::getPinNames() const
 {
     return { "+", "-" };

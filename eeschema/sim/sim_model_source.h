@@ -43,6 +43,9 @@ public:
 
     bool HasAutofill() const override { return true; }
 
+protected:
+    wxString GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const override;
+
 private:
     std::vector<wxString> getPinNames() const override;
 

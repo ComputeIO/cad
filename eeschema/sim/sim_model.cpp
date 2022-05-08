@@ -1138,16 +1138,23 @@ wxString SIM_MODEL::generateParamsField( const wxString& aPairSeparator ) const
         if( valueStr.IsEmpty() )
             continue;
 
-        if( isFirst )
-            isFirst = false;
-        else
-            result << " ";
-
-        result << param.info.name;
-        result << "=";
-        result << param.value->ToString();
+        result << GenerateParamValuePair( param, isFirst );
     }
 
+    return result;
+}
+
+
+wxString SIM_MODEL::GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const
+{
+    wxString result = "";
+
+    if( aIsFirst )
+        aIsFirst = false;
+    else
+        result << " ";
+
+    result << aParam.info.name + "=" + aParam.value->ToString();
     return result;
 }
 
