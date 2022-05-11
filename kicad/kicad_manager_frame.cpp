@@ -364,20 +364,16 @@ void KICAD_MANAGER_FRAME::OnSize( wxSizeEvent& event )
 
 void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
 {
-    if( aEvent.GetNumberOfFiles() == 1 )
+    wxString* files = aEvent.GetFiles();
+    for( int nb = 0; nb < aEvent.GetNumberOfFiles(); nb++ )
     {
-        const wxFileName fn = wxFileName( *aEvent.GetFiles() );
+        const wxFileName fn = wxFileName( files[nb] );
         if( fn.GetExt() == "kicad_pro" || fn.GetExt() == "pro" )
+        {
             LoadProject( fn );
-        else
-            KIDIALOG( this, "Extension of Kicad project is kicad_pro or pro.", KIDIALOG::KD_ERROR,
-                      "Extension of dropped file" )
-                    .ShowModal();
+            break;
+        }
     }
-    else
-        KIDIALOG( this, "Drop only 1 file to open project !", KIDIALOG::KD_ERROR,
-                  "Too many files dropped" )
-                .ShowModal();
 }
 
 bool KICAD_MANAGER_FRAME::canCloseWindow( wxCloseEvent& aEvent )
