@@ -54,6 +54,7 @@
 #include <wx/filedlg.h>
 #include <wx/dcclient.h>
 #include <atomic>
+#include <confirm.h>
 
 
 #include <../pcbnew/plugins/kicad/pcb_plugin.h>   // for SEXPR_BOARD_FILE_VERSION def
@@ -95,6 +96,10 @@ BEGIN_EVENT_TABLE( KICAD_MANAGER_FRAME, EDA_BASE_FRAME )
 
     // Special functions
     EVT_MENU( ID_INIT_WATCHED_PATHS, KICAD_MANAGER_FRAME::OnChangeWatchedPaths )
+
+    // Drop files event
+    EVT_DROP_FILES( KICAD_MANAGER_FRAME::OnDropFiles )
+
 END_EVENT_TABLE()
 
 
@@ -197,6 +202,8 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
 
     // Do not let the messages window have initial focus
     m_leftWin->SetFocus();
+
+    DragAcceptFiles( true );
 
     // Ensure the window is on top
     Raise();
@@ -355,6 +362,23 @@ void KICAD_MANAGER_FRAME::OnSize( wxSizeEvent& event )
     event.Skip();
 }
 
+void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
+{
+    if( aEvent.GetNumberOfFiles() == 1 )
+    {
+        const wxFileName fn = wxFileName( *aEvent.GetFiles() );
+        if( fn.GetExt() == "kicad_pro" || fn.GetExt() == "pro" )
+            LoadProject( fn );
+        else
+            KIDIALOG( this, "Extension of Kicad project is kicad_pro or pro.", KIDIALOG::KD_ERROR,
+                      "Extension of dropped file" )
+                    .ShowModal();
+    }
+    else
+        KIDIALOG( this, "Drop only 1 file to open project !", KIDIALOG::KD_ERROR,
+                  "Too many files dropped" )
+                .ShowModal();
+}
 
 bool KICAD_MANAGER_FRAME::canCloseWindow( wxCloseEvent& aEvent )
 {

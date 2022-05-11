@@ -28,6 +28,7 @@
 
 #include <wx/process.h>
 #include <kiway_player.h>
+#include <wx/dnd.h>
 
 class PROJECT_TREE;
 class PROJECT_TREE_PANE;
@@ -158,6 +159,7 @@ protected:
 private:
     void setupTools();
     void setupActions();
+    void OnDropFiles( wxDropFilesEvent& aEvent );
 
     APP_SETTINGS_BASE* config() const override;
 
