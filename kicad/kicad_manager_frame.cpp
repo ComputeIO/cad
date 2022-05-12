@@ -54,7 +54,6 @@
 #include <wx/filedlg.h>
 #include <wx/dcclient.h>
 #include <atomic>
-#include <confirm.h>
 
 
 #include <../pcbnew/plugins/kicad/pcb_plugin.h>   // for SEXPR_BOARD_FILE_VERSION def
