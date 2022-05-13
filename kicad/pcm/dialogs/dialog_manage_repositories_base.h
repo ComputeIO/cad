@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.10.1-0-g8feb16b3)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -43,22 +43,25 @@ class DIALOG_MANAGE_REPOSITORIES_BASE : public DIALOG_SHIM
 		wxBitmapButton* m_buttonMoveUp;
 		wxBitmapButton* m_buttonMoveDown;
 		wxBitmapButton* m_buttonRemove;
+		wxButton* m_addDefaultButton;
 		wxStdDialogButtonSizer* m_sdbSizer1;
 		wxButton* m_sdbSizer1Save;
 		wxButton* m_sdbSizer1Cancel;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnGridCellClicked( wxGridEvent& event ) { event.Skip(); }
 		virtual void OnAddButtonClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMoveUpButtonClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMoveDownButtonClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRemoveButtonClicked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnAddDefaultClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSaveClicked( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
 
 		DIALOG_MANAGE_REPOSITORIES_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Manage Repositories"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
+
 		~DIALOG_MANAGE_REPOSITORIES_BASE();
 
 };

@@ -26,6 +26,7 @@
 
 
 #define GRID_CELL_MARGIN 4
+#define DEFAULT_REPOSITORY_URL "https://repository.kicad.org/repository.json"
 
 
 DIALOG_MANAGE_REPOSITORIES::DIALOG_MANAGE_REPOSITORIES(
@@ -79,52 +80,57 @@ void DIALOG_MANAGE_REPOSITORIES::OnAddButtonClicked( wxCommandEvent& event )
 
     if( entry_dialog.ShowModal() == wxID_OK )
     {
-        PCM_REPOSITORY repository;
-        wxString       url = entry_dialog.GetValue();
+        wxString url = entry_dialog.GetValue();
+        addRepository( url );
+    }
+}
 
-        const auto find_row = [&]( const int col, const wxString& val )
-        {
-            for( int row = 0; row < m_grid->GetNumberRows(); row++ )
-            {
-                if( m_grid->GetCellValue( row, col ) == val )
-                    return row;
-            }
 
-            return -1;
-        };
+int DIALOG_MANAGE_REPOSITORIES::findRow( int aCol, const wxString& aVal )
+{
+    for( int row = 0; row < m_grid->GetNumberRows(); row++ )
+    {
+        if( m_grid->GetCellValue( row, aCol ) == aVal )
+            return row;
+    }
 
-        int matching_row;
+    return -1;
+}
 
-        if( ( matching_row = find_row( 1, url ) ) >= 0 )
-        {
-            selectRow( matching_row );
-        }
-        else
-        {
-            WX_PROGRESS_REPORTER reporter( GetParent(), wxT( "" ), 1 );
 
-            if( m_pcm->FetchRepository( url, repository, &reporter ) )
-            {
-                wxString name = repository.name;
-                int      increment = 1;
+void DIALOG_MANAGE_REPOSITORIES::addRepository( const wxString& aUrl )
+{
+    int matching_row;
 
-                while( find_row( 0, name ) >= 0 )
-                    name = wxString::Format( "%s (%d)", repository.name, increment++ );
+    if( ( matching_row = findRow( 1, aUrl ) ) >= 0 )
+    {
+        selectRow( matching_row );
+        return;
+    }
 
-                m_grid->Freeze();
+    PCM_REPOSITORY       repository;
+    WX_PROGRESS_REPORTER reporter( GetParent(), wxT( "" ), 1 );
 
-                m_grid->AppendRows();
-                int row = m_grid->GetNumberRows() - 1;
+    if( m_pcm->FetchRepository( aUrl, repository, &reporter ) )
+    {
+        wxString name = repository.name;
+        int      increment = 1;
 
-                m_grid->SetCellValue( row, 0, name );
-                m_grid->SetCellValue( row, 1, url );
+        while( findRow( 0, name ) >= 0 )
+            name = wxString::Format( "%s (%d)", repository.name, increment++ );
 
-                setColumnWidths();
-                m_grid->Thaw();
+        m_grid->Freeze();
 
-                selectRow( row );
-            }
-        }
+        m_grid->AppendRows();
+        int row = m_grid->GetNumberRows() - 1;
+
+        m_grid->SetCellValue( row, 0, name );
+        m_grid->SetCellValue( row, 1, aUrl );
+
+        setColumnWidths();
+        m_grid->Thaw();
+
+        selectRow( row );
     }
 }
 
@@ -250,8 +256,8 @@ std::vector<std::pair<wxString, wxString>> DIALOG_MANAGE_REPOSITORIES::GetData()
 
     for( int i = 0; i < m_grid->GetNumberRows(); i++ )
     {
-        result.push_back( std::make_pair( m_grid->GetCellValue( i, 0 ),
-                                          m_grid->GetCellValue( i, 1 ) ) );
+        result.push_back(
+                std::make_pair( m_grid->GetCellValue( i, 0 ), m_grid->GetCellValue( i, 1 ) ) );
     }
 
     return result;
@@ -261,4 +267,10 @@ std::vector<std::pair<wxString, wxString>> DIALOG_MANAGE_REPOSITORIES::GetData()
 void DIALOG_MANAGE_REPOSITORIES::OnSaveClicked( wxCommandEvent& event )
 {
     EndModal( wxID_SAVE );
+}
+
+
+void DIALOG_MANAGE_REPOSITORIES::OnAddDefaultClicked( wxCommandEvent& event )
+{
+    addRepository( DEFAULT_REPOSITORY_URL );
 }

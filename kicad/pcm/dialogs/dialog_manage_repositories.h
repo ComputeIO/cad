@@ -47,12 +47,16 @@ public:
 
     void SetData( const std::vector<std::pair<wxString, wxString>>& aData );
 
+    void OnAddDefaultClicked( wxCommandEvent& event ) override;
+
     std::vector<std::pair<wxString, wxString>> GetData();
 
 private:
     void swapRows( int aRowA, int aRowB );
     void selectRow( int aRow );
     void setColumnWidths();
+    void addRepository( const wxString& aUrl );
+    int findRow( int aCol, const wxString& aVal );
 
     std::shared_ptr<PLUGIN_CONTENT_MANAGER> m_pcm;
 };

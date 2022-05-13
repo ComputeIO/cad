@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.10.1-0-g8feb16b3)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -35,9 +35,9 @@ DIALOG_MANAGE_REPOSITORIES_BASE::DIALOG_MANAGE_REPOSITORIES_BASE( wxWindow* pare
 	m_grid->SetColSize( 1, 400 );
 	m_grid->EnableDragColMove( false );
 	m_grid->EnableDragColSize( true );
-	m_grid->SetColLabelSize( 22 );
 	m_grid->SetColLabelValue( 0, _("Name") );
 	m_grid->SetColLabelValue( 1, _("URL") );
+	m_grid->SetColLabelSize( 22 );
 	m_grid->SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
 
 	// Rows
@@ -70,6 +70,12 @@ DIALOG_MANAGE_REPOSITORIES_BASE::DIALOG_MANAGE_REPOSITORIES_BASE( wxWindow* pare
 	bButtonsSizer->Add( m_buttonRemove, 0, 0, 5 );
 
 
+	bButtonsSizer->Add( 20, 0, 1, wxEXPAND, 5 );
+
+	m_addDefaultButton = new wxButton( this, wxID_ANY, _("Add Default"), wxDefaultPosition, wxDefaultSize, 0 );
+	bButtonsSizer->Add( m_addDefaultButton, 0, 0, 5 );
+
+
 	m_TopSizer->Add( bButtonsSizer, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
 
 
@@ -97,6 +103,7 @@ DIALOG_MANAGE_REPOSITORIES_BASE::DIALOG_MANAGE_REPOSITORIES_BASE( wxWindow* pare
 	m_buttonMoveUp->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveUpButtonClicked ), NULL, this );
 	m_buttonMoveDown->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveDownButtonClicked ), NULL, this );
 	m_buttonRemove->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnRemoveButtonClicked ), NULL, this );
+	m_addDefaultButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnAddDefaultClicked ), NULL, this );
 	m_sdbSizer1Save->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnSaveClicked ), NULL, this );
 }
 
@@ -108,6 +115,7 @@ DIALOG_MANAGE_REPOSITORIES_BASE::~DIALOG_MANAGE_REPOSITORIES_BASE()
 	m_buttonMoveUp->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveUpButtonClicked ), NULL, this );
 	m_buttonMoveDown->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveDownButtonClicked ), NULL, this );
 	m_buttonRemove->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnRemoveButtonClicked ), NULL, this );
+	m_addDefaultButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnAddDefaultClicked ), NULL, this );
 	m_sdbSizer1Save->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnSaveClicked ), NULL, this );
 
 }
