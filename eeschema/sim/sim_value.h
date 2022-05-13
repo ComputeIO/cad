@@ -165,7 +165,7 @@ namespace SIM_VALUE_GRAMMAR
     template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct number : seq<significand<ValueType>,
                         opt<exponentWithPrefix>,
-                        opt<metricSuffix<ValueType, Notation>>> {};
+                        sor<metricSuffix<ValueType, Notation>, not_at<alnum>>> {};
 
     template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct numberGrammar : must<opt<number<ValueType, Notation>>, eof> {};

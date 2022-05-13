@@ -482,6 +482,12 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
 
     switch( param.info.type )
     {
+    case TYPE::BOOL:
+        // TODO.
+        prop = new wxBoolProperty( paramDescription, param.info.name );
+        prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
+        break;
+
     case TYPE::INT:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
                                  aParamIndex, SIM_VALUE::TYPE::INT );
@@ -492,9 +498,12 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
                                  aParamIndex, SIM_VALUE::TYPE::FLOAT );
         break;
 
-    case TYPE::BOOL:
-        prop = new wxBoolProperty( paramDescription, param.info.name );
-        prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
+    //case TYPE::COMPLEX:
+    //  break;
+
+    case TYPE::STRING:
+        prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
+                                 aParamIndex, SIM_VALUE::TYPE::STRING );
         break;
 
     default:

@@ -45,17 +45,15 @@ namespace SIM_MODEL_PARSER
     using namespace SIM_MODEL_GRAMMAR;
 
 
-    template <typename Rule> struct paramValuePairsSelector : std::false_type {};
+    template <typename Rule> struct fieldParamValuePairsSelector : std::false_type {};
 
-    template <> struct paramValuePairsSelector<param> : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SI>>
+    template <> struct fieldParamValuePairsSelector<param> : std::true_type {};
+    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SI>>
         : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>>
+    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>>
         : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SPICE>>
-        : std::true_type {};
-    template <> struct paramValuePairsSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>>
-        : std::true_type {};
+    template <> struct fieldParamValuePairsSelector<unquotedString> : std::true_type {};
+    template <> struct fieldParamValuePairsSelector<quotedString> : std::true_type {};
 
 
     template <typename Rule> struct spiceUnitSelector : std::false_type {};
@@ -140,7 +138,7 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::SW_V:                 return { DEVICE_TYPE::SW,     "V",              "Voltage-controlled"         };
     case TYPE::SW_I:                 return { DEVICE_TYPE::SW,     "I",              "Current-controlled"         };
 
-    case TYPE::D:                return { DEVICE_TYPE::D,      "",               ""                           };
+    case TYPE::D:                    return { DEVICE_TYPE::D,      "",               ""                           };
     
     case TYPE::NPN_GUMMELPOON:       return { DEVICE_TYPE::NPN,    "GUMMELPOON",     "Gummel-Poon"                };
     case TYPE::PNP_GUMMELPOON:       return { DEVICE_TYPE::PNP,    "GUMMELPOON",     "Gummel-Poon"                };
@@ -461,7 +459,12 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
         return TYPE::NONE;
 
     // No type information. For passives we infer the model from the mandatory fields in this case.
-    return InferTypeFromRef( GetFieldValue( &aFields, REFERENCE_FIELD ) );
+    TYPE typeFromRef = InferTypeFromRef( GetFieldValue( &aFields, REFERENCE_FIELD ) );
+    if( typeFromRef != TYPE::NONE )
+        return typeFromRef;
+
+    // Finally, try to infer the model from legacy fields, if present.
+    return InferTypeFromLegacyFields( aFields );
 }
 
 
@@ -510,6 +513,21 @@ TYPE SIM_MODEL::InferTypeFromRef( const wxString& aRef )
     }
 
     return TYPE::NONE;
+}
+
+
+template <typename T>
+TYPE SIM_MODEL::InferTypeFromLegacyFields( const std::vector<T>& aFields )
+{
+    if( !GetFieldValue( &aFields, SIM_MODEL_SPICE::LEGACY_TYPE_FIELD ).IsEmpty()
+        || !GetFieldValue( &aFields, SIM_MODEL_SPICE::LEGACY_MODEL_FIELD ).IsEmpty()
+        || !GetFieldValue( &aFields, SIM_MODEL_SPICE::LEGACY_ENABLED_FIELD ).IsEmpty()
+        || !GetFieldValue( &aFields, SIM_MODEL_SPICE::LEGACY_LIB_FIELD ).IsEmpty() )
+    {
+        return TYPE::SPICE;
+    }
+    else
+        return TYPE::NONE;
 }
 
 
@@ -815,10 +833,10 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
 
 wxString SIM_MODEL::GenerateSpiceItemName( const wxString& aRefName ) const
 {
-    if( !aRefName.IsEmpty() && aRefName.StartsWith( GetSpiceInfo().primitive ) )
+    if( !aRefName.IsEmpty() && aRefName.StartsWith( GetSpiceInfo().itemType ) )
         return aRefName;
     else
-        return GetSpiceInfo().primitive + aRefName;
+        return GetSpiceInfo().itemType + aRefName;
 }
 
 
@@ -896,54 +914,6 @@ std::vector<wxString> SIM_MODEL::GenerateSpiceCurrentNames( const wxString& aRef
 {
     LOCALE_IO toggle;
     return { wxString::Format( "I(%s)", GenerateSpiceItemName( aRefName ) ) };
-}
-
-
-bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField )
-{
-    // Default pin sequence: model pins are the same as symbol pins.
-    // Excess model pins are set as Not Connected.
-    for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
-    {
-        if( i < aSymbolPinCount )
-            AddPin( { getPinNames().at( i ), i + 1 } );
-        else
-            AddPin( { getPinNames().at( i ), PIN::NOT_CONNECTED } );
-    }
-
-    if( aPinsField.IsEmpty() )
-        return true;
-
-    LOCALE_IO toggle;
-
-    tao::pegtl::string_input<> in( aPinsField.ToStdString(), "from_content" );
-    std::unique_ptr<tao::pegtl::parse_tree::node> root;
-
-    try
-    {
-        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::pinSequenceGrammar,
-                                             SIM_MODEL_PARSER::pinSequenceSelector>( in );
-    }
-    catch( const tao::pegtl::parse_error& e )
-    {
-        return false;
-    }
-
-    wxASSERT( root );
-
-    if( static_cast<int>( root->children.size() ) != GetPinCount() )
-        return false;
-
-    for( unsigned int i = 0; i < root->children.size(); ++i )
-    {
-        if( root->children.at( i )->string() == "X" )
-            SetPinSymbolPinNumber( static_cast<int>( i ), PIN::NOT_CONNECTED );
-        else
-            SetPinSymbolPinNumber( static_cast<int>( i ),
-                                   std::stoi( root->children.at( i )->string() ) );
-    }
-
-    return true;
 }
 
 
@@ -1105,8 +1075,8 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
         // Using parse tree instead of actions because we don't care about performance that much,
         // and having a tree greatly simplifies some things. 
         root = tao::pegtl::parse_tree::parse<
-            SIM_MODEL_PARSER::paramValuePairsGrammar<SIM_MODEL_PARSER::NOTATION::SI>,
-            SIM_MODEL_PARSER::paramValuePairsSelector>
+            SIM_MODEL_PARSER::fieldParamValuePairsGrammar,
+            SIM_MODEL_PARSER::fieldParamValuePairsSelector>
                 ( in );
     }
     catch( const tao::pegtl::parse_error& e )
@@ -1124,18 +1094,81 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
             paramName = node->string();
         // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
         // It doesn't seem too useful?
-        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
-                                                        SIM_MODEL_PARSER::NOTATION::SI>>() )
+        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::INT,
+                                                        SIM_MODEL_PARSER::NOTATION::SI>>()
+            || node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
+                                                      SIM_MODEL_PARSER::NOTATION::SI>>()
+            || node->is_type<SIM_MODEL_PARSER::unquotedString>() )
         {
             wxASSERT( !paramName.IsEmpty() );
             // TODO: Shouldn't be named "...fromSpiceCode" here...
+
             setParamFromSpiceCode( paramName, node->string(), SIM_VALUE_GRAMMAR::NOTATION::SI );
+        }
+        else if( node->is_type<SIM_MODEL_PARSER::quotedString>() )
+        {
+            wxASSERT( !paramName.IsEmpty() );
+
+            wxString str = node->string();
+
+            // Unescape quotes.
+            str.Replace( "\\\"", "\"" );
+
+            setParamFromSpiceCode( paramName, str, SIM_VALUE_GRAMMAR::NOTATION::SI );
         }
         else
         {
             wxFAIL;
             return false;
         }
+    }
+
+    return true;
+}
+
+
+bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField )
+{
+    // Default pin sequence: model pins are the same as symbol pins.
+    // Excess model pins are set as Not Connected.
+    for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
+    {
+        if( i < aSymbolPinCount )
+            AddPin( { getPinNames().at( i ), i + 1 } );
+        else
+            AddPin( { getPinNames().at( i ), PIN::NOT_CONNECTED } );
+    }
+
+    if( aPinsField.IsEmpty() )
+        return true;
+
+    LOCALE_IO toggle;
+
+    tao::pegtl::string_input<> in( aPinsField.ToStdString(), "from_content" );
+    std::unique_ptr<tao::pegtl::parse_tree::node> root;
+
+    try
+    {
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::pinSequenceGrammar,
+                                             SIM_MODEL_PARSER::pinSequenceSelector>( in );
+    }
+    catch( const tao::pegtl::parse_error& e )
+    {
+        return false;
+    }
+
+    wxASSERT( root );
+
+    if( static_cast<int>( root->children.size() ) != GetPinCount() )
+        return false;
+
+    for( unsigned int i = 0; i < root->children.size(); ++i )
+    {
+        if( root->children.at( i )->string() == "X" )
+            SetPinSymbolPinNumber( static_cast<int>( i ), PIN::NOT_CONNECTED );
+        else
+            SetPinSymbolPinNumber( static_cast<int>( i ),
+                                   std::stoi( root->children.at( i )->string() ) );
     }
 
     return true;

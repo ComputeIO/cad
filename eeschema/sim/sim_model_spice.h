@@ -31,11 +31,41 @@
 class SIM_MODEL_SPICE : public SIM_MODEL
 {
 public:
+    DEFINE_ENUM_CLASS_WITH_ITERATOR( SPICE_PARAM,
+        TYPE,
+        MODEL,
+        LIB
+    )
+
+    static constexpr auto LEGACY_TYPE_FIELD = "Spice_Primitive";
+    static constexpr auto LEGACY_PINS_FIELD = "Spice_Node_Sequence";
+    static constexpr auto LEGACY_MODEL_FIELD = "Spice_Model";
+    static constexpr auto LEGACY_ENABLED_FIELD = "Spice_Netlist_Enabled";
+    static constexpr auto LEGACY_LIB_FIELD = "Spice_Lib_File";
+
+
     SIM_MODEL_SPICE( TYPE aType );
 
     //bool ReadSpiceCode( const std::string& aSpiceCode ) override;
+    void ReadDataSchFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields ) override;
+    void ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields ) override;
+
+    void WriteDataSchFields( std::vector<SCH_FIELD>& aFields ) const override;
+    void WriteDataLibFields( std::vector<LIB_FIELD>& aFields ) const override;
+
+
+    wxString GenerateSpiceModelLine( const wxString& aModelName ) const override;
+    wxString GenerateSpiceItemName( const wxString& aRefName ) const override;
+    wxString GenerateSpiceItemLine( const wxString& aRefName,
+                                    const wxString& aModelName,
+                                    const std::vector<wxString>& aPinNetNames ) const override;
 
 private:
+    std::vector<PARAM::INFO> makeParamInfos();
+
+    template <typename T>
+    void readLegacyDataFields( int aSymbolPinCount, const std::vector<T>* aFields );
+
     bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
                                 SIM_VALUE_GRAMMAR::NOTATION aNotation
                                     = SIM_VALUE_GRAMMAR::NOTATION::SPICE ) override;

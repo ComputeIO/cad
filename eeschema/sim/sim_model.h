@@ -31,7 +31,6 @@
 #include <lib_field.h>
 #include <wx/string.h>
 #include <map>
-#include <stdexcept>
 
 class SIM_LIBRARY;
 
@@ -39,6 +38,8 @@ class SIM_LIBRARY;
 namespace SIM_MODEL_GRAMMAR
 {
     using namespace SPICE_GRAMMAR;
+
+    struct sep : plus<space> {};
 
 
     struct pinNumber : sor<digits, one<'X'>> {};
@@ -51,11 +52,29 @@ namespace SIM_MODEL_GRAMMAR
                                      opt<sep>,
                                      eof> {};
 
-    template <NOTATION Notation>
-    struct paramValuePairsGrammar : must<opt<sep>,
-                                         paramValuePairs<Notation>,
-                                         opt<sep>,
-                                         eof> {};
+    struct unquotedString : plus<not_at<space>, any> {};
+    struct quotedString : seq<one<'"'>,
+                              until<seq<not_at<string<'\\',
+                                                      '"'>>,
+                                        one<'"'>>>> {};
+
+    struct fieldParamValuePair : seq<param,
+                                     opt<sep>,
+                                     one<'='>,
+                                     opt<sep>,
+                                     sor<number<SIM_VALUE::TYPE::INT, NOTATION::SI>,
+                                         number<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>,
+                                         quotedString,
+                                         unquotedString>> {};
+
+    struct fieldParamValuePairs : seq<opt<fieldParamValuePair>,
+                                      star<sep,
+                                           fieldParamValuePair>> {};
+
+    struct fieldParamValuePairsGrammar : must<opt<sep>,
+                                              fieldParamValuePairs,
+                                              opt<sep>,
+                                              eof> {};
 }
 
 
@@ -270,7 +289,7 @@ public:
 
     struct SPICE_INFO
     {
-        wxString primitive;
+        wxString itemType;
         wxString modelType = "";
         wxString inlineTypeString = "";
         int level = 0;
@@ -354,6 +373,9 @@ public:
 
     static TYPE InferTypeFromRef( const wxString& aRef );
 
+    template <typename T>
+    static TYPE InferTypeFromLegacyFields( const std::vector<T>& aFields );
+
 
     static std::unique_ptr<SIM_MODEL> Create( TYPE aType, int aSymbolPinCount = 0 );
     static std::unique_ptr<SIM_MODEL> Create( const std::string& aSpiceCode );
@@ -417,8 +439,6 @@ public:
     SPICE_INFO GetSpiceInfo() const;
     virtual std::vector<wxString> GenerateSpiceCurrentNames( const wxString& aRefName ) const;
 
-    bool ParsePinsField( int aSymbolPinCount, const wxString& aPinsField );
-
     void AddPin( const PIN& aPin );
     int FindModelPinNumber( int aSymbolPinNumber );
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
@@ -462,6 +482,8 @@ protected:
 
     wxString GenerateParamsField( const wxString& aPairSeparator ) const;
     bool ParseParamsField( const wxString& aParamsField );
+
+    bool ParsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
     wxString m_spiceCode;
 

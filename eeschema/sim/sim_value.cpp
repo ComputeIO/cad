@@ -546,7 +546,7 @@ wxString SIM_VALUE_INSTANCE<long>::ToString( NOTATION aNotation ) const
         long value = *m_value;
         long exponent = 0;
 
-        while( value % 1000 == 0 )
+        while( value != 0 && value % 1000 == 0 )
         {
             exponent += 3;
             value /= 1000;
