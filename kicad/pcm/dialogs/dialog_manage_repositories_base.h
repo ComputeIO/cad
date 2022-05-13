@@ -11,6 +11,7 @@
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
 class WX_GRID;
+class forward_declare;
 
 #include "dialog_shim.h"
 #include <wx/colour.h>
@@ -19,6 +20,7 @@ class WX_GRID;
 #include <wx/font.h>
 #include <wx/grid.h>
 #include <wx/gdicmn.h>
+#include <widgets/split_button.h>
 #include <wx/bmpbuttn.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -39,22 +41,19 @@ class DIALOG_MANAGE_REPOSITORIES_BASE : public DIALOG_SHIM
 
 	protected:
 		WX_GRID* m_grid;
-		wxBitmapButton* m_buttonAdd;
+		SPLIT_BUTTON* m_buttonAdd;
 		wxBitmapButton* m_buttonMoveUp;
 		wxBitmapButton* m_buttonMoveDown;
 		wxBitmapButton* m_buttonRemove;
-		wxButton* m_addDefaultButton;
 		wxStdDialogButtonSizer* m_sdbSizer1;
 		wxButton* m_sdbSizer1Save;
 		wxButton* m_sdbSizer1Cancel;
 
 		// Virtual event handlers, override them in your derived class
 		virtual void OnGridCellClicked( wxGridEvent& event ) { event.Skip(); }
-		virtual void OnAddButtonClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMoveUpButtonClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnMoveDownButtonClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRemoveButtonClicked( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnAddDefaultClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSaveClicked( wxCommandEvent& event ) { event.Skip(); }
 
 

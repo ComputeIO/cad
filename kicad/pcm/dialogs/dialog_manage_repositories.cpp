@@ -22,11 +22,11 @@
 #include "bitmaps/bitmap_types.h"
 #include "bitmaps/bitmaps_list.h"
 #include "grid_tricks.h"
+#include "kicad_settings.h"
 #include "widgets/wx_grid.h"
 
 
 #define GRID_CELL_MARGIN 4
-#define DEFAULT_REPOSITORY_URL "https://repository.kicad.org/repository.json"
 
 
 DIALOG_MANAGE_REPOSITORIES::DIALOG_MANAGE_REPOSITORIES(
@@ -38,6 +38,21 @@ DIALOG_MANAGE_REPOSITORIES::DIALOG_MANAGE_REPOSITORIES(
     m_buttonRemove->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
     m_buttonMoveUp->SetBitmap( KiBitmap( BITMAPS::small_up ) );
     m_buttonMoveDown->SetBitmap( KiBitmap( BITMAPS::small_down ) );
+
+    // For aesthetic reasons, we must set the size of m_buttonAdd to match the other bitmaps
+    // manually (for instance m_buttonRemove)
+    Layout(); // Needed at least on MSW to compute the actual buttons sizes, after initializing
+              // their bitmaps
+    m_buttonAdd->SetWidthPadding( 4 );
+    m_buttonAdd->SetMinSize( m_buttonRemove->GetSize() );
+
+    m_buttonAdd->Bind( wxEVT_BUTTON, &DIALOG_MANAGE_REPOSITORIES::OnAdd, this );
+
+    wxMenu*     addMenu = m_buttonAdd->GetSplitButtonMenu();
+    wxMenuItem* menuItem = addMenu->Append( wxID_ANY, _( "Add Default" ) );
+
+    addMenu->Bind( wxEVT_COMMAND_MENU_SELECTED, &DIALOG_MANAGE_REPOSITORIES::OnAddDefault, this,
+                   menuItem->GetId() );
 
     m_grid->PushEventHandler( new GRID_TRICKS( m_grid ) );
 
@@ -72,10 +87,9 @@ void DIALOG_MANAGE_REPOSITORIES::setColumnWidths()
 }
 
 
-void DIALOG_MANAGE_REPOSITORIES::OnAddButtonClicked( wxCommandEvent& event )
+void DIALOG_MANAGE_REPOSITORIES::OnAdd( wxCommandEvent& event )
 {
-    wxTextEntryDialog entry_dialog( this,
-                                    _( "Please enter fully qualified repository url" ),
+    wxTextEntryDialog entry_dialog( this, _( "Please enter fully qualified repository url" ),
                                     _( "Add repository" ) );
 
     if( entry_dialog.ShowModal() == wxID_OK )
@@ -132,6 +146,12 @@ void DIALOG_MANAGE_REPOSITORIES::addRepository( const wxString& aUrl )
 
         selectRow( row );
     }
+}
+
+
+void DIALOG_MANAGE_REPOSITORIES::OnAddDefault( wxCommandEvent& event )
+{
+    addRepository( PCM_DEFAULT_REPOSITORY_URL );
 }
 
 
@@ -267,10 +287,4 @@ std::vector<std::pair<wxString, wxString>> DIALOG_MANAGE_REPOSITORIES::GetData()
 void DIALOG_MANAGE_REPOSITORIES::OnSaveClicked( wxCommandEvent& event )
 {
     EndModal( wxID_SAVE );
-}
-
-
-void DIALOG_MANAGE_REPOSITORIES::OnAddDefaultClicked( wxCommandEvent& event )
-{
-    addRepository( DEFAULT_REPOSITORY_URL );
 }

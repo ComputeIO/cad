@@ -32,7 +32,6 @@ class DIALOG_MANAGE_REPOSITORIES : public DIALOG_MANAGE_REPOSITORIES_BASE
 {
 protected:
     // Handlers for DIALOG_MANAGE_REPOSITORIES_BASE events.
-    void OnAddButtonClicked( wxCommandEvent& event ) override;
     void OnRemoveButtonClicked( wxCommandEvent& event ) override;
     void OnMoveUpButtonClicked( wxCommandEvent& event ) override;
     void OnMoveDownButtonClicked( wxCommandEvent& event ) override;
@@ -47,7 +46,9 @@ public:
 
     void SetData( const std::vector<std::pair<wxString, wxString>>& aData );
 
-    void OnAddDefaultClicked( wxCommandEvent& event ) override;
+    void OnAdd( wxCommandEvent& event );
+
+    void OnAddDefault( wxCommandEvent& event );
 
     std::vector<std::pair<wxString, wxString>> GetData();
 
@@ -56,7 +57,7 @@ private:
     void selectRow( int aRow );
     void setColumnWidths();
     void addRepository( const wxString& aUrl );
-    int findRow( int aCol, const wxString& aVal );
+    int  findRow( int aCol, const wxString& aVal );
 
     std::shared_ptr<PLUGIN_CONTENT_MANAGER> m_pcm;
 };

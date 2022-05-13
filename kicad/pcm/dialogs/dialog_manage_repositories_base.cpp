@@ -54,7 +54,7 @@ DIALOG_MANAGE_REPOSITORIES_BASE::DIALOG_MANAGE_REPOSITORIES_BASE( wxWindow* pare
 	wxBoxSizer* bButtonsSizer;
 	bButtonsSizer = new wxBoxSizer( wxHORIZONTAL );
 
-	m_buttonAdd = new wxBitmapButton( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
+	m_buttonAdd = new SPLIT_BUTTON( this, wxID_ANY, _( "Add Existing" ) );
 	bButtonsSizer->Add( m_buttonAdd, 0, wxRIGHT, 5 );
 
 	m_buttonMoveUp = new wxBitmapButton( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
@@ -68,12 +68,6 @@ DIALOG_MANAGE_REPOSITORIES_BASE::DIALOG_MANAGE_REPOSITORIES_BASE( wxWindow* pare
 
 	m_buttonRemove = new wxBitmapButton( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW|0 );
 	bButtonsSizer->Add( m_buttonRemove, 0, 0, 5 );
-
-
-	bButtonsSizer->Add( 20, 0, 1, wxEXPAND, 5 );
-
-	m_addDefaultButton = new wxButton( this, wxID_ANY, _("Add Default"), wxDefaultPosition, wxDefaultSize, 0 );
-	bButtonsSizer->Add( m_addDefaultButton, 0, 0, 5 );
 
 
 	m_TopSizer->Add( bButtonsSizer, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
@@ -99,11 +93,9 @@ DIALOG_MANAGE_REPOSITORIES_BASE::DIALOG_MANAGE_REPOSITORIES_BASE( wxWindow* pare
 
 	// Connect Events
 	m_grid->Connect( wxEVT_GRID_CELL_LEFT_CLICK, wxGridEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnGridCellClicked ), NULL, this );
-	m_buttonAdd->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnAddButtonClicked ), NULL, this );
 	m_buttonMoveUp->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveUpButtonClicked ), NULL, this );
 	m_buttonMoveDown->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveDownButtonClicked ), NULL, this );
 	m_buttonRemove->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnRemoveButtonClicked ), NULL, this );
-	m_addDefaultButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnAddDefaultClicked ), NULL, this );
 	m_sdbSizer1Save->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnSaveClicked ), NULL, this );
 }
 
@@ -111,11 +103,9 @@ DIALOG_MANAGE_REPOSITORIES_BASE::~DIALOG_MANAGE_REPOSITORIES_BASE()
 {
 	// Disconnect Events
 	m_grid->Disconnect( wxEVT_GRID_CELL_LEFT_CLICK, wxGridEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnGridCellClicked ), NULL, this );
-	m_buttonAdd->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnAddButtonClicked ), NULL, this );
 	m_buttonMoveUp->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveUpButtonClicked ), NULL, this );
 	m_buttonMoveDown->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnMoveDownButtonClicked ), NULL, this );
 	m_buttonRemove->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnRemoveButtonClicked ), NULL, this );
-	m_addDefaultButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnAddDefaultClicked ), NULL, this );
 	m_sdbSizer1Save->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_MANAGE_REPOSITORIES_BASE::OnSaveClicked ), NULL, this );
 
 }
