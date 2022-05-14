@@ -28,6 +28,7 @@
 #include <plotters/plotter.h>
 #include <widgets/msgpanel.h>
 #include <bitmaps.h>
+#include <eda_doc.h>
 #include <string_utils.h>
 #include <sch_text.h>
 #include <schematic.h>
@@ -381,6 +382,20 @@ wxString SCH_TEXT::GetShownText( int aDepth ) const
 }
 
 
+void SCH_TEXT::DoHypertextMenu( EDA_DRAW_FRAME* aFrame ) const
+{
+    wxCHECK_MSG( IsHypertext(), /* void */,
+                 "Calling a hypertext menu on a SCH_TEXT with no hyperlink?" );
+
+    wxMenu menu;
+    menu.Append( 1, wxString::Format( _( "Open %s" ), m_hyperlink ) );
+    int sel = aFrame->GetPopupMenuSelectionFromUser( menu );
+
+    if( sel == 1 )
+        GetAssociatedDocument( aFrame, m_hyperlink, &aFrame->Prj() );
+}
+
+
 wxString SCH_TEXT::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
     return wxString::Format( _( "Graphic Text '%s'" ), KIUI::EllipsizeMenuText( GetShownText() ) );
@@ -467,6 +482,9 @@ void SCH_TEXT::Plot( PLOTTER* aPlotter, bool aBackground ) const
         aPlotter->Text( textpos, color, txt, GetTextAngle(), GetTextSize(), GetHorizJustify(),
                         GetVertJustify(), penWidth, IsItalic(), IsBold(), false, font );
     }
+
+    if( HasHyperlink() )
+        aPlotter->HyperlinkBoxURL( GetBoundingBox(), GetHyperlink() );
 }
 
 

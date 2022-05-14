@@ -713,7 +713,7 @@ void SCH_FIELD::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_I
 }
 
 
-void SCH_FIELD::DoHypertextMenu( EDA_DRAW_FRAME* aFrame )
+void SCH_FIELD::DoHypertextMenu( EDA_DRAW_FRAME* aFrame ) const
 {
     constexpr int START_ID = 1;
 
