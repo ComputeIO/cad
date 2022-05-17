@@ -35,7 +35,7 @@ if( WIN32 )
     endif()
 endif()
 
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     # setup bundle
     set( BITMAP2COMPONENT_RESOURCES bitmap2component.icns )
     set_source_files_properties( "${CMAKE_CURRENT_SOURCE_DIR}/bitmap2component.icns" PROPERTIES
@@ -46,7 +46,7 @@ if( APPLE )
     set( MACOSX_BUNDLE_NAME bitmap2component )
 endif()
 
-add_executable( bitmap2component WIN32 MACOSX_BUNDLE
+add_executable( bitmap2component WIN32
     ${BITMAP2COMPONENT_SRCS}
     ${BITMAP2COMPONENT_RESOURCES}
     )
@@ -57,9 +57,10 @@ target_link_libraries( bitmap2component
     potrace
     )
 
-if( APPLE )
+if( KICAD_MACOSX_APP_BUNDLE )
     set_target_properties( bitmap2component PROPERTIES
         MACOSX_BUNDLE_INFO_PLIST ${PROJECT_BINARY_DIR}/bitmap2component/Info.plist
+        MACOSX_BUNDLE TRUE
         )
 
     # put individual bundle outside of main bundle as a first step
