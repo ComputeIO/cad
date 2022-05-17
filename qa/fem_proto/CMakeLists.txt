@@ -105,8 +105,8 @@ set( QA_FEM_SRCS
     test_module.cpp
 
     # Shared between programs, but dependent on the BIU
-    ${CMAKE_SOURCE_DIR}/qa/common/test_format_units.cpp
-    ${CMAKE_SOURCE_DIR}/qa/common/test_array_options.cpp
+    ${CMAKE_SOURCE_DIR}/qa/unittests/common/test_format_units.cpp
+    ${CMAKE_SOURCE_DIR}/qa/unittests/common/test_array_options.cpp
 )
 
 add_executable( sparselizard_DC

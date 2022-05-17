@@ -438,7 +438,7 @@ void SPARSELIZARD_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aC
     if( !isPlated )
         return;
 
-    wxSize clearance( aClearance, aClearance );
+    VECTOR2I clearance( aClearance, aClearance );
 
     switch( aLayer )
     {
