@@ -429,24 +429,14 @@ bool KIBIS_MODEL::HasPOWERClamp()
 }
 
 std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNode2,
-                                          KIBIS_WAVEFORM_RECTANGULAR*             aWave,
-                                          std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                          IBIS_CORNER                             aSupply )
+                                             std::vector<std::pair<int, double>>     aBits,
+                                             std::pair<IbisWaveform*, IbisWaveform*> aPair,
+                                             IBIS_CORNER                             aSupply )
 {
     std::string simul;
 
     IbisWaveform risingWF = TrimWaveform( *( aPair.first ) );
     IbisWaveform fallingWF = TrimWaveform( *( aPair.second ) );
-
-    if( aWave->m_ton < risingWF.m_table->m_entries.back().t )
-    {
-        Report( _( "WARNING: rising edge is longer than on time." ), RPT_SEVERITY_WARNING );
-    }
-
-    if( aWave->m_toff < fallingWF.m_table->m_entries.back().t )
-    {
-        Report( _( "WARNING: falling edge is longer than off time." ), RPT_SEVERITY_WARNING );
-    }
 
     double deltaR = risingWF.m_table->m_entries.back().V->value[aSupply]
                     - risingWF.m_table->m_entries.at( 0 ).V->value[aSupply];
@@ -456,13 +446,21 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
     // Ideally, delta should be equal to zero.
     // It can be different from zero if the falling waveform does not start were the rising one ended.
     double delta = deltaR + deltaF;
-    double KR = deltaR * aWave->m_cycles;
 
-    for( int i = 0; i < aWave->m_cycles; i++ )
+    int i = 0;
+    for( std::pair<int, double> bit : aBits )
     {
-        simul += "Vrise";
+        IbisWaveform* WF;
+        double        timing = bit.second;
+
+        if( bit.first == 1 )
+            WF = &risingWF;
+        else
+            WF = &fallingWF;
+
+        simul += "Vstimuli";
         simul += std::to_string( i );
-        simul += " rise";
+        simul += " stimuli";
         simul += std::to_string( i );
         simul += " ";
         simul += aNode2;
@@ -471,61 +469,26 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
         if( i != 0 )
         {
             simul += "0 0 ";
-            VTtableEntry entry0 = risingWF.m_table->m_entries.at( 0 );
-            VTtableEntry entry1 = risingWF.m_table->m_entries.at( 1 );
+            VTtableEntry entry0 = WF->m_table->m_entries.at( 0 );
+            VTtableEntry entry1 = WF->m_table->m_entries.at( 1 );
             double       deltaT = entry1.t - entry0.t;
 
-            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) - deltaT
-                                     + aWave->m_delay );
+            simul += doubleToString( entry0.t + timing - deltaT );
             simul += " ";
             simul += "0";
             simul += " ";
         }
 
-        for( VTtableEntry& entry : risingWF.m_table->m_entries )
+        for( VTtableEntry& entry : WF->m_table->m_entries )
         {
-            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff )
-                                     + aWave->m_delay );
+            simul += doubleToString( entry.t + timing );
             simul += " ";
             simul += doubleToString( entry.V->value[aSupply] - delta );
             simul += " ";
         }
         simul += ")\n";
-    }
 
-    for( int i = 0; i < aWave->m_cycles; i++ )
-    {
-        simul += "Vfall";
-        simul += std::to_string( i );
-        simul += " fall";
-        simul += std::to_string( i );
-        simul += " ";
-        simul += aNode2;
-        simul += " pwl ( ";
-
-        if( i != 0 )
-        {
-            simul += "0 0 ";
-            VTtableEntry entry0 = fallingWF.m_table->m_entries.at( 0 );
-            VTtableEntry entry1 = fallingWF.m_table->m_entries.at( 1 );
-            double       deltaT = entry1.t - entry0.t;
-
-            simul += doubleToString( entry0.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton
-                                     + aWave->m_delay - deltaT );
-            simul += " ";
-            simul += "0";
-            simul += " ";
-        }
-
-        for( VTtableEntry& entry : fallingWF.m_table->m_entries )
-        {
-            simul += doubleToString( entry.t + i * ( aWave->m_ton + aWave->m_toff ) + aWave->m_ton
-                                     + aWave->m_delay );
-            simul += " ";
-            simul += doubleToString( entry.V->value[aSupply] );
-            simul += " ";
-        }
-        simul += ")\n";
+        i++;
     }
 
     simul += "bin ";
@@ -534,14 +497,11 @@ std::string KIBIS_MODEL::generateSquareWave( std::string aNode1, std::string aNo
     simul += aNode2;
     simul += " v=(";
 
-    for( int i = 0; i < aWave->m_cycles; i++ )
+    for( int i = 0; i < aBits.size(); i++ )
     {
-        simul += " v( rise";
+        simul += " v( stimuli";
         simul += std::to_string( i );
-        simul += " ) + v( fall";
-        simul += std::to_string( i );
-        simul += " ) ";
-        simul += "+";
+        simul += " ) + ";
     }
     simul += doubleToString(
             aPair.first->m_table->m_entries.at( 0 ).V->value[aSupply] ); // Add DC bias
@@ -712,9 +672,39 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL&                            aMode
     switch( aWave->GetType() )
     {
     case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
-        simul += aModel.generateSquareWave(
-                "DIE0", "GND", static_cast<KIBIS_WAVEFORM_RECTANGULAR*>( aWave ), aPair, aSupply );
+    {
+        std::vector<std::pair<int, double>> bits;
+        KIBIS_WAVEFORM_RECTANGULAR* rectWave = static_cast<KIBIS_WAVEFORM_RECTANGULAR*>( aWave );
+
+        IbisWaveform* risingWF = aPair.first;
+        IbisWaveform* fallingWF = aPair.second;
+
+        if( rectWave->m_ton < risingWF->m_table->m_entries.back().t )
+        {
+            Report( _( "WARNING: rising edge is longer than on time." ), RPT_SEVERITY_WARNING );
+        }
+
+        if( rectWave->m_toff < fallingWF->m_table->m_entries.back().t )
+        {
+            Report( _( "WARNING: falling edge is longer than off time." ), RPT_SEVERITY_WARNING );
+        }
+
+        for( int i = 0; i < rectWave->m_cycles; i++ )
+        {
+            std::pair<int, double> bit;
+            bit.first = 1;
+            bit.second = ( rectWave->m_ton + rectWave->m_toff ) * i + rectWave->m_delay;
+            bits.push_back( bit );
+
+            bit.first = 0;
+            bit.second = ( rectWave->m_ton + rectWave->m_toff ) * i + rectWave->m_delay
+                         + rectWave->m_ton;
+            bits.push_back( bit );
+        }
+
+        simul += aModel.generateSquareWave( "DIE0", "GND", bits, aPair, aSupply );
         break;
+    }
     case KIBIS_WAVEFORM_TYPE::STUCK_HIGH:
     {
         IbisWaveform* fallingWF = aPair.second;
@@ -845,7 +835,7 @@ void KIBIS_PIN::getKuKdNoWaveform( KIBIS_MODEL& aModel, KIBIS_WAVEFORM* aWave, I
     case KIBIS_WAVEFORM_TYPE::RECTANGULAR:
     {
         KIBIS_WAVEFORM_RECTANGULAR* rectWave = static_cast<KIBIS_WAVEFORM_RECTANGULAR*>( aWave );
-        for( int i = 0; i < 10; i++ )
+        for( int i = 0; i < rectWave->m_cycles; i++ )
         {
             ku.push_back( 0 );
             kd.push_back( 1 );

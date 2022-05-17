@@ -225,13 +225,14 @@ public:
      *  
      *  @param aNode1 node where the voltage is applied
      *  @param aNode2 Reference node
-     *  @param aWave Class holding information about the wave to generate
+     *  @param aBits The first member is the bit value ( 1 or 0 ).
+     *  The second member is the time of the transition edge.
      *  @param aPair @see waveformPairs()
      *  @param aSupply Power supply corner
      *  @return A multiline string with spice directives
      */
     std::string generateSquareWave( std::string aNode1, std::string aNode2,
-                                    KIBIS_WAVEFORM_RECTANGULAR*             aWave,
+                                    std::vector<std::pair<int, double>>     aBits,
                                     std::pair<IbisWaveform*, IbisWaveform*> aPair,
                                     IBIS_CORNER                             aSupply );
 
