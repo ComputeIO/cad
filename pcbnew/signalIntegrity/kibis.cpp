@@ -375,7 +375,7 @@ IbisWaveform KIBIS_MODEL::TrimWaveform( IbisWaveform& aIn )
 
     if( nbPoints < 2 )
     {
-        Report( _( "ERROR : waveform has less than two points" ), RPT_SEVERITY_ERROR );
+        Report( _( "waveform has less than two points" ), RPT_SEVERITY_ERROR );
         return out;
     }
 
@@ -607,7 +607,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
                 kd.push_back( kd_v );
                 t.push_back( t_v );
                 break;
-            default: Report( _( "ERROR : i should be between 0 and 2." ), RPT_SEVERITY_ERROR );
+            default: Report( _( "Error while reading temporary file" ), RPT_SEVERITY_ERROR );
             }
             i = ( i + 1 ) % 3;
         }
@@ -615,8 +615,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     }
     else
     {
-        Report( _( "ERROR : I asked for file creation, but I cannot find it" ),
-                RPT_SEVERITY_ERROR );
+        Report( _( "Error while creating temporary file" ), RPT_SEVERITY_ERROR );
     }
     std::remove( "temp_input.spice" );
     std::remove( "temp_output.spice" );
@@ -661,7 +660,8 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL&                            aMode
         simul << aPair.first->m_C_dut;
         simul += "\n";
         */
-        Report( "WARNING : I can't yet use DUT values. https://ibis.org/summits/nov16a/chen.pdf",
+        Report( _( "Kibis does not support DUT values yet. "
+                   "https://ibis.org/summits/nov16a/chen.pdf" ),
                 RPT_SEVERITY_WARNING );
     }
 
@@ -681,12 +681,12 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL&                            aMode
 
         if( rectWave->m_ton < risingWF->m_table->m_entries.back().t )
         {
-            Report( _( "WARNING: rising edge is longer than on time." ), RPT_SEVERITY_WARNING );
+            Report( _( "Rising edge is longer than on time." ), RPT_SEVERITY_WARNING );
         }
 
         if( rectWave->m_toff < fallingWF->m_table->m_entries.back().t )
         {
-            Report( _( "WARNING: falling edge is longer than off time." ), RPT_SEVERITY_WARNING );
+            Report( _( "Falling edge is longer than off time." ), RPT_SEVERITY_WARNING );
         }
 
         for( int i = 0; i < rectWave->m_cycles; i++ )
@@ -797,8 +797,7 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL&                            aMod
         }
         else
         {
-            Report( _( "ERROR: Driver needs at least a pullup or a pulldown" ),
-                    RPT_SEVERITY_ERROR );
+            Report( _( "Driver needs at least a pullup or a pulldown" ), RPT_SEVERITY_ERROR );
         }
 
         switch( aWave->GetType() )
@@ -966,7 +965,8 @@ void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL&                            aMo
 
         else if( !aModel.HasPullup() && aModel.HasPulldown() )
         {
-            Report( "I have two waveforms, but only one transistor. More equations than unknowns.",
+            Report( _( "There are two waveform pairs, but only one transistor. More equations than "
+                       "unknowns." ),
                     RPT_SEVERITY_WARNING );
             simul += "Bku KD 0 v=( ( i(VmeasIout0)+i(VmeasPC0)+i(VmeasGC0) )/(i(VmeasPD0)))\n";
             simul += "Bkd KU 0 v=0\n";
@@ -974,15 +974,15 @@ void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL&                            aMo
 
         else if( aModel.HasPullup() && !aModel.HasPulldown() )
         {
-            Report( "I have two waveforms, but only one transistor. More equations than unknowns.",
+            Report( _( "There are two waveform pairs, but only one transistor. More equations than "
+                       "unknowns." ),
                     RPT_SEVERITY_WARNING );
             simul += "Bku KU 0 v=( ( i(VmeasIout)+i(VmeasPC)+i(VmeasGC) )/(i(VmeasPU)))\n";
             simul += "Bkd KD 0 v=0\n";
         }
         else
         {
-            Report( _( "ERROR: Driver needs at least a pullup or a pulldown" ),
-                    RPT_SEVERITY_ERROR );
+            Report( _( "Driver needs at least a pullup or a pulldown" ), RPT_SEVERITY_ERROR );
         }
 
 
@@ -1065,7 +1065,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         {
             if( aAccuracy > KIBIS_ACCURACY::LEVEL_0 )
             {
-                Report( "Model has no waveform pair, using [Ramp] instead, poor accuracy",
+                Report( _( "Model has no waveform pair, using [Ramp] instead, poor accuracy" ),
                         RPT_SEVERITY_INFO );
             }
             getKuKdNoWaveform( aModel, aWave, aSupply );
@@ -1078,7 +1078,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         {
             if( wfPairs.size() > 2 || aAccuracy <= KIBIS_ACCURACY::LEVEL_2 )
             {
-                Report( "Model has more than 2 waveform pairs, using the first two.",
+                Report( _( "Model has more than 2 waveform pairs, using the first two." ),
                         RPT_SEVERITY_WARNING );
             }
             getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), aWave, aSupply, aSpeed );
@@ -1113,9 +1113,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         *aDest = result;
         break;
     }
-    default:
-        Report( _( "ERROR : Can't define a driver for that model type." ), RPT_SEVERITY_ERROR );
-        status = false;
+    default: Report( _( "Invalid model type for a driver." ), RPT_SEVERITY_ERROR ); status = false;
     }
 
     return status;
@@ -1167,9 +1165,7 @@ bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_M
         *aDest = result;
         break;
     }
-    default:
-        Report( _( "ERROR : Can't define a device for that model type." ), RPT_SEVERITY_ERROR );
-        status = false;
+    default: Report( _( "Invalid model type for a device" ), RPT_SEVERITY_ERROR ); status = false;
     }
 
     return status;
