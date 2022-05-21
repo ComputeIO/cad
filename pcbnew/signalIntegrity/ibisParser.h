@@ -651,6 +651,16 @@ public:
 private:
     std::string* m_continuingString;
 
+    /** @brief compare two strings without being case sensitive
+     * 
+     * Ibis: "The content of the files is case sensitive, except for reserved words and keywords."
+     * 
+     * @param a string to compare
+     * @param b string to compare
+     * @return true if the string are equal
+     */
+    bool compareIbisWord( const std::string& a, const std::string& b );
+
     /** @brief Parse a single keyword in the header context
      * 
      * @param aKeyword Keyword

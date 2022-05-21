@@ -33,6 +33,15 @@
 #include <sstream>
 #include <iterator>
 
+bool IbisParser::compareIbisWord( const std::string& a, const std::string& b )
+{
+    return std::equal(a.begin(), a.end(),
+                    b.begin(), b.end(),
+                    [](char a, char b) {
+                        return std::tolower(a) == std::tolower(b);
+                    });
+}
+
 bool IBIS_MATRIX_BANDED::Check()
 {
     bool status = true;
@@ -559,8 +568,8 @@ bool IbisHeader::Check()
 
     std::string ext = m_fileName.substr( m_fileName.length() - 4 );
 
-    if( !( !strcasecmp( ext.c_str(), ".ibs" )  || !strcasecmp( ext.c_str(), ".pkg" )
-           || !strcasecmp( ext.c_str(), ".ebd" ) || !strcasecmp( ext.c_str(), ".ims" ) ) )
+    if( !( !strcmp( ext.c_str(), ".ibs" ) || !strcmp( ext.c_str(), ".pkg" )
+           || !strcmp( ext.c_str(), ".ebd" ) || !strcmp( ext.c_str(), ".ims" ) ) )
     {
         Report( "Invalid file extension in [File Name]", RPT_SEVERITY_ERROR );
         status = false;
@@ -1166,10 +1175,10 @@ bool IbisParser::changeContext( std::string& aKeyword )
         }
     }
 
-    if( strcasecmp( aKeyword.c_str(), "End" ) && status )
+    if( !compareIbisWord( aKeyword.c_str(), "End" ) && status )
     {
         //New context
-        if( !strcasecmp( aKeyword.c_str(), "Component" ) )
+        if( compareIbisWord( aKeyword.c_str(), "Component" ) )
         {
             IbisComponent comp( m_reporter );
             storeString( comp.m_name, false );
@@ -1177,7 +1186,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
             m_currentComponent = &( m_ibisFile.m_components.back() );
             m_context = IBIS_PARSER_CONTEXT::COMPONENT;
         }
-        else if( !strcasecmp( aKeyword.c_str(), "Model_Selector" ) )
+        else if( compareIbisWord( aKeyword.c_str(), "Model_Selector" ) )
         {
             IbisModelSelector MS( m_reporter );
             storeString( MS.m_name, false );
@@ -1186,7 +1195,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
             m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
             m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
         }
-        else if( !strcasecmp( aKeyword.c_str(), "Model" ) )
+        else if( compareIbisWord( aKeyword.c_str(), "Model" ) )
         {
             IbisModel model( m_reporter );
             model.m_temperatureRange->value[IBIS_CORNER::MIN] = 0;
@@ -1198,7 +1207,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
             m_context = IBIS_PARSER_CONTEXT::MODEL;
             m_continue = IBIS_PARSER_CONTINUE::MODEL;
         }
-        else if( !strcasecmp( aKeyword.c_str(), "Define_Package_Model" ) )
+        else if( compareIbisWord( aKeyword.c_str(), "Define_Package_Model" ) )
         {
             IbisPackageModel PM( m_reporter );
             PM.m_resistanceMatrix = std::unique_ptr<IBIS_MATRIX>( new IBIS_MATRIX( m_reporter ) );
@@ -1219,7 +1228,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
             m_currentPackageModel = &( m_ibisFile.m_packageModels.back() );
             m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
         }
-        else if( !strcasecmp( aKeyword.c_str(), "End_Package_Model" ) )
+        else if( compareIbisWord( aKeyword.c_str(), "End_Package_Model" ) )
         {
             if( m_currentComponent != nullptr )
             {
@@ -1332,40 +1341,40 @@ bool IbisParser::readRamp()
 bool IbisParser::parseModel( std::string& aKeyword )
 {
     bool status = false;
-    
-    if( !strcasecmp( aKeyword.c_str(), "Voltage_Range" ) )
+
+    if( compareIbisWord( aKeyword.c_str(), "Voltage_Range" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_voltageRange ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Temperature_Range" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Temperature_Range" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_temperatureRange ) );
-    else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "GND_Clamp" ) )
         status = readIVtableEntry( *( m_currentModel->m_GNDClamp ) );
-    else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "POWER_Clamp" ) )
         status = readIVtableEntry( *( m_currentModel->m_POWERClamp ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Pulldown" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Pulldown" ) )
         status = readIVtableEntry( *( m_currentModel->m_pulldown ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Pullup" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Pullup" ) )
         status = readIVtableEntry( *( m_currentModel->m_pullup ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Rising_Waveform" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Rising_Waveform" ) )
         status = readWaveform( nullptr, IBIS_WAVEFORM_TYPE::RISING );
-    else if( !strcasecmp( aKeyword.c_str(), "Falling_Waveform" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Falling_Waveform" ) )
         status = readWaveform( nullptr, IBIS_WAVEFORM_TYPE::FALLING );
-    else if( !strcasecmp( aKeyword.c_str(), "Ramp" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Ramp" ) )
         status = readRamp();
-    else if( !strcasecmp( aKeyword.c_str(), "Pullup_Reference" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Pullup_Reference" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_pullupReference ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Pulldown_Reference" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Pulldown_Reference" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_pulldownReference ) );
-    else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp_Reference" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "POWER_Clamp_Reference" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_POWERClampReference ) );
-    else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp_Reference" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "GND_Clamp_Reference" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_GNDClampReference ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Rac" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Rac" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_Rac ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Cac" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Cac" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_Cac ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Rpower" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Rpower" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_Rpower ) );
-    else if( !strcasecmp( aKeyword.c_str(), "Rgnd" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Rgnd" ) )
         status = readTypMinMaxValue( *( m_currentModel->m_Rgnd ) );
     else
     {
@@ -1391,7 +1400,7 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED& aDe
     bool status = true;
     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
 
-    if( !strcasecmp( aKeyword.c_str(), "Bandwidth" ) )
+    if( compareIbisWord( aKeyword.c_str(), "Bandwidth" ) )
     {
         if( m_currentMatrix->m_type == IBIS_MATRIX_TYPE::BANDED )
         {
@@ -1407,7 +1416,7 @@ bool IbisParser::readMatrixBanded( std::string aKeyword, IBIS_MATRIX_BANDED& aDe
             Report( _( "Cannot specify a bandwidth for that kind of matrix" ), RPT_SEVERITY_ERROR );
         }
     }
-    if( strcasecmp( aKeyword.c_str(), "Dummy" ) )
+    if( !compareIbisWord( aKeyword.c_str(), "Dummy" ) )
     {
         int i;
         for( i = 0; i < aDest.m_bandwidth; i++ )
@@ -1440,7 +1449,7 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL& aDest )
     bool status = true;
     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
 
-    if( strcasecmp( aKeyword.c_str(), "Dummy" ) )
+    if( !compareIbisWord( aKeyword.c_str(), "Dummy" ) )
     {
         std::vector<std::string> values;
 
@@ -1483,7 +1492,7 @@ bool IbisParser::readMatrixSparse( std::string aKeyword, IBIS_MATRIX_SPARSE& aDe
 {
     bool status = true;
 
-    if( strcasecmp( aKeyword.c_str(), "Dummy"  ) )
+    if( !compareIbisWord( aKeyword.c_str(), "Dummy" ) )
     {
         int    subindex;
         double value;
@@ -1540,7 +1549,7 @@ bool IbisParser::readMatrix( std::shared_ptr<IBIS_MATRIX> aDest )
             {
                 IBIS_MATRIX* matrix;
 
-                if( !strcasecmp( str.c_str(), "Banded_matrix" ) )
+                if( compareIbisWord( str.c_str(), "Banded_matrix" ) )
                 {
                     matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_BANDED( m_reporter ) );
                     aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
@@ -1548,7 +1557,7 @@ bool IbisParser::readMatrix( std::shared_ptr<IBIS_MATRIX> aDest )
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::BANDED;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
-                else if( !strcasecmp( str.c_str(), "Full_matrix" ) )
+                else if( compareIbisWord( str.c_str(), "Full_matrix" ) )
                 {
                     matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_FULL( m_reporter ) );
                     aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
@@ -1557,7 +1566,7 @@ bool IbisParser::readMatrix( std::shared_ptr<IBIS_MATRIX> aDest )
                     m_currentMatrix->m_type = IBIS_MATRIX_TYPE::FULL;
                     m_continue = IBIS_PARSER_CONTINUE::MATRIX;
                 }
-                else if( !strcasecmp( str.c_str(), "Sparse_matrix" ) )
+                else if( compareIbisWord( str.c_str(), "Sparse_matrix" ) )
                 {
                     matrix = static_cast<IBIS_MATRIX*>( new IBIS_MATRIX_SPARSE( m_reporter ) );
                     aDest = static_cast<std::shared_ptr<IBIS_MATRIX>>( matrix );
@@ -1625,32 +1634,32 @@ bool IbisParser::parsePackageModelModelData( std::string& aKeyword )
 {
     bool status = true;
 
-    if( !strcasecmp( aKeyword.c_str(), "Resistance_Matrix" ) )
+    if( compareIbisWord( aKeyword.c_str(), "Resistance_Matrix" ) )
     {
         IBIS_MATRIX dest( m_reporter ), source( m_reporter );
         status &= readMatrix( m_currentPackageModel->m_resistanceMatrix );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Capacitance_Matrix" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Capacitance_Matrix" ) )
     {
         status &= readMatrix( m_currentPackageModel->m_capacitanceMatrix );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Inductance_Matrix" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Inductance_Matrix" ) )
     {
         status &= readMatrix( m_currentPackageModel->m_inductanceMatrix );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Bandwidth" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Bandwidth" ) )
     {
         status &= readMatrixBanded( aKeyword,
                                     *static_cast<IBIS_MATRIX_BANDED*>( m_currentMatrix.get() ) );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Row" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Row" ) )
     {
         status &= readInt( m_currentMatrixRow );
         m_currentMatrixRow--;        // The matrix starts at 0
         m_currentMatrixRowIndex = 0; // The matrix starts at 0*/
         m_continue = IBIS_PARSER_CONTINUE::MATRIX;
     }
-    else if( !strcasecmp( aKeyword.c_str(), "End_Model_Data" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "End_Model_Data" ) )
     {
         m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
         m_continue = IBIS_PARSER_CONTINUE::NONE;
@@ -1669,17 +1678,17 @@ bool IbisParser::parsePackageModel( std::string& aKeyword )
 {
     bool status = true;
 
-    if( !strcasecmp( aKeyword.c_str(), "Manufacturer" ) )
+    if( compareIbisWord( aKeyword.c_str(), "Manufacturer" ) )
         status &= storeString( m_currentPackageModel->m_manufacturer, false );
-    else if( !strcasecmp( aKeyword.c_str(), "OEM" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "OEM" ) )
         status &= storeString( m_currentPackageModel->m_OEM, false );
-    else if( !strcasecmp( aKeyword.c_str(), "Description" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Description" ) )
         status &= storeString( m_currentPackageModel->m_description, false );
-    else if( !strcasecmp( aKeyword.c_str(), "Number_of_Pins" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Number_of_Pins" ) )
         status &= readInt( m_currentPackageModel->m_numberOfPins );
-    else if( !strcasecmp( aKeyword.c_str(), "Pin_Numbers" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Pin_Numbers" ) )
         status &= readPackageModelPins();
-    else if( !strcasecmp( aKeyword.c_str(), "Model_Data" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Model_Data" ) )
     {
         m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL_MODELDATA;
         m_continue = IBIS_PARSER_CONTINUE::NONE;
@@ -1988,39 +1997,39 @@ bool IbisParser::parseHeader( std::string& aKeyword )
 {
     bool status = true;
 
-    if( !strcasecmp( aKeyword.c_str(), "IBIS_Ver" ) )
+    if( compareIbisWord( aKeyword.c_str(), "IBIS_Ver" ) )
     {
         status &= readDouble( m_ibisFile.m_header->m_ibisVersion );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Comment_char" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Comment_char" ) )
     {
         changeCommentChar();
     }
-    else if( !strcasecmp( aKeyword.c_str(), "File_Name" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "File_Name" ) )
     {
         storeString( m_ibisFile.m_header->m_fileName, false );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "File_Rev" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "File_Rev" ) )
     {
         status &= readDouble( m_ibisFile.m_header->m_fileRevision );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Source" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Source" ) )
     {
         storeString( m_ibisFile.m_header->m_source, true );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Notes" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Notes" ) )
     {
         storeString( m_ibisFile.m_header->m_notes, true );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Disclaimer" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Disclaimer" ) )
     {
         storeString( m_ibisFile.m_header->m_disclaimer, true );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Copyright" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Copyright" ) )
     {
         storeString( m_ibisFile.m_header->m_copyright, true );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Date" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Date" ) )
     {
         storeString( m_ibisFile.m_header->m_date, false );
     }
@@ -2038,23 +2047,23 @@ bool IbisParser::parseHeader( std::string& aKeyword )
 bool IbisParser::parseComponent( std::string& aKeyword )
 {
     bool status = true;
-    if( !strcasecmp( aKeyword.c_str(), "Manufacturer" ) )
+    if( compareIbisWord( aKeyword.c_str(), "Manufacturer" ) )
     {
         status &= storeString( m_currentComponent->m_manufacturer, true );
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Package" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Package" ) )
     {
         status &= readPackage();
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Pin" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Pin" ) )
     {
         status &= readPin();
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Pin_Mapping" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Pin_Mapping" ) )
     {
         status &= readPinMapping();
     }
-    else if( !strcasecmp( aKeyword.c_str(), "Diff_Pin" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Diff_Pin" ) )
     {
         status &= readDiffPin();
     }
@@ -2064,7 +2073,7 @@ bool IbisParser::parseComponent( std::string& aKeyword )
     {
         status &= ReadDieSupplyPads();
     }*/
-    else if( !strcasecmp( aKeyword.c_str(), "Package_Model" ) )
+    else if( compareIbisWord( aKeyword.c_str(), "Package_Model" ) )
     {
         status &= storeString( m_currentComponent->m_packageModel, true );
     }
