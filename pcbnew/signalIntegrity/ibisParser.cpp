@@ -1729,52 +1729,39 @@ bool IbisParser::readNumericSubparam( std::string aSubparam, double& aDest )
     std::string paramName;
     bool     status = true;
 
+    if( aSubparam.size() >= m_lineLength )
+    {
+        // Continuing would result in an overflow
+        return false;
+    }
+
     int old_index = m_lineIndex;
     m_lineIndex = 0;
-    if( aSubparam.size() < m_lineLength )
+
+    for( int i = 0; i < aSubparam.size(); i++ )
     {
-        for( int i = 0; i < aSubparam.size(); i++ )
-        {
-            paramName += m_buffer[m_lineOffset + m_lineIndex++];
-        }
-
-        if( !strcmp( paramName.c_str(), aSubparam.c_str() ) )
-        {
-            skipWhitespaces();
-            if( m_buffer[m_lineOffset + m_lineIndex++] == '=' )
-            {
-                skipWhitespaces();
-
-                std::string strValue;
-
-                if( !storeString( strValue, false ) )
-                {
-                    status = false;
-                }
-                else
-                {
-                    if( !parseDouble( aDest, strValue, true ) )
-                    {
-                        status = false;
-                    }
-                }
-            }
-            else
-            {
-                status = false;
-            }
-        }
-        else
-        {
-            status = false;
-        }
-    }
-    else
-    {
-        status = false;
+        paramName += m_buffer[m_lineOffset + m_lineIndex++];
     }
 
-    if( status == false )
+    if( strcmp( paramName.c_str(), aSubparam.c_str() ) )
+    {
+        m_lineIndex = old_index;
+        return false;
+    }
+
+    skipWhitespaces();
+
+    status &= m_buffer[m_lineOffset + m_lineIndex++] == '=';
+
+    if( status )
+    {
+        skipWhitespaces();
+        std::string strValue;
+        status &= storeString( strValue, false );
+        status &= status && parseDouble( aDest, strValue, true );
+    }
+
+    if( !status )
     {
         m_lineIndex = old_index;
     }
