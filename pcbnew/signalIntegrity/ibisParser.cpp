@@ -940,7 +940,6 @@ bool IbisParser::readDouble( double& aDest )
             Report( _( "Failed to read a double." ), RPT_SEVERITY_WARNING );
             status = false;
         }
-
     }
     else
     {
@@ -1756,9 +1755,7 @@ bool IbisParser::readNumericSubparam( std::string aSubparam, double& aDest )
     if( status )
     {
         skipWhitespaces();
-        std::string strValue;
-        status &= storeString( strValue, false );
-        status &= status && parseDouble( aDest, strValue, true );
+        status &= readDouble( aDest );
     }
 
     if( !status )
@@ -1778,31 +1775,15 @@ bool IbisParser::readTypMinMaxValue( TypMinMaxValue& aDest )
 
     std::string strValue;
 
+    if( !readDouble( aDest.value[IBIS_CORNER::TYP] ) )
+    {
+        Report( _( "Typ-Min-Max Values requires at least Typ." ), RPT_SEVERITY_ERROR );
+        return false;
+    }
 
-    if( !readWord( strValue ) )
-    {
-        status = false;
-    }
-    else
-    {
-        if( parseDouble( aDest.value[IBIS_CORNER::TYP], strValue, true ) )
-        {
-            if( readWord( strValue ) )
-            {
-                parseDouble( aDest.value[IBIS_CORNER::MIN], strValue, true );
-                
-                if( readWord( strValue ) )
-                {
-                    parseDouble( aDest.value[IBIS_CORNER::MAX], strValue, true );
-                }
-            }
-        }
-        else
-        {
-            status = false;
-            Report( _( "Typ-Min-Max Values requires at least Typ." ), RPT_SEVERITY_ERROR );
-        }
-    }
+    readDouble( aDest.value[IBIS_CORNER::MIN] );
+    readDouble( aDest.value[IBIS_CORNER::MAX] );
+
     return status;
 }
 
@@ -2347,14 +2328,7 @@ bool IbisParser::readIVtableEntry( IVtable& aDest )
     {
         std::string str;
 
-        if( !readWord( str ) )
-        {
-            status = false;
-        }
-        if( !parseDouble( entry.V, str, true ) )
-        {
-            status = false;
-        }
+        status &= readDouble( entry.V );
 
         if( status && readTypMinMaxValue( *( entry.I ) ) )
         {
@@ -2379,18 +2353,8 @@ bool IbisParser::readVTtableEntry( VTtable& aDest )
     if( m_lineIndex < m_lineLength )
     {
         std::string str;
-
-        if( readWord( str ) )
-        {
-            if( !parseDouble( entry.t, str, true ) || !readTypMinMaxValue( *( entry.V ) ) )
-            {
-                status = false;
-            }
-        }
-        else
-        {
-            status = false;
-        }
+        status &= readDouble( entry.t );
+        status &= readTypMinMaxValue( *( entry.V ) );
     }
 
     m_continue = IBIS_PARSER_CONTINUE::IV_TABLE;
