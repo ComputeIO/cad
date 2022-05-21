@@ -167,8 +167,9 @@ bool IbisComponentPin::Check()
 
     if( !m_dummy )
     {
-        char cstr[IBIS_MAX_LINE_LENGTH];
-        std::sprintf( cstr, _( "Checking pin %s" ), m_pinName.c_str() );
+        int  size = std::snprintf( nullptr, 0, _( "Checking pin %s" ), m_pinName.c_str() ) + 1;
+        char cstr[size];
+        std::snprintf( cstr, size, _( "Checking pin %s" ), m_pinName.c_str() );
         Report( std::string( cstr ), RPT_SEVERITY_ACTION );
 
         if( m_pinName.empty() )
@@ -216,8 +217,9 @@ bool IbisComponent::Check()
         status = false;
     }
 
-    char cstr[IBIS_MAX_LINE_LENGTH];
-    std::sprintf( cstr, _( "Checking component %s" ), m_name.c_str() );
+    int  size = std::snprintf( nullptr, 0, _( "Checking component %s" ), m_name.c_str() ) + 1;
+    char cstr[size];
+    std::snprintf( cstr, size, _( "Checking component %s" ), m_name.c_str() );
     Report( std::string( cstr ), RPT_SEVERITY_ACTION );
 
     if( m_manufacturer.empty() )
@@ -428,8 +430,9 @@ bool IbisModel::Check()
         status = false;
     }
 
-    char cstr[IBIS_MAX_LINE_LENGTH];
-    std::sprintf( cstr, _( "Checking model %s" ), m_name.c_str() );
+    int  size = std::snprintf( nullptr, 0, _( "Checking model %s" ), m_name.c_str() ) + 1;
+    char cstr[size];
+    std::snprintf( cstr, size, _( "Checking model %s" ), m_name.c_str() );
     Report( std::string( cstr ), RPT_SEVERITY_ACTION );
 
     if(m_type == IBIS_MODEL_TYPE::UNDEFINED)
@@ -589,8 +592,9 @@ bool IbisPackageModel::Check()
         status = false;
     }
 
-    char cstr[IBIS_MAX_LINE_LENGTH];
-    std::sprintf( cstr, _( "Checking package model %s" ), m_name.c_str() );
+    int  size = std::snprintf( nullptr, 0, _( "Checking package model %s" ), m_name.c_str() ) + 1;
+    char cstr[size];
+    std::snprintf( cstr, size, _( "Checking package model %s" ), m_name.c_str() );
     Report( std::string( cstr ), RPT_SEVERITY_ACTION );
 
     if( m_manufacturer.empty() )
@@ -689,17 +693,19 @@ bool IbisParser::ParseFile( std::string& aFileName )
     std::ifstream ibisFile;
     ibisFile.open( aFileName );
 
-    char cstr[IBIS_MAX_LINE_LENGTH];
-
     if( !ibisFile.is_open() )
     {
-        std::sprintf( cstr, _( "Cannot open file %s" ), aFileName.c_str() );
+        int  size = std::snprintf( nullptr, 0, _( "Cannot open file %s" ), aFileName.c_str() ) + 1;
+        char cstr[size];
+        std::snprintf( cstr, size, _( "Cannot open file %s" ), aFileName.c_str() );
         Report( std::string( cstr ), RPT_SEVERITY_ERROR );
         return false;
     }
 
-    std::sprintf( cstr, _( "Reading file %s..." ), aFileName.c_str() );
-    Report( std::string( cstr ), RPT_SEVERITY_ACTION );
+    int  size1 = std::snprintf( nullptr, 0, _( "Reading file %s..." ), aFileName.c_str() ) + 1;
+    char cstr[size1];
+    std::snprintf( cstr, size1, _( "Reading file %s..." ), aFileName.c_str() );
+    Report( std::string( cstr ), RPT_SEVERITY_ERROR );
 
     std::ostringstream ss;
     ss << ibisFile.rdbuf();
@@ -731,8 +737,10 @@ bool IbisParser::ParseFile( std::string& aFileName )
 
         if( status && !onNewLine() )
         {
-            std::sprintf( cstr, _( "Error on line %i..." ), m_lineCounter );
-            Report( std::string( cstr ), RPT_SEVERITY_ACTION );
+            int  size2 = std::snprintf( nullptr, 0, _( "Error on line %i..." ), m_lineCounter ) + 1;
+            char cstr2[size2];
+            std::snprintf( cstr2, size2, _( "Error on line %i..." ), m_lineCounter );
+            Report( std::string( cstr2 ), RPT_SEVERITY_ACTION );
             status = false;
         }
         if( m_context == IBIS_PARSER_CONTEXT::END )
@@ -1258,9 +1266,12 @@ bool IbisParser::changeContext( std::string& aKeyword )
             default: context_string += "???"; break;
             }
 
-            char cstr[IBIS_MAX_LINE_LENGTH];
-            std::sprintf( cstr, _( "Unknown keyword in %s context: %s" ), context_string.c_str(),
-                          aKeyword.c_str() );
+            int size = std::snprintf( nullptr, 0, _( "Unknown keyword in %s context: %s" ),
+                                      context_string.c_str(), aKeyword.c_str() )
+                       + 1;
+            char cstr[size];
+            std::snprintf( cstr, size, _( "Unknown keyword in %s context: %s" ),
+                           context_string.c_str(), aKeyword.c_str() );
             Report( std::string( cstr ), RPT_SEVERITY_ERROR );
         }
     }
@@ -1871,8 +1882,12 @@ bool IbisParser::readModel()
                         m_currentModel->m_type = IBIS_MODEL_TYPE::SERIES_SWITCH;
                     else
                     {
-                        char cstr[IBIS_MAX_LINE_LENGTH];
-                        std::sprintf( cstr, _( "Unknown Model_type: %s" ), subparam.c_str() );
+                        int size = std::snprintf( nullptr, 0, _( "Unknown Model_type: %s" ),
+                                                  subparam.c_str() )
+                                   + 1;
+                        char cstr[size];
+                        std::snprintf( cstr, size, _( "Unknown Model_type: %s" ),
+                                       subparam.c_str() );
                         Report( std::string( cstr ), RPT_SEVERITY_ACTION );
                         status = false;
                     }
@@ -1893,8 +1908,11 @@ bool IbisParser::readModel()
                         m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_LOW;
                     else
                     {
-                        char cstr[IBIS_MAX_LINE_LENGTH];
-                        std::sprintf( cstr, _( "Unknown Enable: %s" ), subparam.c_str() );
+                        int size = std::snprintf( nullptr, 0, _( "Unknown Enable: %s" ),
+                                                  subparam.c_str() )
+                                   + 1;
+                        char cstr[size];
+                        std::snprintf( cstr, size, _( "Unknown Enable: %s" ), subparam.c_str() );
                         Report( std::string( cstr ), RPT_SEVERITY_ACTION );
                         status = false;
                     }
@@ -1915,8 +1933,11 @@ bool IbisParser::readModel()
                         m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_LOW;
                     else
                     {
-                        char cstr[IBIS_MAX_LINE_LENGTH];
-                        std::sprintf( cstr, _( "Unknown polarity: %s" ), subparam.c_str() );
+                        int size = std::snprintf( nullptr, 0, _( "Unknown polarity: %s" ),
+                                                  subparam.c_str() )
+                                   + 1;
+                        char cstr[size];
+                        std::snprintf( cstr, size, _( "Unknown polarity: %s" ), subparam.c_str() );
                         Report( std::string( cstr ), RPT_SEVERITY_ACTION );
                         status = false;
                     }
