@@ -704,6 +704,9 @@ bool IbisParser::parseFile( std::string& aFileName )
 
     bool status = true;
 
+    const char* locale_origin = ( setlocale( LC_ALL, NULL ) );
+    std::setlocale( LC_NUMERIC, "en_US.UTF-8" );
+
     while( ( m_bufferIndex < size ) && status )
     {
         if( !GetNextLine() )
@@ -729,6 +732,7 @@ bool IbisParser::parseFile( std::string& aFileName )
         }
     }
 
+    std::setlocale( LC_NUMERIC, locale_origin );
     m_buffer.clear();
     return status;
 }
