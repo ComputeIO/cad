@@ -305,7 +305,7 @@ std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs(
     return pairs;
 }
 
-std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int aIndex )
+std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aParasitics, int aIndex )
 {
     std::string result;
 
@@ -339,7 +339,7 @@ std::string KIBIS_MODEL::SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int 
     result += doubleToString( m_voltageRange->value[aSupply] );
     result += "\n";
     result += "CCPOMP " + DIE + " GND ";
-    result += doubleToString( m_C_comp->value[ReverseLogic( aSpeed )] );
+    result += doubleToString( m_C_comp->value[aParasitics] );
     result += "\n";
 
     if( HasGNDClamp() )
@@ -638,7 +638,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
 
 std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL&                            aModel,
                                    std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                   KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
+                                   KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aParasitics,
                                    int aIndex )
 {
     std::string simul = "";
@@ -676,7 +676,7 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL&                            aMode
 
     simul += "\n";
     simul += "CCPOMP 2 GND ";
-    simul += doubleToString( aModel.m_C_comp->value[aSpeed] ); //@TODO: Check the corner ?
+    simul += doubleToString( aModel.m_C_comp->value[aParasitics] ); //@TODO: Check the corner ?
     simul += "\n";
     switch( aWave->GetType() )
     {
@@ -742,7 +742,7 @@ std::string KIBIS_PIN::KuKdDriver( KIBIS_MODEL&                            aMode
 
 void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL&                            aModel,
                                     std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                                    KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+                                    KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aParasitics )
 {
     std::string simul = "";
 
@@ -759,7 +759,7 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL&                            aMod
     }
     else
     {
-        simul += KuKdDriver( aModel, aPair, aWave, aSupply, aSpeed, 0 );
+        simul += KuKdDriver( aModel, aPair, aWave, aSupply, aParasitics, 0 );
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
@@ -893,7 +893,7 @@ void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL&                            aMo
                                      std::pair<IbisWaveform*, IbisWaveform*> aPair1,
                                      std::pair<IbisWaveform*, IbisWaveform*> aPair2,
                                      KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply,
-                                     IBIS_CORNER aSpeed )
+                                     IBIS_CORNER aParasitics )
 {
     std::string simul = "";
 
@@ -910,8 +910,8 @@ void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL&                            aMo
     }
     else
     {
-        simul += KuKdDriver( aModel, aPair1, aWave, aSupply, aSpeed, 0 );
-        simul += KuKdDriver( aModel, aPair2, aWave, aSupply, aSpeed, 1 );
+        simul += KuKdDriver( aModel, aPair1, aWave, aSupply, aParasitics, 0 );
+        simul += KuKdDriver( aModel, aPair2, aWave, aSupply, aParasitics, 1 );
         simul += "\n x1 3 0 1 DRIVER0 \n";
 
         simul += "VCC 3 0 ";
@@ -1013,7 +1013,7 @@ void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL&                            aMo
 }
 
 bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
-                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
+                                  IBIS_CORNER aSupply, IBIS_CORNER aParasitics, KIBIS_ACCURACY aAccuracy,
                                   KIBIS_WAVEFORM* aWave )
 {
     bool status = true;
@@ -1061,13 +1061,13 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         result += "\n";
 
         result += "RPIN 1 PIN ";
-        result += doubleToString( R_pin->value[ReverseLogic( aSpeed )] );
+        result += doubleToString( R_pin->value[aParasitics] );
         result += "\n";
         result += "LPIN DIE0 1 ";
-        result += doubleToString( L_pin->value[ReverseLogic( aSpeed )] );
+        result += doubleToString( L_pin->value[aParasitics] );
         result += "\n";
         result += "CPIN PIN GND ";
-        result += doubleToString( C_pin->value[ReverseLogic( aSpeed )] );
+        result += doubleToString( C_pin->value[aParasitics] );
         result += "\n";
 
         std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel.waveformPairs();
@@ -1083,7 +1083,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         }
         else if( wfPairs.size() == 1 || aAccuracy <= KIBIS_ACCURACY::LEVEL_1 )
         {
-            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), aWave, aSupply, aSpeed );
+            getKuKdOneWaveform( aModel, wfPairs.at( 0 ), aWave, aSupply, aParasitics );
         }
         else
         {
@@ -1092,7 +1092,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
                 Report( _( "Model has more than 2 waveform pairs, using the first two." ),
                         RPT_SEVERITY_WARNING );
             }
-            getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), aWave, aSupply, aSpeed );
+            getKuKdTwoWaveforms( aModel, wfPairs.at( 0 ), wfPairs.at( 1 ), aWave, aSupply, aParasitics );
         }
 
         result += "Vku KU GND pwl ( ";
@@ -1117,7 +1117,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
 
         result += ") \n";
 
-        result += aModel.SpiceDie( aSupply, aSpeed, 0 );
+        result += aModel.SpiceDie( aSupply, aParasitics, 0 );
 
         result += "\n.ENDS DRIVER\n\n";
 
@@ -1132,7 +1132,7 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
 
 
 bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
-                                  IBIS_CORNER aSupply, IBIS_CORNER aSpeed )
+                                  IBIS_CORNER aSupply, IBIS_CORNER aParasitics )
 {
     bool status = true;
 
@@ -1156,20 +1156,20 @@ bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_M
         result += "\n";
         result += "\n";
         result += "RPIN 1 PIN ";
-        result += doubleToString( R_pin->value[ReverseLogic( aSpeed )] );
+        result += doubleToString( R_pin->value[aParasitics] );
         result += "\n";
         result += "LPIN DIE 1 ";
-        result += doubleToString( L_pin->value[ReverseLogic( aSpeed )] );
+        result += doubleToString( L_pin->value[aParasitics] );
         result += "\n";
         result += "CPIN PIN GND ";
-        result += doubleToString( C_pin->value[ReverseLogic( aSpeed )] );
+        result += doubleToString( C_pin->value[aParasitics] );
         result += "\n";
 
 
         result += "Vku KU GND pwl ( 0 0 )\n";
         result += "Vkd KD GND pwl ( 0 0 )\n";
 
-        result += aModel.SpiceDie( aSupply, aSpeed, 0 );
+        result += aModel.SpiceDie( aSupply, aParasitics, 0 );
 
         result += "\n.ENDS DRIVER\n\n";
 

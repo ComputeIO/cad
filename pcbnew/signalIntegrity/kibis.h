@@ -201,11 +201,11 @@ public:
     /** @brief Generate the spice directive to simulate the die
      * 
      *  @param aSupply Power supply corner
-     *  @param aSpeed Speed corner
+     *  @param aParasitics Parasitics corner
      *  @param aIndex Index used to offset spice nodes / directives
      *  @return A multiline string with spice directives
      */
-    std::string SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aSpeed, int aIndex );
+    std::string SpiceDie( IBIS_CORNER aSupply, IBIS_CORNER aParasitics, int aIndex );
 
     /** @brief Create waveform pairs
      * 
@@ -274,10 +274,10 @@ public:
     std::vector<KIBIS_MODEL*> m_models;
 
     bool writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
-                           IBIS_CORNER aSupply, IBIS_CORNER aSpeed, KIBIS_ACCURACY aAccuracy,
+                           IBIS_CORNER aSupply, IBIS_CORNER aParasitics, KIBIS_ACCURACY aAccuracy,
                            KIBIS_WAVEFORM* aWave );
     bool writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
-                           IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+                           IBIS_CORNER aSupply, IBIS_CORNER aParasitics );
 
     /** @brief Update m_Ku, m_Kd using no falling / rising waveform inputs ( low accuracy )
      *  @param aModel Model to be used
@@ -291,10 +291,10 @@ public:
      *  @param aPair @see waveformPairs()
      *  @param aWave Waveform to generate
      *  @param aSupply Power supply corner
-     *  @param aSpeed Speed corner
+     *  @param aParasitics Parasitics corner
      */
     void getKuKdOneWaveform( KIBIS_MODEL& aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                             KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+                             KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aParasitics );
 
     /** @brief Update m_Ku, m_Kd using with two waveform inputs
      * 
@@ -304,11 +304,11 @@ public:
      *  @param aPair2 @see waveformPairs()
      *  @param aWave Waveform to generate
      *  @param aSupply Power supply corner
-     *  @param aSpeed Speed corner
+     *  @param aParasitics Parasitics corner
      */
     void getKuKdTwoWaveforms( KIBIS_MODEL& aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair1,
                               std::pair<IbisWaveform*, IbisWaveform*> aPair2, KIBIS_WAVEFORM* aWave,
-                              IBIS_CORNER aSupply, IBIS_CORNER aSpeed );
+                              IBIS_CORNER aSupply, IBIS_CORNER aParasitics );
 
     /** @brief Update m_Ku, m_Kd using with two waveform inputs
      * 
@@ -317,13 +317,13 @@ public:
      *  @param aPair @see waveformPairs()
      *  @param aWave Waveform to generate
      *  @param aSupply Power supply corner
-     *  @param aSpeed Speed corner
+     *  @param aParasitics Parasitics corner
      *  @param aIndex Index for numbering spice .SUBCKT
      * 
      *  @return A multiline string with spice directives
      */
     std::string KuKdDriver( KIBIS_MODEL& aModel, std::pair<IbisWaveform*, IbisWaveform*> aPair,
-                            KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aSpeed,
+                            KIBIS_WAVEFORM* aWave, IBIS_CORNER aSupply, IBIS_CORNER aParasitics,
                             int aIndex );
 
     /** @brief Generate the spice directive to simulate the die for Ku/Kd estimation
