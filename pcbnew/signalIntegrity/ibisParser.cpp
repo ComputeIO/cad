@@ -1365,10 +1365,7 @@ bool IbisParser::parseModel( std::string& aKeyword )
         status = readTypMinMaxValue( *( m_currentModel->m_Rgnd ) );
     else
     {
-        if( !changeContext( aKeyword ) )
-        {
-            status = false;
-        }
+        status = changeContext( aKeyword );
     }
     return status;
 }
