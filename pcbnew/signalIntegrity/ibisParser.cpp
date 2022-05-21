@@ -673,7 +673,7 @@ bool IbisPackageModel::Check()
 }
 
 
-bool IbisParser::parseFile( std::string& aFileName )
+bool IbisParser::ParseFile( std::string& aFileName )
 {
     std::string err_msg;
 
@@ -709,7 +709,7 @@ bool IbisParser::parseFile( std::string& aFileName )
 
     while( ( m_bufferIndex < size ) && status )
     {
-        if( !GetNextLine() )
+        if( !getNextLine() )
         {
             Report( _( "Unexpected end of file. Missing [END] ?" ), RPT_SEVERITY_ERROR );
             status = false;
@@ -717,7 +717,7 @@ bool IbisParser::parseFile( std::string& aFileName )
 
         if( status && m_parrot )
         {
-            PrintLine();
+            printLine();
         }
 
         if( status && !onNewLine() )
@@ -866,7 +866,7 @@ bool IbisParser::parseDouble( double& aDest, std::string& aStr, bool aAllowModif
 }
 
 
-bool IbisParser::GetNextLine()
+bool IbisParser::getNextLine()
 {
     m_lineCounter++;
 
@@ -910,7 +910,7 @@ bool IbisParser::GetNextLine()
 }
 
 
-void IbisParser::PrintLine()
+void IbisParser::printLine()
 {
     for( int i = 0; i < m_lineLength; i++ )
     {
@@ -1034,7 +1034,7 @@ bool IbisParser::readString( std::string& aDest )
     return true;
 }
 
-bool IbisParser::StoreString( std::string& aDest, bool aMultiline )
+bool IbisParser::storeString( std::string& aDest, bool aMultiline )
 {
     
     skipWhitespaces();
@@ -1048,7 +1048,7 @@ bool IbisParser::StoreString( std::string& aDest, bool aMultiline )
 }
 
 
-bool IbisParser::ChangeCommentChar()
+bool IbisParser::changeCommentChar()
 {
     skipWhitespaces();
 
@@ -1172,7 +1172,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
         if( !strcasecmp( aKeyword.c_str(), "Component" ) )
         {
             IbisComponent comp( m_reporter );
-            StoreString( comp.m_name, false );
+            storeString( comp.m_name, false );
             m_ibisFile.m_components.push_back( comp );
             m_currentComponent = &( m_ibisFile.m_components.back() );
             m_context = IBIS_PARSER_CONTEXT::COMPONENT;
@@ -1180,7 +1180,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
         else if( !strcasecmp( aKeyword.c_str(), "Model_Selector" ) )
         {
             IbisModelSelector MS( m_reporter );
-            StoreString( MS.m_name, false );
+            storeString( MS.m_name, false );
             m_ibisFile.m_modelSelectors.push_back( MS );
             m_currentModelSelector = &( m_ibisFile.m_modelSelectors.back() );
             m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
@@ -1192,7 +1192,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
             model.m_temperatureRange->value[IBIS_CORNER::MIN] = 0;
             model.m_temperatureRange->value[IBIS_CORNER::TYP] = 50;
             model.m_temperatureRange->value[IBIS_CORNER::MAX] = 100;
-            StoreString( model.m_name, false );
+            storeString( model.m_name, false );
             m_ibisFile.m_models.push_back( model );
             m_currentModel = &( m_ibisFile.m_models.back() );
             m_context = IBIS_PARSER_CONTEXT::MODEL;
@@ -1213,7 +1213,7 @@ bool IbisParser::changeContext( std::string& aKeyword )
             PM.m_capacitanceMatrix->m_dim = -1;
             PM.m_inductanceMatrix->m_dim = -1;
 
-            StoreString( PM.m_name, false );
+            storeString( PM.m_name, false );
 
             m_ibisFile.m_packageModels.push_back( PM );
             m_currentPackageModel = &( m_ibisFile.m_packageModels.back() );
@@ -1444,7 +1444,7 @@ bool IbisParser::readMatrixFull( std::string aKeyword, IBIS_MATRIX_FULL& aDest )
     {
         std::vector<std::string> values;
 
-        status &= ReadTableLine( values );
+        status &= readTableLine( values );
         int i;
         for( i = 0; i < values.size(); i++ )
         {
@@ -1670,11 +1670,11 @@ bool IbisParser::parsePackageModel( std::string& aKeyword )
     bool status = true;
 
     if( !strcasecmp( aKeyword.c_str(), "Manufacturer" ) )
-        status &= StoreString( m_currentPackageModel->m_manufacturer, false );
+        status &= storeString( m_currentPackageModel->m_manufacturer, false );
     else if( !strcasecmp( aKeyword.c_str(), "OEM" ) )
-        status &= StoreString( m_currentPackageModel->m_OEM, false );
+        status &= storeString( m_currentPackageModel->m_OEM, false );
     else if( !strcasecmp( aKeyword.c_str(), "Description" ) )
-        status &= StoreString( m_currentPackageModel->m_description, false );
+        status &= storeString( m_currentPackageModel->m_description, false );
     else if( !strcasecmp( aKeyword.c_str(), "Number_of_Pins" ) )
         status &= readInt( m_currentPackageModel->m_numberOfPins );
     else if( !strcasecmp( aKeyword.c_str(), "Pin_Numbers" ) )
@@ -1738,7 +1738,7 @@ bool IbisParser::readNumericSubparam( std::string aSubparam, double& aDest )
 
                 std::string strValue;
 
-                if( !StoreString( strValue, false ) )
+                if( !storeString( strValue, false ) )
                 {
                     status = false;
                 }
@@ -1994,11 +1994,11 @@ bool IbisParser::parseHeader( std::string& aKeyword )
     }
     else if( !strcasecmp( aKeyword.c_str(), "Comment_char" ) )
     {
-        ChangeCommentChar();
+        changeCommentChar();
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Name" ) )
     {
-        StoreString( m_ibisFile.m_header->m_fileName, false );
+        storeString( m_ibisFile.m_header->m_fileName, false );
     }
     else if( !strcasecmp( aKeyword.c_str(), "File_Rev" ) )
     {
@@ -2006,23 +2006,23 @@ bool IbisParser::parseHeader( std::string& aKeyword )
     }
     else if( !strcasecmp( aKeyword.c_str(), "Source" ) )
     {
-        StoreString( m_ibisFile.m_header->m_source, true );
+        storeString( m_ibisFile.m_header->m_source, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Notes" ) )
     {
-        StoreString( m_ibisFile.m_header->m_notes, true );
+        storeString( m_ibisFile.m_header->m_notes, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Disclaimer" ) )
     {
-        StoreString( m_ibisFile.m_header->m_disclaimer, true );
+        storeString( m_ibisFile.m_header->m_disclaimer, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Copyright" ) )
     {
-        StoreString( m_ibisFile.m_header->m_copyright, true );
+        storeString( m_ibisFile.m_header->m_copyright, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Date" ) )
     {
-        StoreString( m_ibisFile.m_header->m_date, false );
+        storeString( m_ibisFile.m_header->m_date, false );
     }
     else
     {
@@ -2040,7 +2040,7 @@ bool IbisParser::parseComponent( std::string& aKeyword )
     bool status = true;
     if( !strcasecmp( aKeyword.c_str(), "Manufacturer" ) )
     {
-        status &= StoreString( m_currentComponent->m_manufacturer, true );
+        status &= storeString( m_currentComponent->m_manufacturer, true );
     }
     else if( !strcasecmp( aKeyword.c_str(), "Package" ) )
     {
@@ -2066,7 +2066,7 @@ bool IbisParser::parseComponent( std::string& aKeyword )
     }*/
     else if( !strcasecmp( aKeyword.c_str(), "Package_Model" ) )
     {
-        status &= StoreString( m_currentComponent->m_packageModel, true );
+        status &= storeString( m_currentComponent->m_packageModel, true );
     }
     else
     {
@@ -2078,7 +2078,7 @@ bool IbisParser::parseComponent( std::string& aKeyword )
     return status;
 }
 
-bool IbisParser::ReadTableLine( std::vector<std::string>& aDest )
+bool IbisParser::readTableLine( std::vector<std::string>& aDest )
 {
     aDest.clear();
 
@@ -2114,7 +2114,7 @@ bool IbisParser::readPackage()
     TypMinMaxValue* L = m_currentComponent->m_package.m_Lpkg;
     TypMinMaxValue* C = m_currentComponent->m_package.m_Cpkg;
 
-    ReadTableLine( fields );
+    readTableLine( fields );
 
     int extraArg = ( m_continue == IBIS_PARSER_CONTINUE::NONE ) ? 1 : 0;
 
@@ -2172,7 +2172,7 @@ bool IbisParser::readPin()
     std::vector<std::string> fields;
 
     m_lineIndex = 0;
-    status &= ReadTableLine( fields );
+    status &= readTableLine( fields );
 
     IbisComponentPin pin( m_reporter );
 
@@ -2269,7 +2269,7 @@ bool IbisParser::readPinMapping()
 
     std::vector<std::string> fields;
 
-    status &= ReadTableLine( fields );
+    status &= readTableLine( fields );
 
     IbisComponentPinMapping pinMapping( m_reporter );
 

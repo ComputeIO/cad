@@ -646,7 +646,11 @@ public:
      * @param aFileName input file name
      * @return True in case of success
      */
-    bool parseFile( std::string& aFileName );
+    bool ParseFile( std::string& aFileName );
+
+private:
+    std::string* m_continuingString;
+
     /** @brief Parse a single keyword in the header context
      * 
      * @param aKeyword Keyword
@@ -692,9 +696,6 @@ public:
      */
     bool parseDouble( double& aDest, std::string& aStr, bool aAllowModifiers = false );
 
-private:
-    std::string* m_continuingString;
-
     /** @brief Parse the current line
      *
      * @return True in case of success
@@ -704,9 +705,9 @@ private:
      *
      * @return True in case of success
      */
-    bool GetNextLine();
+    bool getNextLine();
     /** @brief Print the current line */
-    void PrintLine();
+    void printLine();
 
     void      skipWhitespaces();
     bool      checkEndofLine(); // To be used when there cannot be any character left on the line
@@ -725,8 +726,8 @@ private:
     bool readRamp();
     bool readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
     bool readString( std::string& aDest );
-    bool StoreString( std::string& aDest, bool aMultiline );
-    bool ReadTableLine( std::vector<std::string>& aDest );
+    bool storeString( std::string& aDest, bool aMultiline );
+    bool readTableLine( std::vector<std::string>& aDest );
 
     bool readNumericSubparam( std::string aSubparam, double& aDest );
     bool readIVtableEntry( IVtable& aTable );
@@ -744,7 +745,7 @@ private:
     bool readPackageModelPins();
 
     /** @brief Ibis can change the character used for comments */
-    bool ChangeCommentChar();
+    bool changeCommentChar();
     bool changeContext( std::string& aKeyword );
 
     IBIS_PARSER_CONTINUE m_continue = IBIS_PARSER_CONTINUE::NONE;
