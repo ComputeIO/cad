@@ -1299,6 +1299,7 @@ bool IbisParser::readRamp()
     m_continue = IBIS_PARSER_CONTINUE::RAMP;
 
     std::string keyword = std::string( "R_load " );
+
     if( !readNumericSubparam( std::string( "R_load " ), m_currentModel->m_ramp->m_Rload ) )
     {
         std::string str;
