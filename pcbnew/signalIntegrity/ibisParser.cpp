@@ -156,7 +156,7 @@ bool IbisComponentPin::Check()
 {
     bool status = true;
 
-    if ( !m_dummy )
+    if( !m_dummy )
     {
         char cstr[IBIS_MAX_LINE_LENGTH];
         std::sprintf( cstr, _( "Checking pin %s" ), m_pinName.c_str() );
@@ -223,7 +223,7 @@ bool IbisComponent::Check()
         status = false;        
     }
     
-    if ( m_pins.size() < 1 )
+    if( m_pins.size() < 1 )
     {
         Report( _( "Component: no pin" ), RPT_SEVERITY_ERROR );
         status = false;
@@ -388,7 +388,7 @@ bool IbisRamp::Check()
 {
     bool status = true;
 
-    if ( std::isnan( m_Rload ) )
+    if( std::isnan( m_Rload ) )
     {
         status = false;
         Report( _( "Invalid R_load." ), RPT_SEVERITY_ERROR );
@@ -423,38 +423,38 @@ bool IbisModel::Check()
     std::sprintf( cstr, _( "Checking model %s" ), m_name.c_str() );
     Report( std::string( cstr ), RPT_SEVERITY_ACTION );
 
-    if (m_type == IBIS_MODEL_TYPE::UNDEFINED)
+    if(m_type == IBIS_MODEL_TYPE::UNDEFINED)
     {
         Report( _( "Undefined model type" ), RPT_SEVERITY_ERROR );
         status = false;
     }
 
-    if ( isnan( m_vinh ) && !isNumberNA( m_vinh ) )
+    if( isnan( m_vinh ) && !isNumberNA( m_vinh ) )
     {
         Report( _( "Invalid Vinh value." ), RPT_SEVERITY_ERROR );
         status = false;
     }
-    if ( isnan( m_vinl ) && !isNumberNA( m_vinl ) )
+    if( isnan( m_vinl ) && !isNumberNA( m_vinl ) )
     {
         Report( _( "Invalid Vinl value." ), RPT_SEVERITY_ERROR );
         status = false;
     }
-    if ( isnan( m_rref ) && !isNumberNA( m_rref ) )
+    if( isnan( m_rref ) && !isNumberNA( m_rref ) )
     {
         Report( _( "Invalid R_ref value." ), RPT_SEVERITY_ERROR );
         status = false;
     }
-    if ( isnan( m_cref ) && !isNumberNA( m_cref ) )
+    if( isnan( m_cref ) && !isNumberNA( m_cref ) )
     {
         Report( _( "Invalid C_ref value." ), RPT_SEVERITY_ERROR );
         status = false;
     }
-    if ( isnan( m_vref ) && !isNumberNA( m_vref ) )
+    if( isnan( m_vref ) && !isNumberNA( m_vref ) )
     {
         Report( _( "invalid V_ref value." ), RPT_SEVERITY_ERROR );
         status = false;
     }
-    if ( isnan( m_vmeas ) && !isNumberNA( m_vmeas ) )
+    if( isnan( m_vmeas ) && !isNumberNA( m_vmeas ) )
     {
         Report( _( "Invalid V_meas value." ), RPT_SEVERITY_ERROR );
         status = false;
@@ -489,7 +489,7 @@ bool IbisModel::Check()
         {
             status = false;
         }
-        if ( !status )
+        if( !status )
         {
             Report( _( "Voltage Range is invalid." ), RPT_SEVERITY_ERROR );
         }
@@ -589,16 +589,19 @@ bool IbisPackageModel::Check()
         Report( _( "Manufacturer cannot be empty." ), RPT_SEVERITY_ERROR );
         status = false;
     }
+
     if( m_OEM.empty() )
     {
         Report( _( "OEM cannot be empty." ), RPT_SEVERITY_ERROR );
         status = false;
     }
+
     if( std::isnan( m_numberOfPins ) )
     {
         Report( _( "Number of pins is invalid." ), RPT_SEVERITY_ERROR );
         status = false;
     }
+
     if( m_numberOfPins <= 0 )
     {
         Report( _( "Negative number of pins." ), RPT_SEVERITY_ERROR );
@@ -744,7 +747,7 @@ bool IbisParser::checkEndofLine()
 
     if( m_lineIndex < m_lineLength )
     {
-        Report( _( "A line did not ended properly.." ), RPT_SEVERITY_ERROR );
+        Report( _( "A line did not end properly.." ), RPT_SEVERITY_ERROR );
         return false;
     }
     return true;
@@ -787,6 +790,7 @@ bool IbisParser::readDvdt( std::string& aString, dvdt& aDest )
             status = false;
         }
     }
+
     else if( aString == "NA" )
     {
         aDest.m_dv = std::nan( NAN_NA );
@@ -1301,11 +1305,11 @@ bool IbisParser::readRamp()
 
         if( readWord( str ) )
         {
-            if ( !strcmp( str.c_str(), "dV/dt_r" ) )
+            if( !strcmp( str.c_str(), "dV/dt_r" ) )
             {
                 readRampdvdt( *( m_currentModel->m_ramp->m_rising ) );
             }
-            else if ( !strcmp( str.c_str(), "dV/dt_f" ) )
+            else if( !strcmp( str.c_str(), "dV/dt_f" ) )
             {
                 readRampdvdt( *( m_currentModel->m_ramp->m_falling ) );
             }
@@ -1759,7 +1763,7 @@ bool IbisParser::readNumericSubparam( std::string aSubparam, double& aDest )
         status = false;
     }
 
-    if ( status == false )
+    if( status == false )
     {
         m_lineIndex = old_index;
     }
@@ -1788,6 +1792,7 @@ bool IbisParser::readTypMinMaxValue( TypMinMaxValue& aDest )
             if( readWord( strValue ) )
             {
                 parseDouble( aDest.value[IBIS_CORNER::MIN], strValue, true );
+                
                 if( readWord( strValue ) )
                 {
                     parseDouble( aDest.value[IBIS_CORNER::MAX], strValue, true );
@@ -1846,6 +1851,7 @@ bool IbisParser::readModel()
         switch( m_continue )
         {
         case IBIS_PARSER_CONTINUE::MODEL:
+
             if( !strcmp( subparam.substr( 0, 10 ).c_str(), "Model_type" ) )
             {
                 if( readWord( subparam ) )
@@ -2051,6 +2057,7 @@ bool IbisParser::parseComponent( std::string& aKeyword )
         status &= readDiffPin();
     }
     /*
+    // Not supported yet
     else if( aKeyword == "Die_Supply_Pads" )
     {
         status &= ReadDieSupplyPads();
@@ -2082,6 +2089,7 @@ bool IbisParser::ReadTableLine( std::vector<std::string>& aDest )
         {
             str += m_buffer[m_lineOffset + m_lineIndex++];
         }
+        
         if( str.size() > 0 )
         {
             aDest.push_back( str );
