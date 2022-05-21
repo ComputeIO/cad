@@ -2403,10 +2403,6 @@ bool IbisParser::readVTtableEntry( VTtable& aDest )
     {
         aDest.m_entries.push_back( entry );
     }
-    else
-    {
-    }
-
 
     return status;
 }
