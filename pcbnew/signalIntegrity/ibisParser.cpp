@@ -1326,42 +1326,42 @@ bool IbisParser::readRamp()
 
 bool IbisParser::parseModel( std::string& aKeyword )
 {
-    bool status = true;
+    bool status = false;
     
     if( !strcasecmp( aKeyword.c_str(), "Voltage_Range" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_voltageRange ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_voltageRange ) );
     else if( !strcasecmp( aKeyword.c_str(), "Temperature_Range" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_temperatureRange ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_temperatureRange ) );
     else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp" ) )
-        status &= readIVtableEntry( *( m_currentModel->m_GNDClamp ) );
+        status = readIVtableEntry( *( m_currentModel->m_GNDClamp ) );
     else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp" ) )
-        status &= readIVtableEntry( *( m_currentModel->m_POWERClamp ) );
+        status = readIVtableEntry( *( m_currentModel->m_POWERClamp ) );
     else if( !strcasecmp( aKeyword.c_str(), "Pulldown" ) )
-        status &= readIVtableEntry( *( m_currentModel->m_pulldown ) );
+        status = readIVtableEntry( *( m_currentModel->m_pulldown ) );
     else if( !strcasecmp( aKeyword.c_str(), "Pullup" ) )
-        status &= readIVtableEntry( *( m_currentModel->m_pullup ) );
+        status = readIVtableEntry( *( m_currentModel->m_pullup ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rising_Waveform" ) )
-        status &= readWaveform( nullptr, IBIS_WAVEFORM_TYPE::RISING );
+        status = readWaveform( nullptr, IBIS_WAVEFORM_TYPE::RISING );
     else if( !strcasecmp( aKeyword.c_str(), "Falling_Waveform" ) )
-        status &= readWaveform( nullptr, IBIS_WAVEFORM_TYPE::FALLING );
+        status = readWaveform( nullptr, IBIS_WAVEFORM_TYPE::FALLING );
     else if( !strcasecmp( aKeyword.c_str(), "Ramp" ) )
-        status &= readRamp();
+        status = readRamp();
     else if( !strcasecmp( aKeyword.c_str(), "Pullup_Reference" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_pullupReference ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_pullupReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "Pulldown_Reference" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_pulldownReference ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_pulldownReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "POWER_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_POWERClampReference ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_POWERClampReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "GND_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_GNDClampReference ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_GNDClampReference ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rac" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_Rac ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_Rac ) );
     else if( !strcasecmp( aKeyword.c_str(), "Cac" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_Cac ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_Cac ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rpower" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_Rpower ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_Rpower ) );
     else if( !strcasecmp( aKeyword.c_str(), "Rgnd" ) )
-        status &= readTypMinMaxValue( *( m_currentModel->m_Rgnd ) );
+        status = readTypMinMaxValue( *( m_currentModel->m_Rgnd ) );
     else
     {
         if( !changeContext( aKeyword ) )
@@ -2089,7 +2089,7 @@ bool IbisParser::ReadTableLine( std::vector<std::string>& aDest )
         {
             str += m_buffer[m_lineOffset + m_lineIndex++];
         }
-        
+
         if( str.size() > 0 )
         {
             aDest.push_back( str );
