@@ -63,6 +63,7 @@ class KIBIS_WAVEFORM
 public:
     KIBIS_WAVEFORM(){};
     KIBIS_WAVEFORM_TYPE GetType() { return m_type; };
+    bool                inverted = false; // Used for differential drivers
 
 protected:
     KIBIS_WAVEFORM_TYPE m_type = KIBIS_WAVEFORM_TYPE::NONE;
@@ -276,6 +277,9 @@ public:
     bool writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
                            IBIS_CORNER aSupply, IBIS_CORNER aParasitics, KIBIS_ACCURACY aAccuracy,
                            KIBIS_WAVEFORM* aWave );
+    bool writeSpiceDiffDriver( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
+                               IBIS_CORNER aSupply, IBIS_CORNER aParasitics,
+                               KIBIS_ACCURACY aAccuracy, KIBIS_WAVEFORM* aWave );
     bool writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_MODEL& aModel,
                            IBIS_CORNER aSupply, IBIS_CORNER aParasitics );
 

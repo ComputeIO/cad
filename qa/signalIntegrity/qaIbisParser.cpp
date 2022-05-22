@@ -37,7 +37,7 @@ int main( void )
     wave->m_ton = 80e-9;
     wave->m_toff = 80e-9;
     wave->m_cycles = 10;
-    wave->m_delay = 80e-9;
+    wave->m_delay = 0;
     //KIBIS_WAVEFORM_STUCK_HIGH* wave = new KIBIS_WAVEFORM_STUCK_HIGH();
 
     std::cout << "WAVEFORM TYPE IN QA: " << wave->GetType() << std::endl;
@@ -47,8 +47,8 @@ int main( void )
 
     KIBIS_MODEL* model1 = pin1->m_models.at( 0 );
     std::cout << "Model used for driver: " << model1->m_name << std::endl;
-    pin1->writeSpiceDriver( tmp1, "driver_typ", *( model1 ), IBIS_CORNER::TYP, IBIS_CORNER::TYP,
-                            KIBIS_ACCURACY::LEVEL_2, wave );
+    pin1->writeSpiceDiffDriver( tmp1, "driver_typ", *( model1 ), IBIS_CORNER::TYP, IBIS_CORNER::TYP,
+                                KIBIS_ACCURACY::LEVEL_2, wave );
 
     wxTextFile file( "output.sp" );
     if( file.Exists() )
@@ -65,13 +65,15 @@ int main( void )
     file.AddLine( *tmp4 );
 
     wxString simul = "";
-    simul += "\n x1 OUT_1 0 driver_typ \n";
-    simul += "R1 OUT_1 GND 1k\n";
-    simul += ".tran 0.1n 200n \n";
+    simul += "x1 0 OUT_1 OUT_2 driver_typ \n";
+    simul += "R1 OUT_1 COM 25\n";
+    simul += "R2 OUT_2 COM 25\n";
+    simul += "V1 COM 0 1.25\n";
+    simul += ".tran 0.1n 1000n \n";
     simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
-    simul += "plot v(OUT_1)\n";
+    simul += "plot v(OUT_1) v(OUT_2)\n";
     //simul += "plot v(x1.KU) v(x1.KD) v(1) v(x1.DIEBUFF) \n";
     simul += ".endc \n";
     simul += ".end \n";
