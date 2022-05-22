@@ -1217,27 +1217,43 @@ void SIM_PLOT_FRAME::menuSaveCsv( wxCommandEvent& event )
         return;
 
     wxFFile out( saveDlg.GetPath(), "wb" );
-    bool timeWritten = false;
 
-    for( const auto& t : GetCurrentPlot()->GetTraces() )
+    auto traces = GetCurrentPlot()->GetTraces();
+    assert(traces);
+    
+    if( traces.size() == 0 )
+        return;
+
+    SIM_TYPE simType = m_circuitModel->GetSimType();
+    
+    std::size_t maxRows = traces.begin()->second->GetDataX().size();
+    
+    for ( std::size_t cRow=0; cRow < maxRows; cRow++ )
     {
-        const TRACE* trace = t.second;
-
-        if( !timeWritten )
+        if( cRow == 0 )
         {
-            out.Write( wxString::Format( "Time%c", SEPARATOR ) );
+            // write column header names on the first row
+            wxString xAxisName( m_simulator->GetXAxis( simType ) );
+            out.Write( wxString::Format( "%s%c", xAxisName, SEPARATOR ) );
 
-            for( double v : trace->GetDataX() )
-                out.Write( wxString::Format( "%g%c", v, SEPARATOR ) );
-
-            out.Write( "\r\n" );
-            timeWritten = true;
+            for( const auto& trace : traces )
+            {
+                wxString yAxisName = trace.first;
+                out.Write( wxString::Format( "%s%c", yAxisName, SEPARATOR ) );
+            }
         }
+        else
+        {
+            // write each row's numerical value
+            double xAxisValue = traces.begin()->second->GetDataX().at( cRow );
+            out.Write( wxString::Format( "%g%c", xAxisValue, SEPARATOR ) );
 
-        out.Write( wxString::Format( "%s%c", t.first, SEPARATOR ) );
-
-        for( double v : trace->GetDataY() )
-            out.Write( wxString::Format( "%g%c", v, SEPARATOR ) );
+            for( const auto& trace : traces )
+            {
+                double yAxisValue = trace.second->GetDataY().at( cRow );
+                out.Write( wxString::Format( "%g%c", yAxisValue, SEPARATOR ) );
+            }
+        }
 
         out.Write( "\r\n" );
     }
