@@ -787,7 +787,7 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL&                            aMod
         simul += "Vfixture 5 0 ";
         simul += doubleToString( aPair.first->m_V_fixture );
         simul += "\n";
-        simul += "VmeasIout x1.2 x1.DIE0 0\n";
+        simul += "VmeasIout x1.DIE0 x1.2 0\n";
         simul += "VmeasPD 0 x1.PD_GND0 0\n";
         simul += "VmeasPU x1.PU_PWR0 3 0\n";
         simul += "VmeasPC x1.PC_PWR0 3 0\n";
@@ -827,7 +827,6 @@ void KIBIS_PIN::getKuKdOneWaveform( KIBIS_MODEL&                            aMod
         case KIBIS_WAVEFORM_TYPE::STUCK_HIGH:
         default: simul += ".tran 0.5 1 \n"; //
         }
-        simul += ".option xmu=0.49  \n";
         //simul += ".dc Vpin -5 5 0.1\n";
         simul += ".control run \n";
         simul += "set filetype=ascii\n";
@@ -1003,9 +1002,7 @@ void KIBIS_PIN::getKuKdTwoWaveforms( KIBIS_MODEL&                            aMo
             Report( _( "Driver needs at least a pullup or a pulldown" ), RPT_SEVERITY_ERROR );
         }
 
-
         simul += ".tran 0.1n 1000n \n";
-        simul += ".option xmu=0.49  \n";
         //simul += ".dc Vpin -5 5 0.1\n";
         simul += ".control run \n";
         simul += "set filetype=ascii\n";

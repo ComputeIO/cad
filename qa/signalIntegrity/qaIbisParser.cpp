@@ -70,7 +70,6 @@ int main( void )
     simul += "R2 OUT_2 COM 25\n";
     simul += "V1 COM 0 1.25\n";
     simul += ".tran 0.1n 1000n \n";
-    simul += ".option xmu=0.49  \n";
     simul += ".control run \n";
     simul += "run \n";
     simul += "plot v(OUT_1) v(OUT_2)\n";
