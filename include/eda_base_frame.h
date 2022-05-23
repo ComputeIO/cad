@@ -609,7 +609,7 @@ protected:
 
     /**
      * Handle a window iconize event.
-     * 
+     *
      * @param aEvent is the data for the event.
      */
     virtual void handleIconizeEvent( wxIconizeEvent& aEvent ) {}
@@ -657,6 +657,18 @@ protected:
     void initExitKey();
 
     void ensureWindowIsOnScreen();
+
+    /**
+     * Handles event fired when a file is dropped to window.
+     */
+    virtual void OnDropFiles( wxDropFilesEvent& aEvent );
+
+    /**
+     * Execute action on accepted dropped file.
+     * Called in OnDropFiles and should be populated with
+     * the action to execute in inherited classes.
+     */
+    virtual void DoOnAcceptedFile( const wxFileName& aProjectFileName ){};
 
     DECLARE_EVENT_TABLE()
 
@@ -744,6 +756,13 @@ private:
 
     ///< Set by #NonUserClose() to indicate that the user did not request the current close.
     bool            m_isNonUserClose;
+
+    /**
+     * Array of dropped files extensions accepted by window.
+     * And size of array;
+     */
+    wxString* m_dropFilesExt;
+    int       m_nberExt;
 };
 
 

@@ -160,11 +160,7 @@ private:
     void setupTools();
     void setupActions();
 
-    /**
-     * Handles event fired when a file is dropped to window.
-     * Opens project file. Does nothing if it is not a kicad project file.
-     */
-    void OnDropFiles( wxDropFilesEvent& aEvent );
+    void DoOnAcceptedFile( const wxFileName& aProjectFileName ) override;
 
     APP_SETTINGS_BASE* config() const override;
 

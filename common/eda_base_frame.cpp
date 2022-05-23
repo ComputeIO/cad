@@ -1089,6 +1089,25 @@ void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
 #undef CREATE_PANEL
 }
 
+void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
+{
+    wxString* files = aEvent.GetFiles();
+    for( int nb = 0; nb < aEvent.GetNumberOfFiles(); nb++ )
+    {
+        const wxFileName fn = wxFileName( files[nb] );
+        bool             fnExtAccepted = false;
+        for( int index = 0; index < m_nberExt; index++ )
+        {
+            fnExtAccepted = fnExtAccepted || ( fn.GetExt() == m_dropFilesExt[index] );
+        }
+
+        if( fnExtAccepted )
+        {
+            DoOnAcceptedFile( fn );
+            break;
+        }
+    }
+}
 
 bool EDA_BASE_FRAME::IsWritable( const wxFileName& aFileName, bool aVerbose )
 {

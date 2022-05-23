@@ -202,6 +202,8 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     // Do not let the messages window have initial focus
     m_leftWin->SetFocus();
 
+    m_nberExt = 2;
+    m_dropFilesExt = new wxString[m_nberExt]{ "kicad_pro", "pro" };
     DragAcceptFiles( true );
 
     // Ensure the window is on top
@@ -211,6 +213,8 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
 
 KICAD_MANAGER_FRAME::~KICAD_MANAGER_FRAME()
 {
+    delete[] m_dropFilesExt;
+
     // Shutdown all running tools
     if( m_toolManager )
         m_toolManager->ShutdownAllTools();
@@ -361,18 +365,9 @@ void KICAD_MANAGER_FRAME::OnSize( wxSizeEvent& event )
     event.Skip();
 }
 
-void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
+void KICAD_MANAGER_FRAME::DoOnAcceptedFile( const wxFileName& aProjectFileName )
 {
-    wxString* files = aEvent.GetFiles();
-    for( int nb = 0; nb < aEvent.GetNumberOfFiles(); nb++ )
-    {
-        const wxFileName fn = wxFileName( files[nb] );
-        if( fn.GetExt() == "kicad_pro" || fn.GetExt() == "pro" )
-        {
-            LoadProject( fn );
-            break;
-        }
-    }
+    LoadProject( aProjectFileName );
 }
 
 bool KICAD_MANAGER_FRAME::canCloseWindow( wxCloseEvent& aEvent )
