@@ -116,8 +116,36 @@ wxString SIM_MODEL_SPICE::GenerateSpiceItemLine( const wxString& aRefName,
         }
     }
 
-    result << GetParam( static_cast<int>( SPICE_PARAM::MODEL ) ).value->ToString() << "\n";
+    result << GetParam( static_cast<unsigned>( SPICE_PARAM::MODEL ) ).value->ToString() << "\n";
     return result;
+}
+
+
+bool SIM_MODEL_SPICE::SetParamFromSpiceCode( const wxString& aParamName,
+                                             const wxString& aParamValue,
+                                             SIM_VALUE_GRAMMAR::NOTATION aNotation )
+{
+    unsigned i = 0;
+
+    for(; i < GetParamCount(); ++i )
+    {
+        if( GetParam( i ).info.name == aParamName.Lower() )
+            break;
+    }
+
+    if( i == GetParamCount() )
+    {
+        // No parameter with this name found. Create a new one.
+        std::unique_ptr<PARAM::INFO> paramInfo = std::make_unique<PARAM::INFO>();
+
+        paramInfo->name = aParamName.Lower();
+        paramInfo->type = SIM_VALUE::TYPE::STRING;
+        m_paramInfos.push_back( std::move( paramInfo ) );
+
+        AddParam( *m_paramInfos.back() );
+    }
+
+    return GetParam( i ).value->FromString( wxString( aParamValue ), aNotation );
 }
 
 
@@ -205,43 +233,4 @@ void SIM_MODEL_SPICE::readLegacyDataFields( int aSymbolPinCount, const std::vect
         SetParamValue( static_cast<int>( SPICE_PARAM::LIB ),
                        GetFieldValue( aFields, LEGACY_LIB_FIELD ) );
     }
-}
-
-
-bool SIM_MODEL_SPICE::setParamFromSpiceCode( const wxString& aParamName,
-                                             const wxString& aParamValue,
-                                             SIM_VALUE_GRAMMAR::NOTATION aNotation )
-{
-    int i = 0;
-
-    for(; i < GetParamCount(); ++i )
-    {
-        if( GetParam( i ).info.name == aParamName.Lower() )
-            break;
-    }
-
-
-    if( i == GetParamCount() )
-    {
-        // No parameter with this name found. Create a new one.
-        std::unique_ptr<PARAM::INFO> paramInfo = std::make_unique<PARAM::INFO>();
-
-        paramInfo->name = aParamName.Lower();
-        paramInfo->type = SIM_VALUE::TYPE::STRING;
-        m_paramInfos.push_back( std::move( paramInfo ) );
-
-        AddParam( *m_paramInfos.back() );
-    }
-
-    try
-    {
-        GetParam( i ).value->FromString( wxString( aParamValue ), aNotation );
-    }
-    catch( const KI_PARAM_ERROR& e )
-    {
-        // Shouldn't happen since it's TYPE::STRING.
-        return false;
-    }
-
-    return true;
 }

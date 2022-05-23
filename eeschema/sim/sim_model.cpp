@@ -714,7 +714,7 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
                 {
                     wxASSERT( !paramName.IsEmpty() );
 
-                    if( !setParamFromSpiceCode( paramName, subnode->string() ) )
+                    if( !SetParamFromSpiceCode( paramName, subnode->string() ) )
                         return false;
                 }
                 else
@@ -807,7 +807,7 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
 
     line << wxString::Format( ".model %s %s(\n+", aModelName, GetSpiceInfo().modelType );
 
-    for( int paramIndex = 0; paramIndex < GetParamCount(); ++paramIndex )
+    for( unsigned paramIndex = 0; paramIndex < GetParamCount(); ++paramIndex )
     {
         const PARAM& param = GetParam( paramIndex );
         wxString valueStr = param.value->ToString();
@@ -867,7 +867,7 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
 
     result << aModelName << " ";
 
-    for( int i = 0; i < GetParamCount(); ++i )
+    for( unsigned i = 0; i < GetParamCount(); ++i )
     {
         const PARAM& param = GetParam( i );
 
@@ -941,7 +941,7 @@ void SIM_MODEL::AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant )
 }
 
 
-const SIM_MODEL::PARAM& SIM_MODEL::GetParam( int aParamIndex ) const
+const SIM_MODEL::PARAM& SIM_MODEL::GetParam( unsigned aParamIndex ) const
 {
     if( m_baseModel && m_params.at( aParamIndex ).value->ToString().IsEmpty() )
         return m_baseModel->GetParam( aParamIndex );
@@ -950,13 +950,24 @@ const SIM_MODEL::PARAM& SIM_MODEL::GetParam( int aParamIndex ) const
 }
 
 
-const SIM_MODEL::PARAM& SIM_MODEL::GetUnderlyingParam( int aParamIndex ) const
+std::vector<std::reference_wrapper<const SIM_MODEL::PARAM>> SIM_MODEL::GetParams() const
+{
+    std::vector<std::reference_wrapper<const PARAM>> params;
+
+    for( unsigned i = 0; i < GetParamCount(); ++i )
+        params.emplace_back( GetParam( i ) );
+
+    return params;
+}
+
+
+const SIM_MODEL::PARAM& SIM_MODEL::GetUnderlyingParam( unsigned aParamIndex ) const
 {
     return m_params.at( aParamIndex );
 }
 
 
-const SIM_MODEL::PARAM& SIM_MODEL::GetBaseParam( int aParamIndex ) const
+const SIM_MODEL::PARAM& SIM_MODEL::GetBaseParam( unsigned aParamIndex ) const
 {
     if( m_baseModel )
         return m_baseModel->GetParam( aParamIndex );
@@ -965,7 +976,7 @@ const SIM_MODEL::PARAM& SIM_MODEL::GetBaseParam( int aParamIndex ) const
 }
 
 
-bool SIM_MODEL::SetParamValue( int aParamIndex, const wxString& aValue,
+bool SIM_MODEL::SetParamValue( unsigned aParamIndex, const wxString& aValue,
                                SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
     // Models sourced from a library are immutable.
@@ -1103,7 +1114,7 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
             wxASSERT( !paramName.IsEmpty() );
             // TODO: Shouldn't be named "...fromSpiceCode" here...
 
-            setParamFromSpiceCode( paramName, node->string(), SIM_VALUE_GRAMMAR::NOTATION::SI );
+            SetParamFromSpiceCode( paramName, node->string(), SIM_VALUE_GRAMMAR::NOTATION::SI );
         }
         else if( node->is_type<SIM_MODEL_PARSER::quotedString>() )
         {
@@ -1114,7 +1125,7 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
             // Unescape quotes.
             str.Replace( "\\\"", "\"" );
 
-            setParamFromSpiceCode( paramName, str, SIM_VALUE_GRAMMAR::NOTATION::SI );
+            SetParamFromSpiceCode( paramName, str, SIM_VALUE_GRAMMAR::NOTATION::SI );
         }
         else
         {
@@ -1172,6 +1183,24 @@ bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField 
     }
 
     return true;
+}
+
+
+bool SIM_MODEL::SetParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
+                                       SIM_VALUE_GRAMMAR::NOTATION aNotation )
+{
+    std::vector<std::reference_wrapper<const PARAM>> params = GetParams();
+
+    auto it = std::find_if( params.begin(), params.end(),
+                            [aParamName]( const PARAM& param )
+                            {
+                                return param.info.name == aParamName.Lower();
+                            } );
+    
+    if( it == params.end() )
+        return false;
+
+    return SetParamValue( it - params.begin(), aParamValue, aNotation );
 }
 
 
@@ -1299,22 +1328,4 @@ wxString SIM_MODEL::generatePinsField() const
     }
 
     return result;
-}
-
-
-bool SIM_MODEL::setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
-                                       SIM_VALUE_GRAMMAR::NOTATION aNotation )
-{
-    int i = 0;
-
-    for(; i < GetParamCount(); ++i )
-    {
-        if( GetParam( i ).info.name == aParamName.Lower() )
-            break;
-    }
-
-    if( i == GetParamCount() )
-        return false; // No parameter with this name exists.
-
-    return SetParamValue( i, wxString( aParamValue ), aNotation );
 }

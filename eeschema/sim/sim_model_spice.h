@@ -22,8 +22,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef SIM_MODEL_RAWSPICE_H
-#define SIM_MODEL_RAWSPICE_H
+#ifndef SIM_MODEL_SPICE_H
+#define SIM_MODEL_SPICE_H
 
 #include <sim/sim_model.h>
 
@@ -60,17 +60,18 @@ public:
                                     const wxString& aModelName,
                                     const std::vector<wxString>& aPinNetNames ) const override;
 
+protected:
+    bool SetParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
+                                SIM_VALUE_GRAMMAR::NOTATION aNotation
+                                    = SIM_VALUE_GRAMMAR::NOTATION::SPICE ) override;
+
 private:
     std::vector<PARAM::INFO> makeParamInfos();
 
     template <typename T>
     void readLegacyDataFields( int aSymbolPinCount, const std::vector<T>* aFields );
 
-    bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
-                                SIM_VALUE_GRAMMAR::NOTATION aNotation
-                                    = SIM_VALUE_GRAMMAR::NOTATION::SPICE ) override;
-
     std::vector<std::unique_ptr<PARAM::INFO>> m_paramInfos;
 };
 
-#endif // SIM_MODEL_RAWSPICE_H
+#endif // SIM_MODEL_SPICE_H

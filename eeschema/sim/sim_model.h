@@ -337,14 +337,14 @@ public:
         struct INFO
         {
             wxString name;
-            unsigned int id = 0; // Legacy.
+            unsigned int id = 0; // Legacy (don't remove).
             DIR dir = DIR::INOUT;
             SIM_VALUE::TYPE type = SIM_VALUE::TYPE::FLOAT;
-            FLAGS flags = {}; // Legacy
+            FLAGS flags = {}; // Legacy (don't remove).
             wxString unit = "";
             CATEGORY category = CATEGORY::PRINCIPAL;
             wxString defaultValue = "";
-            wxString defaultValueOfOtherVariant = ""; // Legacy.
+            wxString defaultValueOfOtherVariant = ""; // Legacy (don't remove).
             wxString description = "";
             bool isInstanceParam = false;
         };
@@ -458,11 +458,14 @@ public:
     }
 
 
-    int GetParamCount() const { return static_cast<int>( m_params.size() ); }
-    const PARAM& GetParam( int aParamIndex ) const; // Return base parameter unless it's overridden.
-    const PARAM& GetUnderlyingParam( int aParamIndex ) const; // Return the actual parameter.
-    const PARAM& GetBaseParam( int aParamIndex ) const; // Always return base parameter if it exists.
-    virtual bool SetParamValue( int aParamIndex, const wxString& aValue,
+    unsigned GetParamCount() const { return m_params.size(); }
+    const PARAM& GetParam( unsigned aParamIndex ) const; // Return base parameter unless it's overridden.
+
+    std::vector<std::reference_wrapper<const PARAM>> GetParams() const;
+
+    const PARAM& GetUnderlyingParam( unsigned aParamIndex ) const; // Return the actual parameter.
+    const PARAM& GetBaseParam( unsigned aParamIndex ) const; // Always return base parameter if it exists.
+    virtual bool SetParamValue( unsigned aParamIndex, const wxString& aValue,
                                 SIM_VALUE_GRAMMAR::NOTATION aNotation
                                     = SIM_VALUE_GRAMMAR::NOTATION::SI );
 
@@ -485,6 +488,11 @@ protected:
 
     bool ParsePinsField( int aSymbolPinCount, const wxString& aPinsField );
 
+    // TODO: Rename.
+    virtual bool SetParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
+                                        SIM_VALUE_GRAMMAR::NOTATION aNotation
+                                            = SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+
     wxString m_spiceCode;
 
 private:
@@ -505,11 +513,6 @@ private:
     wxString generateTypeField() const;
 
     wxString generatePinsField() const;
-
-    // TODO: Rename.
-    virtual bool setParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
-                                        SIM_VALUE_GRAMMAR::NOTATION aNotation
-                                            = SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
 
     const SIM_MODEL* m_baseModel;

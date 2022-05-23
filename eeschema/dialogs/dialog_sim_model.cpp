@@ -221,6 +221,9 @@ void DIALOG_SIM_MODEL<T>::updateModelParamsTab()
         m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
         m_paramGrid->HideProperty( "DC" );
 
+        m_paramGrid->Append( new wxPropertyCategory( "Capacitance" ) );
+        m_paramGrid->HideProperty( "Capacitance" );
+
         m_paramGrid->Append( new wxPropertyCategory( "Temperature" ) );
         m_paramGrid->HideProperty( "Temperature" );
 
