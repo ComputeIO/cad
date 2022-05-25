@@ -33,6 +33,7 @@
 
 
 #include <vector>
+#include <map>
 
 #include <wx/aui/aui.h>
 #include <layer_ids.h>
@@ -668,7 +669,7 @@ protected:
      * Called in OnDropFiles and should be populated with
      * the action to execute in inherited classes.
      */
-    virtual void DoOnAcceptedFile( const wxFileName& aProjectFileName ){};
+    virtual void DoOnAcceptedFile( const wxFileName& aFileName ){};
 
     DECLARE_EVENT_TABLE()
 
@@ -761,7 +762,7 @@ private:
      * Array of dropped files extensions accepted by window.
      * And size of array;
      */
-    wxString* m_dropFilesExt;
+    std::map<const wxString, TOOL_ACTION*> m_dropFilesExt;
     int       m_nberExt;
 };
 
