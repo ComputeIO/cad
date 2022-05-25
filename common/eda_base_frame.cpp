@@ -1095,16 +1095,13 @@ void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
     for( int nb = 0; nb < aEvent.GetNumberOfFiles(); nb++ )
     {
         const wxFileName fn = wxFileName( files[nb] );
-        bool             fnExtAccepted = false;
-        for( int index = 0; index < m_nberExt; index++ )
+        for( const auto& [ext, tool] : m_dropFilesExt )
         {
-            fnExtAccepted = fnExtAccepted || ( fn.GetExt() == m_dropFilesExt[index] );
-        }
-
-        if( fnExtAccepted )
-        {
-            DoOnAcceptedFile( fn );
-            break;
+            if( fn.GetExt() == ext )
+            {
+                DoOnAcceptedFile( fn );
+                break;
+            }
         }
     }
 }
