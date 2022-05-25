@@ -248,7 +248,7 @@ void NETLIST_EXPORTER_SPICE::readNameField( SCH_SYMBOL& aSymbol, SPICE_ITEM& aIt
         if( baseModel )
         {
             aItem.model = SIM_MODEL::Create( *baseModel,
-                                             static_cast<int>( m_sortedSymbolPinList.size() ),
+                                             m_sortedSymbolPinList.size(),
                                              aSymbol.GetFields() );
             aItem.modelName = modelName;
             return;

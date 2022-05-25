@@ -245,7 +245,7 @@ void DIALOG_SIM_MODEL<T>::updateModelParamsTab()
         m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
         m_paramGrid->HideProperty( "Flags" );
 
-        for( int i = 0; i < curModel().GetParamCount(); ++i )
+        for( unsigned i = 0; i < curModel().GetParamCount(); ++i )
             addParamPropertyIfRelevant( i );
 
         m_paramGrid->CollapseAll();
@@ -312,9 +312,9 @@ void DIALOG_SIM_MODEL<T>::updatePinAssignmentsTab()
                                             "Not Connected" );
     }
 
-    for( int i = 0; i < curModel().GetPinCount(); ++i )
+    for( unsigned i = 0; i < curModel().GetPinCount(); ++i )
     {
-        int symbolPinNumber = curModel().GetPin( i ).symbolPinNumber;
+        unsigned symbolPinNumber = curModel().GetPin( i ).symbolPinNumber;
 
         if( symbolPinNumber == SIM_MODEL::PIN::NOT_CONNECTED )
             continue;
@@ -322,7 +322,7 @@ void DIALOG_SIM_MODEL<T>::updatePinAssignmentsTab()
         wxString modelPinString = getModelPinString( i + 1 );
         wxArrayString choices; 
 
-        m_pinAssignmentsGrid->SetCellValue( symbolPinNumber - 1,
+        m_pinAssignmentsGrid->SetCellValue( static_cast<int>( symbolPinNumber - 1 ),
                                             static_cast<int>( PIN_COLUMN::MODEL ),
                                             modelPinString );
     }
@@ -340,7 +340,7 @@ void DIALOG_SIM_MODEL<T>::updatePinAssignmentsGridEditors()
     wxString modelPinChoicesString = "";
     bool isFirst = true;
 
-    for( int i = 0; i < curModel().GetPinCount(); ++i )
+    for( unsigned i = 0; i < curModel().GetPinCount(); ++i )
     {
         const SIM_MODEL::PIN& modelPin = curModel().GetPin( i );
         int modelPinNumber = static_cast<int>( i + 1 );

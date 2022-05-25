@@ -46,7 +46,7 @@ SIM_MODEL_IDEAL::SIM_MODEL_IDEAL( TYPE aType )
 }
 
 
-void SIM_MODEL_IDEAL::ReadDataSchFields( int aSymbolPinCount,
+void SIM_MODEL_IDEAL::ReadDataSchFields( unsigned aSymbolPinCount,
                                          const std::vector<SCH_FIELD>* aFields )
 {
     if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
@@ -56,7 +56,7 @@ void SIM_MODEL_IDEAL::ReadDataSchFields( int aSymbolPinCount,
 }
 
 
-void SIM_MODEL_IDEAL::ReadDataLibFields( int aSymbolPinCount,
+void SIM_MODEL_IDEAL::ReadDataLibFields( unsigned aSymbolPinCount,
                                          const std::vector<LIB_FIELD>* aFields )
 {
     if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
@@ -100,7 +100,7 @@ wxString SIM_MODEL_IDEAL::GenerateSpiceItemLine( const wxString& aRefName,
 
 
 template <typename T>
-void SIM_MODEL_IDEAL::inferredReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
+void SIM_MODEL_IDEAL::inferredReadDataFields( unsigned aSymbolPinCount, const std::vector<T>* aFields )
 {
     ParsePinsField( aSymbolPinCount, PINS_FIELD );
 

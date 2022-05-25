@@ -38,11 +38,11 @@ SIM_MODEL_SPICE::SIM_MODEL_SPICE( TYPE aType )
 }
 
 
-void SIM_MODEL_SPICE::ReadDataSchFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
+void SIM_MODEL_SPICE::ReadDataSchFields( unsigned aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
 {
     LOCALE_IO toggle;
 
-    for( int i = 0; i < aSymbolPinCount; ++i )
+    for( unsigned i = 0; i < aSymbolPinCount; ++i )
         AddPin( { wxString::Format( "%d", i + 1 ), i + 1 } );
 
     SIM_MODEL::ReadDataSchFields( aSymbolPinCount, aFields );
@@ -50,11 +50,11 @@ void SIM_MODEL_SPICE::ReadDataSchFields( int aSymbolPinCount, const std::vector<
 }
 
 
-void SIM_MODEL_SPICE::ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
+void SIM_MODEL_SPICE::ReadDataLibFields( unsigned aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
 {
     LOCALE_IO toggle;
 
-    for( int i = 0; i < aSymbolPinCount; ++i )
+    for( unsigned i = 0; i < aSymbolPinCount; ++i )
         AddPin( { wxString::Format( "%d", i + 1 ), i + 1 } );
 
     SIM_MODEL::ReadDataLibFields( aSymbolPinCount, aFields );
@@ -105,11 +105,11 @@ wxString SIM_MODEL_SPICE::GenerateSpiceItemLine( const wxString& aRefName,
     wxString result = "";
     result << GenerateSpiceItemName( aRefName ) << " ";
 
-    for( int i = 0; i < GetPinCount(); ++i )
+    for( unsigned i = 0; i < GetPinCount(); ++i )
     {
-        for( int j = 0; j < ( int ) aPinNetNames.size(); ++j )
+        for( unsigned j = 0; j < aPinNetNames.size(); ++j )
         {
-            int symbolPinNumber = j + 1;
+            unsigned symbolPinNumber = j + 1;
 
             if( symbolPinNumber == GetPin( i ).symbolPinNumber )
                 result << aPinNetNames[j] << " ";
@@ -202,7 +202,7 @@ std::vector<SIM_MODEL::PARAM::INFO> SIM_MODEL_SPICE::makeParamInfos()
 
 
 template <typename T>
-void SIM_MODEL_SPICE::readLegacyDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
+void SIM_MODEL_SPICE::readLegacyDataFields( unsigned aSymbolPinCount, const std::vector<T>* aFields )
 {
     // Fill in the blanks with the legacy parameters.
 

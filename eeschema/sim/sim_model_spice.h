@@ -47,8 +47,8 @@ public:
     SIM_MODEL_SPICE( TYPE aType );
 
     //bool ReadSpiceCode( const std::string& aSpiceCode ) override;
-    void ReadDataSchFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields ) override;
-    void ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields ) override;
+    void ReadDataSchFields( unsigned aSymbolPinCount, const std::vector<SCH_FIELD>* aFields ) override;
+    void ReadDataLibFields( unsigned aSymbolPinCount, const std::vector<LIB_FIELD>* aFields ) override;
 
     void WriteDataSchFields( std::vector<SCH_FIELD>& aFields ) const override;
     void WriteDataLibFields( std::vector<LIB_FIELD>& aFields ) const override;
@@ -69,7 +69,7 @@ private:
     std::vector<PARAM::INFO> makeParamInfos();
 
     template <typename T>
-    void readLegacyDataFields( int aSymbolPinCount, const std::vector<T>* aFields );
+    void readLegacyDataFields( unsigned aSymbolPinCount, const std::vector<T>* aFields );
 
     std::vector<std::unique_ptr<PARAM::INFO>> m_paramInfos;
 };

@@ -23,14 +23,17 @@
  */
 
 #include <iterator>
+
 #include <sim/sim_model.h>
-#include <sim/sim_model_ideal.h>
 #include <sim/sim_model_behavioral.h>
+#include <sim/sim_model_ideal.h>
+#include <sim/sim_model_ngspice.h>
+#include <sim/sim_model_passive.h>
 #include <sim/sim_model_source.h>
+#include <sim/sim_model_spice.h>
 #include <sim/sim_model_subckt.h>
 #include <sim/sim_model_xspice.h>
-#include <sim/sim_model_spice.h>
-#include <sim/sim_model_ngspice.h>
+
 #include <pegtl.hpp>
 #include <pegtl/contrib/parse_tree.hpp>
 #include <locale_io.h>
@@ -505,7 +508,7 @@ TYPE SIM_MODEL::InferTypeFromRef( const wxString& aRef )
         { "IRANDPOISSON", TYPE::I_RANDPOISSON },
         { "IBEHAVIORAL", TYPE::I_BEHAVIORAL }
     };
-    
+
     for( auto&& [prefix, type] : refPrefixToType )
     {
         if( aRef.StartsWith( prefix ) )
@@ -531,7 +534,7 @@ TYPE SIM_MODEL::InferTypeFromLegacyFields( const std::vector<T>& aFields )
 }
 
 
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType, int aSymbolPinCount )
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( TYPE aType, unsigned aSymbolPinCount )
 {
     std::unique_ptr<SIM_MODEL> model = create( aType );
 
@@ -559,15 +562,15 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::string& aSpiceCode )
 
 
 template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel,
-                                                       int aSymbolPinCount,
+                                                       unsigned aSymbolPinCount,
                                                        const std::vector<SCH_FIELD>& aFields );
 
 template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel,
-                                                       int aSymbolPinCount,
+                                                       unsigned aSymbolPinCount,
                                                        const std::vector<LIB_FIELD>& aFields );
 
 template <typename T>
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel, int aSymbolPinCount,
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel, unsigned aSymbolPinCount,
                                               const std::vector<T>& aFields )
 {
     std::unique_ptr<SIM_MODEL> model = create( aBaseModel.GetType() );
@@ -578,13 +581,14 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const SIM_MODEL& aBaseModel, int a
 }
 
 
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int aSymbolPinCount,
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( unsigned aSymbolPinCount,
                                                        const std::vector<SCH_FIELD>& aFields );
-template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int aSymbolPinCount,
+template std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( unsigned aSymbolPinCount,
                                                        const std::vector<LIB_FIELD>& aFields );
 
 template <typename T>
-std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( int aSymbolPinCount, const std::vector<T>& aFields )
+std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( unsigned aSymbolPinCount,
+                                              const std::vector<T>& aFields )
 {
     std::unique_ptr<SIM_MODEL> model = SIM_MODEL::create( ReadTypeFromFields( aFields ) );
 
@@ -737,33 +741,33 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
 
 
 template <typename T>
-void SIM_MODEL::ReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
+void SIM_MODEL::ReadDataFields( unsigned aSymbolPinCount, const std::vector<T>* aFields )
 {
     doReadDataFields( aSymbolPinCount, aFields );
 }
 
 
 template <>
-void SIM_MODEL::ReadDataFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
+void SIM_MODEL::ReadDataFields( unsigned aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
 {
     ReadDataSchFields( aSymbolPinCount, aFields );
 }
 
 
 template <>
-void SIM_MODEL::ReadDataFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
+void SIM_MODEL::ReadDataFields( unsigned aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
 {
     ReadDataLibFields( aSymbolPinCount, aFields );
 }
 
 
-void SIM_MODEL::ReadDataSchFields( int aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
+void SIM_MODEL::ReadDataSchFields( unsigned aSymbolPinCount, const std::vector<SCH_FIELD>* aFields )
 {
     doReadDataFields( aSymbolPinCount, aFields );
 }
 
 
-void SIM_MODEL::ReadDataLibFields( int aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
+void SIM_MODEL::ReadDataLibFields( unsigned aSymbolPinCount, const std::vector<LIB_FIELD>* aFields )
 {
     doReadDataFields( aSymbolPinCount, aFields );
 }
@@ -854,11 +858,11 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
     wxString result = "";
     result << GenerateSpiceItemName( aRefName ) << " ";
 
-    for( int i = 0; i < GetPinCount(); ++i )
+    for( unsigned i = 0; i < GetPinCount(); ++i )
     {
-        for( int j = 0; j < ( int ) aPinNetNames.size(); ++j )
+        for( unsigned j = 0; j < aPinNetNames.size(); ++j )
         {
-            int symbolPinNumber = j + 1;
+            unsigned symbolPinNumber = j + 1;
 
             if( symbolPinNumber == GetPin( i ).symbolPinNumber )
                 result << aPinNetNames[j] << " ";
@@ -923,9 +927,9 @@ void SIM_MODEL::AddPin( const PIN& aPin )
 }
 
 
-int SIM_MODEL::FindModelPinNumber( int aSymbolPinNumber )
+unsigned SIM_MODEL::FindModelPinNumber( unsigned aSymbolPinNumber )
 {
-    for( int i = 0; i < GetPinCount(); ++i )
+    for( unsigned i = 0; i < GetPinCount(); ++i )
     {
         if( GetPin( i ).symbolPinNumber == aSymbolPinNumber )
             return i + 1;
@@ -1138,11 +1142,11 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
 }
 
 
-bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField )
+bool SIM_MODEL::ParsePinsField( unsigned aSymbolPinCount, const wxString& aPinsField )
 {
     // Default pin sequence: model pins are the same as symbol pins.
     // Excess model pins are set as Not Connected.
-    for( int i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
+    for( unsigned i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
     {
         if( i < aSymbolPinCount )
             AddPin( { getPinNames().at( i ), i + 1 } );
@@ -1173,7 +1177,7 @@ bool SIM_MODEL::ParsePinsField( int aSymbolPinCount, const wxString& aPinsField 
     if( static_cast<int>( root->children.size() ) != GetPinCount() )
         return false;
 
-    for( unsigned int i = 0; i < root->children.size(); ++i )
+    for( unsigned i = 0; i < root->children.size(); ++i )
     {
         if( root->children.at( i )->string() == "X" )
             SetPinSymbolPinNumber( static_cast<int>( i ), PIN::NOT_CONNECTED );
@@ -1212,6 +1216,11 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
     case TYPE::C:
     case TYPE::L:
         return std::make_unique<SIM_MODEL_IDEAL>( aType );
+
+    case TYPE::R_ADV:
+    case TYPE::C_ADV:
+    case TYPE::L_ADV:
+        return std::make_unique<SIM_MODEL_PASSIVE>( aType );
 
     case TYPE::R_BEHAVIORAL:
     case TYPE::C_BEHAVIORAL:
@@ -1280,7 +1289,7 @@ TYPE SIM_MODEL::readTypeFromSpiceTypeString( const std::string& aTypeString )
 
 
 template <typename T>
-void SIM_MODEL::doReadDataFields( int aSymbolPinCount, const std::vector<T>* aFields )
+void SIM_MODEL::doReadDataFields( unsigned aSymbolPinCount, const std::vector<T>* aFields )
 {
     ParsePinsField( aSymbolPinCount, GetFieldValue( aFields, PINS_FIELD ) );
     ParseParamsField( GetFieldValue( aFields, PARAMS_FIELD ) );
@@ -1314,7 +1323,7 @@ wxString SIM_MODEL::generatePinsField() const
     wxString result = "";
     bool isFirst = true;
 
-    for( int i = 0; i < GetPinCount(); ++i )
+    for( unsigned i = 0; i < GetPinCount(); ++i )
     {
         if( isFirst )
             isFirst = false;
