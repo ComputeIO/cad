@@ -1218,7 +1218,7 @@ void SIM_PLOT_FRAME::menuSaveCsv( wxCommandEvent& event )
 
     wxFFile out( saveDlg.GetPath(), "wb" );
 
-    auto traces = GetCurrentPlot()->GetTraces();
+    std::map<wxString, TRACE *> traces = GetCurrentPlot()->GetTraces();
     assert(traces);
     
     if( traces.size() == 0 )
@@ -1226,33 +1226,30 @@ void SIM_PLOT_FRAME::menuSaveCsv( wxCommandEvent& event )
 
     SIM_TYPE simType = m_circuitModel->GetSimType();
     
-    std::size_t maxRows = traces.begin()->second->GetDataX().size();
-    
-    for ( std::size_t cRow=0; cRow < maxRows; cRow++ )
+    std::size_t rowCount = traces.begin()->second->GetDataX().size();
+
+    // write column header names on the first row
+    wxString xAxisName( m_simulator->GetXAxis( simType ) );
+    out.Write( wxString::Format( "%s%c", xAxisName, SEPARATOR ) );
+
+    for( const auto& trace : traces )
     {
-        if( cRow == 0 )
-        {
-            // write column header names on the first row
-            wxString xAxisName( m_simulator->GetXAxis( simType ) );
-            out.Write( wxString::Format( "%s%c", xAxisName, SEPARATOR ) );
+        wxString yAxisName = trace.first;
+        out.Write( wxString::Format( "%s%c", yAxisName, SEPARATOR ) );
+    }
 
-            for( const auto& trace : traces )
-            {
-                wxString yAxisName = trace.first;
-                out.Write( wxString::Format( "%s%c", yAxisName, SEPARATOR ) );
-            }
-        }
-        else
-        {
-            // write each row's numerical value
-            double xAxisValue = traces.begin()->second->GetDataX().at( cRow );
-            out.Write( wxString::Format( "%g%c", xAxisValue, SEPARATOR ) );
+    out.Write( "\r\n" );
 
-            for( const auto& trace : traces )
-            {
-                double yAxisValue = trace.second->GetDataY().at( cRow );
-                out.Write( wxString::Format( "%g%c", yAxisValue, SEPARATOR ) );
-            }
+    // write each row's numerical value
+    for ( std::size_t curRow=0; curRow < rowCount; curRow++ )
+    {
+        double xAxisValue = traces.begin()->second->GetDataX().at( curRow );
+        out.Write( wxString::Format( "%g%c", xAxisValue, SEPARATOR ) );
+
+        for( const auto& trace : traces )
+        {
+            double yAxisValue = trace.second->GetDataY().at( curRow );
+            out.Write( wxString::Format( "%g%c", yAxisValue, SEPARATOR ) );
         }
 
         out.Write( "\r\n" );
