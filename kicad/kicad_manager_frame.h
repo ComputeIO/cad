@@ -160,7 +160,7 @@ private:
     void setupTools();
     void setupActions();
 
-    void DoOnAcceptedFile( const wxFileName& aProjectFileName ) override;
+    void DoOnAcceptedFile( const wxFileName& aFileName ) override;
 
     APP_SETTINGS_BASE* config() const override;
 
