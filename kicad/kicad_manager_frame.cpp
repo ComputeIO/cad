@@ -208,6 +208,12 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     m_dropFilesExt.emplace( "gbr",       &KICAD_MANAGER_ACTIONS::viewGerbers );
     m_dropFilesExt.emplace( "gbrjob",    &KICAD_MANAGER_ACTIONS::viewGerbers );
     m_dropFilesExt.emplace( "drl",       &KICAD_MANAGER_ACTIONS::viewGerbers );
+    // Eagle files import
+    m_dropFilesExt.emplace( "sch",       &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_dropFilesExt.emplace( "brd",       &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    // Cadstar files import
+    m_dropFilesExt.emplace( "csa",       &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_dropFilesExt.emplace( "cpa",       &KICAD_MANAGER_ACTIONS::importNonKicadProj );
     DragAcceptFiles( true );
 
     // Ensure the window is on top

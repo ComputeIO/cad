@@ -40,7 +40,10 @@
 #include <wx/dir.h>
 #include <wx/filedlg.h>
 #include "dialog_pcm.h"
-
+#include <richio.h>
+#include <macros.h>
+#include <sch_io_mgr.h>
+#include <io_mgr.h>
 
 ///> Helper widget to select whether a new directory should be created for a project.
 class DIR_CHECKBOX : public wxPanel
@@ -334,6 +337,146 @@ int KICAD_MANAGER_CONTROL::OpenProject( const TOOL_EVENT& aEvent )
 int KICAD_MANAGER_CONTROL::CloseProject( const TOOL_EVENT& aEvent )
 {
     m_frame->CloseProject( true );
+    return 0;
+}
+
+int KICAD_MANAGER_CONTROL::ImportNonKicadProj( const TOOL_EVENT& aEvent )
+{
+    wxString msg;
+
+    if( !aEvent.Parameter<wxString*>() )
+        return -1;
+
+    m_frame->CloseProject( true );
+
+    wxFileName sch( *aEvent.Parameter<wxString*>() );
+
+    wxString schFileExtension, pcbFileExtension;
+    int      schFileType, pcbFileType;
+
+    // Define extensions to use according to file dropped.
+    // Eagle project.
+    if( sch.GetExt() == LegacySchematicFileExtension || sch.GetExt() == LegacyPcbFileExtension )
+    {
+        schFileExtension = LegacySchematicFileExtension;
+        pcbFileExtension = LegacyPcbFileExtension;
+        schFileType = SCH_IO_MGR::SCH_EAGLE;
+        pcbFileType = IO_MGR::EAGLE;
+    }
+    else
+    {
+        // Cadstar project.
+        if( sch.GetExt() == "csa" || sch.GetExt() == "cpa" )
+        {
+            schFileExtension = "csa";
+            pcbFileExtension = "cpa";
+            schFileType = SCH_IO_MGR::SCH_CADSTAR_ARCHIVE;
+            pcbFileType = IO_MGR::CADSTAR_PCB_ARCHIVE;
+        }
+        else
+            return -1;
+    }
+
+    sch.SetExt( schFileExtension );
+
+    wxFileName pcb( sch );
+    pcb.SetExt( pcbFileExtension );
+
+    wxFileName pro( sch );
+    pro.SetExt( ProjectFileExtension );
+
+    // Check if the project directory is empty
+    wxDir directory( pro.GetPath() );
+
+    if( directory.HasFiles() )
+    {
+        // Append a new directory with the same name of the project file
+        // Keep iterating until we find an empty directory
+        wxString newDir = pro.GetName();
+        int      attempt = 0;
+
+        pro.AppendDir( newDir );
+
+        while( pro.DirExists() )
+        {
+            pro.RemoveLastDir();
+            wxString suffix = wxString::Format( "_%d", ++attempt );
+            pro.AppendDir( newDir + suffix );
+        }
+
+        if( !wxMkdir( pro.GetPath() ) )
+            return -1;
+    }
+
+    std::string packet;
+
+    pro.SetExt( ProjectFileExtension );
+
+    if( !pro.IsAbsolute() )
+        pro.MakeAbsolute();
+
+    wxFileName schCopy( pro );
+    schCopy.SetExt( schFileExtension );
+
+    if( sch.Exists() && !schCopy.SameAs( sch ) )
+    {
+        if( !wxCopyFile( sch.GetFullPath(), schCopy.GetFullPath(), true ) )
+            return -1;
+    }
+
+    wxFileName pcbCopy( pro );
+    pcbCopy.SetExt( pcbFileExtension );
+
+    if( pcb.Exists() && !pcbCopy.SameAs( pcb ) )
+    {
+        if( !wxCopyFile( pcb.GetFullPath(), pcbCopy.GetFullPath(), true ) )
+            return -1;
+    }
+
+    m_frame->CreateNewProject( pro.GetFullPath(), false /* Don't create stub files */ );
+    m_frame->LoadProject( pro );
+
+    if( schCopy.FileExists() )
+    {
+        KIWAY_PLAYER* schframe = m_frame->Kiway().Player( FRAME_SCH, true );
+
+        packet = StrPrintf( "%d\n%s", schFileType, TO_UTF8( schCopy.GetFullPath() ) );
+        schframe->Kiway().ExpressMail( FRAME_SCH, MAIL_IMPORT_FILE, packet, m_frame );
+
+        if( !schframe->IsShown() )
+            schframe->Show( true );
+
+        // On Windows, Raise() does not bring the window on screen, when iconized
+        if( schframe->IsIconized() )
+            schframe->Iconize( false );
+
+        schframe->Raise();
+
+        if( !schCopy.SameAs( sch ) ) // Do not delete the original file!
+            wxRemoveFile( schCopy.GetFullPath() );
+    }
+
+    if( pcbCopy.FileExists() )
+    {
+        KIWAY_PLAYER* pcbframe = m_frame->Kiway().Player( FRAME_PCB_EDITOR, true );
+
+        if( !pcbframe->IsVisible() )
+            pcbframe->Show( true );
+
+        packet = StrPrintf( "%d\n%s", pcbFileType, TO_UTF8( pcbCopy.GetFullPath() ) );
+        pcbframe->Kiway().ExpressMail( FRAME_PCB_EDITOR, MAIL_IMPORT_FILE, packet, m_frame );
+
+        // On Windows, Raise() does not bring the window on screen, when iconized
+        if( pcbframe->IsIconized() )
+            pcbframe->Iconize( false );
+
+        pcbframe->Raise();
+
+        if( !pcbCopy.SameAs( pcb ) ) // Do not delete the original file!
+            wxRemoveFile( pcbCopy.GetFullPath() );
+    }
+    m_frame->ReCreateTreePrj();
+    m_frame->LoadProject( pro );
     return 0;
 }
 
@@ -843,13 +986,14 @@ int KICAD_MANAGER_CONTROL::ShowPluginManager( const TOOL_EVENT& aEvent )
 
 void KICAD_MANAGER_CONTROL::setTransitions()
 {
-    Go( &KICAD_MANAGER_CONTROL::NewProject,      KICAD_MANAGER_ACTIONS::newProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::NewFromTemplate, KICAD_MANAGER_ACTIONS::newFromTemplate.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::OpenDemoProject, KICAD_MANAGER_ACTIONS::openDemoProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::OpenProject,     KICAD_MANAGER_ACTIONS::openProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::CloseProject,    KICAD_MANAGER_ACTIONS::closeProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::SaveProjectAs,   ACTIONS::saveAs.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::LoadProject,     KICAD_MANAGER_ACTIONS::loadProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::NewProject,         KICAD_MANAGER_ACTIONS::newProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::NewFromTemplate,    KICAD_MANAGER_ACTIONS::newFromTemplate.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::OpenDemoProject,    KICAD_MANAGER_ACTIONS::openDemoProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::OpenProject,        KICAD_MANAGER_ACTIONS::openProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::CloseProject,       KICAD_MANAGER_ACTIONS::closeProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::SaveProjectAs,      ACTIONS::saveAs.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::LoadProject,        KICAD_MANAGER_ACTIONS::loadProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ImportNonKicadProj, KICAD_MANAGER_ACTIONS::importNonKicadProj.MakeEvent() );
 
     Go( &KICAD_MANAGER_CONTROL::Refresh,         ACTIONS::zoomRedraw.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::UpdateMenu,      ACTIONS::updateMenu.MakeEvent() );
