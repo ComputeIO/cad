@@ -37,11 +37,8 @@ public:
     static TOOL_ACTION openProject;
     static TOOL_ACTION closeProject;
     static TOOL_ACTION loadProject;
-<<<<<<< HEAD
     static TOOL_ACTION importNonKicadProj;
     static TOOL_ACTION viewDroppedGerbers;
-=======
->>>>>>> eb2596228a (Reformat code for dropping project files to kicad manager window.)
 
     static TOOL_ACTION editSchematic;
     static TOOL_ACTION editSymbols;
