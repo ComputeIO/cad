@@ -202,8 +202,12 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     // Do not let the messages window have initial focus
     m_leftWin->SetFocus();
 
-    m_dropFilesExt.insert( std::pair( "kicad_pro", &KICAD_MANAGER_ACTIONS::loadProject ) );
-    m_dropFilesExt.insert( std::pair( "pro", &KICAD_MANAGER_ACTIONS::loadProject ) );
+    // Init for dropping files
+    m_dropFilesExt.emplace( "kicad_pro", &KICAD_MANAGER_ACTIONS::loadProject );
+    m_dropFilesExt.emplace( "pro",       &KICAD_MANAGER_ACTIONS::loadProject );
+    m_dropFilesExt.emplace( "gbr",       &KICAD_MANAGER_ACTIONS::viewGerbers );
+    m_dropFilesExt.emplace( "gbrjob",    &KICAD_MANAGER_ACTIONS::viewGerbers );
+    m_dropFilesExt.emplace( "drl",       &KICAD_MANAGER_ACTIONS::viewGerbers );
     DragAcceptFiles( true );
 
     // Ensure the window is on top
