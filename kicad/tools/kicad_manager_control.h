@@ -51,6 +51,7 @@ public:
     int CloseProject( const TOOL_EVENT& aEvent );
     int SaveProjectAs( const TOOL_EVENT& aEvent );
     int LoadProject( const TOOL_EVENT& aEvent );
+    int ImportNonKicadProj( const TOOL_EVENT& aEvent );
 
     int Refresh( const TOOL_EVENT& aEvent );
     int UpdateMenu( const TOOL_EVENT& aEvent );
