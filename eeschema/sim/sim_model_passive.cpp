@@ -57,6 +57,82 @@ SIM_MODEL_PASSIVE::SIM_MODEL_PASSIVE( TYPE aType )
 }
 
 
+wxString SIM_MODEL_PASSIVE::GenerateSpiceItemLine( const wxString& aRefName,
+                                                   const wxString& aModelName,
+                                                   const std::vector<wxString>& aPinNetNames ) const
+{
+    wxString result = "";
+    result << GenerateSpiceItemName( aRefName ) << " ";
+
+    for( const PIN& pin : GetPins() )
+    {
+        for( unsigned i = 0; i < aPinNetNames.size(); ++i )
+        {
+            unsigned symbolPinNumber = i + 1;
+            
+            if( symbolPinNumber == pin.symbolPinNumber )
+                result << aPinNetNames[i] << " ";
+        }
+    }
+
+    // The model name is preceded by the principal value for resistors.
+    //if( GetType() == TYPE::R_ADV )
+        //result << GetParam( 0 ).value->ToString( SIM_VALUE::NOTATION::SPICE ) << " ";
+
+    result << aModelName << " ";
+
+    for( const PARAM& param : GetParams() )
+    {
+        if( param.info.isInstanceParam )
+            result << param.info.name << "=" << param.value->ToString() << " ";
+    }
+
+    result << "\n";
+    return result;
+}
+
+
+bool SIM_MODEL_PASSIVE::SetParamFromSpiceCode( const wxString& aParamName,
+                                               const wxString& aParamValue,
+                                               SIM_VALUE_GRAMMAR::NOTATION aNotation )
+{
+    if( aParamName.Lower() == "tc" )
+        return SetParamFromSpiceCode( "tc1", aParamValue, aNotation );
+
+    switch( GetType() )
+    {
+    case TYPE::R_ADV:
+        if( aParamName.Lower() == "tc1r" )
+            return SIM_MODEL::SetParamFromSpiceCode( "tc1", aParamValue, aNotation );
+
+        if( aParamName.Lower() == "tc2r" )
+            return SIM_MODEL::SetParamFromSpiceCode( "tc2", aParamValue, aNotation );
+
+        if( aParamName.Lower() == "res" )
+            return SIM_MODEL::SetParamFromSpiceCode( "r", aParamValue, aNotation );
+
+        break;
+
+    case TYPE::C_ADV:
+        if( aParamName.Lower() == "cap" )
+            return SIM_MODEL::SetParamFromSpiceCode( "c", aParamValue, aNotation );
+
+        break;
+
+    case TYPE::L_ADV:
+        if( aParamName.Lower() == "ind" )
+            return SIM_MODEL::SetParamFromSpiceCode( "l", aParamValue, aNotation );
+
+        break;
+
+    default:
+        break;
+    }
+
+    return SIM_MODEL::SetParamFromSpiceCode( aParamName, aParamValue, aNotation );
+}
+
+
 std::vector<PARAM::INFO> SIM_MODEL_PASSIVE::makeParamInfos( wxString aName,
                                                             wxString aDescription,
                                                             wxString aUnit )
@@ -104,7 +180,7 @@ std::vector<PARAM::INFO> SIM_MODEL_PASSIVE::makeParamInfos( wxString aName,
     paramInfo.description = "2nd order temperature coefficient";
     paramInfos.push_back( paramInfo );
 
-    if( aName != "l" )
+    /*if( aName != "l" )
     {
         paramInfo.name = "bv_max";
         paramInfo.type = SIM_VALUE::TYPE::FLOAT;
@@ -113,7 +189,7 @@ std::vector<PARAM::INFO> SIM_MODEL_PASSIVE::makeParamInfos( wxString aName,
         paramInfo.defaultValue = "";
         paramInfo.description = "Max. safe operating voltage";
         paramInfos.push_back( paramInfo );
-    }
+    }*/
 
     if( aName == "r" )
     {

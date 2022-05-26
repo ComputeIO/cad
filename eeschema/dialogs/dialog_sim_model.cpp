@@ -389,7 +389,15 @@ void DIALOG_SIM_MODEL<T>::updatePinAssignmentsGridEditors()
 template <typename T>
 void DIALOG_SIM_MODEL<T>::loadLibrary( const wxString& aFilePath )
 {
-    m_library->ReadFile( Prj().AbsolutePath( aFilePath ) );
+    const wxString absolutePath = Prj().AbsolutePath( aFilePath );
+
+    if( !m_library->ReadFile( Prj().AbsolutePath( aFilePath ) ) )
+    {
+        DisplayErrorMessage( this, wxString::Format( _( "Error loading model library '%s'" ),
+                                                     Prj().AbsolutePath( aFilePath ), aFilePath ),
+                             m_library->GetErrorMessage() );
+    }
+
     m_libraryPathInput->SetValue( aFilePath );
 
     m_libraryModels.clear();

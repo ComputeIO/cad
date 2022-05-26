@@ -33,9 +33,19 @@ class SIM_MODEL_PASSIVE : public SIM_MODEL
 public:
     SIM_MODEL_PASSIVE( TYPE aType );
 
+    wxString GenerateSpiceItemLine( const wxString& aRefName,
+                                    const wxString& aModelName,
+                                    const std::vector<wxString>& aPinNetNames ) const override;
+
+    bool SetParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
+                                SIM_VALUE_GRAMMAR::NOTATION aNotation
+                                    = SIM_VALUE_GRAMMAR::NOTATION::SPICE ) override;
+
 private:
     static std::vector<PARAM::INFO> makeParamInfos( wxString aName, wxString aDescription,
                                                     wxString aUnit );
+
+    std::vector<wxString> getPinNames() const override { return { "+", "-" }; }
 };
 
 

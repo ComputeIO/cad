@@ -453,6 +453,8 @@ public:
     unsigned GetPinCount() const { return m_pins.size(); }
     const PIN& GetPin( unsigned aIndex ) const { return m_pins.at( aIndex ); }
 
+    std::vector<std::reference_wrapper<const PIN>> GetPins() const;
+
     void SetPinSymbolPinNumber( int aIndex, int aSymbolPinNumber )
     {
         m_pins.at( aIndex ).symbolPinNumber = aSymbolPinNumber;
@@ -476,6 +478,8 @@ public:
     // Can modifying a model parameter also modify other parameters?
     virtual bool HasAutofill() const { return false; }
 
+    wxString GetErrorMessage() { return m_errorMessage; }
+
 protected:
     SIM_MODEL( TYPE aType );
 
@@ -495,6 +499,7 @@ protected:
                                             = SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
     wxString m_spiceCode;
+    wxString m_errorMessage;
 
 private:
     static std::unique_ptr<SIM_MODEL> create( TYPE aType );

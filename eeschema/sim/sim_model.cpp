@@ -254,18 +254,18 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     switch( aType )
     {
     case TYPE::R:                    return { "R", ""        };
-    case TYPE::R_ADV:                return { "R", "R"       };
+    case TYPE::R_ADV:                return { "R", "r"       };
     case TYPE::R_BEHAVIORAL:         return { "R", "",       "",        0,  true   };
 
     case TYPE::C:                    return { "C", ""        };
-    case TYPE::C_ADV:                return { "C", "C",      };
+    case TYPE::C_ADV:                return { "C", "c",      };
     case TYPE::C_BEHAVIORAL:         return { "C", "",       "",        0,  true   };
 
     case TYPE::L:                    return { "L", ""        };
-    case TYPE::L_ADV:                return { "L", "L"       };
+    case TYPE::L_ADV:                return { "L", "l"       };
     case TYPE::L_BEHAVIORAL:         return { "L", "",       "",        0,  true   };
     
-    case TYPE::TLINE_LOSSY:          return { "O", "LTRA"    };
+    case TYPE::TLINE_LOSSY:          return { "O", "ltra"    };
     case TYPE::TLINE_LOSSLESS:       return { "T"  };
     case TYPE::TLINE_URC:            return { "U"  };
     case TYPE::TLINE_KSPICE:         return { "Y"  };
@@ -273,69 +273,69 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::SW_V:                 return { "S", "switch"  };
     case TYPE::SW_I:                 return { "W", "cswitch" };
 
-    case TYPE::D:                    return { "D", "D"       };
+    case TYPE::D:                    return { "D", "d"       };
 
-    case TYPE::NPN_GUMMELPOON:       return { "Q", "NPN",    "",        1   };
-    case TYPE::PNP_GUMMELPOON:       return { "Q", "PNP",    "",        1   };
+    case TYPE::NPN_GUMMELPOON:       return { "Q", "npn",    "",        1   };
+    case TYPE::PNP_GUMMELPOON:       return { "Q", "pnp",    "",        1   };
 
-    case TYPE::NPN_VBIC:             return { "Q", "NPN",    "",        4   };
-    case TYPE::PNP_VBIC:             return { "Q", "PNP",    "",        4   };
+    case TYPE::NPN_VBIC:             return { "Q", "npn",    "",        4   };
+    case TYPE::PNP_VBIC:             return { "Q", "pnp",    "",        4   };
 
-    case TYPE::NPN_HICUML2:          return { "Q", "NPN",    "",        8   };
-    case TYPE::PNP_HICUML2:          return { "Q", "PNP",    "",        8   };
+    case TYPE::NPN_HICUML2:          return { "Q", "npn",    "",        8   };
+    case TYPE::PNP_HICUML2:          return { "Q", "pnp",    "",        8   };
 
-    case TYPE::NJFET_SHICHMANHODGES: return { "M", "NJF",    "",        1   };
-    case TYPE::PJFET_SHICHMANHODGES: return { "M", "PJF",    "",        1   };
-    case TYPE::NJFET_PARKERSKELLERN: return { "M", "NJF",    "",        2   };
-    case TYPE::PJFET_PARKERSKELLERN: return { "M", "PJF",    "",        2   };
+    case TYPE::NJFET_SHICHMANHODGES: return { "M", "njf",    "",        1   };
+    case TYPE::PJFET_SHICHMANHODGES: return { "M", "pjf",    "",        1   };
+    case TYPE::NJFET_PARKERSKELLERN: return { "M", "njf",    "",        2   };
+    case TYPE::PJFET_PARKERSKELLERN: return { "M", "pjf",    "",        2   };
 
-    case TYPE::NMES_STATZ:           return { "Z", "NMF",    "",        1   };
-    case TYPE::PMES_STATZ:           return { "Z", "PMF",    "",        1   };
-    case TYPE::NMES_YTTERDAL:        return { "Z", "NMF",    "",        2   };
-    case TYPE::PMES_YTTERDAL:        return { "Z", "PMF",    "",        2   };
-    case TYPE::NMES_HFET1:           return { "Z", "NMF",    "",        5   };
-    case TYPE::PMES_HFET1:           return { "Z", "PMF",    "",        5   };
-    case TYPE::PMES_HFET2:           return { "Z", "NMF",    "",        6   };
-    case TYPE::NMES_HFET2:           return { "Z", "PMF",    "",        6   };
+    case TYPE::NMES_STATZ:           return { "Z", "nmf",    "",        1   };
+    case TYPE::PMES_STATZ:           return { "Z", "pmf",    "",        1   };
+    case TYPE::NMES_YTTERDAL:        return { "Z", "nmf",    "",        2   };
+    case TYPE::PMES_YTTERDAL:        return { "Z", "pmf",    "",        2   };
+    case TYPE::NMES_HFET1:           return { "Z", "nmf",    "",        5   };
+    case TYPE::PMES_HFET1:           return { "Z", "pmf",    "",        5   };
+    case TYPE::PMES_HFET2:           return { "Z", "nmf",    "",        6   };
+    case TYPE::NMES_HFET2:           return { "Z", "pmf",    "",        6   };
 
-    case TYPE::NMOS_MOS1:            return { "M", "NMOS",   "",        1   };
-    case TYPE::PMOS_MOS1:            return { "M", "PMOS",   "",        1   };
-    case TYPE::NMOS_MOS2:            return { "M", "NMOS",   "",        2   };
-    case TYPE::PMOS_MOS2:            return { "M", "PMOS",   "",        2   };
-    case TYPE::NMOS_MOS3:            return { "M", "NMOS",   "",        3   };
-    case TYPE::PMOS_MOS3:            return { "M", "PMOS",   "",        3   };
-    case TYPE::NMOS_BSIM1:           return { "M", "NMOS",   "",        4   };
-    case TYPE::PMOS_BSIM1:           return { "M", "PMOS",   "",        4   };
-    case TYPE::NMOS_BSIM2:           return { "M", "NMOS",   "",        5   };
-    case TYPE::PMOS_BSIM2:           return { "M", "PMOS",   "",        5   };
-    case TYPE::NMOS_MOS6:            return { "M", "NMOS",   "",        6   };
-    case TYPE::PMOS_MOS6:            return { "M", "PMOS",   "",        6   };
-    case TYPE::NMOS_BSIM3:           return { "M", "NMOS",   "",        8   };
-    case TYPE::PMOS_BSIM3:           return { "M", "PMOS",   "",        8   };
-    case TYPE::NMOS_MOS9:            return { "M", "NMOS",   "",        9   };
-    case TYPE::PMOS_MOS9:            return { "M", "PMOS",   "",        9   };
-    case TYPE::NMOS_B4SOI:           return { "M", "NMOS",   "",        10  };
-    case TYPE::PMOS_B4SOI:           return { "M", "PMOS",   "",        10  };
-    case TYPE::NMOS_BSIM4:           return { "M", "NMOS",   "",        14  };
-    case TYPE::PMOS_BSIM4:           return { "M", "PMOS",   "",        14  };
+    case TYPE::NMOS_MOS1:            return { "M", "nmos",   "",        1   };
+    case TYPE::PMOS_MOS1:            return { "M", "pmos",   "",        1   };
+    case TYPE::NMOS_MOS2:            return { "M", "nmos",   "",        2   };
+    case TYPE::PMOS_MOS2:            return { "M", "pmos",   "",        2   };
+    case TYPE::NMOS_MOS3:            return { "M", "nmos",   "",        3   };
+    case TYPE::PMOS_MOS3:            return { "M", "pmos",   "",        3   };
+    case TYPE::NMOS_BSIM1:           return { "M", "nmos",   "",        4   };
+    case TYPE::PMOS_BSIM1:           return { "M", "pmos",   "",        4   };
+    case TYPE::NMOS_BSIM2:           return { "M", "nmos",   "",        5   };
+    case TYPE::PMOS_BSIM2:           return { "M", "pmos",   "",        5   };
+    case TYPE::NMOS_MOS6:            return { "M", "nmos",   "",        6   };
+    case TYPE::PMOS_MOS6:            return { "M", "pmos",   "",        6   };
+    case TYPE::NMOS_BSIM3:           return { "M", "nmos",   "",        8   };
+    case TYPE::PMOS_BSIM3:           return { "M", "pmos",   "",        8   };
+    case TYPE::NMOS_MOS9:            return { "M", "nmos",   "",        9   };
+    case TYPE::PMOS_MOS9:            return { "M", "pmos",   "",        9   };
+    case TYPE::NMOS_B4SOI:           return { "M", "nmos",   "",        10  };
+    case TYPE::PMOS_B4SOI:           return { "M", "pmos",   "",        10  };
+    case TYPE::NMOS_BSIM4:           return { "M", "nmos",   "",        14  };
+    case TYPE::PMOS_BSIM4:           return { "M", "pmos",   "",        14  };
     //case TYPE::NMOS_EKV2_6:          return {};
     //case TYPE::PMOS_EKV2_6:          return {};
     //case TYPE::NMOS_PSP:             return {};
     //case TYPE::PMOS_PSP:             return {};
-    case TYPE::NMOS_B3SOIFD:         return { "M", "NMOS",   "",        55  };
-    case TYPE::PMOS_B3SOIFD:         return { "M", "PMOS",   "",        55  };
-    case TYPE::NMOS_B3SOIDD:         return { "M", "NMOS",   "",        56  };
-    case TYPE::PMOS_B3SOIDD:         return { "M", "PMOS",   "",        56  };
-    case TYPE::NMOS_B3SOIPD:         return { "M", "NMOS",   "",        57  };
-    case TYPE::PMOS_B3SOIPD:         return { "M", "PMOS",   "",        57  };
+    case TYPE::NMOS_B3SOIFD:         return { "M", "nmos",   "",        55  };
+    case TYPE::PMOS_B3SOIFD:         return { "M", "pmos",   "",        55  };
+    case TYPE::NMOS_B3SOIDD:         return { "M", "nmos",   "",        56  };
+    case TYPE::PMOS_B3SOIDD:         return { "M", "pmos",   "",        56  };
+    case TYPE::NMOS_B3SOIPD:         return { "M", "nmos",   "",        57  };
+    case TYPE::PMOS_B3SOIPD:         return { "M", "pmos",   "",        57  };
     //case TYPE::NMOS_STAG:            return {};
     //case TYPE::PMOS_STAG:            return {};
-    case TYPE::NMOS_HISIM2:          return { "M", "NMOS",   "",        68  };
-    case TYPE::PMOS_HISIM2:          return { "M", "PMOS",   "",        68  };
-    case TYPE::NMOS_HISIMHV1:        return { "M", "NMOS",   "",        73, false, "1.2.4" };
-    case TYPE::PMOS_HISIMHV1:        return { "M", "PMOS",   "",        73, false, "1.2.4" };
-    case TYPE::NMOS_HISIMHV2:        return { "M", "NMOS",   "",        73, false, "2.2.0" };
-    case TYPE::PMOS_HISIMHV2:        return { "M", "PMOS",   "",        73, false, "2.2.0" };
+    case TYPE::NMOS_HISIM2:          return { "M", "nmos",   "",        68  };
+    case TYPE::PMOS_HISIM2:          return { "M", "pmos",   "",        68  };
+    case TYPE::NMOS_HISIMHV1:        return { "M", "nmos",   "",        73, false, "1.2.4" };
+    case TYPE::PMOS_HISIMHV1:        return { "M", "pmos",   "",        73, false, "1.2.4" };
+    case TYPE::NMOS_HISIMHV2:        return { "M", "nmos",   "",        73, false, "2.2.0" };
+    case TYPE::PMOS_HISIMHV2:        return { "M", "pmos",   "",        73, false, "2.2.0" };
 
     case TYPE::V_DC:                 return { "V", ""        };
     case TYPE::V_SIN:                return { "V", "",       "SIN"      };
@@ -669,10 +669,10 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
 {
     // The default behavior is to treat the Spice param=value pairs as the model parameters and
     // values (for many models the correspondence is not exact, so this function is overridden).
-    
+
     tao::pegtl::string_input<> in( aSpiceCode, "from_content" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
-    
+
     try
     {
         root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::spiceUnitGrammar,
@@ -681,6 +681,7 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
     }
     catch( tao::pegtl::parse_error& e )
     {
+        m_errorMessage = e.what();
         return false;
     }
 
@@ -858,23 +859,21 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
     wxString result = "";
     result << GenerateSpiceItemName( aRefName ) << " ";
 
-    for( unsigned i = 0; i < GetPinCount(); ++i )
+    for( const PIN& pin : GetPins() )
     {
-        for( unsigned j = 0; j < aPinNetNames.size(); ++j )
+        for( unsigned i = 0; i < aPinNetNames.size(); ++i )
         {
-            unsigned symbolPinNumber = j + 1;
-
-            if( symbolPinNumber == GetPin( i ).symbolPinNumber )
-                result << aPinNetNames[j] << " ";
+            unsigned symbolPinNumber = i + 1;
+            
+            if( symbolPinNumber == pin.symbolPinNumber )
+                result << aPinNetNames[i] << " ";
         }
     }
 
     result << aModelName << " ";
 
-    for( unsigned i = 0; i < GetParamCount(); ++i )
+    for( const PARAM& param : GetParams() )
     {
-        const PARAM& param = GetParam( i );
-
         if( param.info.isInstanceParam )
             result << param.info.name << "=" << param.value->ToString() << " ";
     }
@@ -942,6 +941,17 @@ unsigned SIM_MODEL::FindModelPinNumber( unsigned aSymbolPinNumber )
 void SIM_MODEL::AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant )
 {
     m_params.emplace_back( aInfo );
+}
+
+
+std::vector<std::reference_wrapper<const SIM_MODEL::PIN>> SIM_MODEL::GetPins() const
+{
+    std::vector<std::reference_wrapper<const PIN>> pins;
+
+    for( unsigned i = 0; i < GetPinCount(); ++i )
+        pins.emplace_back( GetPin( i ) );
+
+    return pins;
 }
 
 
@@ -1081,7 +1091,7 @@ wxString SIM_MODEL::GenerateParamsField( const wxString& aPairSeparator ) const
 bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
 {
     LOCALE_IO toggle;
-    
+
     tao::pegtl::string_input<> in( aParamsField.ToStdString(), "from_content" );
     std::unique_ptr<tao::pegtl::parse_tree::node> root;
 
@@ -1146,7 +1156,7 @@ bool SIM_MODEL::ParsePinsField( unsigned aSymbolPinCount, const wxString& aPinsF
 {
     // Default pin sequence: model pins are the same as symbol pins.
     // Excess model pins are set as Not Connected.
-    for( unsigned i = 0; i < static_cast<int>( getPinNames().size() ); ++i )
+    for( unsigned i = 0; i < getPinNames().size(); ++i )
     {
         if( i < aSymbolPinCount )
             AddPin( { getPinNames().at( i ), i + 1 } );
@@ -1174,7 +1184,7 @@ bool SIM_MODEL::ParsePinsField( unsigned aSymbolPinCount, const wxString& aPinsF
 
     wxASSERT( root );
 
-    if( static_cast<int>( root->children.size() ) != GetPinCount() )
+    if( root->children.size() != GetPinCount() )
         return false;
 
     for( unsigned i = 0; i < root->children.size(); ++i )
@@ -1276,9 +1286,19 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
 
 TYPE SIM_MODEL::readTypeFromSpiceTypeString( const std::string& aTypeString )
 {
+    std::string lowercaseTypeString = aTypeString;
+    std::transform( lowercaseTypeString.begin(), lowercaseTypeString.end(),
+                    lowercaseTypeString.begin(), ::tolower );
+
     for( TYPE type : TYPE_ITERATOR() )
     {
-        if( SpiceInfo( type ).modelType == aTypeString )
+        wxString typePrefix = SpiceInfo( type ).modelType;
+
+        if( typePrefix == "" )
+            continue;
+        
+        // Check if `aTypeString` starts with `typePrefix`.
+        if( lowercaseTypeString.rfind( typePrefix, 0 ) == 0 )
             return type;
     }
 
