@@ -161,6 +161,8 @@ public:
 
     struct PANEL_ANNOTATE
     {
+        bool automatic;
+        bool recursive;
         int scope;
         int options;
         int method;

@@ -1638,6 +1638,9 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     SCH_SHEET          tempSheet;
     SCH_SCREEN*        tempScreen = new SCH_SCREEN( &m_frame->Schematic() );
 
+    EESCHEMA_SETTINGS::PANEL_ANNOTATE& annotate = m_frame->eeconfig()->m_AnnotatePanel;
+    int annotateStartNum = m_frame->Schematic().Settings().m_AnnotateStartNum;
+
     // Screen object on heap is owned by the sheet.
     tempSheet.SetScreen( tempScreen );
 
@@ -1656,7 +1659,8 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     // Save loaded screen instances to m_clipboardSheetInstances
     setClipboardInstances( tempScreen );
 
-    PASTE_MODE pasteMode = PASTE_MODE::REMOVE_ANNOTATIONS;
+    PASTE_MODE pasteMode =
+            annotate.automatic ? PASTE_MODE::RESPECT_OPTIONS : PASTE_MODE::REMOVE_ANNOTATIONS;
 
     if( aEvent.IsAction( &ACTIONS::pasteSpecial ) )
     {
@@ -1869,7 +1873,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
             for( SCH_SHEET_PATH& instance : pasteInstances )
             {
                 SCH_SHEET_PATH sheetPath = updatePastedSheet( instance, clipPath, sheet,
-                                                              forceKeepAnnotations,
+                                                              ( forceKeepAnnotations && annotate.recursive ),
                                                               &pastedSheets[instance],
                                                               &pastedSymbols[instance] );
 
@@ -1955,6 +1959,16 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     m_toolMgr->RunAction( EE_ACTIONS::addItemsToSel, true, &loadedItems );
 
     EE_SELECTION& selection = selTool->GetSelection();
+
+    // We should have a new selection of only the pasted symbols and sheets
+    if( pasteMode == PASTE_MODE::RESPECT_OPTIONS )
+    {
+        // Annotate the symbols on the current sheet with the selection
+        m_frame->AnnotateSymbols( ANNOTATE_SELECTION, (ANNOTATE_ORDER_T) annotate.sort_order,
+                                  (ANNOTATE_ALGO_T) annotate.method, annotate.recursive,
+                                  annotateStartNum, true, false, NULL_REPORTER::GetInstance(),
+                                  true );
+    }
 
     if( !selection.Empty() )
     {
@@ -2231,6 +2245,22 @@ int SCH_EDITOR_CONTROL::SwitchSegmentPosture( const TOOL_EVENT& aEvent )
 }
 
 
+int SCH_EDITOR_CONTROL::ToggleAnnotateAuto( const TOOL_EVENT& aEvent )
+{
+    EESCHEMA_SETTINGS* cfg = m_frame->eeconfig();
+    cfg->m_AnnotatePanel.automatic = !cfg->m_AnnotatePanel.automatic;
+    return 0;
+}
+
+
+int SCH_EDITOR_CONTROL::ToggleAnnotateRecursive( const TOOL_EVENT& aEvent )
+{
+    EESCHEMA_SETTINGS* cfg = m_frame->eeconfig();
+    cfg->m_AnnotatePanel.recursive = !cfg->m_AnnotatePanel.recursive;
+    return 0;
+}
+
+
 int SCH_EDITOR_CONTROL::TogglePythonConsole( const TOOL_EVENT& aEvent )
 {
 
@@ -2410,6 +2440,7 @@ void SCH_EDITOR_CONTROL::setTransitions()
     Go( &SCH_EDITOR_CONTROL::ChangeLineMode,        EE_ACTIONS::lineMode135.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::NextLineMode,          EE_ACTIONS::lineModeNext.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::SwitchSegmentPosture,  EE_ACTIONS::switchSegmentPosture.MakeEvent() );
+    Go( &SCH_EDITOR_CONTROL::ToggleAnnotateAuto,    EE_ACTIONS::toggleAnnotateAuto.MakeEvent() );
 
     Go( &SCH_EDITOR_CONTROL::TogglePythonConsole,   EE_ACTIONS::showPythonConsole.MakeEvent() );
 
