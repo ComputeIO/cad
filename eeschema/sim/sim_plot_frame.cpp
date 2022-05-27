@@ -1643,6 +1643,9 @@ void SIM_PLOT_FRAME::doCloseWindow()
     if( m_simulator->IsRunning() )
         m_simulator->Stop();
 
+    // Prevent memory leak on exit by deleting all simulation vectors
+    m_simulator->Clean();
+
     // Cancel a running simProbe or simTune tool
     m_schematicFrame->GetToolManager()->RunAction( ACTIONS::cancelInteractive );
 
