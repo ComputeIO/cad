@@ -28,7 +28,6 @@
 
 #include <wx/process.h>
 #include <kiway_player.h>
-#include <wx/dnd.h>
 
 class PROJECT_TREE;
 class PROJECT_TREE_PANE;

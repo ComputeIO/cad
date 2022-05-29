@@ -759,11 +759,9 @@ private:
     bool            m_isNonUserClose;
 
     /**
-     * Array of dropped files extensions accepted by window.
-     * And size of array;
+     * Associates files extensions with action to execute.
      */
     std::map<const wxString, TOOL_ACTION*> m_dropFilesExt;
-    int       m_nberExt;
 };
 
 
