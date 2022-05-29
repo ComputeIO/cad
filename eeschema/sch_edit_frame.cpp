@@ -207,6 +207,9 @@ BEGIN_EVENT_TABLE( SCH_EDIT_FRAME, EDA_DRAW_FRAME )
     EVT_MENU( wxID_CLOSE, SCH_EDIT_FRAME::OnExit )
 
     EVT_MENU( ID_GRID_SETTINGS, SCH_BASE_FRAME::OnGridSettings )
+
+    // Drop files event
+    EVT_DROP_FILES( SCH_EDIT_FRAME::OnDropFiles )
 END_EVENT_TABLE()
 
 
@@ -300,6 +303,10 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     // Default shutdown reason until a file is loaded
     KIPLATFORM::APP::SetShutdownBlockReason( this, _( "New schematic file is unsaved" ) );
+
+    // Init for dropping files
+    m_dropFilesExt.emplace( "kicad_sch", nullptr );
+    DragAcceptFiles( true );
 
     // Ensure the window is on top
     Raise();
@@ -1818,4 +1825,20 @@ void SCH_EDIT_FRAME::UpdateItem( EDA_ITEM* aItem, bool isAddOrDelete, bool aUpda
 
     if( SCH_ITEM* sch_item = dynamic_cast<SCH_ITEM*>( aItem ) )
         sch_item->ClearCaches();
+}
+
+void SCH_EDIT_FRAME::DoOnAcceptedFile( const wxFileName& aFileName )
+{
+    if( !LoadSheetFromFile( GetCurrentSheet().Last(), &GetCurrentSheet(),
+                            aFileName.GetFullPath() ) )
+        return;
+
+    initScreenZoom();
+    SetSheetNumberAndCount();
+
+    SyncView();
+    OnModify();
+    HardRedraw(); // Full reinit of the current screen and the display.
+
+    UpdateHierarchyNavigator();
 }
