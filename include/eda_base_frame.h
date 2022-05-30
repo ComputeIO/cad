@@ -661,6 +661,8 @@ protected:
 
     /**
      * Handles event fired when a file is dropped to window.
+     * Sends to the window the path of files accepted.
+     * The file is then handled by DoOnAcceptedFile.
      */
     virtual void OnDropFiles( wxDropFilesEvent& aEvent );
 
