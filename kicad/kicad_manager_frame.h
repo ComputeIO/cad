@@ -159,7 +159,9 @@ private:
     void setupTools();
     void setupActions();
 
+    void OnDropFiles( wxDropFilesEvent& aEvent ) override;
     void DoOnAcceptedFile( const wxFileName& aFileName ) override;
+    std::vector<wxFileName> m_AcceptedFiles;
 
     APP_SETTINGS_BASE* config() const override;
 

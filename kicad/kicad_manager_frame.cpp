@@ -374,11 +374,38 @@ void KICAD_MANAGER_FRAME::OnSize( wxSizeEvent& event )
     event.Skip();
 }
 
+
+void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
+{
+    m_AcceptedFiles.clear();
+    EDA_BASE_FRAME::OnDropFiles( aEvent );
+
+    // All fileNames are now in m_AcceptedFiles vector.
+    // Check if contains a project file name and load project.
+    // If not, open files in dedicated app.
+    for( auto fileName : m_AcceptedFiles )
+    {
+        if( fileName.GetExt() == "kicad_pro" || fileName.GetExt() == "pro" )
+        {
+            wxString fn = fileName.GetFullPath();
+            m_toolManager->RunAction( *m_dropFilesExt.at( fileName.GetExt() ), true, &fn );
+            return;
+        }
+    }
+
+    for( auto fileName : m_AcceptedFiles )
+    {
+        wxString fn = fileName.GetFullPath();
+        m_toolManager->RunAction( *m_dropFilesExt.at( fileName.GetExt() ), true, &fn );
+    }
+}
+
+
 void KICAD_MANAGER_FRAME::DoOnAcceptedFile( const wxFileName& aFileName )
 {
-    wxString fn = aFileName.GetFullPath();
-    m_toolManager->RunAction( *m_dropFilesExt.at( aFileName.GetExt() ), true, &fn );
+    m_AcceptedFiles.emplace( m_AcceptedFiles.end(), aFileName );
 }
+
 
 bool KICAD_MANAGER_FRAME::canCloseWindow( wxCloseEvent& aEvent )
 {
