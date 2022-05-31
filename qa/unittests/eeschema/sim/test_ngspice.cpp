@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE( Models )
             BOOST_CHECK_EQUAL( instanceParamCount, 20 );
             break;*/
         
-        case NGSPICE::MODEL_TYPE::LTRA:
+        /*case NGSPICE::MODEL_TYPE::LTRA:
             BOOST_CHECK_EQUAL( modelParamCount, 18 );
             BOOST_CHECK_EQUAL( instanceParamCount, 9 );
             break;
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE( Models )
         case NGSPICE::MODEL_TYPE::URC:
             BOOST_CHECK_EQUAL( modelParamCount, 7 );
             BOOST_CHECK_EQUAL( instanceParamCount, 5 );
-            break;
+            break;*/
         
         /*case NGSPICE::MODEL_TYPE::TRANSLINE:
             BOOST_CHECK_EQUAL( modelParamCount, 6 );

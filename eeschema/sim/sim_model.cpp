@@ -828,7 +828,7 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
             line << append;
     }
 
-    result << line + ")\n";
+    result << line + " )\n";
     return result;
 }
 
