@@ -70,8 +70,8 @@ bool SIM_MODEL_PASSIVE::SetParamFromSpiceCode( const wxString& aParamName,
         if( aParamName.Lower() == "tc1r" )
             return SIM_MODEL::SetParamFromSpiceCode( "tc1", aParamValue, aNotation );
 
-        if( aParamName.Lower() == "tc2r" )
-            return SIM_MODEL::SetParamFromSpiceCode( "tc2", aParamValue, aNotation );
+        /*if( aParamName.Lower() == "tc2r" )
+            return SIM_MODEL::SetParamFromSpiceCode( "tc2", aParamValue, aNotation );*/
 
         if( aParamName.Lower() == "res" )
             return SIM_MODEL::SetParamFromSpiceCode( "r", aParamValue, aNotation );
@@ -137,18 +137,18 @@ std::vector<PARAM::INFO> SIM_MODEL_PASSIVE::makeParamInfos( wxString aName,
     paramInfo.unit = aUnit;
     paramInfo.category = PARAM::CATEGORY::TEMPERATURE;
     paramInfo.defaultValue = "0";
-    paramInfo.description = "1st order temperature coefficient";
+    paramInfo.description = "Temperature coefficient";
     paramInfo.isInstanceParam = false;
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "tc2";
+    /*paramInfo.name = "tc2";
     paramInfo.type = SIM_VALUE::TYPE::FLOAT;
     paramInfo.unit = aUnit;
     paramInfo.category = PARAM::CATEGORY::TEMPERATURE;
     paramInfo.defaultValue = "0";
     paramInfo.description = "2nd order temperature coefficient";
     paramInfo.isInstanceParam = false;
-    paramInfos.push_back( paramInfo );
+    paramInfos.push_back( paramInfo );*/
 
     /*if( aName != "l" )
     {
