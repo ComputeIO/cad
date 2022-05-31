@@ -32,6 +32,7 @@
 #include <sim/sim_model_source.h>
 #include <sim/sim_model_spice.h>
 #include <sim/sim_model_subckt.h>
+#include <sim/sim_model_tline.h>
 #include <sim/sim_model_xspice.h>
 
 #include <pegtl.hpp>
@@ -133,10 +134,8 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::L_ADV:                return { DEVICE_TYPE::L,      "ADV",            "Advanced"                   };
     case TYPE::L_BEHAVIORAL:         return { DEVICE_TYPE::L,      "=",              "Behavioral"                 };
 
-    case TYPE::TLINE_LOSSY:          return { DEVICE_TYPE::TLINE,  "",               "Lossy"                      };
-    case TYPE::TLINE_LOSSLESS:       return { DEVICE_TYPE::TLINE,  "LOSSLESS",       "Lossless"                   };
-    case TYPE::TLINE_URC:            return { DEVICE_TYPE::TLINE,  "URC",            "Uniform RC"                 };
-    case TYPE::TLINE_KSPICE:         return { DEVICE_TYPE::TLINE,  "KSPICE",         "KSPICE"                     };
+    case TYPE::TLINE_Z0:             return { DEVICE_TYPE::TLINE,  "Z0",             "Characteristic impedance"   };
+    case TYPE::TLINE_RLGC:           return { DEVICE_TYPE::TLINE,  "RLGC",           "RLGC"                       };
 
     case TYPE::SW_V:                 return { DEVICE_TYPE::SW,     "V",              "Voltage-controlled"         };
     case TYPE::SW_I:                 return { DEVICE_TYPE::SW,     "I",              "Current-controlled"         };
@@ -265,10 +264,8 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::L_ADV:                return { "L", "l"       };
     case TYPE::L_BEHAVIORAL:         return { "L", "",       "",        0,  true   };
     
-    case TYPE::TLINE_LOSSY:          return { "O", "ltra"    };
-    case TYPE::TLINE_LOSSLESS:       return { "T"  };
-    case TYPE::TLINE_URC:            return { "U"  };
-    case TYPE::TLINE_KSPICE:         return { "Y"  };
+    case TYPE::TLINE_Z0:             return { "T"  };
+    case TYPE::TLINE_RLGC:           return { "O", "ltra"    };
     
     case TYPE::SW_V:                 return { "S", "switch"  };
     case TYPE::SW_I:                 return { "W", "cswitch" };
@@ -804,7 +801,7 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
 {
     LOCALE_IO toggle;
 
-    if( !HasOverrides() )
+    if( !HasOverrides() || !requiresSpiceModel() )
         return "";
 
     wxString result = "";
@@ -815,12 +812,12 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
     for( unsigned paramIndex = 0; paramIndex < GetParamCount(); ++paramIndex )
     {
         const PARAM& param = GetParam( paramIndex );
-        wxString valueStr = param.value->ToString();
+        wxString valueStr = param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
         if( valueStr.IsEmpty() )
             continue;
         
-        wxString append = " " + param.info.name + "=" + param.value->ToString();
+        wxString append = " " + param.info.name + "=" + valueStr;
 
         if( line.Length() + append.Length() > 60 )
         {
@@ -870,12 +867,14 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
         }
     }
 
-    result << aModelName << " ";
+    if( requiresSpiceModel() )
+        result << aModelName << " ";
 
     for( const PARAM& param : GetParams() )
     {
-        if( param.info.isInstanceParam )
-            result << param.info.name << "=" << param.value->ToString() << " ";
+        if( param.info.isSpiceInstanceParam )
+            result << param.info.name << "="
+                << param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE ) << " ";
     }
 
     result << "\n";
@@ -1005,7 +1004,7 @@ bool SIM_MODEL::HasOverrides() const
 {
     for( const PARAM& param : m_params )
     {
-        if( !param.value->ToString().IsEmpty() )
+        if( param.value->ToString() != "" )
             return true;
     }
 
@@ -1013,15 +1012,12 @@ bool SIM_MODEL::HasOverrides() const
 }
 
 
-bool SIM_MODEL::HasNonPrincipalOverrides() const
+bool SIM_MODEL::HasNonInstanceOverrides() const
 {
     for( const PARAM& param : m_params )
     {
-        if( param.info.category != PARAM::CATEGORY::PRINCIPAL
-            && !param.value->ToString().IsEmpty() )
-        {
+        if( !param.info.isInstanceParam && param.value->ToString() != "" )
             return true;
-        }
     }
 
     return false;
@@ -1076,9 +1072,7 @@ wxString SIM_MODEL::GenerateParamsField( const wxString& aPairSeparator ) const
 
     for( const PARAM& param : m_params )
     {
-        wxString valueStr = param.value->ToString();
-
-        if( valueStr.IsEmpty() )
+        if( param.value->ToString() == "" )
             continue;
 
         result << GenerateParamValuePair( param, isFirst );
@@ -1238,6 +1232,10 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
     case TYPE::V_BEHAVIORAL:
     case TYPE::I_BEHAVIORAL:
         return std::make_unique<SIM_MODEL_BEHAVIORAL>( aType );
+    
+    case TYPE::TLINE_Z0:
+    case TYPE::TLINE_RLGC:
+        return std::make_unique<SIM_MODEL_TLINE>( aType );
 
     case TYPE::V_DC:
     case TYPE::I_DC:
@@ -1357,4 +1355,16 @@ wxString SIM_MODEL::generatePinsField() const
     }
 
     return result;
+}
+
+
+bool SIM_MODEL::requiresSpiceModel() const
+{
+    for( const PARAM& param : GetParams() )
+    {
+        if( !param.info.isSpiceInstanceParam )
+            return true;
+    }
+
+    return false;
 }

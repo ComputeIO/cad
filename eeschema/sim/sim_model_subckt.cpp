@@ -86,6 +86,7 @@ bool SIM_MODEL_SUBCKT::ReadSpiceCode( const std::string& aSpiceCode )
                     m_paramInfos.push_back( std::make_unique<PARAM::INFO>() );
                     m_paramInfos.back()->name = subnode->string();
                     m_paramInfos.back()->isInstanceParam = true;
+                    m_paramInfos.back()->isSpiceInstanceParam = true;
 
                     AddParam( *m_paramInfos.back() );
                 }

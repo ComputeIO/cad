@@ -133,13 +133,6 @@ NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType() const
     switch( GetType() )
     {
     case TYPE::NONE:                 return NGSPICE::MODEL_TYPE::NONE;
-    //case TYPE::R_ADV:                return NGSPICE::MODEL_TYPE::RESISTOR;
-    //case TYPE::C_ADV:                return NGSPICE::MODEL_TYPE::CAPACITOR;
-    //case TYPE::L_ADV:                return NGSPICE::MODEL_TYPE::INDUCTOR;
-    case TYPE::TLINE_LOSSY:          return NGSPICE::MODEL_TYPE::LTRA;
-    case TYPE::TLINE_LOSSLESS:       return NGSPICE::MODEL_TYPE::TRANLINE;
-    case TYPE::TLINE_URC:            return NGSPICE::MODEL_TYPE::URC;
-    //case TYPE::TLINE_KSPICE:       return NGSPICE::MODEL_TYPE::TRANSLINE;
     case TYPE::SW_V:                 return NGSPICE::MODEL_TYPE::SWITCH;
     case TYPE::SW_I:                 return NGSPICE::MODEL_TYPE::CSWITCH;
     case TYPE::D:                    return NGSPICE::MODEL_TYPE::DIODE;

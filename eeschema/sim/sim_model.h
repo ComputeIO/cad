@@ -142,10 +142,8 @@ public:
         L_ADV,
         L_BEHAVIORAL,
 
-        TLINE_LOSSY,
-        TLINE_LOSSLESS,
-        TLINE_URC,
-        TLINE_KSPICE,
+        TLINE_Z0,
+        TLINE_RLGC,
 
         SW_V,
         SW_I,
@@ -300,7 +298,7 @@ public:
 
     struct PIN
     {
-        static constexpr auto NOT_CONNECTED = 0;
+        static constexpr unsigned NOT_CONNECTED = 0;
 
         const wxString name;
         unsigned symbolPinNumber;
@@ -347,6 +345,7 @@ public:
             wxString defaultValueOfOtherVariant = ""; // Legacy (don't remove).
             wxString description = "";
             bool isInstanceParam = false;
+            bool isSpiceInstanceParam = false;
         };
 
         std::unique_ptr<SIM_VALUE> value;
@@ -473,7 +472,7 @@ public:
                                     = SIM_VALUE_GRAMMAR::NOTATION::SI );
 
     bool HasOverrides() const;
-    bool HasNonPrincipalOverrides() const;
+    bool HasNonInstanceOverrides() const;
 
     // Can modifying a model parameter also modify other parameters?
     virtual bool HasAutofill() const { return false; }
@@ -519,6 +518,8 @@ private:
     wxString generateTypeField() const;
 
     wxString generatePinsField() const;
+
+    virtual bool requiresSpiceModel() const;
 
 
     const SIM_MODEL* m_baseModel;

@@ -573,7 +573,8 @@ wxString SIM_VALUE_INSTANCE<double>::ToString( NOTATION aNotation ) const
         long reductionExponent = 0;
 
         wxString metricSuffix = SIM_VALUE_PARSER::ExponentToMetricSuffix( exponent,
-                                                                          reductionExponent );
+                                                                          reductionExponent,
+                                                                          aNotation );
         double reducedValue = *m_value / std::pow( 10, reductionExponent );
 
         return wxString::Format( "%g%s", reducedValue, metricSuffix );
