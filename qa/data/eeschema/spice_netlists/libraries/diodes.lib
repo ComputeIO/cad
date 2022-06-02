@@ -1,0 +1,83 @@
+*
+* diodes.lib
+*
+
+* Some diode models to test if reading Spice libraries works.
+
+* Not really 1N4148, just shoddily based on some of values in datasheet.
+.MODEL 1N4148 D (BV=100 CJO=4p IBV=100u IS=4n M=0.33 N=2
++ RS=0.5 TT=10n VJ=0.8)
+
+* The below models have made up values - I didn't bother to check if they are physically correct.
+
+
+.model D1 D(Is=1.23n N=1.23 Rs=.7890 Ikf=12.34m Xti=3 Eg=1.23 Cjo=.90p
++           M=.56 Vj=.78 Fc=.9 Isr=12.34n Nr=2.345 Bv=100 Ibv=100u Tt=12.34n)
+
+* This line has a single trailing space.
+* DUsual* models always have the same values to save space on test asserts.
+.model Usual2 D(BV=1.1U CJO=2.2M IBV=3.3 IS=4.4K M=5.5MEG N=6.6G) 
+
+* Trailing spaces, and an (empty) continuation.
+.model Usual3 D(BV=1.1U CJO=2.2M IBV=3.3 IS=4.4K M=5.5MEG N=6.6G 
++) 
+
+.model D4  D( Is=0.1p 
++             Rs=2 
++             CJO=3p 
++             Tt=45n ; Test comment
++             Bv=678 
++             Ibv=0.1p )
+* (Has trailing spaces after each parameter value)
+
+.model Empty5 D () ; Empty model
+
+* Parentheses are optional.
+.model Empty6 D
+
+.model Empty7 D ; Empty model, no parentheses, ending with a comment.
+
+.model Empty8 D
+
+.model Empty9 D;
+
+* Several parameters, no parentheses.
+.model Usual10 D BV=1.1U CJO=2.2M IBV=3.3 IS=4.4K M=5.5MEG N=6.6G
+
+* Several parameters, no parentheses, multiple lines.
+.model Usual11 D BV=1.1U
++                CJO=2.2M
++                IBV=3.3;
++                IS=4.4K ; Test comment
++                M=5.5MEG
++                N=6.6G
+
+.model Usual12 D
++BV=1.1U 
++CJO=2.2M 
++IBV=3.3;
++IS=4.4K;
++M=5.5MEG 
++N=6.6G 
+
+* Test some parameter synonyms.
+.model Usual13 D
++ BV=1.1U
++ CJ0=2.2M
++ IBV=3.3
++ JS=4.4K
++ MJ=5.5MEG
++ N=6.6G
+.model Usual14 D
++ BV=1.1U
++ CJ=2.2M
++ IBV=3.3
++ JS=4.4K
++ MJ=5.5MEG
++ N=6.6G
+
+* Two spaces as a separator everywhere, two trailing spaces.
+.model  Usual15  D  (  BV=1.1U  CJ=2.2M  IBV=3.3  JS=4.4K  MJ=5.5MEG  N=6.6G  )  
+
+* No newline at the end of file.
+.model Usual16 D(BV=1.1U CJ=2.2M IBV=3.3 JS=4.4K MJ=5.5MEG N=6.6G)

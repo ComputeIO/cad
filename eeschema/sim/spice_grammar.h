@@ -100,15 +100,15 @@ namespace SPICE_GRAMMAR
                           modelName,
                           sep,
                           dotModelType,
-                          sor<seq<opt<sep>,
-                                  one<'('>,
-                                  opt<sep>,
-                                  paramValuePairs<NOTATION::SPICE>,
-                                  opt<sep>,
-                                  // Ngspice doesn't require the parentheses to match, though.
-                                  one<')'>>,
-                              seq<sep,
-                                  paramValuePairs<NOTATION::SPICE>>>,
+                          opt<sor<seq<opt<sep>,
+                                      one<'('>,
+                                      opt<sep>,
+                                      paramValuePairs<NOTATION::SPICE>,
+                                      opt<sep>,
+                                      // Ngspice doesn't require the parentheses to match, though.
+                                      one<')'>>,
+                                  seq<sep,
+                                      paramValuePairs<NOTATION::SPICE>>>>,
                           opt<sep>,
                           newline> {};
 

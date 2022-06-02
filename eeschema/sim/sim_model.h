@@ -463,6 +463,8 @@ public:
     unsigned GetParamCount() const { return m_params.size(); }
     const PARAM& GetParam( unsigned aParamIndex ) const; // Return base parameter unless it's overridden.
 
+    const PARAM* FindParam( const wxString& aParamName ) const;
+
     std::vector<std::reference_wrapper<const PARAM>> GetParams() const;
 
     const PARAM& GetUnderlyingParam( unsigned aParamIndex ) const; // Return the actual parameter.

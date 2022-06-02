@@ -956,10 +956,27 @@ std::vector<std::reference_wrapper<const SIM_MODEL::PIN>> SIM_MODEL::GetPins() c
 
 const SIM_MODEL::PARAM& SIM_MODEL::GetParam( unsigned aParamIndex ) const
 {
-    if( m_baseModel && m_params.at( aParamIndex ).value->ToString().IsEmpty() )
+    if( m_baseModel && m_params.at( aParamIndex ).value->ToString() == "" )
         return m_baseModel->GetParam( aParamIndex );
     else
         return m_params.at( aParamIndex );
+}
+
+
+const SIM_MODEL::PARAM* SIM_MODEL::FindParam( const wxString& aParamName ) const
+{
+    std::vector<std::reference_wrapper<const PARAM>> params = GetParams();
+
+    auto it = std::find_if( params.begin(), params.end(),
+                            [aParamName]( const PARAM& param )
+                            {
+                                return param.info.name == aParamName.Lower();
+                            } );
+
+    if( it == params.end() )
+        return nullptr;
+
+    return &it->get();
 }
 
 
