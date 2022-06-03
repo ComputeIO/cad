@@ -108,7 +108,7 @@ PANEL_E_SERIE_BASE::PANEL_E_SERIE_BASE( wxWindow* parent, wxWindowID id, const w
 
 	fgSizerESerieResults->Add( m_ESeries_Sol2R, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT|wxEXPAND, 5 );
 
-	m_ESeriesSimpleErr = new wxStaticText( sbSizerESeriesSolutions->GetStaticBox(), wxID_ANY, _("Error:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ESeriesSimpleErr = new wxStaticText( sbSizerESeriesSolutions->GetStaticBox(), wxID_ANY, _("Tolerance:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_ESeriesSimpleErr->Wrap( -1 );
 	fgSizerESerieResults->Add( m_ESeriesSimpleErr, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
@@ -128,7 +128,7 @@ PANEL_E_SERIE_BASE::PANEL_E_SERIE_BASE( wxWindow* parent, wxWindowID id, const w
 
 	fgSizerESerieResults->Add( m_ESeries_Sol3R, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT|wxEXPAND, 5 );
 
-	m_ESeriesAltErr = new wxStaticText( sbSizerESeriesSolutions->GetStaticBox(), wxID_ANY, _("Error:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ESeriesAltErr = new wxStaticText( sbSizerESeriesSolutions->GetStaticBox(), wxID_ANY, _("Tolerance:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_ESeriesAltErr->Wrap( -1 );
 	fgSizerESerieResults->Add( m_ESeriesAltErr, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
@@ -148,7 +148,7 @@ PANEL_E_SERIE_BASE::PANEL_E_SERIE_BASE( wxWindow* parent, wxWindowID id, const w
 
 	fgSizerESerieResults->Add( m_ESeries_Sol4R, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT|wxEXPAND, 5 );
 
-	m_ESeriesAltErr1 = new wxStaticText( sbSizerESeriesSolutions->GetStaticBox(), wxID_ANY, _("Error:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ESeriesAltErr1 = new wxStaticText( sbSizerESeriesSolutions->GetStaticBox(), wxID_ANY, _("Tolerance:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_ESeriesAltErr1->Wrap( -1 );
 	fgSizerESerieResults->Add( m_ESeriesAltErr1, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
