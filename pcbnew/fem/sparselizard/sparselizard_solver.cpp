@@ -942,7 +942,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     }
 
 
-    mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
+    mymesh.write( "mymesh.msh", {-1}, SPARSELIZARD_VERBOSITY );
 
     m_reporter->Report( "Computing region boundaries...", RPT_SEVERITY_ACTION );
     SetBoundaries();
