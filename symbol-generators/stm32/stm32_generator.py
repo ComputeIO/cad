@@ -43,21 +43,22 @@ class DataPin:
         self.name = name
         self.pintype = pintype
         self.altfuncs = []
+        self.visible = None
 
     def to_drawing_pin(self, **kwargs):
-        # Get the el_type for the DrawingPin
-        el_type = DataPin._PIN_TYPES_MAPPING[self.pintype]
-        # Get visibility based on el_type
-        if el_type == DrawingPin.PinElectricalType.EL_TYPE_NC:
-            visibility = DrawingPin.PinVisibility.INVISIBLE
-        else:
+        # Get visibility based on the pin type
+        if self.visible is None:
+            self.visible = self.pintype != "NC"
+        if self.visible:
             visibility = DrawingPin.PinVisibility.VISIBLE
+        else:
+            visibility = DrawingPin.PinVisibility.INVISIBLE
         # Make the DrawingPin
         return DrawingPin(
             Point(0, 0),
             self.num,
             name=self.name,
-            el_type=el_type,
+            el_type=DataPin._PIN_TYPES_MAPPING[self.pintype],
             visibility=visibility,
             altfuncs=self.altfuncs,
             **kwargs,
