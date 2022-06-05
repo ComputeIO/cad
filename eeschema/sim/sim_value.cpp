@@ -437,7 +437,7 @@ bool SIM_VALUE_INSTANCE<long>::FromString( const wxString& aString, NOTATION aNo
     if( parseResult.isEmpty )
         return true;
 
-    if( !parseResult.intPart || parseResult.fracPart )
+    if( !parseResult.intPart || ( parseResult.fracPart && *parseResult.fracPart != 0 ) )
         return false;
 
     long exponent = parseResult.exponent ? *parseResult.exponent : 0;
@@ -555,7 +555,7 @@ wxString SIM_VALUE_INSTANCE<long>::ToString( NOTATION aNotation ) const
         long dummy = 0;
         wxString metricSuffix = SIM_VALUE_PARSER::ExponentToMetricSuffix(
                 static_cast<double>( exponent ), dummy, aNotation );
-        return wxString::Format( "%d%s", value, metricSuffix );
+        return wxString::Format( "%ld%s", value, metricSuffix );
     }
 
     return "";
@@ -638,10 +638,10 @@ wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToSimpleString() const
 template <typename T>
 bool SIM_VALUE_INSTANCE<T>::operator==( const SIM_VALUE& aOther ) const
 {
-    const SIM_VALUE_INSTANCE* otherNumber = dynamic_cast<const SIM_VALUE_INSTANCE*>( &aOther );
+    const SIM_VALUE_INSTANCE* otherValue = dynamic_cast<const SIM_VALUE_INSTANCE*>( &aOther );
 
-    if( otherNumber )
-        return m_value == otherNumber->m_value;
+    if( otherValue )
+        return m_value == otherValue->m_value;
 
     return false;
 }

@@ -290,7 +290,8 @@ public:
         wxString itemType;
         wxString modelType = "";
         wxString inlineTypeString = "";
-        int level = 0;
+        wxString level = "";
+        bool isDefaultLevel = false;
         bool hasExpression = false;
         wxString version = "";
     };
@@ -436,14 +437,15 @@ public:
 
     virtual wxString GenerateSpicePreview( const wxString& aModelName ) const;
 
-    SPICE_INFO GetSpiceInfo() const;
+    SPICE_INFO GetSpiceInfo() const { return SpiceInfo( GetType() ); }
     virtual std::vector<wxString> GenerateSpiceCurrentNames( const wxString& aRefName ) const;
 
     void AddPin( const PIN& aPin );
     unsigned FindModelPinNumber( unsigned aSymbolPinNumber );
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
 
-    DEVICE_TYPE GetDeviceType() const { return TypeInfo( GetType() ).deviceType; }
+    INFO GetTypeInfo() const { return TypeInfo( GetType() ); }
+    DEVICE_TYPE GetDeviceType() const { return GetTypeInfo().deviceType; }
     TYPE GetType() const { return m_type; }
 
     const SIM_MODEL* GetBaseModel() const { return m_baseModel; }
@@ -479,7 +481,7 @@ public:
     // Can modifying a model parameter also modify other parameters?
     virtual bool HasAutofill() const { return false; }
 
-    wxString GetErrorMessage() { return m_errorMessage; }
+    wxString GetErrorMessage() const { return m_errorMessage; }
 
 protected:
     SIM_MODEL( TYPE aType );
@@ -504,7 +506,10 @@ protected:
 
 private:
     static std::unique_ptr<SIM_MODEL> create( TYPE aType );
-    static TYPE readTypeFromSpiceTypeString( const std::string& aTypeString );
+    static TYPE readTypeFromSpiceStrings( const wxString& aTypeString,
+                                          const wxString& aLevel = "",
+                                          const wxString& aVersion = "",
+                                          bool aSkipDefaultLevel = true );
 
 
     template <typename T>

@@ -34,8 +34,8 @@ public:
         wxFileName fn = KI_TEST::GetEeschemaTestDataDir();
         fn.AppendDir( "spice_netlists" );
         fn.AppendDir( "libraries" );
-        fn.SetName( "diodes" );
-        fn.SetExt( "lib" );
+        fn.SetName( aBaseName );
+        fn.SetExt( "lib.spice" );
 
         return fn.GetFullPath();
     }
@@ -47,9 +47,12 @@ public:
         BOOST_CHECK( m_library->ReadFile( path ) );
     }
 
-    void CompareToUsualModel( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex )
+    void CompareToUsualDiodeModel( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex )
     {
-        BOOST_CHECK_EQUAL( aModelName, "Usual" + wxString::FromCDouble( aModelIndex ) );
+
+        BOOST_CHECK_EQUAL( aModelName, aModel.GetSpiceInfo().modelType.Upper()
+                                       + wxString::FromCDouble( aModelIndex )
+                                       + "_Usual" );
         BOOST_CHECK_EQUAL( aModel.FindParam( "bv" )->value->ToString(), "1.1u" );
         BOOST_CHECK_EQUAL( aModel.FindParam( "cjo" )->value->ToString(), "2.2m" );
         BOOST_CHECK_EQUAL( aModel.FindParam( "ibv" )->value->ToString(), "3.3" );
@@ -60,11 +63,37 @@ public:
 
     void CompareToEmptyModel( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex )
     {
-        BOOST_CHECK_EQUAL( aModelName, "Empty" + wxString::FromCDouble( aModelIndex ) );
+        BOOST_CHECK_EQUAL( aModelName, aModel.GetSpiceInfo().modelType.Upper()
+                                       + wxString::FromCDouble( aModelIndex )
+                                       + "_Empty" );
 
         for( unsigned i = 0; i < aModel.GetParamCount(); ++i )
         {
             BOOST_CHECK_EQUAL( aModel.GetUnderlyingParam( i ).value->ToString(), "" );
+        }
+    }
+
+    void TestBjt( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex,
+                  SIM_MODEL::TYPE aType, const std::vector<wxString>& aParamNames )
+    {
+        BOOST_CHECK_EQUAL( aModelName, aModel.GetSpiceInfo().modelType.Upper()
+                                       + wxString::FromCDouble( aModelIndex )
+                                       + "_" + aModel.GetTypeInfo().fieldValue );
+
+        for( int i = 0; i < aParamNames.size(); ++i )
+        {
+            wxString paramName = aParamNames.at( i );
+
+            if( i == 0 )
+            {
+                BOOST_CHECK_EQUAL( aModel.FindParam( paramName )->value->ToString(), "0" );
+            }
+            else
+            {
+                BOOST_CHECK_EQUAL( aModel.FindParam( paramName )->value->ToString(),
+                                   wxString::FromCDouble( i ) + ".0000"
+                                   + wxString::FromCDouble( i ) + "G" );
+            }
         }
     }
 
@@ -82,7 +111,7 @@ BOOST_AUTO_TEST_CASE( Diodes )
     const std::vector<std::reference_wrapper<SIM_MODEL>> models = m_library->GetModels();
     const std::vector<wxString>& modelNames = m_library->GetModelNames();
 
-    BOOST_CHECK_EQUAL( models.size(), 17 );
+    BOOST_CHECK_EQUAL( models.size(), 18 );
 
     for( int i = 0; i < models.size(); ++i )
     {
@@ -125,7 +154,7 @@ BOOST_AUTO_TEST_CASE( Diodes )
 
             case 2:
             case 3:
-                CompareToUsualModel( model, modelName, i );
+                CompareToUsualDiodeModel( model, modelName, i );
                 break;
 
             case 4:
@@ -153,11 +182,62 @@ BOOST_AUTO_TEST_CASE( Diodes )
             case 14:
             case 15:
             case 16:
-                CompareToUsualModel( model, modelName, i );
+            case 17:
+                CompareToUsualDiodeModel( model, modelName, i );
                 break;
 
             default:
                 BOOST_FAIL( "Unknown parameter index" );
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE( Bjts )
+{
+    LoadLibrary( "bjts" );
+
+    const std::vector<std::reference_wrapper<SIM_MODEL>> models = m_library->GetModels();
+    const std::vector<wxString>& modelNames = m_library->GetModelNames();
+
+    BOOST_CHECK_EQUAL( models.size(), 6 );
+
+    for( int i = 0; i < models.size(); ++i )
+    {
+        const SIM_MODEL& model = models.at( i );
+        const wxString& modelName = modelNames.at( i );
+
+        switch( i )
+        {
+        case 0:
+            TestBjt( model, modelName, i, SIM_MODEL::TYPE::NPN_GUMMELPOON,
+                     { "is", "nf", "ise", "ne", "bf", "ikf", "vaf", "nr", "isc", "nc" } );
+            break;
+
+        case 1:
+            TestBjt( model, modelName, i, SIM_MODEL::TYPE::PNP_GUMMELPOON,
+                     { "is", "nf", "ise", "ne", "bf", "ikf", "vaf", "nr", "isc", "nc" } );
+            break;
+
+        case 2:
+            TestBjt( model, modelName, i, SIM_MODEL::TYPE::NPN_VBIC,
+                     { "rcx", "rci", "vo", "gamm", "hrcf", "rbx", "rbi", "re", "rs", "rbp" } );
+            break;
+
+        case 3:
+            TestBjt( model, modelName, i, SIM_MODEL::TYPE::PNP_VBIC,
+                     { "rcx", "rci", "vo", "gamm", "hrcf", "rbx", "rbi", "re", "rs", "rbp" } );
+            break;
+
+        case 4:
+            TestBjt( model, modelName, i, SIM_MODEL::TYPE::NPN_HICUML2,
+                     { "c10", "qp0", "ich", "hf0", "hfe", "hfc", "hjei", "ahjei", "rhjei", "hjci" } );
+            break;
+
+        case 5:
+            TestBjt( model, modelName, i, SIM_MODEL::TYPE::PNP_HICUML2,
+                     { "c10", "qp0", "ich", "hf0", "hfe", "hfc", "hjei", "ahjei", "rhjei", "hjci" } );
+            break;
         }
     }
 }

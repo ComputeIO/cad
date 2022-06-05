@@ -79,6 +79,11 @@ std::vector<wxString> SIM_MODEL_NGSPICE::GenerateSpiceCurrentNames( const wxStri
 bool SIM_MODEL_NGSPICE::SetParamFromSpiceCode( const wxString& aParamName, const wxString& aParamValue,
                                                SIM_VALUE_GRAMMAR::NOTATION aNotation )
 {
+    // "level" and "version" are not really parameters - they're part of the type - so silently
+    // ignore them.
+    if( aParamName == "level" || aParamName == "version" )
+        return true;
+
     // One Spice param can have multiple names, we need to take this into account.
 
     std::vector<std::reference_wrapper<const PARAM>> params = GetParams();
@@ -93,7 +98,6 @@ bool SIM_MODEL_NGSPICE::SetParamFromSpiceCode( const wxString& aParamName, const
     if( paramIt != params.end() )
         return SetParamValue( paramIt - params.begin(), aParamValue, aNotation );
     
-
     std::vector<PARAM::INFO> ngspiceParams = NGSPICE::ModelInfo( getModelType() ).modelParams;
 
     auto ngspiceParamIt = std::find_if( ngspiceParams.begin(), ngspiceParams.end(),
