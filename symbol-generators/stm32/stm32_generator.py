@@ -36,6 +36,7 @@ class DataPin:
         "MonoIO": DrawingPin.PinElectricalType.EL_TYPE_BIDIR,
         "NC": DrawingPin.PinElectricalType.EL_TYPE_NC,
         "Clock": DrawingPin.PinElectricalType.EL_TYPE_INPUT,
+        "Passive": DrawingPin.PinElectricalType.EL_TYPE_PASSIVE,
     }
 
     def __init__(self, number, name, pintype):
@@ -557,8 +558,8 @@ class Device:
         otherPins = []
         ports = {}
 
-        topPins = []
-        bottomPins = []
+        topPins = {}
+        bottomPins = {}
 
         # Get pin length
         pin_length = 100 if all(len(pin.num) < 3 for pin in self.pins) else 200
@@ -588,7 +589,12 @@ class Device:
             elif pin.pintype == "Power" or pin.name.startswith("VREF"):
                 # Positive pins go on the top
                 if pin.name.startswith("VDD") or pin.name.startswith("VBAT"):
-                    topPins.append(
+                    if not pin.name in topPins:
+                        topPins[pin.name] = []
+                    else:
+                        pin.pintype = "Passive"
+                        pin.visible = False
+                    topPins[pin.name].append(
                         pin.to_drawing_pin(
                             pin_length=pin_length,
                             orientation=DrawingPin.PinOrientation.DOWN,
@@ -596,7 +602,12 @@ class Device:
                     )
                 # Negative pins go on the bottom
                 elif pin.name.startswith("VSS"):
-                    bottomPins.append(
+                    if not pin.name in bottomPins:
+                        bottomPins[pin.name] = []
+                    else:
+                        pin.pintype = "Passive"
+                        pin.visible = False
+                    bottomPins[pin.name].append(
                         pin.to_drawing_pin(
                             pin_length=pin_length,
                             orientation=DrawingPin.PinOrientation.UP,
@@ -758,19 +769,21 @@ class Device:
 
         # Add the top pins
         x = (left_width + (100 + middle_width) // 2 - top_width // 2) // 100 * 100
-        for pin in sorted(topPins, key=lambda p: p.name):
-            pin.at = Point(x, box_height + pin_length)
-            pin.orientation = DrawingPin.PinOrientation.DOWN
-            drawing.append(pin)
+        for _, pins in sorted(topPins.items()):
+            for pin in pins:
+                pin.at = Point(x, box_height + pin_length)
+                pin.orientation = DrawingPin.PinOrientation.DOWN
+                drawing.append(pin)
             x += 100
         last_top_x = x
 
         # Add the bottom pins
         x = (left_width + (100 + middle_width) // 2 - bottom_width // 2) // 100 * 100
-        for pin in sorted(bottomPins, key=lambda p: p.name):
-            pin.at = Point(x, -pin_length)
-            pin.orientation = DrawingPin.PinOrientation.UP
-            drawing.append(pin)
+        for _, pins in sorted(bottomPins.items()):
+            for pin in pins:
+                pin.at = Point(x, -pin_length)
+                pin.orientation = DrawingPin.PinOrientation.UP
+                drawing.append(pin)
             x += 100
 
         # Add the NC pins
