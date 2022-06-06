@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import itertools
 import logging
 import multiprocessing
 import os
@@ -67,6 +68,8 @@ class DataPin:
 
 
 class Device:
+    _alpha_number_findall = re.compile(r"([^0-9]*)([0-9]*)")
+    _group_search = re.compile(r"^(DDR|USB)_(.+)$")
     _name_search = re.compile(r"^(.+)\((.+)\)(.+)$")
     _number_findall = re.compile(r"\d+")
     _pincount_search = re.compile(r"^[a-zA-Z]+([0-9]+)$")
@@ -580,6 +583,22 @@ class Device:
                 except KeyError:
                     ports[port] = {}
                     ports[port][pin_num] = pin.to_drawing_pin(pin_length=pin_length)
+            elif pin.pintype == "MonoIO" and (
+                group_match := Device._group_search.search(pin.name)
+            ):
+                port = group_match.group(1)
+                if port == "USB":
+                    pin_key = pin.num
+                else:
+                    # Approximate a numeric sort
+                    alpha_numbers = Device._alpha_number_findall.findall(
+                        group_match.group(2)
+                    )
+                    sortables = ((s, int(n) if n else None) for s, n in alpha_numbers)
+                    pin_key = tuple(itertools.chain.from_iterable(sortables))
+                if port not in ports:
+                    ports[port] = {}
+                ports[port][pin_key] = pin.to_drawing_pin(pin_length=pin_length)
             # Clock pins go on the left
             elif pin.pintype == "Clock":
                 clockPins.append(
@@ -681,7 +700,9 @@ class Device:
             leftSpace += len(group) + 1
 
         # Add ports to the right, counting the space needed
-        for _, port in sorted(ports.items()):
+        for _, _, port in sorted(
+            (len(name), name, port) for name, port in ports.items()
+        ):
             pins = [pin for _, pin in sorted(port.items())]
             rightSpace += len(pins) + 1
             rightGroups.append(pins)
