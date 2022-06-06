@@ -310,8 +310,11 @@ class Device:
                 newpin.name = Device._pinname_split.split(newpin.name)[0]
 
             # Fix type for NC pins
-            if newpin.name == "NC":
+            if newpin.name in ("NC", "DNU"):
                 newpin.pintype = "NC"
+            # These pins can be used for routing, so mark them as passive
+            elif newpin.name.endswith("_Unused"):
+                newpin.pintype = "Passive"
 
             # Get alternate functions
             for signal in child.xpath("a:Signal", namespaces=self.ns):
