@@ -693,7 +693,7 @@ class Device:
         if clockPins:
             leftGroups.append(clockPins)
         if otherPins:
-            leftGroups.append(otherPins)
+            leftGroups.append(sorted(otherPins, key=lambda p: p.name))
 
         # Count the space needed for special groups
         for group in leftGroups:
