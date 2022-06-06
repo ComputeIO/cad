@@ -17,14 +17,11 @@ class DocumentManager:
     prefix = "https://www.st.com/content/st_com/en/products/microcontrollers-microprocessors/" \
              "stm32-32-bit-arm-cortex-mcus/.cxst-rs-grid.html"
     ds_urls = [
-        f"{prefix}/stm32-high-performance-mcus.cxst-rs-grid.html/SC2154.technical_literature.datasheet.json",
-        f"{prefix}/stm32-mainstream-mcus.cxst-rs-grid.html/SC2155.technical_literature.datasheet.json",
-        f"{prefix}/stm32-ultra-low-power-mcus.cxst-rs-grid.html/SC2157.technical_literature.datasheet.json",
-        f"{prefix}/stm32-wireless-mcus.cxst-rs-grid.html/SC2156.technical_literature.datasheet.json",
         f"{prefix}/SC2154.technical_literature.datasheet.json",
         f"{prefix}/SC2155.technical_literature.datasheet.json",
         f"{prefix}/SC2157.technical_literature.datasheet.json",
         f"{prefix}/SC2156.technical_literature.datasheet.json",
+        f"{prefix}/SS2003.technical_literature.datasheet.json",
         # f"{prefix}/stm32-arm-cortex-mpus.cxst-rs-grid.html/SC2230.technical_literature.datasheet.json',
     ]
     hdr = {
