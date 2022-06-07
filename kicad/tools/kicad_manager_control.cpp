@@ -487,6 +487,13 @@ int KICAD_MANAGER_CONTROL::LoadProject( const TOOL_EVENT& aEvent )
     return 0;
 }
 
+int KICAD_MANAGER_CONTROL::ViewDroppedViewers( const TOOL_EVENT& aEvent )
+{
+    if( aEvent.Parameter<wxString*>() )
+        wxExecute( *aEvent.Parameter<wxString*>(), wxEXEC_ASYNC );
+    return 0;
+}
+
 class SAVE_AS_TRAVERSER : public wxDirTraverser
 {
 public:
@@ -994,6 +1001,7 @@ void KICAD_MANAGER_CONTROL::setTransitions()
     Go( &KICAD_MANAGER_CONTROL::SaveProjectAs,      ACTIONS::saveAs.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::LoadProject,        KICAD_MANAGER_ACTIONS::loadProject.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::ImportNonKicadProj, KICAD_MANAGER_ACTIONS::importNonKicadProj.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ViewDroppedViewers, KICAD_MANAGER_ACTIONS::viewDroppedGerbers.MakeEvent() );
 
     Go( &KICAD_MANAGER_CONTROL::Refresh,         ACTIONS::zoomRedraw.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::UpdateMenu,      ACTIONS::updateMenu.MakeEvent() );
