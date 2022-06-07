@@ -31,7 +31,9 @@
 #include <build_version.h>
 #include <dialogs/panel_kicad_launcher.h>
 #include <eda_base_frame.h>
+#include <executable_names.h>
 #include <filehistory.h>
+#include <gestfich.h>
 #include <kiplatform/app.h>
 #include <kicad_build_version.h>
 #include <kiway.h>
@@ -205,9 +207,9 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     // Init for dropping files
     m_dropFilesExt.emplace( "kicad_pro", &KICAD_MANAGER_ACTIONS::loadProject );
     m_dropFilesExt.emplace( "pro",       &KICAD_MANAGER_ACTIONS::loadProject );
-    m_dropFilesExt.emplace( "gbr",       &KICAD_MANAGER_ACTIONS::viewGerbers );
-    m_dropFilesExt.emplace( "gbrjob",    &KICAD_MANAGER_ACTIONS::viewGerbers );
-    m_dropFilesExt.emplace( "drl",       &KICAD_MANAGER_ACTIONS::viewGerbers );
+    m_dropFilesExt.emplace( "gbr",       &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
+    m_dropFilesExt.emplace( "gbrjob",    &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
+    m_dropFilesExt.emplace( "drl",       &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
     // Eagle files import
     m_dropFilesExt.emplace( "sch",       &KICAD_MANAGER_ACTIONS::importNonKicadProj );
     m_dropFilesExt.emplace( "brd",       &KICAD_MANAGER_ACTIONS::importNonKicadProj );
@@ -393,10 +395,34 @@ void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
         }
     }
 
+    // Then stock gerber files in gerberFiles and run action for other files.
+    wxString gerberFiles;
     for( auto fileName : m_AcceptedFiles )
     {
-        wxString fn = fileName.GetFullPath();
-        m_toolManager->RunAction( *m_dropFilesExt.at( fileName.GetExt() ), true, &fn );
+        auto fileExt = fileName.GetExt();
+        if( fileExt == "gbr" || fileExt == "gbrjob" || fileExt == "drl" )
+        {
+            gerberFiles += wxT('\"');
+            gerberFiles += fileName.GetFullPath() + wxT('\"');
+            gerberFiles = gerberFiles.Pad( 1 );
+        }
+        else
+        {
+            wxString fn = fileName.GetFullPath();
+            m_toolManager->RunAction( *m_dropFilesExt.at( fileName.GetExt() ), true, &fn );
+        }
+    }
+
+    // Execute Gerbviewer
+    if( !gerberFiles.IsEmpty() )
+    {
+        wxString fullEditorName = FindKicadFile( GERBVIEW_EXE );
+
+        if( wxFileExists( fullEditorName ) )
+        {
+            wxString command = fullEditorName + " " + gerberFiles;
+            m_toolManager->RunAction( *m_dropFilesExt.at( "gbr" ), true, &command );
+        }
     }
 }
 
