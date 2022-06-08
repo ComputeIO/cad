@@ -32,6 +32,7 @@
 #include "ibisParser.h"
 #include <sstream>
 #include <iterator>
+#include <locale_io.h> // KiCad header
 
 bool IbisParser::compareIbisWord( const std::string& a, const std::string& b )
 {
@@ -719,8 +720,7 @@ bool IbisParser::ParseFile( std::string& aFileName )
 
     bool status = true;
 
-    const char* locale_origin = ( setlocale( LC_ALL, NULL ) );
-    std::setlocale( LC_NUMERIC, "en_US.UTF-8" );
+    LOCALE_IO toggle;   // Temporary switch the locale to standard C to r/w floats
 
     while( ( m_bufferIndex < size ) && status )
     {
@@ -749,7 +749,6 @@ bool IbisParser::ParseFile( std::string& aFileName )
         }
     }
 
-    std::setlocale( LC_NUMERIC, locale_origin );
     m_buffer.clear();
     return status;
 }
