@@ -78,7 +78,7 @@ bool NETLIST_EXPORTER_SPICE::GenerateNetlist( OUTPUTFORMATTER& aFormatter, unsig
 
     writeIncludes( aFormatter, aNetlistOptions );
     writeModels( aFormatter );
-    writeDirectives( aFormatter, aNetlistOptions );
+    WriteDirectives( aFormatter, aNetlistOptions );
     writeItems( aFormatter );
 
     aFormatter.Print( 0, ".end\n" );
@@ -361,7 +361,8 @@ void NETLIST_EXPORTER_SPICE::writeItems( OUTPUTFORMATTER& aFormatter )
 }
 
 
-void NETLIST_EXPORTER_SPICE::writeDirectives( OUTPUTFORMATTER& aFormatter, unsigned aNetlistOptions )
+void NETLIST_EXPORTER_SPICE::WriteDirectives( OUTPUTFORMATTER& aFormatter,
+                                              unsigned         aNetlistOptions ) const
 {
     if( aNetlistOptions & OPTION_SAVE_ALL_VOLTAGES )
         aFormatter.Print( 0, ".save all\n" );
