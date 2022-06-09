@@ -66,10 +66,7 @@ namespace SIM_MODEL_PARSER
     template <> struct spiceUnitSelector<modelName> : std::true_type {};
     template <> struct spiceUnitSelector<dotModelType> : std::true_type {};
     template <> struct spiceUnitSelector<param> : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SPICE>>
-        : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>>
-        : std::true_type {};
+    template <> struct spiceUnitSelector<paramValue> : std::true_type {};
 
     template <> struct spiceUnitSelector<dotSubckt> : std::true_type {};
 
@@ -162,8 +159,8 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::PMES_YTTERDAL:        return { DEVICE_TYPE::PMES,   "YTTERDAL",       "Ytterdal"                   };
     case TYPE::NMES_HFET1:           return { DEVICE_TYPE::NMES,   "HFET1",          "HFET1"                      };
     case TYPE::PMES_HFET1:           return { DEVICE_TYPE::PMES,   "HFET1",          "HFET1"                      };
-    case TYPE::PMES_HFET2:           return { DEVICE_TYPE::NMES,   "HFET2",          "HFET2"                      };
-    case TYPE::NMES_HFET2:           return { DEVICE_TYPE::PMES,   "HFET2",          "HFET2"                      };
+    case TYPE::NMES_HFET2:           return { DEVICE_TYPE::NMES,   "HFET2",          "HFET2"                      };
+    case TYPE::PMES_HFET2:           return { DEVICE_TYPE::PMES,   "HFET2",          "HFET2"                      };
 
     case TYPE::NMOS_MOS1:            return { DEVICE_TYPE::NMOS,   "MOS1",           "Classical quadratic (MOS1)" };
     case TYPE::PMOS_MOS1:            return { DEVICE_TYPE::PMOS,   "MOS1",           "Classical quadratic (MOS1)" };
@@ -292,8 +289,8 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::PMES_YTTERDAL:        return { "Z", "pmf",    "",        "2"   };
     case TYPE::NMES_HFET1:           return { "Z", "nmf",    "",        "5"   };
     case TYPE::PMES_HFET1:           return { "Z", "pmf",    "",        "5"   };
-    case TYPE::PMES_HFET2:           return { "Z", "nmf",    "",        "6"   };
-    case TYPE::NMES_HFET2:           return { "Z", "pmf",    "",        "6"   };
+    case TYPE::NMES_HFET2:           return { "Z", "nmf",    "",        "6"   };
+    case TYPE::PMES_HFET2:           return { "Z", "pmf",    "",        "6"   };
 
     case TYPE::NMOS_MOS1:            return { "M", "nmos",   "",        "1"   };
     case TYPE::PMOS_MOS1:            return { "M", "pmos",   "",        "1"   };
@@ -395,7 +392,7 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
     }
     catch( const tao::pegtl::parse_error& e )
     {
-        // TODO: Maybe announce an error somehow?
+        wxLogDebug( "%s", e.what() );
         return TYPE::NONE;
     }
 
@@ -428,12 +425,7 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
                 {
                     paramName = subnode->string();
                 }
-                else if( subnode->is_type<
-                        SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::INT,
-                                                 SIM_MODEL_PARSER::NOTATION::SPICE>>()
-                    || subnode->is_type<
-                        SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
-                                                 SIM_MODEL_PARSER::NOTATION::SPICE>>() )
+                else if( subnode->is_type<SIM_MODEL_PARSER::paramValue>() )
                 {
                     wxASSERT( paramName != "" );
 
@@ -582,6 +574,7 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::Create( const std::string& aSpiceCode )
     
     if( !model->ReadSpiceCode( aSpiceCode ) )
     {
+        wxLogDebug( "%s", model->GetErrorMessage() );
         // Demote to raw Spice element and try again.
         std::unique_ptr<SIM_MODEL> rawSpiceModel = create( TYPE::SPICE );
 
@@ -740,14 +733,7 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
                 {
                     paramName = subnode->string();
                 }
-                // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
-                // It doesn't seem too useful?
-                else if( subnode->is_type<
-                        SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::INT,
-                                                 SIM_MODEL_PARSER::NOTATION::SPICE>>()
-                    || subnode->is_type<
-                        SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
-                                                 SIM_MODEL_PARSER::NOTATION::SPICE>>() )
+                else if( subnode->is_type<SIM_MODEL_PARSER::paramValue>() )
                 {
                     wxASSERT( !paramName.IsEmpty() );
 

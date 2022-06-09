@@ -49,7 +49,7 @@ public:
 
     void CompareToUsualDiodeModel( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex )
     {
-
+        BOOST_CHECK( aModel.GetType() == SIM_MODEL::TYPE::D );
         BOOST_CHECK_EQUAL( aModelName, aModel.GetSpiceInfo().modelType.Upper()
                                        + wxString::FromCDouble( aModelIndex )
                                        + "_Usual" );
@@ -63,36 +63,52 @@ public:
 
     void CompareToEmptyModel( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex )
     {
-        BOOST_CHECK_EQUAL( aModelName, aModel.GetSpiceInfo().modelType.Upper()
-                                       + wxString::FromCDouble( aModelIndex )
-                                       + "_Empty" );
-
-        for( unsigned i = 0; i < aModel.GetParamCount(); ++i )
+        BOOST_TEST_CONTEXT( "Model index: " << aModelIndex )
         {
-            BOOST_CHECK_EQUAL( aModel.GetUnderlyingParam( i ).value->ToString(), "" );
+            BOOST_CHECK_EQUAL( aModelName, aModel.GetSpiceInfo().modelType.Upper()
+                                           + wxString::FromCDouble( aModelIndex )
+                                           + "_Empty" );
+
+            for( unsigned i = 0; i < aModel.GetParamCount(); ++i )
+            {
+                BOOST_TEST_CONTEXT( "Param name: " << aModel.GetParam( i ).info.name )
+                {
+                    BOOST_CHECK_EQUAL( aModel.GetUnderlyingParam( i ).value->ToString(), "" );
+                }
+            }
         }
     }
 
-    void TestBjt( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex,
-                  SIM_MODEL::TYPE aType, const std::vector<wxString>& aParamNames )
+    void TestTransistor( const SIM_MODEL& aModel, const wxString& aModelName, int aModelIndex,
+                         SIM_MODEL::TYPE aType, const std::vector<wxString>& aParamNames )
     {
-        BOOST_CHECK_EQUAL( aModelName, aModel.GetSpiceInfo().modelType.Upper()
-                                       + wxString::FromCDouble( aModelIndex )
-                                       + "_" + aModel.GetTypeInfo().fieldValue );
-
-        for( int i = 0; i < aParamNames.size(); ++i )
+        BOOST_TEST_CONTEXT( "Model index: " << aModelIndex
+                            << ", Model name: " << aModelName
+                            << ", Model device type: " << aModel.GetDeviceTypeInfo().fieldValue
+                            << ", Model type: " << aModel.GetTypeInfo().fieldValue )
         {
-            wxString paramName = aParamNames.at( i );
+            BOOST_CHECK( aModel.GetType() == aType );
+            BOOST_CHECK_EQUAL( aModelName, "_" + wxString::FromCDouble( aModelIndex )
+                                           + "_" + aModel.GetSpiceInfo().modelType.Upper()
+                                           + "_" + aModel.GetTypeInfo().fieldValue );
 
-            if( i == 0 )
+            for( int i = 0; i < aParamNames.size(); ++i )
             {
-                BOOST_CHECK_EQUAL( aModel.FindParam( paramName )->value->ToString(), "0" );
-            }
-            else
-            {
-                BOOST_CHECK_EQUAL( aModel.FindParam( paramName )->value->ToString(),
-                                   wxString::FromCDouble( i ) + ".0000"
-                                   + wxString::FromCDouble( i ) + "G" );
+                wxString paramName = aParamNames.at( i );
+
+                BOOST_TEST_CONTEXT( "Param name: " << paramName )
+                {
+                    if( i == 0 )
+                    {
+                        BOOST_CHECK_EQUAL( aModel.FindParam( paramName )->value->ToString(), "0" );
+                    }
+                    else
+                    {
+                        BOOST_CHECK_EQUAL( aModel.FindParam( paramName )->value->ToString(),
+                                           wxString::FromCDouble( i ) + ".0000"
+                                           + wxString::FromCDouble( i ) + "G" );
+                    }
+                }
             }
         }
     }
@@ -210,33 +226,322 @@ BOOST_AUTO_TEST_CASE( Bjts )
         switch( i )
         {
         case 0:
-            TestBjt( model, modelName, i, SIM_MODEL::TYPE::NPN_GUMMELPOON,
-                     { "is", "nf", "ise", "ne", "bf", "ikf", "vaf", "nr", "isc", "nc" } );
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NPN_GUMMELPOON,
+                            { "is", "nf", "ise", "ne", "bf", "ikf", "vaf", "nr", "isc", "nc" } );
             break;
 
         case 1:
-            TestBjt( model, modelName, i, SIM_MODEL::TYPE::PNP_GUMMELPOON,
-                     { "is", "nf", "ise", "ne", "bf", "ikf", "vaf", "nr", "isc", "nc" } );
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PNP_GUMMELPOON,
+                            { "is", "nf", "ise", "ne", "bf", "ikf", "vaf", "nr", "isc", "nc" } );
             break;
 
         case 2:
-            TestBjt( model, modelName, i, SIM_MODEL::TYPE::NPN_VBIC,
-                     { "rcx", "rci", "vo", "gamm", "hrcf", "rbx", "rbi", "re", "rs", "rbp" } );
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NPN_VBIC,
+                            { "rcx", "rci", "vo", "gamm", "hrcf", "rbx", "rbi", "re", "rs",
+                              "rbp" } );
             break;
 
         case 3:
-            TestBjt( model, modelName, i, SIM_MODEL::TYPE::PNP_VBIC,
-                     { "rcx", "rci", "vo", "gamm", "hrcf", "rbx", "rbi", "re", "rs", "rbp" } );
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PNP_VBIC,
+                            { "rcx", "rci", "vo", "gamm", "hrcf", "rbx", "rbi", "re", "rs",
+                              "rbp" } );
             break;
 
         case 4:
-            TestBjt( model, modelName, i, SIM_MODEL::TYPE::NPN_HICUML2,
-                     { "c10", "qp0", "ich", "hf0", "hfe", "hfc", "hjei", "ahjei", "rhjei", "hjci" } );
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NPN_HICUML2,
+                            { "c10", "qp0", "ich", "hf0", "hfe", "hfc", "hjei", "ahjei", "rhjei",
+                              "hjci" } );
             break;
 
         case 5:
-            TestBjt( model, modelName, i, SIM_MODEL::TYPE::PNP_HICUML2,
-                     { "c10", "qp0", "ich", "hf0", "hfe", "hfc", "hjei", "ahjei", "rhjei", "hjci" } );
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PNP_HICUML2,
+                            { "c10", "qp0", "ich", "hf0", "hfe", "hfc", "hjei", "ahjei", "rhjei",
+                              "hjci" } );
+            break;
+        }
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE( Fets )
+{
+    LoadLibrary( "fets" );
+
+    const std::vector<std::reference_wrapper<SIM_MODEL>> models = m_library->GetModels();
+    const std::vector<wxString>& modelNames = m_library->GetModelNames();
+
+    BOOST_CHECK_EQUAL( models.size(), 44 );
+
+    for( int i = 0; i < models.size(); ++i )
+    {
+        const SIM_MODEL& model = models.at( i );
+        const wxString& modelName = modelNames.at( i );
+
+        switch( i )
+        {
+        case 0:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NJFET_SHICHMANHODGES,
+                            { "vt0", "beta", "lambda", "rd", "rs", "cgs", "cgd", "pb", "is",
+                              "fc" } );
+            break;
+
+        case 1:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PJFET_SHICHMANHODGES,
+                            { "vt0", "beta", "lambda", "rd", "rs", "cgs", "cgd", "pb", "is",
+                              "fc" } );
+            break;
+
+        case 2:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NJFET_PARKERSKELLERN,
+                            { "vbi", "af", "beta", "cds", "cgd", "cgs", "delta", "hfeta", "mvst",
+                              "mxi" } );
+            break;
+
+        case 3:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PJFET_PARKERSKELLERN,
+                            { "vbi", "af", "beta", "cds", "cgd", "cgs", "delta", "hfeta", "mvst",
+                              "mxi" } );
+            break;
+
+        case 4:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMES_STATZ,
+                            { "vt0", "alpha", "beta", "lambda", "b", "rd", "rs", "cgs", "cgd",
+                              "pb" } );
+            break;
+
+        case 5:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMES_STATZ,
+                            { "vt0", "alpha", "beta", "lambda", "b", "rd", "rs", "cgs", "cgd",
+                              "pb" } );
+            break;
+
+        case 6:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMES_YTTERDAL,
+                            { "vto", "lambda", "lambdahf", "beta", "vs", "rd", "rs", "rg", "ri",
+                              "rf" } );
+            break;
+
+        case 7:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMES_YTTERDAL,
+                            { "vto", "lambda", "lambdahf", "beta", "vs", "rd", "rs", "rg", "ri",
+                              "rf" } );
+            break;
+
+        case 8:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMES_HFET1,
+                            { "vt0", "lambda", "rd", "rs", "rg", "rdi", "rsi", "rgs", "rgd",
+                              "eta" } );
+            break;
+
+        case 9:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMES_HFET1,
+                            { "vt0", "lambda", "rd", "rs", "rg", "rdi", "rsi", "rgs", "rgd",
+                              "eta" } );
+            break;
+
+        case 10:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMES_HFET2,
+                            { "vs", "ggr", "js", "del", "delta", "deltad", "di", "epsi", "eta",
+                              "eta1" } );
+            break;
+
+        case 11:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMES_HFET2,
+                            { "vs", "ggr", "js", "del", "delta", "deltad", "di", "epsi", "eta",
+                              "eta1" } );
+            break;
+
+        case 12:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_MOS1,
+                            { "vto", "kp", "gamma", "phi", "lambda", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 13:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_MOS1,
+                            { "vto", "kp", "gamma", "phi", "lambda", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 14:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_MOS2,
+                            { "vto", "kp", "gamma", "phi", "lambda", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 15:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_MOS2,
+                            { "vto", "kp", "gamma", "phi", "lambda", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 16:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_MOS3,
+                            { "vto", "theta", "gamma", "phi", "eta", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 17:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_MOS3,
+                            { "vto", "theta", "gamma", "phi", "eta", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+        
+        case 18:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_BSIM1,
+                            { "vfb", "lvfb", "wvfb", "phi", "lphi", "wphi", "k1", "lk1", "wk1",
+                              "k2" } );
+            break;
+
+        case 19:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_BSIM1,
+                            { "vfb", "lvfb", "wvfb", "phi", "lphi", "wphi", "k1", "lk1", "wk1",
+                              "k2" } );
+            break;
+
+        case 20:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_BSIM2,
+                            { "bib", "lbib", "wbib", "vghigh", "lvghigh", "wvghigh",
+                              "waib", "bi0", "lbi0", "wbi0" } );
+            break;
+
+        case 21:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_BSIM2,
+                            { "bib", "lbib", "wbib", "vghigh", "lvghigh", "wvghigh",
+                              "waib", "bi0", "lbi0", "wbi0" } );
+            break;
+
+        case 22:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_MOS6,
+                            { "vto", "nvth", "gamma", "phi", "lambda", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 23:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_MOS6,
+                            { "vto", "nvth", "gamma", "phi", "lambda", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 24:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_BSIM3,
+                            { "tox", "toxm", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "xj",
+                              "vsat", "at" } );
+            break;
+
+        case 25:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_BSIM3,
+                            { "tox", "toxm", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "xj",
+                              "vsat", "at" } );
+            break;
+
+        case 26:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_MOS9,
+                            { "vto", "theta", "gamma", "phi", "eta", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 27:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_MOS9,
+                            { "vto", "theta", "gamma", "phi", "eta", "rd", "rs", "cbd", "cbs",
+                              "is" } );
+            break;
+
+        case 28:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_B4SOI,
+                            { "tox", "toxp", "toxm", "dtoxcv", "cdsc", "cdscb", "cdscd", "cit",
+                              "nfactor", "vsat" } );
+            break;
+
+        case 29:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_B4SOI,
+                            { "tox", "toxp", "toxm", "dtoxcv", "cdsc", "cdscb", "cdscd", "cit",
+                              "nfactor", "vsat" } );
+            break;
+
+        case 30:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_BSIM4,
+                            { "rbps0", "rbpsl", "rbpsw", "rbpsnf", "rbpd0", "rbpdl", "rbpdw", "rbpdnf",
+                              "rbpbx0", "rbpbxl" } );
+            break;
+
+        case 31:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_BSIM4,
+                            { "rbps0", "rbpsl", "rbpsw", "rbpsnf", "rbpd0", "rbpdl", "rbpdw", "rbpdnf",
+                              "rbpbx0", "rbpbxl" } );
+            break;
+
+        case 32:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_B3SOIFD,
+                            { "tox", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "vsat", "at", "a0",
+                              "ags" } );
+            break;
+
+        case 33:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_B3SOIFD,
+                            { "tox", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "vsat", "at", "a0",
+                              "ags" } );
+            break;
+
+        case 34:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_B3SOIDD,
+                            { "tox", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "vsat", "at", "a0",
+                              "ags" } );
+            break;
+
+        case 35:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_B3SOIDD,
+                            { "tox", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "vsat", "at", "a0",
+                              "ags" } );
+            break;
+
+        case 36:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_B3SOIPD,
+                            { "tox", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "vsat", "at", "a0",
+                              "ags" } );
+            break;
+
+        case 37:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_B3SOIPD,
+                            { "tox", "cdsc", "cdscb", "cdscd", "cit", "nfactor", "vsat", "at", "a0",
+                              "ags" } );
+            break;
+
+        case 38:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_HISIM2,
+                            { "depmue0", "depmue0l", "depmue0lp", "depmue1", "depmue1l",
+                              "depmue1lp", "depmueback0", "depmueback0l", "depmueback0lp",
+                              "depmueback1" } );
+            break;
+
+        case 39:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_HISIM2,
+                            { "depmue0", "depmue0l", "depmue0lp", "depmue1", "depmue1l", "depmue1lp",
+                              "depmueback0", "depmueback0l", "depmueback0lp", "depmueback1" } );
+            break;
+
+        case 40:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_HISIMHV1,
+                            { "prd", "prd22", "prd23", "prd24", "prdict1", "prdov13", "prdslp1",
+                              "prdvb", "prdvd", "prdvg11" } );
+            break;
+
+        case 41:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_HISIMHV1,
+                            { "prd", "prd22", "prd23", "prd24", "prdict1", "prdov13", "prdslp1", 
+                              "prdvb", "prdvd", "prdvg11" } );
+            break;
+
+        case 42:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::NMOS_HISIMHV2,
+                            { "pjs0d", "pjs0swd", "pnjd", "pcisbkd", "pvdiffjd", "pjs0s", "pjs0sws",
+                              "prs", "prth0", "pvover" } );
+            break;
+
+        case 43:
+            TestTransistor( model, modelName, i, SIM_MODEL::TYPE::PMOS_HISIMHV2,
+                            { "pjs0d", "pjs0swd", "pnjd", "pcisbkd", "pvdiffjd", "pjs0s", "pjs0sws",
+                              "prs", "prth0", "pvover" } );
             break;
         }
     }

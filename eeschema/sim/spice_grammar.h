@@ -57,22 +57,24 @@ namespace SPICE_GRAMMAR
     struct param : plus<alnum> {};
     struct suffixUnit : plus<alpha> {};
 
-    template <SIM_VALUE::TYPE Type, NOTATION Notation>
+    //struct stringParamValue : star<not_at<sep>, any> {};
+
+    // FIXME: ), ;, eol handled here is a quick hack to pass QA tests. Fix the `sep` rule, then
+    // remove the hack.
+    struct paramValue : star<not_at<sor<sep, one<')', ';'>, eol>>, any> {};
+
     struct paramValuePair : seq<param,
                                 opt<sep>,
                                 one<'='>,
                                 opt<sep>,
-                                number<Type, Notation>,
-                                opt<suffixUnit>> {};
-    template <NOTATION Notation>
-    struct paramValuePairs : seq<opt<paramValuePair<SIM_VALUE::TYPE::FLOAT,
-                                                    Notation>,
+                                paramValue> {};
+
+
+    struct paramValuePairs : seq<opt<paramValuePair,
                                      star<sep,
-                                          paramValuePair<SIM_VALUE::TYPE::FLOAT,
-                                                         Notation>>>> {};
-    struct modelName : plus<alnum,
-                            star<sor<alnum,
-                                     one<'!', '#', '$', '%', '[', ']', '_'>>>> {};
+                                          paramValuePair>>> {};
+    struct modelName : star<sor<alnum,
+                                one<'!', '#', '$', '%', '[', ']', '_'>>> {};
                      /*seq<alpha,
                            star<sor<alnum,
                                     one<'!', '#', '$', '%', '[', ']', '_'>>>> {};*/
@@ -103,12 +105,12 @@ namespace SPICE_GRAMMAR
                           opt<sor<seq<opt<sep>,
                                       one<'('>,
                                       opt<sep>,
-                                      paramValuePairs<NOTATION::SPICE>,
+                                      paramValuePairs,
                                       opt<sep>,
                                       // Ngspice doesn't require the parentheses to match, though.
                                       one<')'>>,
                                   seq<sep,
-                                      paramValuePairs<NOTATION::SPICE>>>>,
+                                      paramValuePairs>>>,
                           opt<sep>,
                           newline> {};
 
@@ -131,7 +133,7 @@ namespace SPICE_GRAMMAR
                            opt<sep,
                                TAO_PEGTL_ISTRING( "params:" ),
                                sep,
-                               paramValuePairs<NOTATION::SPICE>>,
+                               paramValuePairs>,
                            opt<sep>,
                            newline,
                            until<dotSubcktEnd>> {};

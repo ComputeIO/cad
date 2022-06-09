@@ -444,7 +444,9 @@ public:
     unsigned FindModelPinNumber( unsigned aSymbolPinNumber );
     void AddParam( const PARAM::INFO& aInfo, bool aIsOtherVariant = false );
 
+    DEVICE_INFO GetDeviceTypeInfo() const { return DeviceTypeInfo( GetDeviceType() ); }
     INFO GetTypeInfo() const { return TypeInfo( GetType() ); }
+
     DEVICE_TYPE GetDeviceType() const { return GetTypeInfo().deviceType; }
     TYPE GetType() const { return m_type; }
 

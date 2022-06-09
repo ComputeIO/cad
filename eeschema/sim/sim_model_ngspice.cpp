@@ -159,8 +159,8 @@ NGSPICE::MODEL_TYPE SIM_MODEL_NGSPICE::getModelType() const
     case TYPE::PMES_YTTERDAL:        return NGSPICE::MODEL_TYPE::MESA;
     case TYPE::NMES_HFET1:
     case TYPE::PMES_HFET1:           return NGSPICE::MODEL_TYPE::HFET1;
-    case TYPE::PMES_HFET2:
-    case TYPE::NMES_HFET2:           return NGSPICE::MODEL_TYPE::HFET2;
+    case TYPE::NMES_HFET2:
+    case TYPE::PMES_HFET2:           return NGSPICE::MODEL_TYPE::HFET2;
 
     case TYPE::NMOS_MOS1:
     case TYPE::PMOS_MOS1:            return NGSPICE::MODEL_TYPE::MOS1;

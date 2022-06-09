@@ -1,14 +1,14 @@
 *
-* bjts.lib
+* bjts.lib.spice
 * 
 
-* The parameter values are made up and physically nonsensical.
+* All parameter values are made up and physically nonsensical.
 * Commented out some parameters to avoid making test code overly long.
 
 * First, Gummel-Poon.
 
 *
-.MODEL NPN0_GUMMELPOON NPN(  
+.MODEL _0_NPN_GUMMELPOON NPN(  
 +     IS=000.000E+07
 +     NF=100.001E+07
 +     ISE=200.002E+07
@@ -51,7 +51,7 @@
 * 
 
 *
-.MODEL PNP1_GUMMELPOON PNP( level = 1
+.MODEL _1_PNP_GUMMELPOON PNP( level = 1. ; Decimal separator must be accepted too.
 +     IS=000.000E+07
 +     NF=100.001E+07
 +     ISE=200.002E+07
@@ -96,7 +96,7 @@
 
 * VBIC.
 
-.model NPN2_VBIC NPN( level=4
+.model _2_NPN_VBIC NPN( level=4
 + rcx             = 000.000E+07
 + rci             = 100.001E+07
 + vo              = 200.002E+07
@@ -212,7 +212,7 @@
 *+ vce_max         = 123.456E+07
 *+)
 
-.model PNP3_VBIC PNP( level=4.0
+.model _3_PNP_VBIC PNP( level=4.0
 + rcx             = 000.000E+07
 + rci             = 100.001E+07
 + vo              = 200.002E+07
@@ -331,7 +331,7 @@
 
 * HICUM/L2
 
-.model NPN4_HICUML2 NPN( level=8.00
+.model _4_NPN_HICUML2 NPN( level=8.00
 + c10             = 000.000E+07
 + qp0             = 100.001E+07
 + ich             = 200.002E+07
@@ -478,7 +478,7 @@
 *+ vce_max         = 123.456E+07
 *+)
 
-.model PNP5_HICUML2 PNP( level=8
+.model _5_PNP_HICUML2 PNP( level=8
 + c10             = 000.000E+07
 + qp0             = 100.001E+07
 + ich             = 200.002E+07
