@@ -162,6 +162,16 @@ extern const std::string JpegFileExtension;
 extern const std::string TextFileExtension;
 extern const std::string CsvFileExtension;
 
+extern const wxString GerberFileExtensionWildCard;
+
+/**
+ * Checks if the file extension is in accepted extension
+ * @param aExt is the extension to test
+ * @param acceptedExts Array with extensions to test against
+ *
+ * @return true if the extension is in array
+ */
+bool IsExtensionAccepted( const wxString& aExt, const std::vector<wxString> acceptedExts );
 
 bool IsProtelExtension( const wxString& ext );
 

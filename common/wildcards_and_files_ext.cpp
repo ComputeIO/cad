@@ -172,6 +172,22 @@ const std::string JpegFileExtension( "jpg" );
 const std::string TextFileExtension( "txt" );
 const std::string CsvFileExtension( "csv" );
 
+const wxString GerberFileExtensionWildCard( ".((gbr|gbrjob|(gb|gt)[alops])|pho)" );
+
+bool IsExtensionAccepted( const wxString& aExt, const std::vector<wxString> acceptedExts )
+{
+    wxString exts;
+    for( wxString ext : acceptedExts )
+    {
+        exts += ext + wxT( "|" );
+    }
+    if( !exts.empty() )
+        exts.RemoveLast();
+    wxRegEx reg;
+    reg.Compile( exts, wxRE_ICASE );
+    return reg.Matches( aExt );
+}
+
 
 bool IsProtelExtension( const wxString& ext )
 {
