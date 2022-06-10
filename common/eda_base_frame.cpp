@@ -1097,7 +1097,7 @@ void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
         const wxFileName fn = wxFileName( files[nb] );
         for( const auto& [ext, tool] : m_dropFilesExt )
         {
-            if( fn.GetExt() == ext )
+            if( IsExtensionAccepted( fn.GetExt(), { ext } ) )
             {
                 DoOnAcceptedFile( fn );
                 break;
