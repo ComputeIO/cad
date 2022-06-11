@@ -33,42 +33,80 @@ namespace SPICE_GRAMMAR
     using namespace SIM_VALUE_GRAMMAR;
 
 
-    struct eolComment : seq<one<';'>, until<eol>> {};
-    struct commentLine : seq<one<'*', ';'>, until<eol>> {};
+    struct garbage : plus<one<' ', '\t', '=', '(', ')', ','>> {};
+    struct leaders : plus<one<' ', '\t'>> {};
+    struct trailers : plus<one<' ', '\t', '\v', '\f'>> {};
+
+    // NOTE: In Ngspice, a '$' opening a comment must be preceded by ' ', ',', or '\t'. We don't
+    //       implement that here - this may cause problems in the future.
+    // Ngspice supports '//' for comments.
+    struct eolCommentStart : sor<one<';', '$'>,
+                                 string<'/', '/'>> {};
+
+    struct eolComment : seq<eolCommentStart,
+                            until<eol>> {};
+                                            
+
+    struct commentLine : seq<opt<garbage>,
+                             one<'*'>,
+                             until<eol>> {};
 
 
-    struct linespaces : plus<not_at<eol>,
-                             space> {};
     struct newline : seq<sor<eol,
                              eolComment>,
                          not_at<one<'+'>>> {};
-                         
-    struct continuation : seq<opt<linespaces>,
-                              sor<eol,
-                                  eolComment>,
-                              star<commentLine>,
-                              one<'+'>,
-                              opt<linespaces>> {};
 
-    struct sep : sor<continuation,
-                     linespaces> {};
+    struct backslashContinuation : seq<string<'\\', '\\'>,
+                                       opt<trailers>,
+                                       eol> {};
 
+    struct commentBackslashContinuation : seq<eolCommentStart,
+                                              seq<star<not_at<eol>,
+                                                       not_at<string<'\\', '\\'>,
+                                                              opt<trailers>,
+                                                              eol>,
+                                                       any>,
+                                                  string<'\\', '\\'>,
+                                                  opt<trailers>,
+                                                  eol>> {};
+                                                  
 
-    struct param : plus<alnum> {};
-    struct suffixUnit : plus<alpha> {};
+    struct plusContinuation : seq<sor<eol,
+                                      eolComment>,
+                                  star<commentLine>,
+                                  opt<leaders>,
+                                  one<'+'>> {};
 
-    //struct stringParamValue : star<not_at<sep>, any> {};
+    struct continuation : seq<opt<garbage>,
+                              sor<backslashContinuation,
+                                  commentBackslashContinuation,
+                                  plusContinuation>,
+                              opt<garbage>> {};
+                             
+                
 
-    // FIXME: ), ;, eol handled here is a quick hack to pass QA tests. Fix the `sep` rule, then
-    // remove the hack.
-    struct paramValue : star<not_at<sor<sep, one<')', ';'>, eol>>, any> {};
+    struct sep : sor<plus<continuation>,
+                     garbage> {};
+
+    // Ngspice has some heuristic logic to allow + and - in tokens. We mimic that here.
+    struct tokenStart : seq<opt<one<'+', '-'>>,
+                            opt<seq<star<sor<tao::pegtl::digit,
+                                             one<'.'>>>,
+                                    one<'e', 'E'>,
+                                    opt<one<'+', '-'>>>>> {};
+
+    struct token : seq<tokenStart,
+                       star<not_at<eol>,
+                            not_at<backslashContinuation>,
+                            not_one<' ', '\t', '=', '(', ')', ',', '+', '-', '*', '/', '^', ';'>>>
+        {};
+
+    struct param : token {};
+    struct paramValue : token {};
 
     struct paramValuePair : seq<param,
-                                opt<sep>,
-                                one<'='>,
-                                opt<sep>,
+                                sep,
                                 paramValue> {};
-
 
     struct paramValuePairs : seq<opt<paramValuePair,
                                      star<sep,

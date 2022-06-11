@@ -44,21 +44,21 @@
 * Several parameters, no parentheses.
 .model D10_Usual D BV=1.1U CJO=2.2M IBV=3.3 IS=4.4K M=5.5MEG N=6.6G
 
-* Several parameters, no parentheses, multiple lines.
-.model D11_Usual D BV=1.1U
-+                  CJO=2.2M
+* Several parameters, no parentheses, multiple lines, backslash continuations.
+.model D11_Usual D BV=1.1U \\  
+                  CJO=2.2M
 +                  IBV=3.3;
 +                  IS=4.4K ; Test comment
-+                  M=5.5MEG
-+                  N=6.6G
++                  M=5.5MEG\\
+                   N=6.6G
 
 .model D12_Usual D
 +BV=1.1U 
-+CJO=2.2M 
-+IBV=3.3;
-+IS=4.4K;
+ +CJO=2.2M 
+  +IBV=3.3;
+ +IS=4.4K;
 +M=5.5MEG 
-+N=6.6G 
+ +N=6.6G 
 
 * Test some parameter synonyms.
 .model D13_Usual D
@@ -76,11 +76,12 @@
 + MJ=5.5MEG
 + N=6.6G
 
-* Two spaces as a separator everywhere, two trailing spaces.
-.model  D15_Usual  D  (  BV=1.1U  CJ=2.2M  IBV=3.3  JS=4.4K  MJ=5.5MEG  N=6.6G  )  
+* Two spaces as a separator everywhere, two leading, two trailing spaces.
+  .model  D15_Usual  D  (  BV=1.1U  CJ=2.2M  IBV=3.3  JS=4.4K  MJ=5.5MEG  N=6.6G  )  
 
 * Spaces aligning param names and values.
-.model D16_Usual D
+* Leading tab.
+	.model D16_Usual D
 + BV  = 1.1U
 + CJ0 = 2.2M
 + IBV = 3.3
@@ -88,5 +89,44 @@
 + MJ  = 5.5MEG
 + N   = 6.6G
 
+* Parameters intermingled with garbage characters. Spice allows that, so we should too.
+.model D17_Usual D ( ()  	 ) , =
++ BV ==== 	 +1.1E-6,
++ CJ0 ,, ,, +2.2e-03 ,
++ 	IBV 3.3E-00
++ JS = = 4.4e+03
++ 	MJ +5.5MEG,;,
++ 	 N = 6.6G ;
+
+* All valid combinations of + - signs.
+.model D18 D
++ N -1.1, MJ +2.2, JS -3.3e-3, IBV +4.4e+4, CJ0 5.5e-5, BV 6.6e+6
+
+* Multiple empty-line continuations.
+* TODO
+.model D19_Usual D
+* Comment 1
+* Comment 2
++ BV=1.1U
++
++ CJ=2.2M\\
+\\
+
++
+* Comment 3
++
++ IBV=3.3
++ 
++ 
++ JS=4.4K
+* Comment 4
+ * Comment 5
++
+* Comment 8
++ MJ=5.5MEG
++
+(),= 	* Comment 9
++ N=6.6G
+
 * No newline at the end of file.
-.model D17_Usual D(BV=1.1U CJ=2.2M IBV=3.3 JS=4.4K MJ=5.5MEG N=6.6G)
+.model D20_Usual D(BV=1.1U CJ=2.2M IBV=3.3 JS=4.4K MJ=5.5MEG N=6.6G)

@@ -60,6 +60,16 @@ namespace SIM_MODEL_PARSER
     template <> struct fieldParamValuePairsSelector<quotedString> : std::true_type {};
 
 
+    template <typename Rule> struct pinSequenceSelector : std::false_type {};
+    template <> struct pinSequenceSelector<pinNumber> : std::true_type {};
+}
+
+
+namespace SIM_MODEL_SPICE_PARSER
+{
+    using namespace SPICE_GRAMMAR;
+
+
     template <typename Rule> struct spiceUnitSelector : std::false_type {};
 
     template <> struct spiceUnitSelector<dotModel> : std::true_type {};
@@ -69,10 +79,6 @@ namespace SIM_MODEL_PARSER
     template <> struct spiceUnitSelector<paramValue> : std::true_type {};
 
     template <> struct spiceUnitSelector<dotSubckt> : std::true_type {};
-
-
-    template <typename Rule> struct pinSequenceSelector : std::false_type {};
-    template <> struct pinSequenceSelector<pinNumber> : std::true_type {};
 }
 
 
@@ -386,8 +392,8 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
 
     try
     {
-        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::spiceUnitGrammar,
-                                             SIM_MODEL_PARSER::spiceUnitSelector>
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_SPICE_PARSER::spiceUnitGrammar,
+                                             SIM_MODEL_SPICE_PARSER::spiceUnitSelector>
             ( in );
     }
     catch( const tao::pegtl::parse_error& e )
@@ -400,7 +406,7 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
 
     for( const auto& node : root->children )
     {
-        if( node->is_type<SIM_MODEL_PARSER::dotModel>() )
+        if( node->is_type<SIM_MODEL_SPICE_PARSER::dotModel>() )
         {
             wxString paramName;
             wxString typeString;
@@ -409,11 +415,11 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
 
             for( const auto& subnode : node->children )
             {
-                if( subnode->is_type<SIM_MODEL_PARSER::modelName>() )
+                if( subnode->is_type<SIM_MODEL_SPICE_PARSER::modelName>() )
                 {
                     // Do nothing.
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::dotModelType>() )
+                else if( subnode->is_type<SIM_MODEL_SPICE_PARSER::dotModelType>() )
                 {
                     typeString = subnode->string();
                     TYPE type = readTypeFromSpiceStrings( typeString );
@@ -421,11 +427,11 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
                     if( type != TYPE::SPICE )
                         return type;
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::param>() )
+                else if( subnode->is_type<SIM_MODEL_SPICE_PARSER::param>() )
                 {
                     paramName = subnode->string();
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::paramValue>() )
+                else if( subnode->is_type<SIM_MODEL_SPICE_PARSER::paramValue>() )
                 {
                     wxASSERT( paramName != "" );
 
@@ -447,7 +453,7 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
 
             return readTypeFromSpiceStrings( typeString, level, version, false );
         }
-        else if( node->is_type<SIM_MODEL_PARSER::dotSubckt>() )
+        else if( node->is_type<SIM_MODEL_SPICE_PARSER::dotSubckt>() )
             return TYPE::SUBCKT;
         else
         {
@@ -700,8 +706,8 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
 
     try
     {
-        root = tao::pegtl::parse_tree::parse<SIM_MODEL_PARSER::spiceUnitGrammar,
-                                             SIM_MODEL_PARSER::spiceUnitSelector>
+        root = tao::pegtl::parse_tree::parse<SIM_MODEL_SPICE_PARSER::spiceUnitGrammar,
+                                             SIM_MODEL_SPICE_PARSER::spiceUnitSelector>
             ( in );
     }
     catch( tao::pegtl::parse_error& e )
@@ -715,25 +721,25 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
 
     for( const auto& node : root->children )
     {
-        if( node->is_type<SIM_MODEL_PARSER::dotModel>() )
+        if( node->is_type<SIM_MODEL_SPICE_PARSER::dotModel>() )
         {
             wxString paramName = "";
 
             for( const auto& subnode : node->children )
             {
-                if( subnode->is_type<SIM_MODEL_PARSER::modelName>() )
+                if( subnode->is_type<SIM_MODEL_SPICE_PARSER::modelName>() )
                 {
                     // Do nothing.
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::dotModelType>() )
+                else if( subnode->is_type<SIM_MODEL_SPICE_PARSER::dotModelType>() )
                 {
                     // Do nothing.
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::param>() )
+                else if( subnode->is_type<SIM_MODEL_SPICE_PARSER::param>() )
                 {
                     paramName = subnode->string();
                 }
-                else if( subnode->is_type<SIM_MODEL_PARSER::paramValue>() )
+                else if( subnode->is_type<SIM_MODEL_SPICE_PARSER::paramValue>() )
                 {
                     wxASSERT( !paramName.IsEmpty() );
 

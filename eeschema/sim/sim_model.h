@@ -37,7 +37,7 @@ class SIM_LIBRARY;
 
 namespace SIM_MODEL_GRAMMAR
 {
-    using namespace SPICE_GRAMMAR;
+    using namespace SIM_VALUE_GRAMMAR;
 
     struct sep : plus<space> {};
 
@@ -57,6 +57,8 @@ namespace SIM_MODEL_GRAMMAR
                               until<seq<not_at<string<'\\',
                                                       '"'>>,
                                         one<'"'>>>> {};
+
+    struct param : plus<alnum> {};
 
     struct fieldParamValuePair : seq<param,
                                      opt<sep>,

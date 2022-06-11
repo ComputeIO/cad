@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE( Diodes )
     const std::vector<std::reference_wrapper<SIM_MODEL>> models = m_library->GetModels();
     const std::vector<wxString>& modelNames = m_library->GetModelNames();
 
-    BOOST_CHECK_EQUAL( models.size(), 18 );
+    BOOST_CHECK_EQUAL( models.size(), 21 );
 
     for( int i = 0; i < models.size(); ++i )
     {
@@ -199,6 +199,21 @@ BOOST_AUTO_TEST_CASE( Diodes )
             case 15:
             case 16:
             case 17:
+                CompareToUsualDiodeModel( model, modelName, i );
+                break;
+            
+            case 18:
+                BOOST_CHECK_EQUAL( modelName, "D18" );
+                BOOST_CHECK_EQUAL( model.FindParam( "n" )->value->ToString(), "-1.1" );
+                BOOST_CHECK_EQUAL( model.FindParam( "m" )->value->ToString(), "2.2" );
+                BOOST_CHECK_EQUAL( model.FindParam( "is" )->value->ToString(), "-3.3m" );
+                BOOST_CHECK_EQUAL( model.FindParam( "ibv" )->value->ToString(), "44k" );
+                BOOST_CHECK_EQUAL( model.FindParam( "cjo" )->value->ToString(), "55u" );
+                BOOST_CHECK_EQUAL( model.FindParam( "bv" )->value->ToString(), "6.6M" );
+                break;
+
+            case 19:
+            case 20:
                 CompareToUsualDiodeModel( model, modelName, i );
                 break;
 
