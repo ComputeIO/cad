@@ -73,9 +73,9 @@ class KIBIS_WAVEFORM_RECTANGULAR : public KIBIS_WAVEFORM
 {
 public:
     KIBIS_WAVEFORM_RECTANGULAR() : KIBIS_WAVEFORM() { m_type = KIBIS_WAVEFORM_TYPE::RECTANGULAR; };
-    double m_ton;
-    double m_toff;
-    int    m_cycles;
+    double m_ton = 1;
+    double m_toff = 1;
+    int    m_cycles = 1;
     double m_delay = 0;
 };
 
@@ -262,11 +262,11 @@ public:
     std::string m_pinNumber;
 
     /** @brief Resistance from die to pin */
-    TypMinMaxValue* R_pin;
+    TypMinMaxValue* m_Rpin;
     /** @brief Inductance from die to pin */
-    TypMinMaxValue* L_pin;
+    TypMinMaxValue* m_Lpin;
     /** @brief Capacitance from pin to GND */
-    TypMinMaxValue* C_pin;
+    TypMinMaxValue* m_Cpin;
 
     KIBIS_COMPONENT* m_parent;
 

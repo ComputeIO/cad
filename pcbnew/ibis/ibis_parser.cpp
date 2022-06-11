@@ -143,6 +143,12 @@ bool TypMinMaxValue::Check()
 bool IbisComponentPackage::Check()
 {
     bool status =  true;
+    
+    if ( ( m_Rpkg == nullptr ) || ( m_Lpkg == nullptr )  || ( m_Cpkg == nullptr ) )
+    {
+        Report( _( "Missing pkg value(s)." ), RPT_SEVERITY_ERROR );
+        return false;
+    }
 
     if( !m_Rpkg->Check() )
     {

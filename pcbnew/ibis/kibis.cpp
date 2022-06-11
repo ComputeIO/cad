@@ -94,6 +94,8 @@ KIBIS::KIBIS( std::string aFileName ) : KIBIS_ANY( this ), m_file( this )
 
 KIBIS_FILE::KIBIS_FILE( KIBIS* aTopLevel ) : KIBIS_ANY( aTopLevel )
 {
+    m_fileRev = -1;
+    m_ibisVersion = -1;
 }
 
 bool KIBIS_FILE::Init( IbisParser& aParser )
@@ -121,9 +123,9 @@ KIBIS_PIN::KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin& aPin, IbisComponentPac
     m_pinNumber = aPin.m_pinName;
     m_parent = aParent;
 
-    R_pin = aPackage.m_Rpkg;
-    L_pin = aPackage.m_Lpkg;
-    C_pin = aPackage.m_Cpkg;
+    m_Rpin = aPackage.m_Rpkg;
+    m_Lpin = aPackage.m_Lpkg;
+    m_Cpin = aPackage.m_Cpkg;
 
     // The values listed in the [Pin] description section override the default
     // values defined in [Package]
@@ -133,21 +135,21 @@ KIBIS_PIN::KIBIS_PIN( KIBIS* aTopLevel, IbisComponentPin& aPin, IbisComponentPac
 
     if( !isnan( aPin.m_Lpin ) )
     {
-        R_pin->value[IBIS_CORNER::TYP] = aPin.m_Rpin;
-        R_pin->value[IBIS_CORNER::MIN] = aPin.m_Rpin;
-        R_pin->value[IBIS_CORNER::MAX] = aPin.m_Rpin;
+        m_Rpin->value[IBIS_CORNER::TYP] = aPin.m_Rpin;
+        m_Rpin->value[IBIS_CORNER::MIN] = aPin.m_Rpin;
+        m_Rpin->value[IBIS_CORNER::MAX] = aPin.m_Rpin;
     }
     if( !isnan( aPin.m_Lpin ) )
     {
-        L_pin->value[IBIS_CORNER::TYP] = aPin.m_Lpin;
-        L_pin->value[IBIS_CORNER::MIN] = aPin.m_Lpin;
-        L_pin->value[IBIS_CORNER::MAX] = aPin.m_Lpin;
+        m_Lpin->value[IBIS_CORNER::TYP] = aPin.m_Lpin;
+        m_Lpin->value[IBIS_CORNER::MIN] = aPin.m_Lpin;
+        m_Lpin->value[IBIS_CORNER::MAX] = aPin.m_Lpin;
     }
     if( !isnan( aPin.m_Cpin ) )
     {
-        C_pin->value[IBIS_CORNER::TYP] = aPin.m_Cpin;
-        C_pin->value[IBIS_CORNER::MIN] = aPin.m_Cpin;
-        C_pin->value[IBIS_CORNER::MAX] = aPin.m_Cpin;
+        m_Cpin->value[IBIS_CORNER::TYP] = aPin.m_Cpin;
+        m_Cpin->value[IBIS_CORNER::MIN] = aPin.m_Cpin;
+        m_Cpin->value[IBIS_CORNER::MAX] = aPin.m_Cpin;
     }
 
     bool                     modelSelected = false;
@@ -581,8 +583,15 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     // that's not the best way to do, but ¯\_(ツ)_/¯
     std::ifstream in( "temp_input.spice" );
 
-    std::remove( "temp_input.spice" );
-    std::remove( "temp_output.spice" );
+    if( std::remove( "temp_input.spice" ) )
+    {
+        Report( _( "Cannot remove temporary input file" ), RPT_SEVERITY_WARNING );
+    }
+
+    if( std::remove( "temp_ouput.spice" ) )
+    {
+        Report( _( "Cannot remove temporary output file" ), RPT_SEVERITY_WARNING );
+    }
 
     std::ofstream file( "temp_input.spice" );
 
@@ -635,8 +644,16 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
     {
         Report( _( "Error while creating temporary file" ), RPT_SEVERITY_ERROR );
     }
-    std::remove( "temp_input.spice" );
-    std::remove( "temp_output.spice" );
+
+    if( std::remove( "temp_input.spice" ) )
+    {
+        Report( _( "Cannot remove temporary input file" ), RPT_SEVERITY_WARNING );
+    }
+
+    if( std::remove( "temp_ouput.spice" ) )
+    {
+        Report( _( "Cannot remove temporary output file" ), RPT_SEVERITY_WARNING );
+    }
 
     // @TODO : this is the end of the dirty code
 
@@ -1067,13 +1084,13 @@ bool KIBIS_PIN::writeSpiceDriver( std::string* aDest, std::string aName, KIBIS_M
         result += "\n";
 
         result += "RPIN 1 PIN ";
-        result += doubleToString( R_pin->value[aParasitics] );
+        result += doubleToString( m_Rpin->value[aParasitics] );
         result += "\n";
         result += "LPIN DIE0 1 ";
-        result += doubleToString( L_pin->value[aParasitics] );
+        result += doubleToString( m_Lpin->value[aParasitics] );
         result += "\n";
         result += "CPIN PIN GND ";
-        result += doubleToString( C_pin->value[aParasitics] );
+        result += doubleToString( m_Cpin->value[aParasitics] );
         result += "\n";
 
         std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = aModel.waveformPairs();
@@ -1162,13 +1179,13 @@ bool KIBIS_PIN::writeSpiceDevice( std::string* aDest, std::string aName, KIBIS_M
         result += "\n";
         result += "\n";
         result += "RPIN 1 PIN ";
-        result += doubleToString( R_pin->value[aParasitics] );
+        result += doubleToString( m_Rpin->value[aParasitics] );
         result += "\n";
         result += "LPIN DIE 1 ";
-        result += doubleToString( L_pin->value[aParasitics] );
+        result += doubleToString( m_Lpin->value[aParasitics] );
         result += "\n";
         result += "CPIN PIN GND ";
-        result += doubleToString( C_pin->value[aParasitics] );
+        result += doubleToString( m_Cpin->value[aParasitics] );
         result += "\n";
 
 

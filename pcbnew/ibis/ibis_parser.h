@@ -252,7 +252,7 @@ public:
     std::string m_POWERClampRef;
     std::string m_extRef;
 
-    bool m_virtual;
+    bool m_virtual = false;
 };
 
 
@@ -326,7 +326,7 @@ public:
     {
         I = new TypMinMaxValue( m_reporter );
     };
-    double         V;
+    double         V = 0;
     TypMinMaxValue* I;
 };
 
@@ -374,7 +374,8 @@ public:
     {
         V = new TypMinMaxValue( m_reporter );
     };
-    double         t;
+
+    double         t = 0;
     TypMinMaxValue* V;
 };
 
@@ -424,8 +425,8 @@ enum class IBIS_MODEL_ENABLE
 class dvdt
 {
 public:
-    double m_dv;
-    double m_dt;
+    double m_dv = 1;
+    double m_dt = 1;
 };
 
 class dvdtTypMinMax : public IBIS_INPUT
@@ -468,10 +469,10 @@ public:
         m_table = new VTtable( m_reporter );
     };
     VTtable*           m_table;
-    IBIS_WAVEFORM_TYPE m_type;
-    double             m_R_dut;
-    double             m_C_dut;
-    double             m_L_dut;
+    IBIS_WAVEFORM_TYPE m_type = IBIS_WAVEFORM_TYPE::RISING;
+    double             m_R_dut = 0;
+    double             m_C_dut = 0;
+    double             m_L_dut = 0;
     double             m_R_fixture = 0;
     double             m_C_fixture = 0;
     double             m_L_fixture = 0;
@@ -556,7 +557,7 @@ public:
     std::string              m_manufacturer;
     std::string              m_OEM;
     std::string              m_description;
-    int                   m_numberOfPins;
+    int                      m_numberOfPins = 0;
     std::vector<std::string> m_pins;
 
     std::shared_ptr<IBIS_MATRIX> m_resistanceMatrix;
@@ -619,25 +620,25 @@ public:
 
     bool m_parrot = true; // Write back all lines.
 
-    long  m_lineCounter;
+    long  m_lineCounter = 0;
     char  m_commentChar = '|';
     std::vector<char> m_buffer;
-    int   m_bufferIndex;
-    int   m_lineOffset;
-    int   m_lineIndex;
-    int   m_lineLength;
+    int   m_bufferIndex = 0;
+    int   m_lineOffset = 0;
+    int   m_lineIndex = 0;
+    int   m_lineLength = 0;
 
     IbisFile           m_ibisFile;
-    IbisComponent*     m_currentComponent;
-    IbisModelSelector* m_currentModelSelector;
-    IbisModel*         m_currentModel;
-    IbisPackageModel*  m_currentPackageModel;
+    IbisComponent*     m_currentComponent = nullptr;
+    IbisModelSelector* m_currentModelSelector = nullptr;
+    IbisModel*         m_currentModel = nullptr;
+    IbisPackageModel*  m_currentPackageModel = nullptr;
     std::shared_ptr<IBIS_MATRIX> m_currentMatrix;
     int                m_currentMatrixRow;
     int                m_currentMatrixRowIndex;
-    IVtable*           m_currentIVtable;
-    VTtable*           m_currentVTtable;
-    IbisWaveform*      m_currentWaveform;
+    IVtable*           m_currentIVtable = nullptr;
+    VTtable*           m_currentVTtable = nullptr;
+    IbisWaveform*      m_currentWaveform = nullptr;
 
     /** @brief Parse a file
      * 
