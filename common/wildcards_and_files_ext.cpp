@@ -177,12 +177,17 @@ const wxString GerberFileExtensionWildCard( ".((gbr|gbrjob|(gb|gt)[alops])|pho)"
 bool IsExtensionAccepted( const wxString& aExt, const std::vector<wxString> acceptedExts )
 {
     wxString exts;
+    exts = "^(";
     for( wxString ext : acceptedExts )
     {
         exts += ext + wxT( "|" );
     }
-    if( !exts.empty() )
+    if( exts.EndsWith( "|" ) )
         exts.RemoveLast();
+    exts += ")$";
+    if( !exts.IsSameAs( "^()$" ) )
+        exts.RemoveLast();
+
     wxRegEx reg;
     reg.Compile( exts, wxRE_ICASE );
     return reg.Matches( aExt );
