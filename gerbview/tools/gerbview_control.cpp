@@ -20,6 +20,7 @@
 
 #include <confirm.h>
 #include <dialogs/dialog_layers_select_to_pcb.h>
+#include <dialogs/html_message_box.h>
 #include <export_to_pcbnew.h>
 #include <gerber_file_image.h>
 #include <gerber_file_image_list.h>
@@ -31,6 +32,7 @@
 #include <menus_helpers.h>
 #include <tool/tool_manager.h>
 #include <project.h>
+#include <reporter.h>
 #include <view/view.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/filedlg.h>
