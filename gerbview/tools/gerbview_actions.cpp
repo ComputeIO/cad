@@ -202,3 +202,7 @@ TOOL_ACTION GERBVIEW_ACTIONS::selectionClear( "gerbview.InteractiveSelection.Cle
         AS_GLOBAL );
 
 
+// Drag and drop
+//
+TOOL_ACTION GERBVIEW_ACTIONS::unarchive( "gerbview.Control.unarchive",
+        AS_GLOBAL );
