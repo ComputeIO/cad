@@ -20,6 +20,7 @@
 
 #include <confirm.h>
 #include <dialogs/dialog_layers_select_to_pcb.h>
+#include <dialogs/html_message_box.h>
 #include <export_to_pcbnew.h>
 #include <gerber_file_image.h>
 #include <gerber_file_image_list.h>
@@ -31,6 +32,7 @@
 #include <menus_helpers.h>
 #include <tool/tool_manager.h>
 #include <project.h>
+#include <reporter.h>
 #include <view/view.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/filedlg.h>
@@ -429,6 +431,31 @@ int GERBVIEW_CONTROL::UpdateMessagePanel( const TOOL_EVENT& aEvent )
 }
 
 
+int GERBVIEW_CONTROL::Unarchive( const TOOL_EVENT& aEvent )
+{
+    wxString           msg;
+    WX_STRING_REPORTER reporter( &msg );
+    wxFileName         aFileName( *aEvent.Parameter<wxString*>() );
+    m_frame->unarchiveFiles( aFileName.GetFullPath(), &reporter );
+    m_frame->Zoom_Automatique( false );
+
+    // Synchronize layers tools with actual active layer:
+    m_frame->ReFillLayerWidget();
+    m_frame->SetActiveLayer( m_frame->GetActiveLayer() );
+    m_frame->syncLayerBox();
+
+    if( !msg.IsEmpty() )
+    {
+        wxSafeYield(); // Allows slice of time to redraw the screen
+        // to refresh widgets, before displaying messages
+        HTML_MESSAGE_BOX mbox( m_frame, _( "Messages" ) );
+        mbox.ListSet( msg );
+        mbox.ShowModal();
+    }
+    return 0;
+}
+
+
 void GERBVIEW_CONTROL::setTransitions()
 {
     Go( &GERBVIEW_CONTROL::OpenAutodetected,   GERBVIEW_ACTIONS::openAutodetected.MakeEvent() );
@@ -465,4 +492,6 @@ void GERBVIEW_CONTROL::setTransitions()
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, EVENTS::UnselectedEvent );
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, EVENTS::ClearedEvent );
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, ACTIONS::updateUnits.MakeEvent() );
+
+    Go( &GERBVIEW_CONTROL::Unarchive,          GERBVIEW_ACTIONS::unarchive.MakeEvent() );
 }
