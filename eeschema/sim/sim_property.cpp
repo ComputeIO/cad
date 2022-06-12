@@ -33,6 +33,7 @@
 wxBEGIN_EVENT_TABLE( SIM_VALIDATOR, wxValidator )
     EVT_TEXT( wxID_ANY, SIM_VALIDATOR::onText )
     EVT_CHAR( SIM_VALIDATOR::onChar )
+    EVT_KEY_DOWN( SIM_VALIDATOR::onKeyDown )
     EVT_MOUSE_EVENTS( SIM_VALIDATOR::onMouse )
 wxEND_EVENT_TABLE()
 
@@ -137,6 +138,29 @@ void SIM_VALIDATOR::onChar( wxKeyEvent& aEvent )
 
     m_prevInsertionPoint = textEntry->GetInsertionPoint();
 }
+
+
+void SIM_VALIDATOR::onKeyDown( wxKeyEvent& aEvent )
+{
+    // Because wxPropertyGrid has special handling for the tab key, wxPropertyGrid::DedicateKey()
+    // and wxPropertyGrid::AddActionTrigger() don't work for it. So instead we translate it to an
+    // (up or down) arrow key, which has proper handling (select next or previous property) defined
+    // by the aforementioned functions.
+
+    if( aEvent.GetKeyCode() == WXK_TAB )
+    {
+        if( aEvent.GetModifiers() == wxMOD_SHIFT )
+        {
+            aEvent.m_shiftDown = false;
+            aEvent.m_keyCode = WXK_UP;
+        }
+        else
+            aEvent.m_keyCode = WXK_DOWN;
+    }
+
+    aEvent.Skip();
+}
+
 
 void SIM_VALIDATOR::onMouse( wxMouseEvent& aEvent )
 {

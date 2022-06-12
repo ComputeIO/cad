@@ -49,6 +49,7 @@ private:
 
     void onText( wxCommandEvent& aEvent );
     void onChar( wxKeyEvent& aEvent );
+    void onKeyDown( wxKeyEvent& aEvent );
     void onMouse( wxMouseEvent& aEvent );
 
     SIM_VALUE::TYPE       m_valueType;

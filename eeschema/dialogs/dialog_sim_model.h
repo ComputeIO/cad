@@ -86,8 +86,7 @@ private:
     void onDeviceTypeChoiceUpdate( wxUpdateUIEvent& aEvent ) override;
     void onTypeChoiceUpdate( wxUpdateUIEvent& aEvent ) override;
 
-    virtual void onSelectionChange( wxPropertyGridEvent& aEvent );
-    //void onPropertyChanged( wxPropertyGridEvent& aEvent ) override;
+    virtual void onPropertyGridSelectionChange( wxPropertyGridEvent& aEvent );
 
 
     SCH_SYMBOL& m_symbol;

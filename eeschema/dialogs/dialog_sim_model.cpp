@@ -67,7 +67,8 @@ DIALOG_SIM_MODEL<T>::DIALOG_SIM_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
 
     m_scintillaTricks = std::make_unique<SCINTILLA_TRICKS>( m_codePreview, wxT( "{}" ), false );
 
-    m_paramGridMgr->Bind( wxEVT_PG_SELECTED, &DIALOG_SIM_MODEL::onSelectionChange, this );
+    m_paramGridMgr->Bind( wxEVT_PG_SELECTED, &DIALOG_SIM_MODEL::onPropertyGridSelectionChange,
+                          this );
 
     m_paramGrid->SetValidationFailureBehavior( wxPG_VFB_STAY_IN_PROPERTY
                                                | wxPG_VFB_BEEP
@@ -87,11 +88,6 @@ DIALOG_SIM_MODEL<T>::DIALOG_SIM_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
 
         grid->DedicateKey( WXK_UP );
         grid->DedicateKey( WXK_DOWN );
-
-        // Doesn't work for some reason.
-        //grid->DedicateKey( WXK_TAB );
-        //grid->AddActionTrigger( wxPG_ACTION_NEXT_PROPERTY, WXK_TAB );
-        //grid->AddActionTrigger( wxPG_ACTION_PREV_PROPERTY, WXK_TAB, wxMOD_SHIFT );
     }
     else
         wxFAIL;
@@ -790,7 +786,7 @@ void DIALOG_SIM_MODEL<T>::onTypeChoiceUpdate( wxUpdateUIEvent& aEvent )
 
 
 template <typename T>
-void DIALOG_SIM_MODEL<T>::onSelectionChange( wxPropertyGridEvent& aEvent )
+void DIALOG_SIM_MODEL<T>::onPropertyGridSelectionChange( wxPropertyGridEvent& aEvent )
 {
     // TODO: Activate also when the whole property grid is selected with tab key.
 
@@ -811,25 +807,3 @@ void DIALOG_SIM_MODEL<T>::onSelectionChange( wxPropertyGridEvent& aEvent )
     // Without this, the user had to press tab before they could edit the field.
     editorControl->SetFocus();
 }
-
-
-/*template <typename T>
-void DIALOG_SPICE_MODEL<T>::onPropertyChanged( wxPropertyGridEvent& aEvent )
-{
-    wxString name = aEvent.GetPropertyName();
-    
-    for( SIM_MODEL::PARAM& param : getCurModel().Params() )
-    {
-        if( param.info.name == name )
-        {
-            try
-            {
-                param.value->FromString( m_paramGrid->GetPropertyValueAsString( param.info.name ) );
-            }
-            catch( KI_PARAM_ERROR& e )
-            {
-                DisplayErrorMessage( this, e.What() );
-            }
-        }
-    }
-}*/
