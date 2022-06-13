@@ -93,7 +93,7 @@ public:
     static TOOL_ACTION highlightDCode;
 
     // Drag and drop
-    static TOOL_ACTION unarchive;
+    static TOOL_ACTION loadZipFile;
 };
 
 #endif  // __GERBVIEW_ACTIONS_H
