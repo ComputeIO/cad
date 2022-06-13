@@ -27,6 +27,9 @@
 
 #include <sim/sim_model.h>
 #include <wx/window.h>
+#include <wx/notebook.h>
+#include <wx/propgrid/propgrid.h>
+#include <wx/propgrid/manager.h>
 #include <wx/propgrid/props.h>
 
 
@@ -43,6 +46,8 @@ public:
     bool TransferFromWindow() override;
 
 private:
+    void navigate( int flags );
+
     bool isValid( const wxString& aString );
 
     wxTextEntry* getTextEntry();
