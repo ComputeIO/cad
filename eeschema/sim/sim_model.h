@@ -25,7 +25,7 @@
 #ifndef SIM_MODEL_H
 #define SIM_MODEL_H
 
-#include <sim/spice_grammar.h>
+#include <sim/sim_value.h>
 #include <enum_vector.h>
 #include <sch_field.h>
 #include <lib_field.h>

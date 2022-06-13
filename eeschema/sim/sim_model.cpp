@@ -35,10 +35,11 @@
 #include <sim/sim_model_tline.h>
 #include <sim/sim_model_xspice.h>
 
-#include <pegtl.hpp>
-#include <pegtl/contrib/parse_tree.hpp>
+#include <sim/spice_grammar.h>
 #include <locale_io.h>
 #include <lib_symbol.h>
+#include <pegtl.hpp>
+#include <pegtl/contrib/parse_tree.hpp>
 
 using DEVICE_TYPE = SIM_MODEL::DEVICE_TYPE;
 using TYPE = SIM_MODEL::TYPE;

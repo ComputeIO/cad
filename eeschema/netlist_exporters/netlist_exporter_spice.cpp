@@ -24,9 +24,8 @@
  */
 
 #include "netlist_exporter_spice.h"
-#include <pegtl.hpp>
-#include <pegtl/contrib/parse_tree.hpp>
 #include <sim/sim_model_spice.h>
+#include <sim/spice_grammar.h>
 #include <common.h>
 #include <confirm.h>
 #include <pgm_base.h>
@@ -36,6 +35,8 @@
 #include <sch_text.h>
 #include <sch_textbox.h>
 #include <string_utils.h>
+#include <pegtl.hpp>
+#include <pegtl/contrib/parse_tree.hpp>
 
 
 namespace NETLIST_EXPORTER_SPICE_PARSER
