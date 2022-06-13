@@ -67,7 +67,7 @@ public:
     int Print( const TOOL_EVENT& aEvent );
 
     // Drag and drop
-    int Unarchive( const TOOL_EVENT& aEvent );
+    int LoadZipfile( const TOOL_EVENT& aEvent );
 
     ///< Set up handlers for various events.
     void setTransitions() override;

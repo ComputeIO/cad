@@ -204,5 +204,5 @@ TOOL_ACTION GERBVIEW_ACTIONS::selectionClear( "gerbview.InteractiveSelection.Cle
 
 // Drag and drop
 //
-TOOL_ACTION GERBVIEW_ACTIONS::unarchive( "gerbview.Control.unarchive",
+TOOL_ACTION GERBVIEW_ACTIONS::loadZipFile( "gerbview.Control.loadZipFile",
         AS_GLOBAL );

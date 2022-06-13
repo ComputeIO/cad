@@ -431,27 +431,11 @@ int GERBVIEW_CONTROL::UpdateMessagePanel( const TOOL_EVENT& aEvent )
 }
 
 
-int GERBVIEW_CONTROL::Unarchive( const TOOL_EVENT& aEvent )
+int GERBVIEW_CONTROL::LoadZipfile( const TOOL_EVENT& aEvent )
 {
-    wxString           msg;
-    WX_STRING_REPORTER reporter( &msg );
-    wxFileName         aFileName( *aEvent.Parameter<wxString*>() );
-    m_frame->unarchiveFiles( aFileName.GetFullPath(), &reporter );
-    m_frame->Zoom_Automatique( false );
+    m_frame->LoadZipArchiveFile( *aEvent.Parameter<wxString*>() );
+    canvas()->Refresh();
 
-    // Synchronize layers tools with actual active layer:
-    m_frame->ReFillLayerWidget();
-    m_frame->SetActiveLayer( m_frame->GetActiveLayer() );
-    m_frame->syncLayerBox();
-
-    if( !msg.IsEmpty() )
-    {
-        wxSafeYield(); // Allows slice of time to redraw the screen
-        // to refresh widgets, before displaying messages
-        HTML_MESSAGE_BOX mbox( m_frame, _( "Messages" ) );
-        mbox.ListSet( msg );
-        mbox.ShowModal();
-    }
     return 0;
 }
 
@@ -493,5 +477,5 @@ void GERBVIEW_CONTROL::setTransitions()
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, EVENTS::ClearedEvent );
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, ACTIONS::updateUnits.MakeEvent() );
 
-    Go( &GERBVIEW_CONTROL::Unarchive,          GERBVIEW_ACTIONS::unarchive.MakeEvent() );
+    Go( &GERBVIEW_CONTROL::LoadZipfile,        GERBVIEW_ACTIONS::loadZipFile.MakeEvent() );
 }
