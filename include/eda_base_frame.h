@@ -660,9 +660,9 @@ protected:
     void ensureWindowIsOnScreen();
 
     /**
-     * Handles event fired when a file is dropped to window.
-     * Sends to the window the path of files accepted.
-     * The file is then handled by DoOnAcceptedFile.
+     * Handles event fired when a file is dropped to the window.
+     * In this base class, stores the path of files accepted.
+     * Calls DoWithAcceptedFiles() to execute actions on files.
      */
     virtual void OnDropFiles( wxDropFilesEvent& aEvent );
 
@@ -671,7 +671,8 @@ protected:
      * Called in OnDropFiles and should be populated with
      * the action to execute in inherited classes.
      */
-    virtual void DoOnAcceptedFile( const wxFileName& aFileName ){};
+    virtual void DoWithAcceptedFiles(){};
+    std::vector<wxFileName> m_AcceptedFiles;
 
     DECLARE_EVENT_TABLE()
 
@@ -763,7 +764,7 @@ private:
     /**
      * Associates files extensions with action to execute.
      */
-    std::map<const wxString, TOOL_ACTION*> m_dropFilesExt;
+    std::map<const wxString, TOOL_ACTION*> m_acceptedExts;
 };
 
 
