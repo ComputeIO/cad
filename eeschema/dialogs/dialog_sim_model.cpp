@@ -396,11 +396,15 @@ void DIALOG_SIM_MODEL<T>::loadLibrary( const wxString& aFilePath )
 {
     const wxString absolutePath = Prj().AbsolutePath( aFilePath );
 
-    if( !m_library->ReadFile( Prj().AbsolutePath( aFilePath ) ) )
+    try
     {
-        DisplayErrorMessage( this, wxString::Format( _( "Error loading model library '%s'" ),
-                                                     Prj().AbsolutePath( aFilePath ), aFilePath ),
-                             m_library->GetErrorMessage() );
+        m_library->ReadFile( absolutePath );
+    }
+    catch( const IO_ERROR& e )
+    {
+        DisplayErrorMessage( this, wxString::Format( _( "Failed reading model library '%s'." ),
+                                                     absolutePath ),
+                             e.What() );
     }
 
     m_libraryPathInput->SetValue( aFilePath );
