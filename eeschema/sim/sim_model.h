@@ -320,6 +320,7 @@ public:
         enum class CATEGORY
         {
             PRINCIPAL,
+            AC,
             DC,
             CAPACITANCE,
             TEMPERATURE,

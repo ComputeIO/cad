@@ -223,7 +223,10 @@ void DIALOG_SIM_MODEL<T>::updateModelParamsTab()
 
         m_paramGrid->Clear();
 
-        m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
+        m_firstCategory = m_paramGrid->Append( new wxPropertyCategory( "AC" ) );
+        m_paramGrid->HideProperty( "AC" );
+
+        m_paramGrid->Append( new wxPropertyCategory( "DC" ) );
         m_paramGrid->HideProperty( "DC" );
 
         m_paramGrid->Append( new wxPropertyCategory( "Capacitance" ) );
@@ -250,10 +253,10 @@ void DIALOG_SIM_MODEL<T>::updateModelParamsTab()
         m_paramGrid->Append( new wxPropertyCategory( "Flags" ) );
         m_paramGrid->HideProperty( "Flags" );
 
+        m_paramGrid->CollapseAll();
+
         for( unsigned i = 0; i < curModel().GetParamCount(); ++i )
             addParamPropertyIfRelevant( i );
-
-        m_paramGrid->CollapseAll();
     }
 
     // Either enable all properties or disable all except the principal ones.
@@ -430,6 +433,12 @@ void DIALOG_SIM_MODEL<T>::addParamPropertyIfRelevant( int aParamIndex )
 
     switch( curModel().GetParam( aParamIndex ).info.category )
     {
+    case CATEGORY::AC:
+        m_paramGrid->HideProperty( "AC", false );
+        m_paramGrid->AppendIn( "AC", newParamProperty( aParamIndex ) );
+        m_paramGrid->Expand( "AC" );
+        break;
+
     case CATEGORY::DC:
         m_paramGrid->HideProperty( "DC", false );
         m_paramGrid->AppendIn( "DC", newParamProperty( aParamIndex ) );

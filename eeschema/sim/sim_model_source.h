@@ -79,6 +79,8 @@ private:
     static std::vector<PARAM::INFO> makeRandomExpParamInfos( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeRandomPoissonParamInfos( wxString aPrefix, wxString aUnit );
 
+    static void appendAcParamInfos( std::vector<PARAM::INFO>& aParamInfos, wxString aUnit );
+
     bool m_isInferred;
 };
 

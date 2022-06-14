@@ -94,7 +94,13 @@ wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
             argList << argStr << " ";
     }
 
-    wxString model = wxString::Format( GetSpiceInfo().inlineTypeString + "( %s)", argList );
+    wxString model;
+
+    wxString ac = FindParam( "ac" )->value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+    wxString ph = FindParam( "ph" )->value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+
+    model << wxString::Format( "AC %s %s ", ac, ph );
+    model << wxString::Format( "%s( %s)", GetSpiceInfo().inlineTypeString, argList );
 
     return SIM_MODEL::GenerateSpiceItemLine( aRefName, model, aPinNetNames );
 }
@@ -259,6 +265,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeDcParamInfos( wxString aPrefix, w
     paramInfo.description = "DC value";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -316,6 +323,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSinParamInfos( wxString aPrefix, 
     paramInfo.description = "Phase";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -389,6 +397,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePulseParamInfos( wxString aPrefix
     paramInfo.description = "Phase";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -446,6 +455,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeExpParamInfos( wxString aPrefix, 
     paramInfo.description = "Fall time constant";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -494,6 +504,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSfamParamInfos( wxString aPrefix,
     paramInfo.description = "Modulating frequency";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -559,6 +570,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSffmParamInfos( wxString aPrefix,
     paramInfo.description = "Signal phase";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -601,6 +613,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePwlParamInfos( wxString aPrefix, 
     paramInfo.description = "Delay";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -635,6 +648,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeWhiteNoiseParamInfos( wxString aP
     paramInfo.description = "Time step";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -677,6 +691,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePinkNoiseParamInfos( wxString aPr
     paramInfo.description = "Time step";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -719,6 +734,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeBurstNoiseParamInfos( wxString aP
     paramInfo.description = "Time step";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -753,6 +769,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomUniformParamInfos( wxString
     paramInfo.description = "Delay";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -787,6 +804,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomNormalParamInfos( wxString 
     paramInfo.description = "Delay";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -821,6 +839,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomExpParamInfos( wxString aPr
     paramInfo.description = "Delay";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
 }
 
@@ -855,5 +874,27 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomPoissonParamInfos( wxString
     paramInfo.description = "Delay";
     paramInfos.push_back( paramInfo );
 
+    appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
+}
+
+void SIM_MODEL_SOURCE::appendAcParamInfos( std::vector<PARAM::INFO>& aParamInfos, wxString aUnit )
+{
+    PARAM::INFO paramInfo;
+
+    paramInfo.name = "ac";
+    paramInfo.type = SIM_VALUE::TYPE::FLOAT;
+    paramInfo.unit = aUnit;
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::AC;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "AC magnitude";
+    aParamInfos.push_back( paramInfo );
+
+    paramInfo.name = "ph";
+    paramInfo.type = SIM_VALUE::TYPE::FLOAT;
+    paramInfo.unit = "°";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::AC;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "AC phase";
+    aParamInfos.push_back( paramInfo );
 }
