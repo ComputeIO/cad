@@ -205,17 +205,17 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     m_leftWin->SetFocus();
 
     // Init for dropping files
-    m_dropFilesExt.emplace( ProjectFileExtension, &KICAD_MANAGER_ACTIONS::loadProject );
-    m_dropFilesExt.emplace( LegacyProjectFileExtension, &KICAD_MANAGER_ACTIONS::loadProject );
-    m_dropFilesExt.emplace( GerberFileExtensionWildCard.Mid( 1 ),
+    m_acceptedExts.emplace( ProjectFileExtension, &KICAD_MANAGER_ACTIONS::loadProject );
+    m_acceptedExts.emplace( LegacyProjectFileExtension, &KICAD_MANAGER_ACTIONS::loadProject );
+    m_acceptedExts.emplace( GerberFileExtensionWildCard.Mid( 1 ),
                             &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
-    m_dropFilesExt.emplace( DrillFileExtension, &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
+    m_acceptedExts.emplace( DrillFileExtension, &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
     // Eagle files import
-    m_dropFilesExt.emplace( "sch", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
-    m_dropFilesExt.emplace( "brd", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_acceptedExts.emplace( "sch", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_acceptedExts.emplace( "brd", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
     // Cadstar files import
-    m_dropFilesExt.emplace( "csa", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
-    m_dropFilesExt.emplace( "cpa", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_acceptedExts.emplace( "csa", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_acceptedExts.emplace( "cpa", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
     DragAcceptFiles( true );
 
     // Ensure the window is on top
@@ -377,11 +377,8 @@ void KICAD_MANAGER_FRAME::OnSize( wxSizeEvent& event )
 }
 
 
-void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
+void KICAD_MANAGER_FRAME::DoWithAcceptedFiles()
 {
-    m_AcceptedFiles.clear();
-    EDA_BASE_FRAME::OnDropFiles( aEvent );
-
     // All fileNames are now in m_AcceptedFiles vector.
     // Check if contains a project file name and load project.
     // If not, open files in dedicated app.
@@ -391,7 +388,7 @@ void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
                                  { ProjectFileExtension, LegacyProjectFileExtension } ) )
         {
             wxString fn = fileName.GetFullPath();
-            m_toolManager->RunAction( *m_dropFilesExt.at( fileName.GetExt() ), true, &fn );
+            m_toolManager->RunAction( *m_acceptedExts.at( fileName.GetExt() ), true, &fn );
             return;
         }
     }
@@ -410,7 +407,7 @@ void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
         else
         {
             wxString fn = fileName.GetFullPath();
-            m_toolManager->RunAction( *m_dropFilesExt.at( fileName.GetExt() ), true, &fn );
+            m_toolManager->RunAction( *m_acceptedExts.at( fileName.GetExt() ), true, &fn );
         }
     }
 
@@ -422,16 +419,10 @@ void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
         if( wxFileExists( fullEditorName ) )
         {
             wxString command = fullEditorName + " " + gerberFiles;
-            m_toolManager->RunAction( *m_dropFilesExt.at( GerberFileExtensionWildCard.Mid( 1 ) ),
+            m_toolManager->RunAction( *m_acceptedExts.at( GerberFileExtensionWildCard.Mid( 1 ) ),
                                       true, &command );
         }
     }
-}
-
-
-void KICAD_MANAGER_FRAME::DoOnAcceptedFile( const wxFileName& aFileName )
-{
-    m_AcceptedFiles.emplace( m_AcceptedFiles.end(), aFileName );
 }
 
 
