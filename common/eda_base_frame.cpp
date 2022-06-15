@@ -1105,6 +1105,7 @@ void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
         }
     }
     DoWithAcceptedFiles();
+    m_AcceptedFiles.clear();
 }
 
 bool EDA_BASE_FRAME::IsWritable( const wxFileName& aFileName, bool aVerbose )
