@@ -674,11 +674,26 @@ bool GERBVIEW_FRAME::LoadZipArchiveFile( const wxString& aFullFileName )
     return true;
 }
 
-void GERBVIEW_FRAME::DoOnAcceptedFile( const wxFileName& aFileName )
+void GERBVIEW_FRAME::DoWithAcceptedFiles()
 {
-    if( IsExtensionAccepted( aFileName.GetExt(), { ArchiveFileExtension } ) )
+    wxString gerbFn; // param to be sent with action event.
+
+    for( auto file : m_AcceptedFiles )
     {
-        wxString fn = aFileName.GetFullPath();
-        m_toolManager->RunAction( *m_dropFilesExt.at( aFileName.GetExt() ), true, &fn );
+        if( IsExtensionAccepted( file.GetExt(), { ArchiveFileExtension } ) )
+        {
+            wxString fn = file.GetFullPath();
+            // Open zip archive in editor
+            m_toolManager->RunAction( *m_acceptedExts.at( ArchiveFileExtension ), true, &fn );
+        }
+        else
+        {
+            // Store FileName in variable to open later
+            gerbFn += '"' + file.GetFullPath() + '"';
+        }
     }
+
+    // Open files in editor
+    if( !gerbFn.IsEmpty() )
+        m_toolManager->RunAction( *m_acceptedExts.at( DrillFileExtension ), true, &gerbFn );
 }

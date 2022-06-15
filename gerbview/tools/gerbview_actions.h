@@ -94,6 +94,7 @@ public:
 
     // Drag and drop
     static TOOL_ACTION loadZipFile;
+    static TOOL_ACTION loadGerbFiles;
 };
 
 #endif  // __GERBVIEW_ACTIONS_H
