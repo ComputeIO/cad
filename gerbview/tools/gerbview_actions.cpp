@@ -206,3 +206,6 @@ TOOL_ACTION GERBVIEW_ACTIONS::selectionClear( "gerbview.InteractiveSelection.Cle
 //
 TOOL_ACTION GERBVIEW_ACTIONS::loadZipFile( "gerbview.Control.loadZipFile",
         AS_GLOBAL );
+
+TOOL_ACTION GERBVIEW_ACTIONS::loadGerbFiles( "gerbview.Control.loadGerbFiles",
+        AS_GLOBAL );

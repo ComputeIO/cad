@@ -177,7 +177,10 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( KIWAY* aKiway, wxWindow* aParent )
     m_LayersManager->ReFillRender();    // Update colors in Render after the config is read
 
     // Drag and drop
-    m_dropFilesExt.emplace( ArchiveFileExtension, &GERBVIEW_ACTIONS::loadZipFile );
+    m_acceptedExts.emplace( ArchiveFileExtension, &GERBVIEW_ACTIONS::loadZipFile );
+    m_acceptedExts.emplace( GerberFileExtensionWildCard.Mid( 1 ),
+                            &GERBVIEW_ACTIONS::loadGerbFiles );
+    m_acceptedExts.emplace( DrillFileExtension, &GERBVIEW_ACTIONS::loadGerbFiles );
     DragAcceptFiles( true );
 
     GetToolManager()->RunAction( ACTIONS::zoomFitScreen, true );
