@@ -1105,6 +1105,7 @@ void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
         }
     }
     DoWithAcceptedFiles();
+    m_AcceptedFiles.clear();
 }
 
 void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
