@@ -84,23 +84,30 @@ wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
                                                   const wxString& aModelName,
                                                   const std::vector<wxString>& aPinNetNames ) const
 {
-    wxString argList = "";
-    
-    for( const PARAM& param : GetParams() )
-    {
-        wxString argStr = param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
-
-        if( argStr != "" )
-            argList << argStr << " ";
-    }
-
     wxString model;
 
     wxString ac = FindParam( "ac" )->value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
     wxString ph = FindParam( "ph" )->value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
-    model << wxString::Format( "AC %s %s ", ac, ph );
-    model << wxString::Format( "%s( %s)", GetSpiceInfo().inlineTypeString, argList );
+    if( ac != "" )
+        model << wxString::Format( "AC %s %s ", ac, ph );
+
+    if( GetSpiceInfo().inlineTypeString != "" )
+    {
+        wxString argList = "";
+        
+        for( const PARAM& param : GetParams() )
+        {
+            wxString argStr = param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+
+            if( argStr != "" )
+                argList << argStr << " ";
+        }
+
+        model << wxString::Format( "%s( %s)", GetSpiceInfo().inlineTypeString, argList );
+    }
+    else
+        model << GetParam( 0 ).value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
     return SIM_MODEL::GenerateSpiceItemLine( aRefName, model, aPinNetNames );
 }

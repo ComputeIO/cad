@@ -482,6 +482,8 @@ void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
 
     if( simulatorLock.owns_lock() )
     {
+        wxBusyCursor toggle;
+
         updateTuners();
         applyTuners();
         // Prevents memory leak on succeding simulations by deleting old vectors
