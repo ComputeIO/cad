@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.10.0-4761b0c5)
+// C++ code generated with wxFormBuilder (version 3.10.1)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -31,7 +31,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_dummy1->Wrap( -1 );
 	fgSizer11->Add( m_dummy1, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_ambientText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Ambient temperature"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_ambientText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Ambient temperature:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_ambientText->Wrap( -1 );
 	fgSizer11->Add( m_ambientText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
@@ -46,21 +46,21 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_dummy2->Wrap( -1 );
 	fgSizer11->Add( m_dummy2, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_meltingText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Melting point"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_meltingText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Melting point:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_meltingText->Wrap( -1 );
 	fgSizer11->Add( m_meltingText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
 	m_meltingValue = new wxTextCtrl( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_meltingValue, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_meltingUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("°C"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_meltingUnit = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("deg C"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_meltingUnit->Wrap( -1 );
 	fgSizer11->Add( m_meltingUnit, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 	m_widthRadio = new wxRadioButton( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_widthRadio, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_widthText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Track width"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_widthText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Track width:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_widthText->Wrap( -1 );
 	fgSizer11->Add( m_widthText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
@@ -75,7 +75,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_thicknessRadio = new wxRadioButton( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_thicknessRadio, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_thicknessText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Track thickness"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_thicknessText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Track thickness:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_thicknessText->Wrap( -1 );
 	fgSizer11->Add( m_thicknessText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
@@ -90,7 +90,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_currentRadio = new wxRadioButton( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_currentRadio, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
-	m_currentText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Current"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_currentText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Current:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_currentText->Wrap( -1 );
 	fgSizer11->Add( m_currentText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
@@ -104,7 +104,7 @@ PANEL_FUSING_CURRENT_BASE::PANEL_FUSING_CURRENT_BASE( wxWindow* parent, wxWindow
 	m_timeRadio = new wxRadioButton( m_parametersSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer11->Add( m_timeRadio, 0, wxALL, 5 );
 
-	m_timeText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Time to fuse"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_timeText = new wxStaticText( m_parametersSizer->GetStaticBox(), wxID_ANY, _("Time to fuse:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_timeText->Wrap( -1 );
 	fgSizer11->Add( m_timeText, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 

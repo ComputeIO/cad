@@ -226,7 +226,7 @@ void PANEL_FUSING_CURRENT::m_onCalculateClick( wxCommandEvent& event )
     }
     else
     {
-        m_comment->SetLabel( _( "The wire fuses too slowly, the adiabatic hypothesis does not hold "
-                                "and the wire could handle more current." ) );
+        m_comment->SetLabel( _( "Current calculation is underestimated due to long fusing time."
+                              ) );
     }
 }
