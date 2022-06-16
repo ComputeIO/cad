@@ -131,7 +131,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Standard Size</property>
+                                                        <property name="label">Standard Size:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -267,7 +267,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Diameter</property>
+                                                        <property name="label">Diameter:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -458,7 +458,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Area</property>
+                                                        <property name="label">Area:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -645,7 +645,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Linear resistance</property>
+                                                        <property name="label">Linear resistance:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -836,7 +836,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Frequency for 100% skin depth</property>
+                                                        <property name="label">Frequency for 100% skin depth:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -1027,7 +1027,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Ampacity</property>
+                                                        <property name="label">Ampacity:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -1242,7 +1242,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Current</property>
+                                                        <property name="label">Current:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -1429,7 +1429,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Length</property>
+                                                        <property name="label">Length:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -1620,7 +1620,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Resistance</property>
+                                                        <property name="label">Resistance:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -1807,7 +1807,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Voltage drop</property>
+                                                        <property name="label">Voltage drop:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
@@ -1994,7 +1994,7 @@
                                                         <property name="gripper">0</property>
                                                         <property name="hidden">0</property>
                                                         <property name="id">wxID_ANY</property>
-                                                        <property name="label">Dissipated power</property>
+                                                        <property name="label">Dissipated power:</property>
                                                         <property name="markup">0</property>
                                                         <property name="max_size"></property>
                                                         <property name="maximize_button">0</property>
