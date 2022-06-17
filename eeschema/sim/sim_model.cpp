@@ -869,7 +869,7 @@ wxString SIM_MODEL::GenerateSpiceModelLine( const wxString& aModelName ) const
 
 wxString SIM_MODEL::GenerateSpiceItemName( const wxString& aRefName ) const
 {
-    if( !aRefName.IsEmpty() && aRefName.StartsWith( GetSpiceInfo().itemType ) )
+    if( aRefName != "" && aRefName.StartsWith( GetSpiceInfo().itemType ) )
         return aRefName;
     else
         return GetSpiceInfo().itemType + aRefName;

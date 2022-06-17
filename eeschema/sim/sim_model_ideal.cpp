@@ -94,9 +94,12 @@ wxString SIM_MODEL_IDEAL::GenerateSpiceItemLine( const wxString& aRefName,
                                                  const wxString& aModelName,
                                                  const std::vector<wxString>& aPinNetNames ) const
 {
-    return SIM_MODEL::GenerateSpiceItemLine( aRefName,
-                                             GetParam( 0 ).value->ToString( SIM_VALUE::NOTATION::SPICE ),
-                                             aPinNetNames );
+    wxString valueStr = GetParam( 0 ).value->ToString( SIM_VALUE::NOTATION::SPICE );
+
+    if( valueStr != "" )
+        return SIM_MODEL::GenerateSpiceItemLine( aRefName, valueStr, aPinNetNames );
+    else
+        return "";
 }
 
 
