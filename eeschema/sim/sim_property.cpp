@@ -325,9 +325,7 @@ bool SIM_PROPERTY::StringToValue( wxVariant& aVariant, const wxString& aText, in
     }
     else
     {
-        if( !m_model->SetParamValue( m_paramIndex, aText ) )
-            return false;
-
+        m_model->SetParamValue( m_paramIndex, aText );
         aVariant = GetParam().value->ToString();
     }
 
