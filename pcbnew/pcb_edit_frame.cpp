@@ -171,6 +171,8 @@ BEGIN_EVENT_TABLE( PCB_EDIT_FRAME, PCB_BASE_FRAME )
                          PCB_EDIT_FRAME::OnUpdateSelectTrackWidth )
     EVT_UPDATE_UI_RANGE( ID_POPUP_PCB_SELECT_VIASIZE1, ID_POPUP_PCB_SELECT_VIASIZE8,
                          PCB_EDIT_FRAME::OnUpdateSelectViaSize )
+    // Drop files event
+    EVT_DROP_FILES( PCB_EDIT_FRAME::OnDropFiles )
 END_EVENT_TABLE()
 
 
@@ -410,6 +412,10 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
         m_eventCounterTimer->Start( 1000 );
     }
+
+    m_acceptedExts.emplace( KiCadPcbFileExtension, &PCB_ACTIONS::ddAppendBoard );
+    m_acceptedExts.emplace( LegacyPcbFileExtension, &PCB_ACTIONS::ddAppendBoard );
+    DragAcceptFiles( true );
 }
 
 
@@ -1929,4 +1935,14 @@ void PCB_EDIT_FRAME::onSize( wxSizeEvent& aEvent )
 
     // Skip() is called in the base class.
     EDA_DRAW_FRAME::OnSize( aEvent );
+}
+
+
+void PCB_EDIT_FRAME::DoWithAcceptedFiles()
+{
+    for( auto fileName : m_AcceptedFiles )
+    {
+        wxString file = fileName.GetFullPath();
+        GetToolManager()->RunAction( PCB_ACTIONS::ddAppendBoard, true, &file );
+    }
 }

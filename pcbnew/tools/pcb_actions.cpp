@@ -1448,3 +1448,6 @@ TOOL_ACTION PCB_ACTIONS::lengthTunerSettingsDialog( "pcbnew.LengthTuner.Settings
         _( "Length Tuning Settings..." ),
         _( "Sets the length tuning parameters for currently routed item." ),
         BITMAPS::router_len_tuner_setup );
+
+TOOL_ACTION PCB_ACTIONS::ddAppendBoard( "pcbnew.Control.DdAppendBoard",
+        AS_GLOBAL );
