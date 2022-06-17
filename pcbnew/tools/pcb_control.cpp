@@ -43,6 +43,7 @@
 #include <pcb_group.h>
 #include <pcb_textbox.h>
 #include <pcb_track.h>
+#include <wildcards_and_files_ext.h>
 #include <zone.h>
 #include <fp_shape.h>
 #include <fp_textbox.h>
@@ -1248,6 +1249,25 @@ int PCB_CONTROL::UpdateMessagePanel( const TOOL_EVENT& aEvent )
 }
 
 
+int PCB_CONTROL::DdAppendBoard( const TOOL_EVENT& aEvent )
+{
+    wxFileName fileName = wxFileName( *aEvent.Parameter<wxString*>() );
+
+    int open_ctl = fileName.GetExt() == KiCadPcbFileExtension ? 0 : KICTL_EAGLE_BRD;
+
+    PCB_EDIT_FRAME* editFrame = dynamic_cast<PCB_EDIT_FRAME*>( m_frame );
+
+    if( !editFrame )
+        return 1;
+
+    wxString filePath = fileName.GetFullPath();
+    IO_MGR::PCB_FILE_T pluginType = plugin_type( filePath, open_ctl );
+    PLUGIN::RELEASER pi( IO_MGR::PluginFind( pluginType ) );
+
+    return AppendBoard( *pi, filePath );
+}
+
+
 int PCB_CONTROL::FlipPcbView( const TOOL_EVENT& aEvent )
 {
     view()->SetMirror( !view()->IsMirroredX(), false );
@@ -1332,6 +1352,7 @@ void PCB_CONTROL::setTransitions()
 
     // Append control
     Go( &PCB_CONTROL::AppendBoardFromFile,  PCB_ACTIONS::appendBoard.MakeEvent() );
+    Go( &PCB_CONTROL::DdAppendBoard,        PCB_ACTIONS::ddAppendBoard.MakeEvent() );
 
     Go( &PCB_CONTROL::Paste,                ACTIONS::paste.MakeEvent() );
     Go( &PCB_CONTROL::Paste,                ACTIONS::pasteSpecial.MakeEvent() );
