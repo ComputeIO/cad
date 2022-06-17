@@ -73,10 +73,10 @@ void SIM_LIBRARY_SPICE::ReadFile( const wxString& aFilePath )
             {
                 m_models.push_back( SIM_MODEL::Create( node->string() ) );
 
-                if( node->children.size() != 1 )
+                if( node->children.size() < 1
+                    || !node->children.at( 0 )->is_type<SIM_LIBRARY_SPICE_PARSER::modelName>() )
                 {
-                    THROW_IO_ERROR( wxString::Format( "Captured %d name tokens, expected one",
-                                                      node->children.size() ) );
+                    THROW_IO_ERROR( wxString::Format( "Model name token not found" ) );
                 }
 
                 m_modelNames.emplace_back( node->children.at( 0 )->string() );
