@@ -114,6 +114,14 @@ int PCB_CONTROL::AddLibrary( const TOOL_EVENT& aEvent )
 }
 
 
+int PCB_CONTROL::DdAddLibrary( const TOOL_EVENT& aEvent )
+{
+    const wxString fn = *aEvent.Parameter<wxString*>();
+    static_cast<PCB_BASE_EDIT_FRAME*>( m_frame )->AddLibrary( fn );
+    return 0;
+}
+
+
 int PCB_CONTROL::Quit( const TOOL_EVENT& aEvent )
 {
     m_frame->Close( false );
@@ -1361,4 +1369,7 @@ void PCB_CONTROL::setTransitions()
     Go( &PCB_CONTROL::UpdateMessagePanel,   EVENTS::UnselectedEvent );
     Go( &PCB_CONTROL::UpdateMessagePanel,   EVENTS::ClearedEvent );
     Go( &PCB_CONTROL::UpdateMessagePanel,   EVENTS::SelectedItemsModified );
+
+    // Add library by dropping file
+    Go( &PCB_CONTROL::DdAddLibrary,         PCB_ACTIONS::ddAddLibrary.MakeEvent() );
 }

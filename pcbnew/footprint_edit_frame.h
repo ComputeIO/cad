@@ -365,6 +365,8 @@ private:
     std::unique_ptr<FOOTPRINT>  m_revertModule;
     wxString                    m_footprintNameWhenLoaded;
     std::map<KIID, KIID>        m_boardFootprintUuids;
+
+    void DoWithAcceptedFiles() override;
 };
 
 #endif      // FOOTPRINT_EDIT_FRAME_H
