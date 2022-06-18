@@ -97,6 +97,10 @@ BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_UPDATE_UI( ID_ADD_FOOTPRINT_TO_BOARD,
                    FOOTPRINT_EDIT_FRAME::OnUpdateSaveFootprintToBoard )
     EVT_UPDATE_UI( ID_TOOLBARH_PCB_SELECT_LAYER, FOOTPRINT_EDIT_FRAME::OnUpdateLayerSelectBox )
+
+    // Drop files event
+    EVT_DROP_FILES( FOOTPRINT_EDIT_FRAME::OnDropFiles )
+
 END_EVENT_TABLE()
 
 
@@ -240,6 +244,10 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     // The selection filter doesn't need to grow in the vertical direction when docked
     m_auimgr.GetPane( "SelectionFilter" ).dock_proportion = 0;
+
+    m_acceptedExts.emplace( KiCadFootprintLibPathExtension, &PCB_ACTIONS::ddAddLibrary );
+    DragAcceptFiles( true );
+
 
     ActivateGalCanvas();
 
@@ -1240,4 +1248,14 @@ void FOOTPRINT_EDIT_FRAME::OnSaveFootprintAsPng( wxCommandEvent& event )
     // to refresh the screen before creating the PNG or JPEG image from screen
     wxYield();
     SaveCanvasImageToFile( this, dlg.GetPath() );
+}
+
+
+void FOOTPRINT_EDIT_FRAME::DoWithAcceptedFiles()
+{
+    for( wxFileName fn : m_AcceptedFiles )
+    {
+        wxString file = fn.GetFullPath();
+        GetToolManager()->RunAction( *m_acceptedExts.at( fn.GetExt() ), true, &file );
+    }
 }

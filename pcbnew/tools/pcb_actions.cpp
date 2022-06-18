@@ -1446,3 +1446,6 @@ TOOL_ACTION PCB_ACTIONS::lengthTunerSettingsDialog( "pcbnew.LengthTuner.Settings
 
 TOOL_ACTION PCB_ACTIONS::ddAppendBoard( "pcbnew.Control.DdAppendBoard",
         AS_GLOBAL );
+
+TOOL_ACTION PCB_ACTIONS::ddAddLibrary( "pcbnew.Control.DdAddLibrary",
+        AS_GLOBAL );

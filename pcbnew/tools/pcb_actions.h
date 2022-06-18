@@ -486,6 +486,7 @@ public:
 
     /// Drag and drop
     static TOOL_ACTION ddAppendBoard;
+    static TOOL_ACTION ddAddLibrary;
 };
 
 #endif
