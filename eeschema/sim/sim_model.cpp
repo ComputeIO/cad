@@ -28,7 +28,6 @@
 #include <sim/sim_model_behavioral.h>
 #include <sim/sim_model_ideal.h>
 #include <sim/sim_model_ngspice.h>
-#include <sim/sim_model_passive.h>
 #include <sim/sim_model_source.h>
 #include <sim/sim_model_spice.h>
 #include <sim/sim_model_subckt.h>
@@ -127,15 +126,15 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::NONE:                 return { DEVICE_TYPE::NONE,   "",               ""                           };
 
     case TYPE::R:                    return { DEVICE_TYPE::R,      "",               "Ideal"                      };
-    case TYPE::R_ADV:                return { DEVICE_TYPE::R,      "ADV",            "Advanced"                   };
+    //case TYPE::R_ADV:                return { DEVICE_TYPE::R,      "ADV",            "Advanced"                   };
     case TYPE::R_BEHAVIORAL:         return { DEVICE_TYPE::R,      "=",              "Behavioral"                 };
 
     case TYPE::C:                    return { DEVICE_TYPE::C,      "",               "Ideal"                      };
-    case TYPE::C_ADV:                return { DEVICE_TYPE::C,      "ADV",            "Advanced"                   };
+    //case TYPE::C_ADV:                return { DEVICE_TYPE::C,      "ADV",            "Advanced"                   };
     case TYPE::C_BEHAVIORAL:         return { DEVICE_TYPE::C,      "=",              "Behavioral"                 };
 
     case TYPE::L:                    return { DEVICE_TYPE::L,      "",               "Ideal"                      };
-    case TYPE::L_ADV:                return { DEVICE_TYPE::L,      "ADV",            "Advanced"                   };
+    //case TYPE::L_ADV:                return { DEVICE_TYPE::L,      "ADV",            "Advanced"                   };
     case TYPE::L_BEHAVIORAL:         return { DEVICE_TYPE::L,      "=",              "Behavioral"                 };
 
     case TYPE::TLINE_Z0:             return { DEVICE_TYPE::TLINE,  "Z0",             "Characteristic impedance"   };
@@ -212,8 +211,8 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::V_SIN:                return { DEVICE_TYPE::V,      "SIN",            "Sine"                       };
     case TYPE::V_PULSE:              return { DEVICE_TYPE::V,      "PULSE",          "Pulse"                      };
     case TYPE::V_EXP:                return { DEVICE_TYPE::V,      "EXP",            "Exponential"                };
-    case TYPE::V_SFAM:               return { DEVICE_TYPE::V,      "SFAM",           "Single-frequency AM"        };
-    case TYPE::V_SFFM:               return { DEVICE_TYPE::V,      "SFFM",           "Single-frequency FM"        };
+    /*case TYPE::V_SFAM:               return { DEVICE_TYPE::V,      "SFAM",           "Single-frequency AM"        };
+    case TYPE::V_SFFM:               return { DEVICE_TYPE::V,      "SFFM",           "Single-frequency FM"        };*/
     case TYPE::V_PWL:                return { DEVICE_TYPE::V,      "PWL",            "Piecewise linear"           };
     case TYPE::V_WHITENOISE:         return { DEVICE_TYPE::V,      "WHITENOISE",     "White Noise"                };
     case TYPE::V_PINKNOISE:          return { DEVICE_TYPE::V,      "PINKNOISE",      "Pink Noise (1/f)"           };
@@ -228,8 +227,8 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::I_SIN:                return { DEVICE_TYPE::I,      "SIN",            "Sine"                       };
     case TYPE::I_PULSE:              return { DEVICE_TYPE::I,      "PULSE",          "Pulse"                      };
     case TYPE::I_EXP:                return { DEVICE_TYPE::I,      "EXP",            "Exponential"                };
-    case TYPE::I_SFAM:               return { DEVICE_TYPE::I,      "SFAM",           "Single-frequency AM"        };
-    case TYPE::I_SFFM:               return { DEVICE_TYPE::I,      "SFFM",           "Single-frequency FM"        };
+    /*case TYPE::I_SFAM:               return { DEVICE_TYPE::I,      "SFAM",           "Single-frequency AM"        };
+    case TYPE::I_SFFM:               return { DEVICE_TYPE::I,      "SFFM",           "Single-frequency FM"        };*/
     case TYPE::I_PWL:                return { DEVICE_TYPE::I,      "PWL",            "Piecewise linear"           };
     case TYPE::I_WHITENOISE:         return { DEVICE_TYPE::I,      "WHITENOISE",     "White Noise"                };
     case TYPE::I_PINKNOISE:          return { DEVICE_TYPE::I,      "PINKNOISE",      "Pink Noise (1/f)"           };
@@ -257,15 +256,15 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     switch( aType )
     {
     case TYPE::R:                    return { "R", ""        };
-    case TYPE::R_ADV:                return { "R", "r"       };
+    //case TYPE::R_ADV:                return { "R", "r"       };
     case TYPE::R_BEHAVIORAL:         return { "R", "",       "",        "0",   false, true   };
 
     case TYPE::C:                    return { "C", ""        };
-    case TYPE::C_ADV:                return { "C", "c",      };
+    //case TYPE::C_ADV:                return { "C", "c",      };
     case TYPE::C_BEHAVIORAL:         return { "C", "",       "",        "0",   false, true   };
 
     case TYPE::L:                    return { "L", ""        };
-    case TYPE::L_ADV:                return { "L", "l"       };
+    //case TYPE::L_ADV:                return { "L", "l"       };
     case TYPE::L_BEHAVIORAL:         return { "L", "",       "",        "0",   false, true   };
     
     case TYPE::TLINE_Z0:             return { "T"  };
@@ -342,8 +341,8 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::V_SIN:                return { "V", "",       "SIN"      };
     case TYPE::V_PULSE:              return { "V", "",       "PULSE"    };
     case TYPE::V_EXP:                return { "V", "",       "EXP"      };
-    case TYPE::V_SFAM:               return { "V", "",       "AM"       };
-    case TYPE::V_SFFM:               return { "V", "",       "SFFM"     };
+    /*case TYPE::V_SFAM:               return { "V", "",       "AM"       };
+    case TYPE::V_SFFM:               return { "V", "",       "SFFM"     };*/
     case TYPE::V_PWL:                return { "V", "",       "PWL"      };
     case TYPE::V_WHITENOISE:         return { "V", "",       "TRNOISE"  };
     case TYPE::V_PINKNOISE:          return { "V", "",       "TRNOISE"  };
@@ -358,8 +357,8 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::I_PULSE:              return { "V", "",       "PULSE"    };
     case TYPE::I_SIN:                return { "V", "",       "SIN"      };
     case TYPE::I_EXP:                return { "V", "",       "EXP"      };
-    case TYPE::I_SFAM:               return { "V", "",       "AM"       };
-    case TYPE::I_SFFM:               return { "V", "",       "SFFM"     };
+    /*case TYPE::I_SFAM:               return { "V", "",       "AM"       };
+    case TYPE::I_SFFM:               return { "V", "",       "SFFM"     };*/
     case TYPE::I_PWL:                return { "V", "",       "PWL"      };
     case TYPE::I_WHITENOISE:         return { "V", "",       "TRNOISE"  };
     case TYPE::I_PINKNOISE:          return { "V", "",       "TRNOISE"  };
@@ -512,8 +511,8 @@ TYPE SIM_MODEL::InferTypeFromRef( const wxString& aRef )
         { "VSIN", TYPE::V_SIN },
         { "VPULSE", TYPE::V_PULSE },
         { "VEXP", TYPE::V_EXP },
-        { "VSFAM", TYPE::V_SFAM },
-        { "VSFFM", TYPE::V_SFFM },
+        /*{ "VSFAM", TYPE::V_SFAM },
+        { "VSFFM", TYPE::V_SFFM },*/
         { "VPWL", TYPE::V_PWL },
         { "VWHITENOISE", TYPE::V_WHITENOISE },
         { "VPINKNOISE", TYPE::V_PINKNOISE },
@@ -527,8 +526,8 @@ TYPE SIM_MODEL::InferTypeFromRef( const wxString& aRef )
         { "ISIN", TYPE::I_SIN },
         { "IPULSE", TYPE::I_PULSE },
         { "IEXP", TYPE::I_EXP },
-        { "ISFAM", TYPE::I_SFAM },
-        { "ISFFM", TYPE::I_SFFM },
+        /*{ "ISFAM", TYPE::I_SFAM },
+        { "ISFFM", TYPE::I_SFFM },*/
         { "IPWL", TYPE::I_PWL },
         { "IWHITENOISE", TYPE::I_WHITENOISE },
         { "IPINKNOISE", TYPE::I_PINKNOISE },
@@ -1266,11 +1265,6 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
     case TYPE::L:
         return std::make_unique<SIM_MODEL_IDEAL>( aType );
 
-    case TYPE::R_ADV:
-    case TYPE::C_ADV:
-    case TYPE::L_ADV:
-        return std::make_unique<SIM_MODEL_PASSIVE>( aType );
-
     case TYPE::R_BEHAVIORAL:
     case TYPE::C_BEHAVIORAL:
     case TYPE::L_BEHAVIORAL:
@@ -1290,10 +1284,10 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
     case TYPE::I_PULSE:
     case TYPE::V_EXP:
     case TYPE::I_EXP:
-    case TYPE::V_SFAM:
+    /*case TYPE::V_SFAM:
     case TYPE::I_SFAM:
     case TYPE::V_SFFM:
-    case TYPE::I_SFFM:
+    case TYPE::I_SFFM:*/
     case TYPE::V_PWL:
     case TYPE::I_PWL:
     case TYPE::V_WHITENOISE:

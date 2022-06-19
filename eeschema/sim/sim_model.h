@@ -133,15 +133,15 @@ public:
         NONE,
 
         R,
-        R_ADV,
+        //R_ADV,
         R_BEHAVIORAL,
 
         C,
-        C_ADV,
+        //C_ADV,
         C_BEHAVIORAL,
 
         L,
-        L_ADV,
+        //L_ADV,
         L_BEHAVIORAL,
 
         TLINE_Z0,
@@ -245,8 +245,8 @@ public:
         V_SIN,
         V_PULSE,
         V_EXP,
-        V_SFAM,
-        V_SFFM,
+        /*V_SFAM,
+        V_SFFM,*/
         V_PWL,
         V_WHITENOISE,
         V_PINKNOISE,
@@ -261,8 +261,8 @@ public:
         I_SIN,
         I_PULSE,
         I_EXP,
-        I_SFAM,
-        I_SFFM,
+        /*I_SFAM,
+        I_SFFM,*/
         I_PWL,
         I_WHITENOISE,
         I_PINKNOISE,

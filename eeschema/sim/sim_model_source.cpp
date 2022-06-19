@@ -127,11 +127,11 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParamInfos( TYPE aType )
     static std::vector<PARAM::INFO> vexp = makeExpParamInfos( "v", "V" );
     static std::vector<PARAM::INFO> iexp = makeExpParamInfos( "i", "A" );
 
-    static std::vector<PARAM::INFO> vsfam = makeSfamParamInfos( "v", "V" );
+    /*static std::vector<PARAM::INFO> vsfam = makeSfamParamInfos( "v", "V" );
     static std::vector<PARAM::INFO> isfam = makeSfamParamInfos( "i", "A" );
 
     static std::vector<PARAM::INFO> vsffm = makeSffmParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> isffm = makeSffmParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> isffm = makeSffmParamInfos( "i", "A" );*/
 
     static std::vector<PARAM::INFO> vpwl = makePwlParamInfos( "v", "Voltage", "V" );
     static std::vector<PARAM::INFO> ipwl = makePwlParamInfos( "i", "Current", "A" );
@@ -167,10 +167,10 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParamInfos( TYPE aType )
     case TYPE::I_PULSE:       return ipulse;
     case TYPE::V_EXP:         return vexp;
     case TYPE::I_EXP:         return iexp;
-    case TYPE::V_SFAM:        return vsfam;
+    /*case TYPE::V_SFAM:        return vsfam;
     case TYPE::I_SFAM:        return isfam;
     case TYPE::V_SFFM:        return vsffm;
-    case TYPE::I_SFFM:        return isffm;
+    case TYPE::I_SFFM:        return isffm;*/
     case TYPE::V_PWL:         return vpwl;
     case TYPE::I_PWL:         return ipwl;
     case TYPE::V_WHITENOISE:  return vwhitenoise;
@@ -322,13 +322,15 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSinParamInfos( wxString aPrefix, 
     paramInfo.description = "Damping factor";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "phase";
+    // "phase" is not needed. "td" is enough.
+
+    /*paramInfo.name = "phase";
     paramInfo.type = SIM_VALUE::TYPE::FLOAT;
-    paramInfo.unit = "deg";
+    paramInfo.unit = "°";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
     paramInfo.description = "Phase";
-    paramInfos.push_back( paramInfo );
+    paramInfos.push_back( paramInfo );*/
 
     appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
@@ -380,7 +382,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePulseParamInfos( wxString aPrefix
     paramInfo.description = "Fall time";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "pw";
+    paramInfo.name = "tw"; // Ngspice calls it "pw".
     paramInfo.type = SIM_VALUE::TYPE::FLOAT;
     paramInfo.unit = "s";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
@@ -396,13 +398,15 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePulseParamInfos( wxString aPrefix
     paramInfo.description = "Period";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "phase";
+    // "phase" is not needed. "td" is enough.
+
+    /*paramInfo.name = "phase";
     paramInfo.type = SIM_VALUE::TYPE::FLOAT;
-    paramInfo.unit = "deg";
+    paramInfo.unit = "°";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
     paramInfo.description = "Phase";
-    paramInfos.push_back( paramInfo );
+    paramInfos.push_back( paramInfo );*/
 
     appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
@@ -467,7 +471,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeExpParamInfos( wxString aPrefix, 
 }
 
 
-std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSfamParamInfos( wxString aPrefix, wxString aUnit )
+/*std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSfamParamInfos( wxString aPrefix, wxString aUnit )
 {
     std::vector<PARAM::INFO> paramInfos;
     PARAM::INFO paramInfo;
@@ -563,7 +567,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSffmParamInfos( wxString aPrefix,
 
     paramInfo.name = "phasec";
     paramInfo.type = SIM_VALUE::TYPE::FLOAT;
-    paramInfo.unit = "deg";
+    paramInfo.unit = "°";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
     paramInfo.description = "Carrier phase";
@@ -571,7 +575,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSffmParamInfos( wxString aPrefix,
 
     paramInfo.name = "phases";
     paramInfo.type = SIM_VALUE::TYPE::FLOAT;
-    paramInfo.unit = "deg";
+    paramInfo.unit = "°";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
     paramInfo.description = "Signal phase";
@@ -579,7 +583,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeSffmParamInfos( wxString aPrefix,
 
     appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;
-}
+}*/
 
 
 std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePwlParamInfos( wxString aPrefix, wxString aQuantity,

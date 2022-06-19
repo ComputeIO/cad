@@ -67,8 +67,8 @@ private:
     static std::vector<PARAM::INFO> makeSinParamInfos( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makePulseParamInfos( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makeExpParamInfos( wxString aPrefix, wxString aUnit );
-    static std::vector<PARAM::INFO> makeSfamParamInfos( wxString aPrefix, wxString aUnit );
-    static std::vector<PARAM::INFO> makeSffmParamInfos( wxString aPrefix, wxString aUnit );
+    //static std::vector<PARAM::INFO> makeSfamParamInfos( wxString aPrefix, wxString aUnit );
+    //static std::vector<PARAM::INFO> makeSffmParamInfos( wxString aPrefix, wxString aUnit );
     static std::vector<PARAM::INFO> makePwlParamInfos( wxString aPrefix, wxString aQuantity,
                                                        wxString aUnit );
     static std::vector<PARAM::INFO> makeWhiteNoiseParamInfos( wxString aPrefix, wxString aUnit );
