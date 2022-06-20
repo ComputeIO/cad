@@ -122,6 +122,15 @@ int PCB_CONTROL::DdAddLibrary( const TOOL_EVENT& aEvent )
 }
 
 
+int PCB_CONTROL::DdImportFootprint( const TOOL_EVENT& aEvent )
+{
+    const wxString fn = *aEvent.Parameter<wxString*>();
+    static_cast<FOOTPRINT_EDIT_FRAME*>( m_frame )->ImportFootprint( fn );
+    m_frame->Zoom_Automatique( false );
+    return 0;
+}
+
+
 int PCB_CONTROL::Quit( const TOOL_EVENT& aEvent )
 {
     m_frame->Close( false );
@@ -1372,4 +1381,5 @@ void PCB_CONTROL::setTransitions()
 
     // Add library by dropping file
     Go( &PCB_CONTROL::DdAddLibrary,         PCB_ACTIONS::ddAddLibrary.MakeEvent() );
+    Go( &PCB_CONTROL::DdImportFootprint,    PCB_ACTIONS::ddImportFootprint.MakeEvent() );
 }

@@ -101,6 +101,7 @@ public:
     // Drag and drop
     int DdAppendBoard( const TOOL_EVENT& aEvent );
     int DdAddLibrary( const TOOL_EVENT& aEvent );
+    int DdImportFootprint( const TOOL_EVENT& aEvent );
 
 private:
     ///< Sets up handlers for various events.
