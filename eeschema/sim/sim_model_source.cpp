@@ -39,7 +39,7 @@ SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType )
 void SIM_MODEL_SOURCE::ReadDataSchFields( unsigned aSymbolPinCount,
                                           const std::vector<SCH_FIELD>* aFields )
 {
-    if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
+    if( GetFieldValue( aFields, PARAMS_FIELD ) != "" )
         SIM_MODEL::ReadDataSchFields( aSymbolPinCount, aFields );
     else
         inferredReadDataFields( aSymbolPinCount, aFields );
@@ -49,7 +49,7 @@ void SIM_MODEL_SOURCE::ReadDataSchFields( unsigned aSymbolPinCount,
 void SIM_MODEL_SOURCE::ReadDataLibFields( unsigned aSymbolPinCount,
                                           const std::vector<LIB_FIELD>* aFields )
 {
-    if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
+    if( GetFieldValue( aFields, PARAMS_FIELD ) != "" )
         SIM_MODEL::ReadDataLibFields( aSymbolPinCount, aFields );
     else
         inferredReadDataFields( aSymbolPinCount, aFields );
@@ -200,7 +200,7 @@ bool SIM_MODEL_SOURCE::SetParamValue( unsigned aParamIndex, const wxString& aVal
 {
     // Sources are special. All preceding parameter values must be filled. If they are not, fill
     // them out automatically. If a value is nulled, delete everything after it.
-    if( aValue.IsEmpty() )
+    if( aValue == "" )
     {
         for( unsigned i = aParamIndex; i < GetParamCount(); ++i )
             SIM_MODEL::SetParamValue( i, "", aNotation );
@@ -209,7 +209,7 @@ bool SIM_MODEL_SOURCE::SetParamValue( unsigned aParamIndex, const wxString& aVal
     {
         for( unsigned i = 0; i < aParamIndex; ++i )
         {
-            if( GetParam( i ).value->ToString().IsEmpty() )
+            if( GetParam( i ).value->ToString() == "" )
                 SIM_MODEL::SetParamValue( i, "0", aNotation );
         }
     }
@@ -228,11 +228,13 @@ wxString SIM_MODEL_SOURCE::GenerateParamValuePair( const PARAM& aParam, bool& aI
 
 
 template <typename T>
-void SIM_MODEL_SOURCE::inferredReadDataFields( unsigned aSymbolPinCount, const std::vector<T>* aFields )
+void SIM_MODEL_SOURCE::inferredReadDataFields( unsigned aSymbolPinCount,
+                                               const std::vector<T>* aFields )
 {
     ParsePinsField( aSymbolPinCount, PINS_FIELD );
 
-    if( ( InferTypeFromRef( GetFieldValue( aFields, REFERENCE_FIELD ) ) == GetType()
+    if( ( InferTypeFromRefAndValue( GetFieldValue( aFields, REFERENCE_FIELD ),
+                                    GetFieldValue( aFields, VALUE_FIELD ) ) == GetType()
             && ParseParamsField( GetFieldValue( aFields, VALUE_FIELD ) ) )
         || GetFieldValue( aFields, VALUE_FIELD ) == DeviceTypeInfo( GetDeviceType() ).fieldValue )
     {
@@ -246,8 +248,8 @@ void SIM_MODEL_SOURCE::inferredWriteDataFields( std::vector<T>& aFields ) const
 {
     wxString value = GetFieldValue( &aFields, PARAMS_FIELD );
 
-    if( value.IsEmpty() )
-        value = DeviceTypeInfo( GetDeviceType() ).fieldValue;
+    if( value == "" )
+        value = GetDeviceTypeInfo().fieldValue;
 
     WriteInferredDataFields( aFields, value );
 }

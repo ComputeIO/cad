@@ -374,7 +374,7 @@ public:
     template <typename T>
     static TYPE ReadTypeFromFields( const std::vector<T>& aFields );
 
-    static TYPE InferTypeFromRef( const wxString& aRef );
+    static TYPE InferTypeFromRefAndValue( const wxString& aRef, const wxString& aValue );
 
     template <typename T>
     static TYPE InferTypeFromLegacyFields( const std::vector<T>& aFields );

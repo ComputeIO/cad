@@ -49,7 +49,7 @@ SIM_MODEL_IDEAL::SIM_MODEL_IDEAL( TYPE aType )
 void SIM_MODEL_IDEAL::ReadDataSchFields( unsigned aSymbolPinCount,
                                          const std::vector<SCH_FIELD>* aFields )
 {
-    if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
+    if( GetFieldValue( aFields, PARAMS_FIELD ) != "" )
         SIM_MODEL::ReadDataSchFields( aSymbolPinCount, aFields );
     else
         inferredReadDataFields( aSymbolPinCount, aFields );
@@ -59,7 +59,7 @@ void SIM_MODEL_IDEAL::ReadDataSchFields( unsigned aSymbolPinCount,
 void SIM_MODEL_IDEAL::ReadDataLibFields( unsigned aSymbolPinCount,
                                          const std::vector<LIB_FIELD>* aFields )
 {
-    if( !GetFieldValue( aFields, PARAMS_FIELD ).IsEmpty() )
+    if( GetFieldValue( aFields, PARAMS_FIELD ) != "" )
         SIM_MODEL::ReadDataLibFields( aSymbolPinCount, aFields );
     else
         inferredReadDataFields( aSymbolPinCount, aFields );
@@ -108,8 +108,10 @@ void SIM_MODEL_IDEAL::inferredReadDataFields( unsigned aSymbolPinCount, const st
 {
     ParsePinsField( aSymbolPinCount, PINS_FIELD );
 
-    if( ( InferTypeFromRef( GetFieldValue( aFields, REFERENCE_FIELD ) ) == GetType()
+    if( ( InferTypeFromRefAndValue( GetFieldValue( aFields, REFERENCE_FIELD ),
+                                    GetFieldValue( aFields, VALUE_FIELD ) ) == GetType()
             && SetParamValue( 0, GetFieldValue( aFields, VALUE_FIELD ) ) )
+        // If Value is device type, this is an empty model
         || GetFieldValue( aFields, VALUE_FIELD ) == DeviceTypeInfo( GetDeviceType() ).fieldValue )
     {
         m_isInferred = true;

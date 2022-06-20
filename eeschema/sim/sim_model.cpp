@@ -492,7 +492,8 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
         return TYPE::NONE;
 
     // No type information. For passives we infer the model from the mandatory fields in this case.
-    TYPE typeFromRef = InferTypeFromRef( GetFieldValue( &aFields, REFERENCE_FIELD ) );
+    TYPE typeFromRef = InferTypeFromRefAndValue( GetFieldValue( &aFields, REFERENCE_FIELD ),
+                                                 GetFieldValue( &aFields, VALUE_FIELD ) );
     if( typeFromRef != TYPE::NONE )
         return typeFromRef;
 
@@ -501,12 +502,13 @@ TYPE SIM_MODEL::ReadTypeFromFields( const std::vector<T>& aFields )
 }
 
 
-TYPE SIM_MODEL::InferTypeFromRef( const wxString& aRef )
+TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& aValue )
 {
     static std::map<wxString, TYPE> refPrefixToType = {
         { "R", TYPE::R },
         { "C", TYPE::C },
         { "L", TYPE::L },
+        { "TLINE", TYPE::TLINE_Z0 },
         { "VDC", TYPE::V_DC },
         { "VSIN", TYPE::V_SIN },
         { "VPULSE", TYPE::V_PULSE },
@@ -539,13 +541,69 @@ TYPE SIM_MODEL::InferTypeFromRef( const wxString& aRef )
         { "IBEHAVIORAL", TYPE::I_BEHAVIORAL }
     };
 
-    for( auto&& [prefix, type] : refPrefixToType )
+    TYPE type = TYPE::NONE;
+
+    for( auto&& [curPrefix, curType] : refPrefixToType )
     {
-        if( aRef.StartsWith( prefix ) )
-            return type;
+        if( aRef.StartsWith( curPrefix ) )
+        {
+            type = curType;
+            break;
+        }
     }
 
-    return TYPE::NONE;
+    wxString value = aValue;
+
+    // Some types have to be inferred from Value field.
+    switch( type )
+    {
+    case TYPE::R:
+        if( value.Trim( false ).StartsWith( "=" ) )
+            type = TYPE::R_BEHAVIORAL;
+        break;
+
+    case TYPE::C:
+        if( value.Trim( false ).StartsWith( "=" ) )
+            type = TYPE::C_BEHAVIORAL;
+        break;
+
+    case TYPE::L:
+        if( value.Trim( false ).StartsWith( "=" ) )
+            type = TYPE::L_BEHAVIORAL;
+        break;
+
+    case TYPE::TLINE_Z0:
+        try
+        {
+            tao::pegtl::string_input<> in( aValue.ToStdString(), "from_content" );
+            auto root = tao::pegtl::parse_tree::parse<
+                SIM_MODEL_PARSER::fieldParamValuePairsGrammar,
+                SIM_MODEL_PARSER::fieldParamValuePairsSelector>
+                    ( in );
+
+            for( const auto& node : root->children )
+            {
+                if( node->is_type<SIM_MODEL_PARSER::param>()
+                    && (node->string() == "r" || node->string() == "R"
+                        || node->string() == "c" || node->string() == "C"
+                        || node->string() == "l" || node->string() == "L" ) )
+                {
+                    type = TYPE::TLINE_RLGC;
+                    break;
+                }
+            }
+        }
+        catch( const tao::pegtl::parse_error& e )
+        {
+        }
+
+        break;
+
+    default:
+        break;
+    }
+
+    return type;
 }
 
 
