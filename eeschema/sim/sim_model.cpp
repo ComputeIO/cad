@@ -150,8 +150,8 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::NPN_VBIC:             return { DEVICE_TYPE::NPN,    "VBIC",           "VBIC"                       };
     case TYPE::PNP_VBIC:             return { DEVICE_TYPE::PNP,    "VBIC",           "VBIC"                       };
     //case TYPE::BJT_MEXTRAM:          return {};
-    case TYPE::NPN_HICUML2:          return { DEVICE_TYPE::NPN,    "HICUML2",        "HICUM Level 2"              };
-    case TYPE::PNP_HICUML2:          return { DEVICE_TYPE::PNP,    "HICUML2",        "HICUM Level 2"              };
+    case TYPE::NPN_HICUML2:          return { DEVICE_TYPE::NPN,    "HICUML2",        "HICUM level 2"              };
+    case TYPE::PNP_HICUML2:          return { DEVICE_TYPE::PNP,    "HICUML2",        "HICUM level 2"              };
     //case TYPE::BJT_HICUM_L0:         return {};
 
     case TYPE::NJFET_SHICHMANHODGES: return { DEVICE_TYPE::NJFET,  "SHICHMANHODGES", "Shichman-Hodges"            };
@@ -214,9 +214,9 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     /*case TYPE::V_SFAM:               return { DEVICE_TYPE::V,      "SFAM",           "Single-frequency AM"        };
     case TYPE::V_SFFM:               return { DEVICE_TYPE::V,      "SFFM",           "Single-frequency FM"        };*/
     case TYPE::V_PWL:                return { DEVICE_TYPE::V,      "PWL",            "Piecewise linear"           };
-    case TYPE::V_WHITENOISE:         return { DEVICE_TYPE::V,      "WHITENOISE",     "White Noise"                };
-    case TYPE::V_PINKNOISE:          return { DEVICE_TYPE::V,      "PINKNOISE",      "Pink Noise (1/f)"           };
-    case TYPE::V_BURSTNOISE:         return { DEVICE_TYPE::V,      "BURSTNOISE",     "Burst Noise"                };
+    case TYPE::V_WHITENOISE:         return { DEVICE_TYPE::V,      "WHITENOISE",     "White noise"                };
+    case TYPE::V_PINKNOISE:          return { DEVICE_TYPE::V,      "PINKNOISE",      "Pink noise (1/f)"           };
+    case TYPE::V_BURSTNOISE:         return { DEVICE_TYPE::V,      "BURSTNOISE",     "Burst noise"                };
     case TYPE::V_RANDUNIFORM:        return { DEVICE_TYPE::V,      "RANDUNIFORM",    "Random uniform"             };
     case TYPE::V_RANDNORMAL:         return { DEVICE_TYPE::V,      "RANDNORMAL",     "Random normal"              };
     case TYPE::V_RANDEXP:            return { DEVICE_TYPE::V,      "RANDEXP",        "Random exponential"         };

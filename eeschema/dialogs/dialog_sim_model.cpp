@@ -49,6 +49,8 @@ DIALOG_SIM_MODEL<T>::DIALOG_SIM_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
       m_firstCategory( nullptr ),
       m_prevParamGridSelection( nullptr )
 {
+    m_browseButton->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
+
     for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
     {
         m_models.push_back( SIM_MODEL::Create( type, m_symbol.GetAllPins().size() ) );
@@ -190,24 +192,28 @@ void DIALOG_SIM_MODEL<T>::updateModelParamsTab()
     if( &curModel() != m_prevModel )
     {
         SIM_MODEL::DEVICE_TYPE deviceType = SIM_MODEL::TypeInfo( curModel().GetType() ).deviceType;
-        m_deviceTypeChoice->SetSelection( static_cast<int>( deviceType ) );
-        
-        m_typeChoice->Clear();
 
-        for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
+        // Change the Type choice to match the current device type.
+        if( !m_prevModel || deviceType != m_prevModel->GetDeviceType() )
         {
-            if( SIM_MODEL::TypeInfo( type ).deviceType == deviceType )
+            m_deviceTypeChoice->SetSelection( static_cast<int>( deviceType ) );
+
+            m_typeChoice->Clear();
+
+            for( SIM_MODEL::TYPE type : SIM_MODEL::TYPE_ITERATOR() )
             {
-                wxString description = SIM_MODEL::TypeInfo( type ).description;
+                if( SIM_MODEL::TypeInfo( type ).deviceType == deviceType )
+                {
+                    wxString description = SIM_MODEL::TypeInfo( type ).description;
 
-                if( !description.IsEmpty() )
-                    m_typeChoice->Append( description );
+                    if( !description.IsEmpty() )
+                        m_typeChoice->Append( description );
 
-                if( type == curModel().GetType() )
-                    m_typeChoice->SetSelection( m_typeChoice->GetCount() - 1 );
+                    if( type == curModel().GetType() )
+                        m_typeChoice->SetSelection( m_typeChoice->GetCount() - 1 );
+                }
             }
         }
-
 
         // This wxPropertyGridManager column and header stuff has to be here because it segfaults in
         // the constructor.
