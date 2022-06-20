@@ -1454,3 +1454,6 @@ TOOL_ACTION PCB_ACTIONS::ddAppendBoard( "pcbnew.Control.DdAppendBoard",
 
 TOOL_ACTION PCB_ACTIONS::ddAddLibrary( "pcbnew.Control.DdAddLibrary",
         AS_GLOBAL );
+
+TOOL_ACTION PCB_ACTIONS::ddImportFootprint( "pcbnew.Control.ddImportFootprint",
+        AS_GLOBAL );
