@@ -125,6 +125,11 @@ public:
     wxString AddLibraryFile( bool aCreateNew );
 
     /**
+     * Add a library dropped file to the symbol library table.
+     */
+    void DdAddLibrary( wxString aLibFile );
+
+    /**
      * Create a new symbol in the selected library.
      */
     void CreateNewSymbol();
@@ -386,6 +391,8 @@ private:
                                         const wxString& aLibraryPreselect );
 
     void saveSymbolAs();
+
+    void DoWithAcceptedFiles() override;
 
     /**
      * Save the changes to the current library.
