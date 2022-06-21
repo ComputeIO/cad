@@ -20,6 +20,7 @@
 
 #include <confirm.h>
 #include <dialogs/dialog_layers_select_to_pcb.h>
+#include <dialogs/html_message_box.h>
 #include <export_to_pcbnew.h>
 #include <gerber_file_image.h>
 #include <gerber_file_image_list.h>
@@ -31,6 +32,7 @@
 #include <menus_helpers.h>
 #include <tool/tool_manager.h>
 #include <project.h>
+#include <reporter.h>
 #include <view/view.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/filedlg.h>
@@ -429,6 +431,38 @@ int GERBVIEW_CONTROL::UpdateMessagePanel( const TOOL_EVENT& aEvent )
 }
 
 
+int GERBVIEW_CONTROL::LoadZipfile( const TOOL_EVENT& aEvent )
+{
+    m_frame->LoadZipArchiveFile( *aEvent.Parameter<wxString*>() );
+    canvas()->Refresh();
+
+    return 0;
+}
+
+
+int GERBVIEW_CONTROL::LoadGerbFiles( const TOOL_EVENT& aEvent )
+{
+    wxString files = *aEvent.Parameter<wxString*>();
+    std::vector<wxString> aFileNameList;
+
+    files = files.AfterFirst( '"' );
+
+    // Gerber files are enclosed with "".
+    // Load files names in array.
+    while( !files.empty() )
+    {
+        aFileNameList.push_back( files.BeforeFirst( '"' ) );
+        files = files.AfterFirst( '"' );
+        files = files.AfterFirst( '"' );
+    }
+
+    if( !aFileNameList.empty() )
+        m_frame->OpenProjectFiles( aFileNameList, KICTL_CREATE );
+
+    return 0;
+}
+
+
 void GERBVIEW_CONTROL::setTransitions()
 {
     Go( &GERBVIEW_CONTROL::OpenAutodetected,   GERBVIEW_ACTIONS::openAutodetected.MakeEvent() );
@@ -465,4 +499,7 @@ void GERBVIEW_CONTROL::setTransitions()
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, EVENTS::UnselectedEvent );
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, EVENTS::ClearedEvent );
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, ACTIONS::updateUnits.MakeEvent() );
+
+    Go( &GERBVIEW_CONTROL::LoadZipfile,        GERBVIEW_ACTIONS::loadZipFile.MakeEvent() );
+    Go( &GERBVIEW_CONTROL::LoadGerbFiles,      GERBVIEW_ACTIONS::loadGerbFiles.MakeEvent() );
 }
