@@ -50,15 +50,15 @@ public:
 
     enum class TYPE
     {
-        BOOL,
-        INT,
-        FLOAT,
+        BOOLEAN,
+        INTEGER,
+        FLOATING,
         COMPLEX,
         STRING,
 
-        BOOL_VECTOR,
-        INT_VECTOR,
-        FLOAT_VECTOR,
+        BOOLEAN_VECTOR,
+        INTEGER_VECTOR,
+        FLOATING_VECTOR,
         COMPLEX_VECTOR
     };
 
@@ -121,14 +121,14 @@ namespace SIM_VALUE_GRAMMAR
     template <SIM_VALUE::TYPE ValueType>
     struct significand;
     
-    template <> struct significand<SIM_VALUE::TYPE::FLOAT> :
+    template <> struct significand<SIM_VALUE::TYPE::FLOATING> :
         sor<seq<intPart, one<'.'>, fracPart>,
             seq<intPart, one<'.'>>,
             intPart,
             seq<one<'.'>, fracPart>,
             one<'.'>> {};
 
-    template <> struct significand<SIM_VALUE::TYPE::INT> : intPart {};
+    template <> struct significand<SIM_VALUE::TYPE::INTEGER> : intPart {};
 
 
     struct exponentPrefix : one<'e', 'E'> {};
@@ -139,17 +139,17 @@ namespace SIM_VALUE_GRAMMAR
     template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct metricSuffix;
 
-    template <> struct metricSuffix<SIM_VALUE::TYPE::INT, NOTATION::SI>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>
         : one<'k', 'K', 'M', 'G', 'T', 'P', 'E'> {};
-    template <> struct metricSuffix<SIM_VALUE::TYPE::INT, NOTATION::SPICE>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::INTEGER, NOTATION::SPICE>
         : sor<TAO_PEGTL_ISTRING( "k" ),
               TAO_PEGTL_ISTRING( "Meg" ),
               TAO_PEGTL_ISTRING( "G" ),
               TAO_PEGTL_ISTRING( "T" )> {};
 
-    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>
         : one<'a', 'f', 'p', 'n', 'u', 'm', 'k', 'K', 'M', 'G', 'T', 'P', 'E'> {};
-    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>
+    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOATING, NOTATION::SPICE>
         : sor<TAO_PEGTL_ISTRING( "f" ),
               TAO_PEGTL_ISTRING( "p" ),
               TAO_PEGTL_ISTRING( "n" ),
@@ -172,7 +172,7 @@ namespace SIM_VALUE_GRAMMAR
 
 
     bool IsValid( const wxString& aString,
-                  SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE::FLOAT,
+                  SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE::FLOATING,
                   NOTATION aNotation = NOTATION::SI );
 }
 

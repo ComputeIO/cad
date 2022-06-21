@@ -33,38 +33,38 @@
 #define CALL_INSTANCE( ValueType, Notation, func, ... )                   \
     switch( ValueType )                                                   \
     {                                                                     \
-    case SIM_VALUE::TYPE::INT:                                            \
+    case SIM_VALUE::TYPE::INTEGER:                                            \
         switch( Notation )                                                \
         {                                                                 \
         case NOTATION::SI:                                                \
-            func<SIM_VALUE::TYPE::INT, NOTATION::SI>( __VA_ARGS__ );      \
+            func<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>( __VA_ARGS__ );      \
             break;                                                        \
                                                                           \
         case NOTATION::SPICE:                                             \
-            func<SIM_VALUE::TYPE::INT, NOTATION::SPICE>( __VA_ARGS__ );   \
+            func<SIM_VALUE::TYPE::INTEGER, NOTATION::SPICE>( __VA_ARGS__ );   \
             break;                                                        \
         }                                                                 \
         break;                                                            \
                                                                           \
-    case SIM_VALUE::TYPE::FLOAT:                                          \
+    case SIM_VALUE::TYPE::FLOATING:                                          \
         switch( Notation )                                                \
         {                                                                 \
         case NOTATION::SI:                                                \
-            func<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>( __VA_ARGS__ );    \
+            func<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>( __VA_ARGS__ );    \
             break;                                                        \
                                                                           \
         case NOTATION::SPICE:                                             \
-            func<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>( __VA_ARGS__ ); \
+            func<SIM_VALUE::TYPE::FLOATING, NOTATION::SPICE>( __VA_ARGS__ ); \
             break;                                                        \
         }                                                                 \
         break;                                                            \
                                                                           \
-    case SIM_VALUE::TYPE::BOOL:                                           \
+    case SIM_VALUE::TYPE::BOOLEAN:                                           \
     case SIM_VALUE::TYPE::COMPLEX:                                        \
     case SIM_VALUE::TYPE::STRING:                                         \
-    case SIM_VALUE::TYPE::BOOL_VECTOR:                                    \
-    case SIM_VALUE::TYPE::INT_VECTOR:                                     \
-    case SIM_VALUE::TYPE::FLOAT_VECTOR:                                   \
+    case SIM_VALUE::TYPE::BOOLEAN_VECTOR:                                    \
+    case SIM_VALUE::TYPE::INTEGER_VECTOR:                                     \
+    case SIM_VALUE::TYPE::FLOATING_VECTOR:                                   \
     case SIM_VALUE::TYPE::COMPLEX_VECTOR:                                 \
         wxFAIL_MSG( "Unhandled SIM_VALUE type" );                         \
         break;                                                            \
@@ -80,20 +80,20 @@ namespace SIM_VALUE_PARSER
 
     // TODO: Reorder. NOTATION should be before TYPE.
 
-    template <> struct numberSelector<SIM_VALUE_GRAMMAR::significand<SIM_VALUE::TYPE::INT>>
+    template <> struct numberSelector<SIM_VALUE_GRAMMAR::significand<SIM_VALUE::TYPE::INTEGER>>
         : std::true_type {};
-    template <> struct numberSelector<SIM_VALUE_GRAMMAR::significand<SIM_VALUE::TYPE::FLOAT>>
+    template <> struct numberSelector<SIM_VALUE_GRAMMAR::significand<SIM_VALUE::TYPE::FLOATING>>
         : std::true_type {};
     template <> struct numberSelector<intPart> : std::true_type {};
     template <> struct numberSelector<fracPart> : std::true_type {};
     template <> struct numberSelector<exponent> : std::true_type {};
-    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::INT, NOTATION::SI>>
+    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>>
         : std::true_type {};
-    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::INT, NOTATION::SPICE>>
+    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::INTEGER, NOTATION::SPICE>>
         : std::true_type {};
-    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>>
+    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>>
         : std::true_type {};
-    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::FLOAT, NOTATION::SPICE>>
+    template <> struct numberSelector<metricSuffix<SIM_VALUE::TYPE::FLOATING, NOTATION::SPICE>>
         : std::true_type {};
 
     struct PARSE_RESULT
@@ -109,7 +109,7 @@ namespace SIM_VALUE_PARSER
 
     PARSE_RESULT Parse( const wxString& aString,
                         NOTATION aNotation = NOTATION::SI,
-                        SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE::FLOAT );
+                        SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE::FLOATING );
 
     long MetricSuffixToExponent( std::string aMetricSuffix, NOTATION aNotation = NOTATION::SI );
     wxString ExponentToMetricSuffix( double aExponent, long& aReductionExponent,
@@ -371,14 +371,14 @@ std::unique_ptr<SIM_VALUE> SIM_VALUE::Create( TYPE aType )
 {
     switch( aType )
     {
-    case TYPE::BOOL:           return std::make_unique<SIM_VALUE_INSTANCE<bool>>();
-    case TYPE::INT:            return std::make_unique<SIM_VALUE_INSTANCE<long>>();
-    case TYPE::FLOAT:          return std::make_unique<SIM_VALUE_INSTANCE<double>>();
+    case TYPE::BOOLEAN:           return std::make_unique<SIM_VALUE_INSTANCE<bool>>();
+    case TYPE::INTEGER:            return std::make_unique<SIM_VALUE_INSTANCE<long>>();
+    case TYPE::FLOATING:          return std::make_unique<SIM_VALUE_INSTANCE<double>>();
     case TYPE::COMPLEX:        return std::make_unique<SIM_VALUE_INSTANCE<std::complex<double>>>();
     case TYPE::STRING:         return std::make_unique<SIM_VALUE_INSTANCE<wxString>>();
-    case TYPE::BOOL_VECTOR:    return std::make_unique<SIM_VALUE_INSTANCE<bool>>();
-    case TYPE::INT_VECTOR:     return std::make_unique<SIM_VALUE_INSTANCE<long>>();
-    case TYPE::FLOAT_VECTOR:   return std::make_unique<SIM_VALUE_INSTANCE<double>>();
+    case TYPE::BOOLEAN_VECTOR:    return std::make_unique<SIM_VALUE_INSTANCE<bool>>();
+    case TYPE::INTEGER_VECTOR:     return std::make_unique<SIM_VALUE_INSTANCE<long>>();
+    case TYPE::FLOATING_VECTOR:   return std::make_unique<SIM_VALUE_INSTANCE<double>>();
     case TYPE::COMPLEX_VECTOR: return std::make_unique<SIM_VALUE_INSTANCE<std::complex<double>>>();
     }
     

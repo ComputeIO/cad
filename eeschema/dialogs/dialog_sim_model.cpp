@@ -517,20 +517,20 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
 
     switch( param.info.type )
     {
-    case TYPE::BOOL:
+    case TYPE::BOOLEAN:
         // TODO.
         prop = new wxBoolProperty( paramDescription, param.info.name );
         prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
         break;
 
-    case TYPE::INT:
+    case TYPE::INTEGER:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE::TYPE::INT );
+                                 aParamIndex, SIM_VALUE::TYPE::INTEGER );
         break;
 
-    case TYPE::FLOAT:
+    case TYPE::FLOATING:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE::TYPE::FLOAT );
+                                 aParamIndex, SIM_VALUE::TYPE::FLOATING );
         break;
 
     //case TYPE::COMPLEX:
@@ -558,14 +558,14 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
 
     switch( param.info.type )
     {
-    case TYPE::BOOL:           typeStr = wxString( "Bool"           ); break;
-    case TYPE::INT:            typeStr = wxString( "Int"            ); break;
-    case TYPE::FLOAT:          typeStr = wxString( "Float"          ); break;
+    case TYPE::BOOLEAN:           typeStr = wxString( "Bool"           ); break;
+    case TYPE::INTEGER:            typeStr = wxString( "Int"            ); break;
+    case TYPE::FLOATING:          typeStr = wxString( "Float"          ); break;
     case TYPE::COMPLEX:        typeStr = wxString( "Complex"        ); break;
     case TYPE::STRING:         typeStr = wxString( "String"         ); break;
-    case TYPE::BOOL_VECTOR:    typeStr = wxString( "Bool Vector"    ); break;
-    case TYPE::INT_VECTOR:     typeStr = wxString( "Int Vector"     ); break;
-    case TYPE::FLOAT_VECTOR:   typeStr = wxString( "Float Vector"   ); break;
+    case TYPE::BOOLEAN_VECTOR:    typeStr = wxString( "Bool Vector"    ); break;
+    case TYPE::INTEGER_VECTOR:     typeStr = wxString( "Int Vector"     ); break;
+    case TYPE::FLOATING_VECTOR:   typeStr = wxString( "Float Vector"   ); break;
     case TYPE::COMPLEX_VECTOR: typeStr = wxString( "Complex Vector" ); break;
     }
 

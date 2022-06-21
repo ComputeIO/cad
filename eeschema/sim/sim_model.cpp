@@ -52,9 +52,9 @@ namespace SIM_MODEL_PARSER
     template <typename Rule> struct fieldParamValuePairsSelector : std::false_type {};
 
     template <> struct fieldParamValuePairsSelector<param> : std::true_type {};
-    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::INT, NOTATION::SI>>
+    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>>
         : std::true_type {};
-    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::FLOAT, NOTATION::SI>>
+    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>>
         : std::true_type {};
     template <> struct fieldParamValuePairsSelector<unquotedString> : std::true_type {};
     template <> struct fieldParamValuePairsSelector<quotedString> : std::true_type {};
@@ -1213,11 +1213,11 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
     {
         if( node->is_type<SIM_MODEL_PARSER::param>() )
             paramName = node->string();
-        // TODO: Do something with number<SIM_VALUE::TYPE::INT, ...>.
+        // TODO: Do something with number<SIM_VALUE::TYPE::INTEGER, ...>.
         // It doesn't seem too useful?
-        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::INT,
+        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::INTEGER,
                                                         SIM_MODEL_PARSER::NOTATION::SI>>()
-            || node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOAT,
+            || node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOATING,
                                                       SIM_MODEL_PARSER::NOTATION::SI>>()
             || node->is_type<SIM_MODEL_PARSER::unquotedString>() )
         {
@@ -1384,7 +1384,7 @@ TYPE SIM_MODEL::readTypeFromSpiceStrings( const wxString& aTypeString,
                                           const wxString& aVersion,
                                           bool aSkipDefaultLevel )
 {
-    std::unique_ptr<SIM_VALUE> readLevel = SIM_VALUE::Create( SIM_VALUE::TYPE::INT, aLevel );
+    std::unique_ptr<SIM_VALUE> readLevel = SIM_VALUE::Create( SIM_VALUE::TYPE::INTEGER, aLevel );
 
     for( TYPE type : TYPE_ITERATOR() )
     {
