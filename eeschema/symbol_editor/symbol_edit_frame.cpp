@@ -928,16 +928,6 @@ void SYMBOL_EDIT_FRAME::DdAddLibrary( wxString aLibFile )
 }
 
 
-void SYMBOL_EDIT_FRAME::DoWithAcceptedFiles()
-{
-    for( auto file : m_AcceptedFiles )
-    {
-        wxString fn = file.GetFullPath();
-        m_toolManager->RunAction( *m_acceptedExts.at( file.GetExt() ), true, &fn );
-    }
-}
-
-
 LIB_ID SYMBOL_EDIT_FRAME::GetTreeLIBID( int* aUnit ) const
 {
     return m_treePane->GetLibTree()->GetSelectedLibId( aUnit );

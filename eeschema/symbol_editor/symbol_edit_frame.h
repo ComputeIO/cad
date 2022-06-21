@@ -392,7 +392,6 @@ private:
 
     void saveSymbolAs();
 
-    void DoWithAcceptedFiles() override;
 
     /**
      * Save the changes to the current library.
