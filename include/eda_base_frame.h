@@ -671,7 +671,7 @@ protected:
      * Called in OnDropFiles and should be populated with
      * the action to execute in inherited classes.
      */
-    virtual void DoWithAcceptedFiles(){};
+    virtual void            DoWithAcceptedFiles();
     std::vector<wxFileName> m_AcceptedFiles;
 
     DECLARE_EVENT_TABLE()
