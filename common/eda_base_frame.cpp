@@ -1089,6 +1089,7 @@ void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
 #undef CREATE_PANEL
 }
 
+
 void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
 {
     wxString* files = aEvent.GetFiles();
