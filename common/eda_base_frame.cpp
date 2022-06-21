@@ -1089,6 +1089,7 @@ void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
 #undef CREATE_PANEL
 }
 
+
 void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
 {
     wxString* files = aEvent.GetFiles();
@@ -1107,6 +1108,17 @@ void EDA_BASE_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
     DoWithAcceptedFiles();
     m_AcceptedFiles.clear();
 }
+
+
+void EDA_BASE_FRAME::DoWithAcceptedFiles()
+{
+    for( auto file : m_AcceptedFiles )
+    {
+        wxString fn = file.GetFullPath();
+        m_toolManager->RunAction( *m_acceptedExts.at( file.GetExt() ), true, &fn );
+    }
+}
+
 
 bool EDA_BASE_FRAME::IsWritable( const wxFileName& aFileName, bool aVerbose )
 {
