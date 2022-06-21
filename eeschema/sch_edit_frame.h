@@ -918,6 +918,8 @@ private:
 
     const wxString& getAutoSaveFileName() const;
 
+    void DoOnAcceptedFile( const wxFileName& aFileName ) override;
+
 private:
     // The schematic editor control class should be able to access some internal
     // functions of the editor frame.
