@@ -1942,13 +1942,3 @@ void PCB_EDIT_FRAME::onSize( wxSizeEvent& aEvent )
     // Skip() is called in the base class.
     EDA_DRAW_FRAME::OnSize( aEvent );
 }
-
-
-void PCB_EDIT_FRAME::DoWithAcceptedFiles()
-{
-    for( auto fileName : m_AcceptedFiles )
-    {
-        wxString file = fileName.GetFullPath();
-        GetToolManager()->RunAction( PCB_ACTIONS::ddAppendBoard, true, &file );
-    }
-}

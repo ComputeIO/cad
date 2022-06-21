@@ -1250,13 +1250,3 @@ void FOOTPRINT_EDIT_FRAME::OnSaveFootprintAsPng( wxCommandEvent& event )
     wxYield();
     SaveCanvasImageToFile( this, dlg.GetPath() );
 }
-
-
-void FOOTPRINT_EDIT_FRAME::DoWithAcceptedFiles()
-{
-    for( wxFileName fn : m_AcceptedFiles )
-    {
-        wxString file = fn.GetFullPath();
-        GetToolManager()->RunAction( *m_acceptedExts.at( fn.GetExt() ), true, &file );
-    }
-}
