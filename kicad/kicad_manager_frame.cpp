@@ -31,7 +31,9 @@
 #include <build_version.h>
 #include <dialogs/panel_kicad_launcher.h>
 #include <eda_base_frame.h>
+#include <executable_names.h>
 #include <filehistory.h>
+#include <gestfich.h>
 #include <kiplatform/app.h>
 #include <kicad_build_version.h>
 #include <kiway.h>
@@ -202,6 +204,18 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     // Do not let the messages window have initial focus
     m_leftWin->SetFocus();
 
+    // Init for dropping files
+    m_acceptedExts.emplace( ProjectFileExtension, &KICAD_MANAGER_ACTIONS::loadProject );
+    m_acceptedExts.emplace( LegacyProjectFileExtension, &KICAD_MANAGER_ACTIONS::loadProject );
+    m_acceptedExts.emplace( GerberFileExtensionWildCard.Mid( 1 ),
+                            &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
+    m_acceptedExts.emplace( DrillFileExtension, &KICAD_MANAGER_ACTIONS::viewDroppedGerbers );
+    // Eagle files import
+    m_acceptedExts.emplace( "sch", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_acceptedExts.emplace( "brd", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    // Cadstar files import
+    m_acceptedExts.emplace( "csa", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
+    m_acceptedExts.emplace( "cpa", &KICAD_MANAGER_ACTIONS::importNonKicadProj );
     DragAcceptFiles( true );
 
     // Ensure the window is on top
@@ -211,6 +225,7 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
 
 KICAD_MANAGER_FRAME::~KICAD_MANAGER_FRAME()
 {
+
     // Shutdown all running tools
     if( m_toolManager )
         m_toolManager->ShutdownAllTools();
@@ -361,19 +376,55 @@ void KICAD_MANAGER_FRAME::OnSize( wxSizeEvent& event )
     event.Skip();
 }
 
-void KICAD_MANAGER_FRAME::OnDropFiles( wxDropFilesEvent& aEvent )
+
+void KICAD_MANAGER_FRAME::DoWithAcceptedFiles()
 {
-    wxString* files = aEvent.GetFiles();
-    for( int nb = 0; nb < aEvent.GetNumberOfFiles(); nb++ )
+    // All fileNames are now in m_AcceptedFiles vector.
+    // Check if contains a project file name and load project.
+    // If not, open files in dedicated app.
+    for( auto fileName : m_AcceptedFiles )
     {
-        const wxFileName fn = wxFileName( files[nb] );
-        if( fn.GetExt() == "kicad_pro" || fn.GetExt() == "pro" )
+        if( IsExtensionAccepted( fileName.GetExt(),
+                                 { ProjectFileExtension, LegacyProjectFileExtension } ) )
         {
-            LoadProject( fn );
-            break;
+            wxString fn = fileName.GetFullPath();
+            m_toolManager->RunAction( *m_acceptedExts.at( fileName.GetExt() ), true, &fn );
+            return;
+        }
+    }
+
+    // Then stock gerber files in gerberFiles and run action for other files.
+    wxString gerberFiles;
+    for( auto fileName : m_AcceptedFiles )
+    {
+        if( IsExtensionAccepted( fileName.GetExt(),
+                                 { GerberFileExtensionWildCard.Mid( 1 ), DrillFileExtension } ) )
+        {
+            gerberFiles += wxT('\"');
+            gerberFiles += fileName.GetFullPath() + wxT('\"');
+            gerberFiles = gerberFiles.Pad( 1 );
+        }
+        else
+        {
+            wxString fn = fileName.GetFullPath();
+            m_toolManager->RunAction( *m_acceptedExts.at( fileName.GetExt() ), true, &fn );
+        }
+    }
+
+    // Execute Gerbviewer
+    if( !gerberFiles.IsEmpty() )
+    {
+        wxString fullEditorName = FindKicadFile( GERBVIEW_EXE );
+
+        if( wxFileExists( fullEditorName ) )
+        {
+            wxString command = fullEditorName + " " + gerberFiles;
+            m_toolManager->RunAction( *m_acceptedExts.at( GerberFileExtensionWildCard.Mid( 1 ) ),
+                                      true, &command );
         }
     }
 }
+
 
 bool KICAD_MANAGER_FRAME::canCloseWindow( wxCloseEvent& aEvent )
 {
