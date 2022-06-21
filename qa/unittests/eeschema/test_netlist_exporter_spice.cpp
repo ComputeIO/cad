@@ -56,7 +56,7 @@ public:
         
     }
 
-    wxString GetSchematicPath( const wxString& aBaseName ) override
+    wxFileName GetSchematicPath( const wxString& aBaseName ) override
     {
         wxFileName fn = KI_TEST::GetEeschemaTestDataDir();
         fn.AppendDir( "spice_netlists" );
@@ -64,7 +64,7 @@ public:
         fn.SetName( aBaseName );
         fn.SetExt( KiCadSchematicFileExtension );
 
-        return fn.GetFullPath();
+        return fn;
     }
 
     wxString GetNetlistPath( bool aTest = false ) override
