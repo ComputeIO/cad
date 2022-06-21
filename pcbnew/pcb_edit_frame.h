@@ -816,8 +816,6 @@ private:
     wxTimer      m_redrawNetnamesTimer;
 
     wxTimer*     m_eventCounterTimer;
-
-    void DoWithAcceptedFiles() override;
 };
 
 #endif  // __PCB_EDIT_FRAME_H__
