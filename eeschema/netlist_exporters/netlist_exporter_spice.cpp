@@ -98,36 +98,36 @@ bool NETLIST_EXPORTER_SPICE::ReadSchematicAndLibraries( unsigned aNetlistOptions
     m_nets.clear();
     m_items.clear();
 
-    for( unsigned int sheetIndex = 0; sheetIndex < m_schematic->GetSheets().size(); ++sheetIndex )
+    for( unsigned sheetIndex = 0; sheetIndex < m_schematic->GetSheets().size(); ++sheetIndex )
     {
         SCH_SHEET_PATH sheet = m_schematic->GetSheets().at( sheetIndex );
 
-        for( SCH_ITEM* schItem : sheet.LastScreen()->Items().OfType( SCH_SYMBOL_T ) )
+        for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_SYMBOL_T ) )
         {
-            SCH_SYMBOL* symbol = findNextSymbol( schItem, &sheet );
+            SCH_SYMBOL* symbol = findNextSymbol( item, &sheet );
 
             if( !symbol )
                 continue;
 
             CreatePinList( symbol, &sheet, true );
 
-            SPICE_ITEM item;
+            SPICE_ITEM spiceItem;
 
-            item.model = SIM_MODEL::Create(
+            spiceItem.model = SIM_MODEL::Create(
                     static_cast<int>( m_sortedSymbolPinList.size() ), symbol->GetFields() );
 
-            if( !readRefName( sheet, *symbol, item, refNames ) )
+            if( !readRefName( sheet, *symbol, spiceItem, refNames ) )
                 return false;
 
-            readLibraryField( *symbol, item );
-            readNameField( *symbol, item );
-            readEnabledField( *symbol, item );
+            readLibraryField( *symbol, spiceItem );
+            readNameField( *symbol, spiceItem );
+            readEnabledField( *symbol, spiceItem );
 
-            readPins( *symbol, item, notConnectedCounter );
+            readPins( *symbol, spiceItem, notConnectedCounter );
 
             // TODO: transmission line handling?
 
-            m_items.push_back( std::move( item ) );
+            m_items.push_back( std::move( spiceItem ) );
         }
     }
 
@@ -233,7 +233,9 @@ void NETLIST_EXPORTER_SPICE::readLibraryField( SCH_SYMBOL& aSymbol, SPICE_ITEM& 
         unsigned libParamIndex = static_cast<unsigned>( SIM_MODEL_SPICE::SPICE_PARAM::LIB );
         path = model->GetParam( libParamIndex ).value->ToString();
 
-        m_rawIncludes.push_back( path );
+        if( path != "" )
+            m_rawIncludes.push_back( path );
+
         return;
     }
     

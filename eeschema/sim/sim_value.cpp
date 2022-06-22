@@ -393,6 +393,12 @@ void SIM_VALUE::operator=( const wxString& aString )
 }
 
 
+bool SIM_VALUE::operator!=( const SIM_VALUE& aOther ) const
+{
+    return !( *this == aOther );
+}
+
+
 template <typename T>
 SIM_VALUE_INSTANCE<T>::SIM_VALUE_INSTANCE( const T& aValue ) : m_value( aValue )
 {
@@ -638,7 +644,7 @@ wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToSimpleString() const
 template <typename T>
 bool SIM_VALUE_INSTANCE<T>::operator==( const SIM_VALUE& aOther ) const
 {
-    const SIM_VALUE_INSTANCE* otherValue = dynamic_cast<const SIM_VALUE_INSTANCE*>( &aOther );
+    const SIM_VALUE_INSTANCE<T>* otherValue = dynamic_cast<const SIM_VALUE_INSTANCE<T>*>( &aOther );
 
     if( otherValue )
         return m_value == otherValue->m_value;

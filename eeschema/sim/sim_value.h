@@ -70,6 +70,7 @@ public:
 
     void operator=( const wxString& aString );
     virtual bool operator==( const SIM_VALUE& aOther ) const = 0;
+    bool operator!=( const SIM_VALUE& aOther ) const;
 
     virtual bool FromString( const wxString& aString, NOTATION aNotation = NOTATION::SI ) = 0;
     virtual wxString ToString( NOTATION aNotation = NOTATION::SI ) const = 0;

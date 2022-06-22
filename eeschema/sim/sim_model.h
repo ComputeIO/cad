@@ -53,10 +53,10 @@ namespace SIM_MODEL_GRAMMAR
                                      eof> {};
 
     struct unquotedString : plus<not_at<space>, any> {};
+    struct quotedStringContent : star<not_at<one<'"'>>, any> {}; // TODO: Allow escaping '"'.
     struct quotedString : seq<one<'"'>,
-                              until<seq<not_at<string<'\\',
-                                                      '"'>>,
-                                        one<'"'>>>> {};
+                              quotedStringContent,
+                              one<'"'>> {};
 
     struct param : plus<alnum> {};
 
@@ -64,8 +64,8 @@ namespace SIM_MODEL_GRAMMAR
                                      opt<sep>,
                                      one<'='>,
                                      opt<sep>,
-                                     sor<number<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>,
-                                         number<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>,
+                                     sor<//number<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>,
+                                         //number<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>,
                                          quotedString,
                                          unquotedString>> {};
 

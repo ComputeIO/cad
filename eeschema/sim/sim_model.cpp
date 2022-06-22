@@ -52,12 +52,8 @@ namespace SIM_MODEL_PARSER
     template <typename Rule> struct fieldParamValuePairsSelector : std::false_type {};
 
     template <> struct fieldParamValuePairsSelector<param> : std::true_type {};
-    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>>
-        : std::true_type {};
-    template <> struct fieldParamValuePairsSelector<number<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>>
-        : std::true_type {};
+    template <> struct fieldParamValuePairsSelector<quotedStringContent> : std::true_type {};
     template <> struct fieldParamValuePairsSelector<unquotedString> : std::true_type {};
-    template <> struct fieldParamValuePairsSelector<quotedString> : std::true_type {};
 
 
     template <typename Rule> struct pinSequenceSelector : std::false_type {};
@@ -1215,10 +1211,7 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
             paramName = node->string();
         // TODO: Do something with number<SIM_VALUE::TYPE::INTEGER, ...>.
         // It doesn't seem too useful?
-        else if( node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::INTEGER,
-                                                        SIM_MODEL_PARSER::NOTATION::SI>>()
-            || node->is_type<SIM_MODEL_PARSER::number<SIM_VALUE::TYPE::FLOATING,
-                                                      SIM_MODEL_PARSER::NOTATION::SI>>()
+        else if( node->is_type<SIM_MODEL_PARSER::quotedStringContent>() 
             || node->is_type<SIM_MODEL_PARSER::unquotedString>() )
         {
             wxASSERT( paramName != "" );
