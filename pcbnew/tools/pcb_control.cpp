@@ -1380,6 +1380,6 @@ void PCB_CONTROL::setTransitions()
     Go( &PCB_CONTROL::UpdateMessagePanel,   EVENTS::SelectedItemsModified );
 
     // Add library by dropping file
-    Go( &PCB_CONTROL::DdAddLibrary,         PCB_ACTIONS::ddAddLibrary.MakeEvent() );
+    Go( &PCB_CONTROL::DdAddLibrary,         ACTIONS::ddAddLibrary.MakeEvent() );
     Go( &PCB_CONTROL::DdImportFootprint,    PCB_ACTIONS::ddImportFootprint.MakeEvent() );
 }

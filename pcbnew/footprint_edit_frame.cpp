@@ -245,7 +245,7 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     // The selection filter doesn't need to grow in the vertical direction when docked
     m_auimgr.GetPane( "SelectionFilter" ).dock_proportion = 0;
 
-    m_acceptedExts.emplace( KiCadFootprintLibPathExtension, &PCB_ACTIONS::ddAddLibrary );
+    m_acceptedExts.emplace( KiCadFootprintLibPathExtension, &ACTIONS::ddAddLibrary );
     m_acceptedExts.emplace( KiCadFootprintFileExtension, &PCB_ACTIONS::ddImportFootprint );
     DragAcceptFiles( true );
 
