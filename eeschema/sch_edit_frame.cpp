@@ -243,7 +243,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     KIPLATFORM::APP::SetShutdownBlockReason( this, _( "New schematic file is unsaved" ) );
 
     // Init for dropping files
-    m_dropFilesExt.emplace( "kicad_sch", nullptr );
+    m_acceptedExts.emplace( "kicad_sch", &EE_ACTIONS::ddAppendFile );
     DragAcceptFiles( true );
 
     // Ensure the window is on top
