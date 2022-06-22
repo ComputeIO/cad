@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2018 CERN
- * Copyright (C) 2019-2021 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2019-2022 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Jon Evans <jon@craftyjon.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -26,11 +26,12 @@
 #include <schematic_settings.h>
 #include <sch_sheet_path.h>
 #include <sch_edit_frame.h>
-
+#include "string_utils.h"
 
 SCH_PIN::SCH_PIN( LIB_PIN* aLibPin, SCH_SYMBOL* aParentSymbol ) :
     SCH_ITEM( aParentSymbol, SCH_PIN_T )
 {
+    m_layer = LAYER_PIN;
     m_alt = wxEmptyString;
     m_number = aLibPin->GetNumber();
     m_libPin = aLibPin;
@@ -46,6 +47,7 @@ SCH_PIN::SCH_PIN( LIB_PIN* aLibPin, SCH_SYMBOL* aParentSymbol ) :
 SCH_PIN::SCH_PIN( SCH_SYMBOL* aParentSymbol, const wxString& aNumber, const wxString& aAlt ) :
     SCH_ITEM( aParentSymbol, SCH_PIN_T )
 {
+    m_layer = LAYER_PIN;
     m_alt = aAlt;
     m_number = aNumber;
     m_libPin = nullptr;
@@ -56,6 +58,7 @@ SCH_PIN::SCH_PIN( SCH_SYMBOL* aParentSymbol, const wxString& aNumber, const wxSt
 SCH_PIN::SCH_PIN( const SCH_PIN& aPin ) :
         SCH_ITEM( aPin )
 {
+    m_layer = aPin.m_layer;
     m_alt = aPin.m_alt;
     m_number = aPin.m_number;
     m_libPin = aPin.m_libPin;
@@ -193,13 +196,6 @@ void SCH_PIN::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITE
 
     aList.emplace_back( _( "Type" ), _( "Pin" ) );
 
-    if( m_libPin->GetUnit() == 0 )
-        msg = _( "All" );
-    else
-        msg.Printf( wxT( "%d" ), m_libPin->GetUnit() );
-
-    aList.emplace_back( _( "Unit" ), msg );
-
     if( m_libPin->GetConvert() == LIB_ITEM::LIB_CONVERT::BASE )
         msg = _( "no" );
     else if( m_libPin->GetConvert() == LIB_ITEM::LIB_CONVERT::DEMORGAN )
@@ -286,13 +282,13 @@ wxString SCH_PIN::GetDefaultNetName( const SCH_SHEET_PATH& aPath, bool aForceNoC
         // Pin names might not be unique between different units so we must have the
         // unit token in the reference designator
         name << GetParentSymbol()->GetRef( &aPath, true );
-        name << "-" << m_libPin->GetShownName() << ")";
+        name << "-" << EscapeString( m_libPin->GetShownName(), CTX_NETNAME ) << ")";
     }
     else
     {
-        // Pin number are unique, so we skip the unit token
+        // Pin numbers are unique, so we skip the unit token
         name << GetParentSymbol()->GetRef( &aPath, false );
-        name << "-Pad" << m_libPin->GetShownNumber() << ")";
+        name << "-Pad" << EscapeString( m_libPin->GetShownNumber(), CTX_NETNAME ) << ")";
     }
 
     if( annotated )

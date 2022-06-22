@@ -94,7 +94,6 @@ private:
 
     std::unique_ptr<DRC_RTREE> m_tesselatedTree;
     std::unique_ptr<DRC_RTREE> m_itemTree;
-    std::vector<ZONE*>         m_copperZones;
 
     std::map< std::tuple<BOARD_ITEM*, BOARD_ITEM*, PCB_LAYER_ID>, int> m_checkedPairs;
 
@@ -121,9 +120,6 @@ void DRC_TEST_PROVIDER_SOLDER_MASK::addItemToRTrees( BOARD_ITEM* item )
                                                           SHAPE_POLY_SET::PM_FAST );
             }
         }
-
-        if( zone->IsOnCopperLayer() && !zone->GetIsRuleArea() )
-            m_copperZones.push_back( zone );
     }
     else if( item->Type() == PCB_PAD_T )
     {
@@ -188,10 +184,6 @@ void DRC_TEST_PROVIDER_SOLDER_MASK::buildRTrees()
 
     m_tesselatedTree = std::make_unique<DRC_RTREE>();
     m_itemTree = std::make_unique<DRC_RTREE>();
-    m_copperZones.clear();
-
-    // Unlikely to be correct, but better than starting at 0
-    m_copperZones.reserve( m_board->Zones().size() );
 
     forEachGeometryItem( s_allBasicItems, layers,
             [&]( BOARD_ITEM* item ) -> bool
@@ -279,13 +271,14 @@ void DRC_TEST_PROVIDER_SOLDER_MASK::testSilkToMaskClearance()
                                                           clearance, &actual, &pos ) )
                     {
                         auto drce = DRC_ITEM::Create( DRCE_SILK_CLEARANCE );
+                        wxString msg;
 
-                        m_msg.Printf( _( "(%s clearance %s; actual %s)" ),
+                        msg.Printf( _( "(%s clearance %s; actual %s)" ),
                                       constraint.GetName(),
                                       MessageTextFromValue( userUnits(), clearance ),
                                       MessageTextFromValue( userUnits(), actual ) );
 
-                        drce->SetErrorMessage( drce->GetErrorText() + wxS( " " ) + m_msg );
+                        drce->SetErrorMessage( drce->GetErrorText() + wxS( " " ) + msg );
                         drce->SetItems( item );
                         drce->SetViolatingRule( constraint.GetParentRule() );
 
@@ -494,7 +487,7 @@ void DRC_TEST_PROVIDER_SOLDER_MASK::testMaskItemAgainstZones( BOARD_ITEM* aItem,
                                                               PCB_LAYER_ID aMaskLayer,
                                                               PCB_LAYER_ID aTargetLayer )
 {
-    for( ZONE* zone : m_copperZones )
+    for( ZONE* zone : m_board->m_DRCCopperZones )
     {
         if( !zone->GetLayerSet().test( aTargetLayer ) )
             continue;
@@ -511,7 +504,7 @@ void DRC_TEST_PROVIDER_SOLDER_MASK::testMaskItemAgainstZones( BOARD_ITEM* aItem,
 
         if( aItem->GetBoundingBox().Intersects( zone->GetCachedBoundingBox() ) )
         {
-            DRC_RTREE* zoneTree = m_board->m_CopperZoneRTrees[ zone ].get();
+            DRC_RTREE* zoneTree = m_board->m_CopperZoneRTreeCache[ zone ].get();
             int        clearance = m_board->GetDesignSettings().m_SolderMaskToCopperClearance;
             int        actual;
             VECTOR2I   pos;
@@ -658,7 +651,7 @@ bool DRC_TEST_PROVIDER_SOLDER_MASK::Run()
             m_largestClearance = std::max( m_largestClearance, pad->GetSolderMaskExpansion() );
     }
 
-    // Order is important here: m_webWidth must be added in before m_largestClearance is maxed
+    // Order is important here: m_webWidth must be added in before m_largestCourtyardClearance is maxed
     // with the various SILK_CLEARANCE_CONSTRAINTS.
     m_largestClearance += m_largestClearance + m_webWidth;
 

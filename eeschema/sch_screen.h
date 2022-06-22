@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2009 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -72,9 +72,6 @@ enum SCH_LINE_TEST_T
     EXCLUDE_END_POINTS_T
 };
 
-
-/// Max number of sheets in a hierarchy project
-#define NB_MAX_SHEET    500
 
 struct PICKED_SYMBOL
 {
@@ -301,7 +298,7 @@ public:
      *
      * @param aSegment The segment to test for connections.
      */
-    std::set<SCH_ITEM*> MarkConnections( SCH_LINE* aSegment );
+    std::set<SCH_ITEM*> MarkConnections( SCH_LINE* aSegment, bool aSecondPass );
 
     /**
      * Clear the state flags of all the items in the screen.

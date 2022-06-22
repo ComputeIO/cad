@@ -132,10 +132,7 @@ public:
     int DrawSheetOnClipboard( const TOOL_EVENT& aEvent );
 
     int ShowBusManager( const TOOL_EVENT& aEvent );
-
-    int EnterSheet( const TOOL_EVENT& aEvent );
-    int LeaveSheet( const TOOL_EVENT& aEvent );
-    int NavigateHierarchy( const TOOL_EVENT& aEvent );
+    int ShowHierarchy( const TOOL_EVENT& aEvent );
 
     int ToggleHiddenPins( const TOOL_EVENT& aEvent );
     int ToggleHiddenFields( const TOOL_EVENT& aEvent );
@@ -144,7 +141,8 @@ public:
     int ToggleERCExclusions( const TOOL_EVENT& aEvent );
     int ChangeLineMode( const TOOL_EVENT& aEvent );
     int NextLineMode( const TOOL_EVENT& aEvent );
-    int SwitchSegmentPosture( const TOOL_EVENT& aEvent );
+    int ToggleAnnotateAuto( const TOOL_EVENT& aEvent );
+    int ToggleAnnotateRecursive( const TOOL_EVENT& aEvent );
     int TogglePythonConsole( const TOOL_EVENT& aEvent );
 
     int RepairSchematic( const TOOL_EVENT& aEvent );

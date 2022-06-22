@@ -513,7 +513,9 @@ wxString LIB_SYMBOL::SubReference( int aUnit, bool aAddSeparator )
         subRef << wxChar( m_subpartIdSeparator );
 
     if( m_subpartFirstId >= '0' && m_subpartFirstId <= '9' )
+    {
         subRef << aUnit;
+    }
     else
     {
         // use letters as notation. To allow more than 26 units, the sub ref
@@ -930,13 +932,16 @@ const EDA_RECT LIB_SYMBOL::GetBodyBoundingBox( int aUnit, int aConvert, bool aIn
         {
             const LIB_PIN& pin = static_cast<const LIB_PIN&>( item );
 
-            // Note: the roots of the pins are always included for symbols that don't have a
-            // well-defined body.
+            if( pin.IsVisible() )
+            {
+                // Note: the roots of the pins are always included for symbols that don't have
+                // a well-defined body.
 
-            if( aIncludePins && pin.IsVisible() )
-                bbox.Merge( pin.GetBoundingBox( false, true ) );
-            else
-                bbox.Merge( pin.GetPinRoot() );
+                if( aIncludePins )
+                    bbox.Merge( pin.GetBoundingBox( false, true ) );
+                else
+                    bbox.Merge( pin.GetPinRoot() );
+            }
         }
         else
         {
@@ -1151,6 +1156,27 @@ bool LIB_SYMBOL::HasConversion() const
     }
 
     return false;
+}
+
+int LIB_SYMBOL::GetMaxPinNumber() const
+{
+    int                        maxPinNumber = 0;
+    LIB_SYMBOL_SPTR            parent = m_parent.lock();
+    const LIB_ITEMS_CONTAINER& drawItems = parent ? parent->m_drawings : m_drawings;
+
+    for( const LIB_ITEM& item : drawItems[LIB_PIN_T] )
+    {
+        const LIB_PIN* pin = static_cast<const LIB_PIN*>( &item );
+        long           currentPinNumber = 0;
+        bool           isNum = pin->GetNumber().ToLong( &currentPinNumber );
+
+        if( isNum && currentPinNumber > maxPinNumber )
+        {
+            maxPinNumber = currentPinNumber;
+        }
+    }
+
+    return maxPinNumber;
 }
 
 

@@ -674,11 +674,6 @@ TOOL_ACTION PCB_ACTIONS::zoneDuplicate( "pcbnew.EditorControl.zoneDuplicate",
         _( "Duplicate Zone onto Layer..." ), _( "Duplicate zone outline onto a different layer" ),
         BITMAPS::zone_duplicate );
 
-TOOL_ACTION PCB_ACTIONS::placeTarget( "pcbnew.EditorControl.placeTarget",
-        AS_GLOBAL, 0, "",
-        _( "Add Layer Alignment Target" ), _( "Add a layer alignment target" ),
-        BITMAPS::add_pcb_target, AF_ACTIVATE );
-
 TOOL_ACTION PCB_ACTIONS::placeFootprint( "pcbnew.EditorControl.placeFootprint",
         AS_GLOBAL,
         'A', LEGACY_HK_NAME( "Add Footprint" ),
@@ -697,12 +692,12 @@ TOOL_ACTION PCB_ACTIONS::toggleLock( "pcbnew.EditorControl.toggleLock",
         _( "Toggle Lock" ), _( "Lock or unlock selected items" ),
         BITMAPS::lock_unlock );
 
-TOOL_ACTION PCB_ACTIONS::toggle45( "pcbnew.EditorControl.toggle45",
+TOOL_ACTION PCB_ACTIONS::toggleHV45Mode( "pcbnew.EditorControl.toggle45",
         AS_GLOBAL,
         MD_SHIFT + ' ', "",
         _( "Constrain to H, V, 45" ),
         _( "Limit actions to horizontal, vertical, or 45 degrees from the starting point" ),
-        BITMAPS::INVALID_BITMAP );
+        BITMAPS::hv45mode );
 
 TOOL_ACTION PCB_ACTIONS::lock( "pcbnew.EditorControl.lock",
         AS_GLOBAL, 0, "",

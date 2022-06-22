@@ -1196,18 +1196,20 @@ void PCB_PARSER::parsePAGE_INFO()
     {
         double width = parseDouble( "width" );      // width in mm
 
+        const double Mils2mm = 0.0254;
+
         // Perform some controls to avoid crashes if the size is edited by hands
-        if( width < 100.0 )
-            width = 100.0;
-        else if( width > 1200.0 )
-            width = 1200.0;
+        if( width < MIN_PAGE_SIZE_MILS*Mils2mm )
+            width = MIN_PAGE_SIZE_MILS*Mils2mm;
+        else if( width > MAX_PAGE_SIZE_PCBNEW_MILS*Mils2mm )
+            width = MAX_PAGE_SIZE_PCBNEW_MILS*Mils2mm;
 
         double height = parseDouble( "height" );    // height in mm
 
-        if( height < 100.0 )
-            height = 100.0;
-        else if( height > 1200.0 )
-            height = 1200.0;
+        if( height < MIN_PAGE_SIZE_MILS*Mils2mm )
+            height = MIN_PAGE_SIZE_MILS*Mils2mm;
+        else if( height > MAX_PAGE_SIZE_PCBNEW_MILS*Mils2mm )
+            height = MAX_PAGE_SIZE_PCBNEW_MILS*Mils2mm;
 
         pageInfo.SetWidthMils( Mm2mils( width ) );
         pageInfo.SetHeightMils( Mm2mils( height ) );
@@ -1904,8 +1906,8 @@ void PCB_PARSER::parseSetup()
             NeedRIGHT();
             break;
 
-        case T_zone_45_only:
-            zoneSettings.m_Zone_45_Only = parseBool();
+        case T_zone_45_only:    // legacy setting
+            /* zoneSettings.m_Zone_45_Only = */ parseBool();
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
@@ -3319,8 +3321,10 @@ PCB_DIMENSION_BASE* PCB_PARSER::parseDIMENSION( BOARD_ITEM* aParent, bool aInFP 
 
                 case T_text_frame:
                 {
-                    wxCHECK_MSG( dim->Type() == PCB_DIM_LEADER_T, nullptr,
+                    KICAD_T expected_type = aInFP ? PCB_FP_DIM_LEADER_T : PCB_DIM_LEADER_T;
+                    wxCHECK_MSG( dim->Type() == expected_type, nullptr,
                                  wxT( "Invalid text_frame token" ) );
+
                     PCB_DIM_LEADER* leader = static_cast<PCB_DIM_LEADER*>( dim.get() );
 
                     int textFrame = parseInt( "dim text frame mode" );

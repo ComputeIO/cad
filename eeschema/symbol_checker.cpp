@@ -35,6 +35,7 @@ static bool sort_by_pin_number( const LIB_PIN* ref, const LIB_PIN* tst );
  * Pins duplicated
  * Conflict with pins at same location
  * Incorrect Power Symbols
+ * illegal reference prefix (cannot ends by a digit or a '?')
  * @param aSymbol is the library symbol to check
  * @param aMessages is a room to store error messages
  * @param aGridForPins (in IU) is the grid to test pin positions ( >= 25 mils )
@@ -46,6 +47,24 @@ void CheckLibSymbol( LIB_SYMBOL* aSymbol, std::vector<wxString>& aMessages,
 {
     if( !aSymbol )
         return;
+
+    wxString msg;
+
+    // Test reference prefix validity:
+    // if the symbol is saved in a library, the prefix should not ends by a digit or a '?'
+    // but it is acceptable if the symbol is saved to aschematic
+    wxString reference_base = aSymbol->GetReferenceField().GetText();
+    wxString illegal_end( wxT( "0123456789?" ) );
+    wxUniChar last_char = reference_base.Last();
+
+    if( illegal_end.Find( last_char ) != wxNOT_FOUND )
+    {
+        msg.Printf( _( "<b>Warning: reference prefix</b><br>prefix ending by '%s' can create"
+                       " issues if saved in a symbol library" ),
+                    illegal_end );
+        msg += wxT( "<br><br>" );
+        aMessages.push_back( msg );
+    }
 
     LIB_PINS pinList;
     aSymbol->GetPins( pinList );
@@ -63,15 +82,21 @@ void CheckLibSymbol( LIB_SYMBOL* aSymbol, std::vector<wxString>& aMessages,
     const int min_grid_size = Mils2iu( 25 );
     const int clamped_grid_size = ( aGridForPins < min_grid_size ) ? min_grid_size : aGridForPins;
 
-    wxString              msg;
-
     for( unsigned ii = 1; ii < pinList.size(); ii++ )
     {
         LIB_PIN* pin  = pinList[ii - 1];
         LIB_PIN* next = pinList[ii];
 
-        if( pin->GetNumber() != next->GetNumber() || pin->GetConvert() != next->GetConvert() )
+        if( pin->GetNumber() != next->GetNumber() )
             continue;
+
+        // Pins are not duplicated only if they are in different convert bodies
+        // (but GetConvert() == 0 means commun to all convert bodies)
+        if( pin->GetConvert() != 0 && next->GetConvert() != 0 )
+        {
+            if( pin->GetConvert() != next->GetConvert() )
+                continue;
+        }
 
         wxString pinName;
         wxString nextName;

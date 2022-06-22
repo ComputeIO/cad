@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2007-2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.TXT for contributors.
+ * Copyright (C) 1992-2022 KiCad Developers, see AUTHORS.TXT for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -229,6 +229,7 @@ enum class BITMAPS : unsigned int
     hole_to_copper_clearance,
     hole_to_hole_clearance,
     hotkeys,
+    hv45mode,
     icon_3d,
     icon_bitmap2component,
     icon_bitmap2component_16,
@@ -306,6 +307,7 @@ enum class BITMAPS : unsigned int
     library_archive_as,
     library_browser,
     library_table,
+    lines_any,
     lines90,
     list_nets,
     list_nets_16,
@@ -314,6 +316,9 @@ enum class BITMAPS : unsigned int
     load_module_board,
     lock_unlock,
     locked,
+    marker_exclude,
+    marker_next,
+    marker_previous,
     measurement,
     microstrip,
     microstrip_zodd_zeven,
@@ -383,6 +388,7 @@ enum class BITMAPS : unsigned int
     pagelayout_special_view_mode,
     part_properties,
     paste,
+    paste_special,
     path,
     pcb_target,
     pcbnew,

@@ -218,7 +218,7 @@ bool DRAWING_TOOL::Init()
     ctxMenu.AddItem( PCB_ACTIONS::closeOutline,    canCloseOutline, 200 );
     ctxMenu.AddItem( PCB_ACTIONS::deleteLastPoint, canUndoPoint, 200 );
 
-    ctxMenu.AddCheckItem( PCB_ACTIONS::toggle45, SELECTION_CONDITIONS::ShowAlways, 250 );
+    ctxMenu.AddCheckItem( PCB_ACTIONS::toggleHV45Mode, SELECTION_CONDITIONS::ShowAlways, 250 );
     ctxMenu.AddSeparator( 500 );
 
     std::shared_ptr<VIA_SIZE_MENU> viaSizeMenu = std::make_shared<VIA_SIZE_MENU>();
@@ -268,8 +268,8 @@ void DRAWING_TOOL::updateStatusBar() const
         else
             constrained = mgr.GetAppSettings<FOOTPRINT_EDITOR_SETTINGS>()->m_Use45Limit;
 
-        m_frame->DisplayConstraintsMsg(
-                constrained ? _( "Constrain to H, V, 45" ) : wxString( "" ) );
+        m_frame->DisplayConstraintsMsg( constrained ? _( "Constrain to H, V, 45" )
+                                                    : wxT( "" ) );
     }
 }
 
@@ -300,7 +300,7 @@ int DRAWING_TOOL::DrawLine( const TOOL_EVENT& aEvent )
     m_frame->PushTool( tool );
     Activate();
 
-    while( drawSegment( tool, &line, startingPoint ) )
+    while( drawShape( tool, &line, startingPoint ) )
     {
         if( line )
         {
@@ -365,7 +365,7 @@ int DRAWING_TOOL::DrawRectangle( const TOOL_EVENT& aEvent )
     rect = makeNew();
     rect->SetShape( SHAPE_T::RECT );
     rect->SetFilled( false );
-    rect->SetFlags(IS_NEW );
+    rect->SetFlags( IS_NEW );
 
     if( aEvent.HasPosition() )
         startingPoint = getViewControls()->GetCursorPosition( !aEvent.DisableGridSnapping() );
@@ -374,7 +374,7 @@ int DRAWING_TOOL::DrawRectangle( const TOOL_EVENT& aEvent )
     m_frame->PushTool( tool );
     Activate();
 
-    while( drawSegment( tool, &rect, startingPoint ) )
+    while( drawShape( tool, &rect, startingPoint ) )
     {
         if( rect )
         {
@@ -398,7 +398,7 @@ int DRAWING_TOOL::DrawRectangle( const TOOL_EVENT& aEvent )
         rect = makeNew();
         rect->SetShape( SHAPE_T::RECT );
         rect->SetFilled( false );
-        rect->SetFlags(IS_NEW );
+        rect->SetFlags( IS_NEW );
         startingPoint = NULLOPT;
     }
 
@@ -433,7 +433,7 @@ int DRAWING_TOOL::DrawCircle( const TOOL_EVENT& aEvent )
     m_frame->PushTool( tool );
     Activate();
 
-    while( drawSegment( tool, &circle, startingPoint ) )
+    while( drawShape( tool, &circle, startingPoint ) )
     {
         if( circle )
         {
@@ -521,7 +521,7 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
     COMMON_SETTINGS*             common_settings = Pgm().GetCommonSettings();
     BOARD_ITEM*                  text = nullptr;
     bool                         ignorePrimePosition = false;
-    const BOARD_DESIGN_SETTINGS& dsnSettings = m_frame->GetDesignSettings();
+    const BOARD_DESIGN_SETTINGS& bds = m_frame->GetDesignSettings();
     BOARD_COMMIT                 commit( m_frame );
     SCOPED_DRAW_MODE             scopedDrawMode( m_mode, MODE::TEXT );
 
@@ -616,10 +616,18 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
                 m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
 
                 m_controls->ForceCursorPosition( true, m_controls->GetCursorPosition() );
-                PCB_LAYER_ID layer = m_frame->GetActiveLayer();
 
-                wxSize textSize = dsnSettings.GetTextSize( layer );
-                int    thickness = dsnSettings.GetTextThickness( layer );
+                PCB_LAYER_ID    layer = m_frame->GetActiveLayer();
+                TEXT_ATTRIBUTES textAttrs;
+
+                textAttrs.m_Size = bds.GetTextSize( layer );
+                textAttrs.m_StrokeWidth = bds.GetTextThickness( layer );
+                InferBold( &textAttrs );
+                textAttrs.m_Italic = bds.GetTextItalic( layer );
+                textAttrs.m_KeepUpright = bds.GetTextUpright( layer );
+                textAttrs.m_Mirrored = IsBackLayer( layer );
+                textAttrs.m_Halign = GR_TEXT_H_ALIGN_LEFT;
+                textAttrs.m_Valign = GR_TEXT_V_ALIGN_BOTTOM;
 
                 // Init the new item attributes
                 if( m_isFootprintEditor )
@@ -627,12 +635,7 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
                     FP_TEXT* fpText = new FP_TEXT( (FOOTPRINT*) m_frame->GetModel() );
 
                     fpText->SetLayer( layer );
-                    fpText->SetTextSize( textSize );
-                    fpText->SetTextThickness( thickness );
-                    fpText->SetBold( abs( thickness - GetPenSizeForBold( textSize ) ) <
-                                     abs( thickness - GetPenSizeForNormal( textSize ) ) );
-                    fpText->SetItalic( dsnSettings.GetTextItalic( layer ) );
-                    fpText->SetKeepUpright( dsnSettings.GetTextUpright( layer ) );
+                    fpText->SetAttributes( textAttrs );
                     fpText->SetTextPos( cursorPos );
 
                     text = fpText;
@@ -663,16 +666,7 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
                     pcbText->SetFlags( IS_NEW );
 
                     pcbText->SetLayer( layer );
-
-                    // Set the mirrored option for layers on the BACK side of the board
-                    if( IsBackLayer( layer ) )
-                        pcbText->SetMirrored( true );
-
-                    pcbText->SetTextSize( textSize );
-                    pcbText->SetTextThickness( thickness );
-                    pcbText->SetBold( abs( thickness - GetPenSizeForBold( textSize ) ) <
-                                      abs( thickness - GetPenSizeForNormal( textSize ) ) );
-                    pcbText->SetItalic( dsnSettings.GetTextItalic( layer ) );
+                    pcbText->SetAttributes( textAttrs );
                     pcbText->SetTextPos( cursorPos );
 
                     RunMainStack( [&]()
@@ -932,7 +926,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
         {
             m_menu.ShowContextMenu( selection() );
         }
-        else if( evt->IsClick( BUT_LEFT ) )
+        else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) )
         {
             switch( step )
             {
@@ -1055,11 +1049,15 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
                 break;
             }
 
-            if( ++step == FINISHED )
+            if( ++step >= FINISHED )
             {
                 step = SET_ORIGIN;
                 m_controls->SetAutoPan( false );
                 m_controls->CaptureCursor( false );
+            }
+            else if( evt->IsDblClick( BUT_LEFT ) )
+            {
+                m_toolMgr->RunAction( PCB_ACTIONS::cursorClick, false );
             }
         }
         else if( evt->IsMotion() )
@@ -1478,7 +1476,7 @@ int DRAWING_TOOL::SetAnchor( const TOOL_EVENT& aEvent )
 }
 
 
-int DRAWING_TOOL::ToggleLine45degMode( const TOOL_EVENT& toolEvent )
+int DRAWING_TOOL::ToggleHV45Mode( const TOOL_EVENT& toolEvent )
 {
 #define TOGGLE( a ) a = !a
 
@@ -1511,17 +1509,18 @@ static void updateSegmentFromGeometryMgr( const KIGFX::PREVIEW::TWO_POINT_GEOMET
 }
 
 
-bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
-                                OPT<VECTOR2D> aStartingPoint )
+bool DRAWING_TOOL::drawShape( const std::string& aTool, PCB_SHAPE** aGraphic,
+                              OPT<VECTOR2D> aStartingPoint )
 {
     SHAPE_T shape = ( *aGraphic )->GetShape();
 
     // Only three shapes are currently supported
     wxASSERT( shape == SHAPE_T::SEGMENT || shape == SHAPE_T::CIRCLE || shape == SHAPE_T::RECT );
 
-    EDA_UNITS        userUnits = m_frame->GetUserUnits();
-    PCB_GRID_HELPER  grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
-    PCB_SHAPE*&      graphic = *aGraphic;
+    const BOARD_DESIGN_SETTINGS& bds = m_frame->GetDesignSettings();
+    EDA_UNITS                    userUnits = m_frame->GetUserUnits();
+    PCB_GRID_HELPER              grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
+    PCB_SHAPE*&                  graphic = *aGraphic;
 
     if( m_layer != m_frame->GetActiveLayer() )
     {
@@ -1529,6 +1528,15 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
         m_stroke.SetWidth( getSegmentWidth( m_layer ) );
         m_stroke.SetPlotStyle( PLOT_DASH_TYPE::DEFAULT );
         m_stroke.SetColor( COLOR4D::UNSPECIFIED );
+
+        m_textAttrs.m_Size = bds.GetTextSize( m_layer );
+        m_textAttrs.m_StrokeWidth = bds.GetTextThickness( m_layer );
+        InferBold( &m_textAttrs );
+        m_textAttrs.m_Italic = bds.GetTextItalic( m_layer );
+        m_textAttrs.m_KeepUpright = bds.GetTextUpright( m_layer );
+        m_textAttrs.m_Mirrored = IsBackLayer( m_layer );
+        m_textAttrs.m_Halign = GR_TEXT_H_ALIGN_LEFT;
+        m_textAttrs.m_Valign = GR_TEXT_V_ALIGN_TOP;
     }
 
     // geometric construction manager
@@ -1633,6 +1641,15 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
                 m_stroke.SetWidth( getSegmentWidth( m_layer ) );
                 m_stroke.SetPlotStyle( PLOT_DASH_TYPE::DEFAULT );
                 m_stroke.SetColor( COLOR4D::UNSPECIFIED );
+
+                m_textAttrs.m_Size = bds.GetTextSize( m_layer );
+                m_textAttrs.m_StrokeWidth = bds.GetTextThickness( m_layer );
+                InferBold( &m_textAttrs );
+                m_textAttrs.m_Italic = bds.GetTextItalic( m_layer );
+                m_textAttrs.m_KeepUpright = bds.GetTextUpright( m_layer );
+                m_textAttrs.m_Mirrored = IsBackLayer( m_layer );
+                m_textAttrs.m_Halign = GR_TEXT_H_ALIGN_LEFT;
+                m_textAttrs.m_Valign = GR_TEXT_V_ALIGN_TOP;
             }
 
             if( graphic )
@@ -1645,6 +1662,12 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
 
                 graphic->SetLayer( m_layer );
                 graphic->SetStroke( m_stroke );
+
+                if( FP_TEXTBOX* fp_textbox = dynamic_cast<FP_TEXTBOX*>( graphic ) )
+                    fp_textbox->SetAttributes( m_textAttrs );
+                else if( PCB_TEXTBOX* pcb_textbox = dynamic_cast<PCB_TEXTBOX*>( graphic ) )
+                    pcb_textbox->SetAttributes( m_textAttrs );
+
                 m_view->Update( &preview );
                 frame()->SetMsgPanel( graphic );
             }
@@ -1688,6 +1711,12 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
                 graphic->SetFilled( false );
                 graphic->SetStroke( m_stroke );
                 graphic->SetLayer( m_layer );
+
+                if( FP_TEXTBOX* fp_textbox = dynamic_cast<FP_TEXTBOX*>( graphic ) )
+                    fp_textbox->SetAttributes( m_textAttrs );
+                else if( PCB_TEXTBOX* pcb_textbox = dynamic_cast<PCB_TEXTBOX*>( graphic ) )
+                    pcb_textbox->SetAttributes( m_textAttrs );
+
                 grid.SetSkipPoint( cursorPos );
 
                 twoPointManager.SetOrigin( cursorPos );
@@ -2187,7 +2216,6 @@ int DRAWING_TOOL::DrawZone( const TOOL_EVENT& aEvent )
     // the geometry manager which handles the zone geometry, and hands the calculated points
     // over to the zone creator tool
     POLYGON_GEOM_MANAGER polyGeomMgr( zoneTool );
-    bool                 constrainAngle = false;
     bool                 started     = false;
     PCB_GRID_HELPER      grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
     STATUS_TEXT_POPUP    status( m_frame );
@@ -2238,10 +2266,8 @@ int DRAWING_TOOL::DrawZone( const TOOL_EVENT& aEvent )
 
         m_controls->ForceCursorPosition( true, cursorPos );
 
-        if( ( sourceZone && sourceZone->GetHV45() ) || constrainAngle || Is45Limited() )
-            polyGeomMgr.SetLeaderMode( POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 );
-        else
-            polyGeomMgr.SetLeaderMode( POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );
+        polyGeomMgr.SetLeaderMode( Is45Limited() ? POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45
+                                                 : POLYGON_GEOM_MANAGER::LEADER_MODE::DIRECT );
 
         if( evt->IsCancelInteractive() )
         {
@@ -2317,9 +2343,6 @@ int DRAWING_TOOL::DrawZone( const TOOL_EVENT& aEvent )
                 if( !started )
                 {
                     started = true;
-
-                    POLYGON_GEOM_MANAGER::LEADER_MODE leaderMode = polyGeomMgr.GetLeaderMode();
-                    constrainAngle = ( leaderMode == POLYGON_GEOM_MANAGER::LEADER_MODE::DEG45 );
 
                     m_controls->SetAutoPan( true );
                     m_controls->CaptureCursor( true );
@@ -2510,16 +2533,10 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             if( ( aOther->Type() == PCB_ZONE_T || aOther->Type() == PCB_FP_ZONE_T )
                     && static_cast<ZONE*>( aOther )->GetIsRuleArea() )
             {
-                ZONE* zone = static_cast<ZONE*>( aOther );
+                ZONE* ruleArea = static_cast<ZONE*>( aOther );
 
-                if( zone->GetDoNotAllowVias() )
-                    return true;
-
-                constraint = m_drcEngine->EvalRules( DISALLOW_CONSTRAINT, aVia, nullptr,
-                                                     UNDEFINED_LAYER );
-
-                if( constraint.m_DisallowFlags && constraint.GetSeverity() != RPT_SEVERITY_IGNORE )
-                    return true;
+                if( ruleArea->GetDoNotAllowVias() )
+                    return ruleArea->Outline()->Collide( aVia->GetPosition(), aVia->GetWidth() / 2 );
 
                 return false;
             }
@@ -2624,6 +2641,12 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
                 checkedItems.insert( item );
             }
+
+            DRC_CONSTRAINT constraint = m_drcEngine->EvalRules( DISALLOW_CONSTRAINT, aVia, nullptr,
+                                                                UNDEFINED_LAYER );
+
+            if( constraint.m_DisallowFlags && constraint.GetSeverity() != RPT_SEVERITY_IGNORE )
+                return true;
 
             return false;
         }
@@ -2969,5 +2992,5 @@ void DRAWING_TOOL::setTransitions()
     Go( &DRAWING_TOOL::DrawRectangle,         PCB_ACTIONS::drawTextBox.MakeEvent() );
     Go( &DRAWING_TOOL::PlaceImportedGraphics, PCB_ACTIONS::placeImportedGraphics.MakeEvent() );
     Go( &DRAWING_TOOL::SetAnchor,             PCB_ACTIONS::setAnchor.MakeEvent() );
-    Go( &DRAWING_TOOL::ToggleLine45degMode,   PCB_ACTIONS::toggle45.MakeEvent() );
+    Go( &DRAWING_TOOL::ToggleHV45Mode,        PCB_ACTIONS::toggleHV45Mode.MakeEvent() );
 }

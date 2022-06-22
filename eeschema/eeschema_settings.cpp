@@ -88,9 +88,6 @@ EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
     m_params.emplace_back( new PARAM<bool>( "appearance.footprint_preview",
             &m_Appearance.footprint_preview, true ) );
 
-    m_params.emplace_back( new PARAM<bool>( "appearance.navigator_stays_open",
-            &m_Appearance.navigator_stays_open, false ) );
-
     m_params.emplace_back( new PARAM<bool>( "appearance.print_sheet_reference",
             &m_Appearance.print_sheet_reference, true ) );
 
@@ -124,6 +121,21 @@ EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
     m_params.emplace_back(
             new PARAM<bool>( "appearance.show_sheet_filename_case_sensitivity_dialog",
             &m_Appearance.show_sheet_filename_case_sensitivity_dialog, true ) );
+
+    m_params.emplace_back( new PARAM<bool>( "aui.show_schematic_hierarchy",
+            &m_AuiPanels.show_schematic_hierarchy, true ) );
+
+    m_params.emplace_back( new PARAM<int>( "aui.hierarchy_panel_docked_width",
+            &m_AuiPanels.hierarchy_panel_docked_width, -1 ) );
+
+    m_params.emplace_back( new PARAM<int>( "aui.hierarchy_panel_float_width",
+            &m_AuiPanels.hierarchy_panel_float_width, -1 ) );
+
+    m_params.emplace_back( new PARAM<int>( "aui.hierarchy_panel_float_height",
+            &m_AuiPanels.hierarchy_panel_float_height, -1 ) );
+
+    m_params.emplace_back( new PARAM<bool>( "aui.schematic_hierarchy_float",
+            &m_AuiPanels.schematic_hierarchy_float, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "autoplace_fields.enable",
             &m_AutoplaceFields.enable, true ) );
@@ -202,6 +214,12 @@ EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
 
     m_params.emplace_back( new PARAM<bool>( "selection.select_pin_selects_symbol",
             &m_Selection.select_pin_selects_symbol, true ) );
+
+    m_params.emplace_back( new PARAM<bool>( "annotation.automatic",
+            &m_AnnotatePanel.automatic, true ) );
+
+    m_params.emplace_back( new PARAM<bool>( "annotation.recursive",
+            &m_AnnotatePanel.recursive, true ) );
 
     m_params.emplace_back( new PARAM<int>( "annotation.method",
             &m_AnnotatePanel.method, 0, 0, 2 ) );

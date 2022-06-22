@@ -90,7 +90,14 @@ private:
     bool                       m_lastTextBold;
     bool                       m_lastTextItalic;
     bool                       m_lastNetClassDirectiveItalic;
+    EDA_ANGLE                  m_lastTextAngle;
+    GR_TEXT_H_ALIGN_T          m_lastTextJust;
     FILL_T                     m_lastFillStyle;
+    FILL_T                     m_lastTextboxFillStyle;
+    COLOR4D                    m_lastFillColor;
+    COLOR4D                    m_lastTextboxFillColor;
+    STROKE_PARAMS              m_lastStroke;
+    STROKE_PARAMS              m_lastTextboxStroke;
     wxString                   m_mruPath;
 
     ///< Re-entrancy guards

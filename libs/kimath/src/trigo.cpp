@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2014-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2014-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -314,17 +314,23 @@ const VECTOR2D CalcArcCenter( const VECTOR2D& aStart, const VECTOR2D& aEnd,
     if( angle > ANGLE_180 )
     {
         std::swap( start, end );
-        angle = ANGLE_360 - angle;
+        angle = ANGLE_180 - angle;
     }
 
     double chord = ( start - end ).EuclideanNorm();
     double r = ( chord / 2.0 ) / ( angle / 2.0 ).Sin();
+    double d_squared = r * r - chord*  chord / 4.0;
+    double d = 0.0;
 
-    VECTOR2D vec = end - start;
-    vec = vec.Resize( r );
-    RotatePoint( vec, -( ANGLE_180 - angle ) / 2 );
+    if( d_squared > 0.0 )
+        d = sqrt( d_squared );
 
-    return VECTOR2D( start + vec );
+    VECTOR2D vec2 = (end - start).Resize( d );
+    VECTOR2D vc = (end - start).Resize( chord / 2 );
+
+    RotatePoint( vec2, -ANGLE_90 );
+
+    return VECTOR2D( start + vc + vec2 );
 }
 
 

@@ -320,6 +320,7 @@ set( COMMON_SRCS
     layer_id.cpp
     lib_id.cpp
     lib_table_base.cpp
+    lib_table_grid_tricks.cpp
     lib_tree_model.cpp
     lib_tree_model_adapter.cpp
     locale_io.cpp
@@ -511,6 +512,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/connectivity/from_to_cache.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/convert_shape_list_to_polygon.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/drc/drc_engine.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/drc/drc_cache_generator.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/drc/drc_item.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/drc/drc_rule.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/drc/drc_rule_condition.cpp

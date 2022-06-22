@@ -57,6 +57,7 @@
 #include <tools/ee_selection.h>
 #include <tools/ee_selection_tool.h>
 #include <tools/sch_editor_control.h>
+#include <tools/sch_navigate_tool.h>
 #include <drawing_sheet/ds_proxy_undo_item.h>
 #include <dialog_update_from_pcb.h>
 #include <eda_list_dialog.h>
@@ -313,13 +314,6 @@ int SCH_EDITOR_CONTROL::FindAndReplace( const TOOL_EVENT& aEvent )
 {
     m_frame->ShowFindReplaceDialog( aEvent.IsAction( &ACTIONS::findAndReplace ) );
     return UpdateFind( aEvent );
-}
-
-
-int SCH_EDITOR_CONTROL::NavigateHierarchy( const TOOL_EVENT& aEvent )
-{
-    m_frame->UpdateHierarchyNavigator( true );
-    return 0;
 }
 
 
@@ -1638,6 +1632,9 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     SCH_SHEET          tempSheet;
     SCH_SCREEN*        tempScreen = new SCH_SCREEN( &m_frame->Schematic() );
 
+    EESCHEMA_SETTINGS::PANEL_ANNOTATE& annotate = m_frame->eeconfig()->m_AnnotatePanel;
+    int annotateStartNum = m_frame->Schematic().Settings().m_AnnotateStartNum;
+
     // Screen object on heap is owned by the sheet.
     tempSheet.SetScreen( tempScreen );
 
@@ -1656,7 +1653,8 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     // Save loaded screen instances to m_clipboardSheetInstances
     setClipboardInstances( tempScreen );
 
-    PASTE_MODE pasteMode = PASTE_MODE::REMOVE_ANNOTATIONS;
+    PASTE_MODE pasteMode =
+            annotate.automatic ? PASTE_MODE::RESPECT_OPTIONS : PASTE_MODE::REMOVE_ANNOTATIONS;
 
     if( aEvent.IsAction( &ACTIONS::pasteSpecial ) )
     {
@@ -1869,7 +1867,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
             for( SCH_SHEET_PATH& instance : pasteInstances )
             {
                 SCH_SHEET_PATH sheetPath = updatePastedSheet( instance, clipPath, sheet,
-                                                              forceKeepAnnotations,
+                                                              ( forceKeepAnnotations && annotate.recursive ),
                                                               &pastedSheets[instance],
                                                               &pastedSymbols[instance] );
 
@@ -1955,6 +1953,16 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     m_toolMgr->RunAction( EE_ACTIONS::addItemsToSel, true, &loadedItems );
 
     EE_SELECTION& selection = selTool->GetSelection();
+
+    // We should have a new selection of only the pasted symbols and sheets
+    if( pasteMode == PASTE_MODE::RESPECT_OPTIONS )
+    {
+        // Annotate the symbols on the current sheet with the selection
+        m_frame->AnnotateSymbols( ANNOTATE_SELECTION, (ANNOTATE_ORDER_T) annotate.sort_order,
+                                  (ANNOTATE_ALGO_T) annotate.method, annotate.recursive,
+                                  annotateStartNum, true, false, NULL_REPORTER::GetInstance(),
+                                  true );
+    }
 
     if( !selection.Empty() )
     {
@@ -2098,43 +2106,9 @@ int SCH_EDITOR_CONTROL::ShowBusManager( const TOOL_EVENT& aEvent )
 }
 
 
-int SCH_EDITOR_CONTROL::EnterSheet( const TOOL_EVENT& aEvent )
+int SCH_EDITOR_CONTROL::ShowHierarchy( const TOOL_EVENT& aEvent )
 {
-    EE_SELECTION_TOOL*  selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
-    const EE_SELECTION& selection = selTool->RequestSelection( EE_COLLECTOR::SheetsOnly );
-
-    if( selection.GetSize() == 1 )
-    {
-        SCH_SHEET* sheet = (SCH_SHEET*) selection.Front();
-
-        m_toolMgr->RunAction( ACTIONS::cancelInteractive, true );
-        m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
-
-        // Store the current zoom level into the current screen before switching
-        m_frame->GetScreen()->m_LastZoomLevel = m_frame->GetCanvas()->GetView()->GetScale();
-
-        m_frame->GetCurrentSheet().push_back( sheet );
-        m_frame->DisplayCurrentSheet();
-    }
-
-    return 0;
-}
-
-
-int SCH_EDITOR_CONTROL::LeaveSheet( const TOOL_EVENT& aEvent )
-{
-    if( m_frame->GetCurrentSheet().Last() != &m_frame->Schematic().Root() )
-    {
-        m_toolMgr->RunAction( ACTIONS::cancelInteractive, true );
-        m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
-
-        // Store the current zoom level into the current screen before switching
-        m_frame->GetScreen()->m_LastZoomLevel = m_frame->GetCanvas()->GetView()->GetScale();
-
-        m_frame->GetCurrentSheet().pop_back();
-        m_frame->DisplayCurrentSheet();
-    }
-
+    getEditFrame<SCH_EDIT_FRAME>()->ToggleSchematicHierarchy();
     return 0;
 }
 
@@ -2216,17 +2190,18 @@ int SCH_EDITOR_CONTROL::NextLineMode( const TOOL_EVENT& aEvent )
 }
 
 
-int SCH_EDITOR_CONTROL::SwitchSegmentPosture( const TOOL_EVENT& aEvent )
+int SCH_EDITOR_CONTROL::ToggleAnnotateAuto( const TOOL_EVENT& aEvent )
 {
-    // The 45/135 angle modes are the only ones with fixed postures, so
-    // only toggle them if we're already in one of these modes
-    if (m_frame->eeconfig()->m_Drawing.line_mode == LINE_MODE::LINE_MODE_45)
-        m_frame->eeconfig()->m_Drawing.line_mode = LINE_MODE::LINE_MODE_135;
-    else if (m_frame->eeconfig()->m_Drawing.line_mode == LINE_MODE::LINE_MODE_135)
-        m_frame->eeconfig()->m_Drawing.line_mode = LINE_MODE::LINE_MODE_45;
+    EESCHEMA_SETTINGS* cfg = m_frame->eeconfig();
+    cfg->m_AnnotatePanel.automatic = !cfg->m_AnnotatePanel.automatic;
+    return 0;
+}
 
-    m_toolMgr->RunAction( ACTIONS::refreshPreview );
 
+int SCH_EDITOR_CONTROL::ToggleAnnotateRecursive( const TOOL_EVENT& aEvent )
+{
+    EESCHEMA_SETTINGS* cfg = m_frame->eeconfig();
+    cfg->m_AnnotatePanel.recursive = !cfg->m_AnnotatePanel.recursive;
     return 0;
 }
 
@@ -2394,10 +2369,7 @@ void SCH_EDITOR_CONTROL::setTransitions()
     Go( &SCH_EDITOR_CONTROL::DrawSheetOnClipboard,  EE_ACTIONS::drawSheetOnClipboard.MakeEvent() );
 
     Go( &SCH_EDITOR_CONTROL::ShowBusManager,        EE_ACTIONS::showBusManager.MakeEvent() );
-
-    Go( &SCH_EDITOR_CONTROL::EnterSheet,            EE_ACTIONS::enterSheet.MakeEvent() );
-    Go( &SCH_EDITOR_CONTROL::LeaveSheet,            EE_ACTIONS::leaveSheet.MakeEvent() );
-    Go( &SCH_EDITOR_CONTROL::NavigateHierarchy,     EE_ACTIONS::navigateHierarchy.MakeEvent() );
+    Go( &SCH_EDITOR_CONTROL::ShowHierarchy,         EE_ACTIONS::showHierarchy.MakeEvent() );
 
     Go( &SCH_EDITOR_CONTROL::ToggleHiddenPins,      EE_ACTIONS::toggleHiddenPins.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ToggleHiddenFields,    EE_ACTIONS::toggleHiddenFields.MakeEvent() );
@@ -2407,9 +2379,8 @@ void SCH_EDITOR_CONTROL::setTransitions()
     Go( &SCH_EDITOR_CONTROL::ChangeLineMode,        EE_ACTIONS::lineModeFree.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ChangeLineMode,        EE_ACTIONS::lineMode90.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ChangeLineMode,        EE_ACTIONS::lineMode45.MakeEvent() );
-    Go( &SCH_EDITOR_CONTROL::ChangeLineMode,        EE_ACTIONS::lineMode135.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::NextLineMode,          EE_ACTIONS::lineModeNext.MakeEvent() );
-    Go( &SCH_EDITOR_CONTROL::SwitchSegmentPosture,  EE_ACTIONS::switchSegmentPosture.MakeEvent() );
+    Go( &SCH_EDITOR_CONTROL::ToggleAnnotateAuto,    EE_ACTIONS::toggleAnnotateAuto.MakeEvent() );
 
     Go( &SCH_EDITOR_CONTROL::TogglePythonConsole,   EE_ACTIONS::showPythonConsole.MakeEvent() );
 

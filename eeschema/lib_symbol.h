@@ -169,6 +169,11 @@ public:
 
     wxString GetSearchText() override;
 
+    wxString GetFootprint() override
+    {
+        return GetFootprintField().GetText();
+    }
+
     /**
      * For symbols derived from other symbols, IsRoot() indicates no derivation.
      */
@@ -452,6 +457,12 @@ public:
      * @return True if symbol has more than one conversion.
      */
     bool HasConversion() const;
+
+    /**
+     * @return the highest pin number of the symbol's pins.
+     * If none of the pins has pin number assigned it returns 0.
+     */
+    int GetMaxPinNumber() const;
 
     /**
      * Clears the status flag all draw objects in this symbol.

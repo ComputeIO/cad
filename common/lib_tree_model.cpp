@@ -105,9 +105,6 @@ int LIB_TREE_NODE::Compare( LIB_TREE_NODE const& aNode1, LIB_TREE_NODE const& aN
     if( aNode1.m_Type != aNode2.m_Type )
         return 0;
 
-    if( aNode1.m_Score != aNode2.m_Score )
-        return aNode1.m_Score - aNode2.m_Score;
-
     if( aNode1.m_Parent != aNode2.m_Parent )
         return 0;
 
@@ -164,6 +161,7 @@ LIB_TREE_NODE_LIB_ID::LIB_TREE_NODE_LIB_ID( LIB_TREE_NODE* aParent, LIB_TREE_ITE
 
     m_Name = aItem->GetName();
     m_Desc = aItem->GetDescription();
+    m_Footprint = aItem->GetFootprint();
 
     m_MatchName = aItem->GetName();
     m_SearchText = aItem->GetSearchText();
@@ -296,7 +294,7 @@ void LIB_TREE_NODE_LIB::UpdateScore( EDA_COMBINED_MATCHER& aMatcher, const wxStr
 
     if( m_Children.size() )
     {
-    for( std::unique_ptr<LIB_TREE_NODE>& child: m_Children )
+        for( std::unique_ptr<LIB_TREE_NODE>& child: m_Children )
         {
             child->UpdateScore( aMatcher, aLib );
             m_Score = std::max( m_Score, child->m_Score );

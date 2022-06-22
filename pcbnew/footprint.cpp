@@ -1621,8 +1621,17 @@ void FOOTPRINT::Flip( const VECTOR2I& aCentre, bool aFlipLeftRight )
             static_cast<FP_TEXTBOX*>( item )->Flip( m_pos, false );
             break;
 
+        case PCB_FP_DIM_ALIGNED_T:
+        case PCB_FP_DIM_ORTHOGONAL_T:
+        case PCB_FP_DIM_RADIAL_T:
+        case PCB_FP_DIM_CENTER_T:
+        case PCB_FP_DIM_LEADER_T:
+            static_cast<PCB_DIMENSION_BASE*>( item )->Flip( m_pos, false );
+            break;
+
         default:
-            wxMessageBox( wxT( "FOOTPRINT::Flip() error: Unknown Draw Type" ) );
+            wxMessageBox( wxString::Format( wxT( "FOOTPRINT::Flip() error: Unknown Draw Type %d" ),
+                          (int)item->Type() ) );
             break;
         }
     }
@@ -1785,6 +1794,12 @@ void FOOTPRINT::SetOrientation( const EDA_ANGLE& aNewAngle )
 
     for( ZONE* zone : m_fp_zones )
         zone->Rotate( GetPosition(), angleChange );
+
+    for( BOARD_ITEM* item : m_drawings )
+    {
+        if( PCB_DIMENSION_BASE* dimension = dynamic_cast<PCB_DIMENSION_BASE*>( item ) )
+            dimension->Rotate( GetPosition(), angleChange );
+    }
 
     // Update of the reference and value.
     m_reference->SetDrawCoord();
@@ -2343,13 +2358,17 @@ void FOOTPRINT::CheckOverlappingPads( const std::function<void( const PAD*, cons
             {
                 checkedPairs[ { a, b } ] = 1;
 
-                VECTOR2I pos;
-                SHAPE*   padShape = pad->GetEffectiveShape().get();
-                SHAPE*   otherShape = other->GetEffectiveShape().get();
-
-                if( padShape->Collide( otherShape, 0, nullptr, &pos ) )
+                if( pad->GetBoundingBox().Intersects( other->GetBoundingBox() ) )
                 {
-                    (aErrorHandler)( pad, other, pos );
+
+                    VECTOR2I pos;
+                    SHAPE*   padShape = pad->GetEffectiveShape().get();
+                    SHAPE*   otherShape = other->GetEffectiveShape().get();
+
+                    if( padShape->Collide( otherShape, 0, nullptr, &pos ) )
+                    {
+                        (aErrorHandler)( pad, other, pos );
+                    }
                 }
             }
         }
@@ -2635,10 +2654,15 @@ static struct FOOTPRINT_DESC
         propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Solderpaste Margin Override" ),
                     &FOOTPRINT::SetLocalSolderPasteMargin, &FOOTPRINT::GetLocalSolderPasteMargin,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<FOOTPRINT,
-                             double>( _HKI( "Solderpaste Margin Ratio Override" ),
-                                      &FOOTPRINT::SetLocalSolderPasteMarginRatio,
-                                      &FOOTPRINT::GetLocalSolderPasteMarginRatio ) );
-        // TODO zone connection, FPID?
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, double>( _HKI( "Solderpaste Margin Ratio Override" ),
+                    &FOOTPRINT::SetLocalSolderPasteMarginRatio,
+                    &FOOTPRINT::GetLocalSolderPasteMarginRatio ) );
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, wxString>( _HKI( "Library ID" ),
+                    &FOOTPRINT::SetFPIDAsString, &FOOTPRINT::GetFPIDAsString ) );
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, wxString>( _HKI( "Description" ),
+                    &FOOTPRINT::SetDescription, &FOOTPRINT::GetDescription ) );
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, wxString>( _HKI( "Keywords" ),
+                    &FOOTPRINT::SetKeywords, &FOOTPRINT::GetKeywords ) );
+        // TODO zone connection
     }
 } _FOOTPRINT_DESC;

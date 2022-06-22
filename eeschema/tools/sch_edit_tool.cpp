@@ -176,6 +176,8 @@ bool SCH_EDIT_TOOL::Init()
                 return sheet->HasUndefinedPins();
             };
 
+    auto sheetSelection = E_C::Count( 1 ) && E_C::OnlyType( SCH_SHEET_T );
+
     auto anyTextTool =
             [this]( const SELECTION& aSel )
             {
@@ -322,6 +324,8 @@ bool SCH_EDIT_TOOL::Init()
                                        SCH_TEXT_T,
                                        EOT };
 
+    auto toChangeCondition = ( E_C::OnlyTypes( allLabelTypes ) );
+
     static KICAD_T toLabelTypes[] = { SCH_DIRECTIVE_LABEL_T, SCH_GLOBAL_LABEL_T, SCH_HIER_LABEL_T, SCH_TEXT_T, EOT };
     auto toLabelCondition = ( E_C::Count( 1 ) && E_C::OnlyTypes( toLabelTypes ) )
                                 || ( E_C::MoreThan( 1 ) && E_C::OnlyTypes( allLabelTypes ) );
@@ -361,9 +365,16 @@ bool SCH_EDIT_TOOL::Init()
         moveMenu.AddItem( EE_ACTIONS::mirrorH,         orientCondition );
 
         moveMenu.AddItem( EE_ACTIONS::properties,      propertiesCondition );
-        moveMenu.AddItem( EE_ACTIONS::editReference,   E_C::SingleSymbol );
-        moveMenu.AddItem( EE_ACTIONS::editValue,       E_C::SingleSymbol );
-        moveMenu.AddItem( EE_ACTIONS::editFootprint,   E_C::SingleSymbol );
+
+        CONDITIONAL_MENU* editMoveItemSubMenu = new CONDITIONAL_MENU(moveTool);
+        editMoveItemSubMenu->SetTitle( _( "Edit Main Fields" ) );
+        editMoveItemSubMenu->SetIcon( BITMAPS::right );
+        moveMenu.AddMenu( editMoveItemSubMenu, E_C::SingleSymbol );
+
+        editMoveItemSubMenu->AddItem( EE_ACTIONS::editReference,   E_C::SingleSymbol );
+        editMoveItemSubMenu->AddItem( EE_ACTIONS::editValue,       E_C::SingleSymbol );
+        editMoveItemSubMenu->AddItem( EE_ACTIONS::editFootprint,   E_C::SingleSymbol );
+
         moveMenu.AddItem( EE_ACTIONS::toggleDeMorgan,  E_C::SingleDeMorganSymbol );
 
         std::shared_ptr<SYMBOL_UNIT_MENU> symUnitMenu = std::make_shared<SYMBOL_UNIT_MENU>();
@@ -376,9 +387,6 @@ bool SCH_EDIT_TOOL::Init()
         moveMenu.AddItem( ACTIONS::copy,               E_C::IdleSelection );
         moveMenu.AddItem( ACTIONS::doDelete,           E_C::NotEmpty );
         moveMenu.AddItem( ACTIONS::duplicate,          duplicateCondition );
-
-        moveMenu.AddSeparator();
-        moveMenu.AddItem( ACTIONS::selectAll,          hasElements );
     }
 
     //
@@ -386,29 +394,40 @@ bool SCH_EDIT_TOOL::Init()
     //
     CONDITIONAL_MENU& drawMenu = drawingTools->GetToolMenu().GetMenu();
 
+    drawMenu.AddItem( EE_ACTIONS::enterSheet,         sheetSelection && EE_CONDITIONS::Idle, 1 );
+    drawMenu.AddSeparator(                            sheetSelection && EE_CONDITIONS::Idle, 1 );
+
     drawMenu.AddItem( EE_ACTIONS::rotateCCW,        orientCondition, 200 );
     drawMenu.AddItem( EE_ACTIONS::rotateCW,         orientCondition, 200 );
     drawMenu.AddItem( EE_ACTIONS::mirrorV,          orientCondition, 200 );
     drawMenu.AddItem( EE_ACTIONS::mirrorH,          orientCondition, 200 );
 
     drawMenu.AddItem( EE_ACTIONS::properties,       propertiesCondition, 200 );
-    drawMenu.AddItem( EE_ACTIONS::editReference,    E_C::SingleSymbol, 200 );
-    drawMenu.AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
-    drawMenu.AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
-    drawMenu.AddItem( EE_ACTIONS::autoplaceFields,  autoplaceCondition, 200 );
+
+    CONDITIONAL_MENU* editDrawItemSubMenu = new CONDITIONAL_MENU(drawingTools);
+    editDrawItemSubMenu->SetTitle( _( "Edit Main Fields" ) );
+    editDrawItemSubMenu->SetIcon( BITMAPS::right );
+    drawMenu.AddMenu( editDrawItemSubMenu, E_C::SingleSymbol, 200 );
+
+    editDrawItemSubMenu->AddItem( EE_ACTIONS::editReference,    E_C::SingleSymbol, 200 );
+    editDrawItemSubMenu->AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
+    editDrawItemSubMenu->AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
+
     drawMenu.AddItem( EE_ACTIONS::toggleDeMorgan,   E_C::SingleDeMorganSymbol, 200 );
+
+    drawMenu.AddItem( EE_ACTIONS::autoplaceFields,  autoplaceCondition, 200 );
 
     std::shared_ptr<SYMBOL_UNIT_MENU> symUnitMenu2 = std::make_shared<SYMBOL_UNIT_MENU>();
     symUnitMenu2->SetTool( drawingTools );
     drawingTools->GetToolMenu().AddSubMenu( symUnitMenu2 );
     drawMenu.AddMenu( symUnitMenu2.get(), E_C::SingleMultiUnitSymbol, 1 );
 
-    drawMenu.AddItem( EE_ACTIONS::editWithLibEdit,     E_C::SingleSymbolOrPower && E_C::Idle, 200 );
+    drawMenu.AddItem( EE_ACTIONS::editWithLibEdit,  E_C::SingleSymbolOrPower && E_C::Idle, 200 );
 
-    drawMenu.AddItem( EE_ACTIONS::toLabel,             anyTextTool && E_C::Idle, 200 );
-    drawMenu.AddItem( EE_ACTIONS::toHLabel,            anyTextTool && E_C::Idle, 200 );
-    drawMenu.AddItem( EE_ACTIONS::toGLabel,            anyTextTool && E_C::Idle, 200 );
-    drawMenu.AddItem( EE_ACTIONS::toText,              anyTextTool && E_C::Idle, 200 );
+    drawMenu.AddItem( EE_ACTIONS::toLabel,          anyTextTool && E_C::Idle, 200 );
+    drawMenu.AddItem( EE_ACTIONS::toHLabel,         anyTextTool && E_C::Idle, 200 );
+    drawMenu.AddItem( EE_ACTIONS::toGLabel,         anyTextTool && E_C::Idle, 200 );
+    drawMenu.AddItem( EE_ACTIONS::toText,           anyTextTool && E_C::Idle, 200 );
 
     //
     // Add editing actions to the selection tool menu
@@ -421,9 +440,16 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( EE_ACTIONS::mirrorH,          orientCondition, 200 );
 
     selToolMenu.AddItem( EE_ACTIONS::properties,       propertiesCondition, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::editReference,    E_C::SingleSymbol, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
+
+    CONDITIONAL_MENU* editSelItemSubMenu = new CONDITIONAL_MENU(moveTool);
+    editSelItemSubMenu->SetTitle( _( "Edit Main Fields" ) );
+    editSelItemSubMenu->SetIcon( BITMAPS::right );
+    selToolMenu.AddMenu( editSelItemSubMenu, E_C::SingleSymbol, 200 );
+
+    editSelItemSubMenu->AddItem( EE_ACTIONS::editReference,    E_C::SingleSymbol, 200 );
+    editSelItemSubMenu->AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
+    editSelItemSubMenu->AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
+
     selToolMenu.AddItem( EE_ACTIONS::autoplaceFields,  autoplaceCondition, 200 );
     selToolMenu.AddItem( EE_ACTIONS::toggleDeMorgan,   E_C::SingleSymbol, 200 );
 
@@ -436,11 +462,16 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( EE_ACTIONS::changeSymbol,     E_C::SingleSymbolOrPower, 200 );
     selToolMenu.AddItem( EE_ACTIONS::updateSymbol,     E_C::SingleSymbolOrPower, 200 );
 
-    selToolMenu.AddItem( EE_ACTIONS::toLabel,          toLabelCondition, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::toCLabel,         toCLabelCondition, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::toHLabel,         toHLabelCondition, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::toGLabel,         toGLabelCondition, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::toText,           toTextCondition, 200 );
+    CONDITIONAL_MENU* convertToSelSubMenu = new CONDITIONAL_MENU(m_selectionTool);
+    convertToSelSubMenu->SetTitle( _( "Change To" ) );
+    convertToSelSubMenu->SetIcon( BITMAPS::right );
+    selToolMenu.AddMenu( convertToSelSubMenu, toChangeCondition, 200 );
+
+    convertToSelSubMenu->AddItem( EE_ACTIONS::toLabel,  toLabelCondition, 200 );
+    convertToSelSubMenu->AddItem( EE_ACTIONS::toCLabel, toCLabelCondition, 200 );
+    convertToSelSubMenu->AddItem( EE_ACTIONS::toHLabel, toHLabelCondition, 200 );
+    convertToSelSubMenu->AddItem( EE_ACTIONS::toGLabel, toGLabelCondition, 200 );
+    convertToSelSubMenu->AddItem( EE_ACTIONS::toText,   toTextCondition, 200 );
     selToolMenu.AddItem( EE_ACTIONS::cleanupSheetPins, sheetHasUndefinedPins, 250 );
 
     selToolMenu.AddSeparator( 300 );
@@ -751,7 +782,6 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
     if( selection.GetSize() == 0 )
         return 0;
 
-    VECTOR2I  mirrorPoint;
     bool      vertical = ( aEvent.Matches( EE_ACTIONS::mirrorV.MakeEvent() ) );
     SCH_ITEM* item = static_cast<SCH_ITEM*>( selection.Front() );
     bool      connections = false;
@@ -802,18 +832,6 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
             break;
         }
 
-        case SCH_TEXTBOX_T:
-        {
-            SCH_TEXTBOX* textBox = static_cast<SCH_TEXTBOX*>( item );
-
-            if( vertical )
-                textBox->MirrorVertically( mirrorPoint.y );
-            else
-                textBox->MirrorHorizontally( mirrorPoint.x );
-
-            break;
-        }
-
         case SCH_SHEET_PIN_T:
         {
             // mirror within parent sheet
@@ -827,14 +845,6 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
 
             break;
         }
-
-        case SCH_BUS_BUS_ENTRY_T:
-        case SCH_BUS_WIRE_ENTRY_T:
-            if( vertical )
-                item->MirrorVertically( item->GetPosition().y );
-            else
-                item->MirrorHorizontally( item->GetPosition().x );
-            break;
 
         case SCH_FIELD_T:
         {
@@ -851,14 +861,6 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
             break;
         }
 
-        case SCH_SHAPE_T:
-            if( vertical )
-                item->MirrorVertically( item->GetPosition().y );
-            else
-                item->MirrorHorizontally( item->GetPosition().x );
-
-            break;
-
         case SCH_BITMAP_T:
             if( vertical )
                 item->MirrorVertically( item->GetPosition().y );
@@ -870,8 +872,9 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
             break;
 
         case SCH_SHEET_T:
+        {
             // Mirror the sheet on itself. Sheets do not have a anchor point.
-            mirrorPoint = m_frame->GetNearestHalfGridPosition( item->GetBoundingBox().Centre() );
+            VECTOR2I mirrorPoint = m_frame->GetNearestHalfGridPosition( item->GetBoundingBox().Centre() );
 
             if( vertical )
                 item->MirrorVertically( mirrorPoint.y );
@@ -879,9 +882,15 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
                 item->MirrorHorizontally( mirrorPoint.x );
 
             break;
+        }
 
         default:
-            UNIMPLEMENTED_FOR( item->GetClass() );
+            if( vertical )
+                item->MirrorVertically( item->GetPosition().y );
+            else
+                item->MirrorHorizontally( item->GetPosition().x );
+
+            break;
         }
 
         connections = item->IsConnectable();
@@ -889,7 +898,7 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
     }
     else if( selection.GetSize() > 1 )
     {
-        mirrorPoint = m_frame->GetNearestHalfGridPosition( selection.GetCenter() );
+        VECTOR2I mirrorPoint = m_frame->GetNearestHalfGridPosition( selection.GetCenter() );
 
         for( unsigned ii = 0; ii < selection.GetSize(); ii++ )
         {
@@ -993,6 +1002,22 @@ int SCH_EDIT_TOOL::RepeatDrawItem( const TOOL_EVENT& aEvent )
     newItem->SetFlags( IS_NEW );
     m_frame->AddToScreen( newItem, m_frame->GetScreen() );
     m_frame->SaveCopyInUndoList( m_frame->GetScreen(), newItem, UNDO_REDO::NEWITEM, false );
+
+    if( newItem->Type() == SCH_SYMBOL_T )
+    {
+        EESCHEMA_SETTINGS::PANEL_ANNOTATE& annotate = m_frame->eeconfig()->m_AnnotatePanel;
+        SCHEMATIC_SETTINGS&                projSettings = m_frame->Schematic().Settings();
+        int                                annotateStartNum = projSettings.m_AnnotateStartNum;
+
+        if( annotate.automatic )
+        {
+            static_cast<SCH_SYMBOL*>( newItem )->ClearAnnotation( nullptr, false );
+            NULL_REPORTER reporter;
+            m_frame->AnnotateSymbols( ANNOTATE_SELECTION, (ANNOTATE_ORDER_T) annotate.sort_order,
+                                      (ANNOTATE_ALGO_T) annotate.method, annotate.recursive,
+                                      annotateStartNum, false, false, reporter, true );
+        }
+    }
 
     // Symbols need to be handled by the move tool.  The move tool will handle schematic
     // cleanup routines
@@ -1746,6 +1771,15 @@ int SCH_EDIT_TOOL::ChangeTextType( const TOOL_EVENT& aEvent )
             TEXT_SPIN_STYLE orientation = text->GetTextSpinStyle();
             wxString        txt         = UnescapeString( text->GetText() );
 
+            if( text->Type() == SCH_DIRECTIVE_LABEL_T )
+            {
+                // a SCH_DIRECTIVE_LABEL has no text, but it has at least one field
+                // containing the net class name
+                SCH_DIRECTIVE_LABEL* dirlabel =
+                            dynamic_cast<SCH_DIRECTIVE_LABEL*>( selection.GetItem( i ) );
+                txt = UnescapeString( dirlabel->GetFields()[0].GetText() );
+            }
+
             // There can be characters in a SCH_TEXT object that can break labels so we have to
             // fix them here.
             if( text->Type() == SCH_TEXT_T )
@@ -1777,12 +1811,33 @@ int SCH_EDIT_TOOL::ChangeTextType( const TOOL_EVENT& aEvent )
             // in the new text item type.
             //
             newtext->SetFlags( text->GetEditFlags() );
-            newtext->SetShape( text->GetShape() );
+
+            if( newtext->Type() == SCH_DIRECTIVE_LABEL_T )
+            {
+                // a SCH_DIRECTIVE_LABEL has at least one field containing the net class name
+                // build it:
+                SCH_DIRECTIVE_LABEL* new_dirlabel = static_cast<SCH_DIRECTIVE_LABEL*>( newtext );
+                SCH_FIELD name( position, 0, new_dirlabel, wxT( "Netclass" ) );
+                name.SetText( txt );
+                name.SetVisible( true );
+                new_dirlabel->GetFields().push_back( name );
+            }
+            else
+            {
+                // We cannot use a shape from SCH_DIRECTIVE_LABEL_T label
+                // It has no meaning for a H or G label
+                if( text->Type() == SCH_DIRECTIVE_LABEL_T )
+                    newtext->SetShape( LABEL_FLAG_SHAPE::L_UNSPECIFIED );
+                else
+                    newtext->SetShape( text->GetShape() );
+            }
+
             newtext->SetTextSpinStyle( orientation );
             newtext->SetTextSize( text->GetTextSize() );
             newtext->SetTextThickness( text->GetTextThickness() );
             newtext->SetItalic( text->IsItalic() );
             newtext->SetBold( text->IsBold() );
+            newtext->AutoplaceFields( m_frame->GetScreen(), false );
 
             if( selected )
                 m_toolMgr->RunAction( EE_ACTIONS::removeItemFromSel, true, text );
@@ -2002,6 +2057,7 @@ void SCH_EDIT_TOOL::setTransitions()
     Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toLabel.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toHLabel.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toGLabel.MakeEvent() );
+    Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toCLabel.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toText.MakeEvent() );
 
     Go( &SCH_EDIT_TOOL::BreakWire,          EE_ACTIONS::breakWire.MakeEvent() );

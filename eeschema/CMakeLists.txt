@@ -121,6 +121,8 @@ set( EESCHEMA_DLGS
     dialogs/panel_eeschema_color_settings.cpp
     dialogs/panel_eeschema_display_options.cpp
     dialogs/panel_eeschema_display_options_base.cpp
+    dialogs/panel_eeschema_annotation_options.cpp
+    dialogs/panel_eeschema_annotation_options_base.cpp
     dialogs/panel_eeschema_editing_options.cpp
     dialogs/panel_eeschema_editing_options_base.cpp
     dialogs/panel_setup_formatting.cpp
@@ -197,6 +199,7 @@ set( EESCHEMA_SRCS
     pin_numbers.cpp
     pin_type.cpp
     project_rescue.cpp
+    project_sch_specific.cpp
     sch_base_frame.cpp
     sch_bitmap.cpp
     sch_bus_entry.cpp

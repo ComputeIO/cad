@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -84,111 +84,10 @@
 #include <wx/app.h>
 #include <wx/filedlg.h>
 #include <wx/socket.h>
+#include <widgets/wx_aui_utils.h>
 
 #include <gal/graphics_abstraction_layer.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
-
-// non-member so it can be moved easily, and kept REALLY private.
-// Do NOT Clear() in here.
-static void add_search_paths( SEARCH_STACK* aDst, const SEARCH_STACK& aSrc, int aIndex )
-{
-    for( unsigned i=0; i<aSrc.GetCount();  ++i )
-        aDst->AddPaths( aSrc[i], aIndex );
-}
-
-
-SEARCH_STACK* PROJECT::SchSearchS()
-{
-    SEARCH_STACK* ss = (SEARCH_STACK*) GetElem( PROJECT::ELEM_SCH_SEARCH_STACK );
-
-    wxASSERT( !ss || dynamic_cast<SEARCH_STACK*>( GetElem( PROJECT::ELEM_SCH_SEARCH_STACK ) ) );
-
-    if( !ss )
-    {
-        ss = new SEARCH_STACK();
-
-        // Make PROJECT the new SEARCH_STACK owner.
-        SetElem( PROJECT::ELEM_SCH_SEARCH_STACK, ss );
-
-        // to the empty SEARCH_STACK for SchSearchS(), add project dir as first
-        ss->AddPaths( m_project_name.GetPath() );
-
-        // next add the paths found in *.pro, variable "LibDir"
-        wxString        libDir;
-
-        try
-        {
-            SYMBOL_LIBS::LibNamesAndPaths( this, false, &libDir );
-        }
-        catch( const IO_ERROR& )
-        {
-        }
-
-        if( !!libDir )
-        {
-            wxArrayString   paths;
-
-            SEARCH_STACK::Split( &paths, libDir );
-
-            for( unsigned i =0; i<paths.GetCount();  ++i )
-            {
-                wxString path = AbsolutePath( paths[i] );
-
-                ss->AddPaths( path );     // at the end
-            }
-        }
-
-        // append all paths from aSList
-        add_search_paths( ss, Kiface().KifaceSearch(), -1 );
-    }
-
-    return ss;
-}
-
-
-SYMBOL_LIBS* PROJECT::SchLibs()
-{
-    SYMBOL_LIBS* libs = (SYMBOL_LIBS*) GetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS );
-
-    wxASSERT( !libs || libs->Type() == SYMBOL_LIBS_T );
-
-    if( !libs )
-    {
-        libs = new SYMBOL_LIBS();
-
-        // Make PROJECT the new SYMBOL_LIBS owner.
-        SetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS, libs );
-
-        try
-        {
-            libs->LoadAllLibraries( this );
-        }
-        catch( const PARSE_ERROR& pe )
-        {
-            wxString    lib_list = UTF8( pe.inputLine );
-            wxWindow*   parent = Pgm().App().GetTopWindow();
-
-            // parent of this dialog cannot be NULL since that breaks the Kiway() chain.
-            HTML_MESSAGE_BOX dlg( parent, _( "Not Found" ) );
-
-            dlg.MessageSet( _( "The following libraries were not found:" ) );
-
-            dlg.ListSet( lib_list );
-
-            dlg.Layout();
-
-            dlg.ShowModal();
-        }
-        catch( const IO_ERROR& ioe )
-        {
-            wxWindow* parent = Pgm().App().GetTopWindow();
-
-            DisplayError( parent, ioe.What() );
-        }
-    }
-
-    return libs;
-}
 
 
 BEGIN_EVENT_TABLE( SCH_EDIT_FRAME, EDA_DRAW_FRAME )
@@ -223,6 +122,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_schematic = new SCHEMATIC( nullptr );
 
     m_showBorderAndTitleBlock = true;   // true to show sheet references
+    m_showHierarchy = true;
     m_supportsAutoSave = true;
     m_aboutTitle = _( "KiCad Schematic Editor" );
 
@@ -253,6 +153,8 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     ReCreateVToolbar();
     ReCreateOptToolbar();
 
+    m_hierarchy = new HIERARCHY_NAVIG_PANEL( this );
+
     // Initialize common print setup dialog settings.
     m_pageSetupData.GetPrintData().SetPrintMode( wxPRINT_MODE_PRINTER );
     m_pageSetupData.GetPrintData().SetQuality( wxPRINT_QUALITY_MEDIUM );
@@ -265,13 +167,43 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_auimgr.AddPane( m_mainToolBar, EDA_PANE().HToolbar().Name( "MainToolbar" )
                       .Top().Layer( 6 ) );
     m_auimgr.AddPane( m_optionsToolBar, EDA_PANE().VToolbar().Name( "OptToolbar" )
-                      .Left().Layer( 3 ) );
+                      .Left().Layer( 4 ) );
+    m_auimgr.AddPane( m_hierarchy, EDA_PANE().Palette().Name( SchematicHierarchyPaneName() )
+                      .Caption( _("Schematic Hierarchy") )
+                      .Left().Layer( 3 )
+                      .TopDockable( false )
+                      .BottomDockable( false )
+                      .CloseButton( true )
+                      .MinSize(120, -1)
+                      .BestSize(200, -1)
+                      .FloatingSize( 200, 80 )
+                      .Show( false )
+                      );
     m_auimgr.AddPane( m_drawToolBar, EDA_PANE().VToolbar().Name( "ToolsToolbar" )
                       .Right().Layer( 2 ) );
     m_auimgr.AddPane( GetCanvas(), EDA_PANE().Canvas().Name( "DrawFrame" )
                       .Center() );
     m_auimgr.AddPane( m_messagePanel, EDA_PANE().Messages().Name( "MsgPanel" )
                       .Bottom().Layer( 6 ) );
+
+    wxAuiPaneInfo& hierarchy_pane = m_auimgr.GetPane( SchematicHierarchyPaneName() );
+
+    if( eeconfig() )
+    {
+        if( eeconfig()->m_AuiPanels.hierarchy_panel_float_width > 0
+            && eeconfig()->m_AuiPanels.hierarchy_panel_float_height > 0 )
+        {
+            hierarchy_pane.FloatingSize( eeconfig()->m_AuiPanels.hierarchy_panel_float_width,
+                                         eeconfig()->m_AuiPanels.hierarchy_panel_float_height );
+        }
+
+        if( eeconfig()->m_AuiPanels.hierarchy_panel_docked_width > 0 )
+        {
+            hierarchy_pane.BestSize( eeconfig()->m_AuiPanels.hierarchy_panel_docked_width, -1);
+            SetAuiPaneSize( m_auimgr, hierarchy_pane,
+                            eeconfig()->m_AuiPanels.hierarchy_panel_docked_width, -1 );
+        }
+    }
 
     FinishAUIInitialization();
 
@@ -281,6 +213,11 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     LoadProjectSettings();
 
     initScreenZoom();
+
+    m_hierarchy->Connect( wxEVT_SIZE,
+                          wxSizeEventHandler( SCH_EDIT_FRAME::OnResizeHierarchyNavigator ),
+                          NULL, this );
+
 
     // This is used temporarily to fix a client size issue on GTK that causes zoom to fit
     // to calculate the wrong zoom size.  See SCH_EDIT_FRAME::onSize().
@@ -300,6 +237,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     DefaultExecFlags();
 
     UpdateTitle();
+    m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->ResetHistory();
 
     // Default shutdown reason until a file is loaded
     KIPLATFORM::APP::SetShutdownBlockReason( this, _( "New schematic file is unsaved" ) );
@@ -310,11 +248,25 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     // Ensure the window is on top
     Raise();
+
+    // Now every sizes are fixed, set the initial hierarchy_pane floating position
+    // to the left top corner of the canvas
+    wxPoint canvas_pos = GetCanvas()->GetScreenPosition();
+    hierarchy_pane.FloatingPosition( canvas_pos.x + 10, canvas_pos.y + 10 );
+
+    if( eeconfig() && eeconfig()->m_AuiPanels.schematic_hierarchy_float )
+        hierarchy_pane.Float();
+
+    hierarchy_pane.Show( m_showHierarchy );
 }
 
 
 SCH_EDIT_FRAME::~SCH_EDIT_FRAME()
 {
+
+    m_hierarchy->Disconnect( wxEVT_SIZE,
+                          wxSizeEventHandler( SCH_EDIT_FRAME::OnResizeHierarchyNavigator ),
+                          NULL, this );
     // Ensure m_canvasType is up to date, to save it in config
     m_canvasType = GetCanvas()->GetBackend();
 
@@ -351,6 +303,40 @@ SCH_EDIT_FRAME::~SCH_EDIT_FRAME()
             // This may be overkill and could be an assertion but we are more likely to
             // find any settings manager errors this way.
             wxLogError( wxT( "Settings exception '%s' occurred." ), exc.what() );
+        }
+    }
+
+    delete m_hierarchy;
+}
+
+
+void SCH_EDIT_FRAME::OnResizeHierarchyNavigator( wxSizeEvent& aEvent )
+{
+    aEvent.Skip();
+
+    // Called when resizing the Hierarchy Navigator panel
+    // Store the current pane size
+    // It allows to retrieve the last defined pane size when switching between
+    // docked and floating pane state
+    // Note: *DO NOT* call m_auimgr.Update() here: it crashes Kicad at leat on Windows
+
+    EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
+    wxAuiPaneInfo&     hierarchy_pane = m_auimgr.GetPane( SchematicHierarchyPaneName() );
+
+    if( cfg && m_hierarchy->IsShown() )
+    {
+        cfg->m_AuiPanels.hierarchy_panel_float_width  = hierarchy_pane.floating_size.x;
+        cfg->m_AuiPanels.hierarchy_panel_float_height = hierarchy_pane.floating_size.y;
+
+        // initialize hierarchy_panel_docked_width and best size only if the hierarchy_pane
+        // width is > 0 (i.e. if its size is already set and has meaning)
+        // if it is floating, its size is not initialized (only floating_size is initialized)
+        // initializing hierarchy_pane.best_size is useful when switching to float pane and
+        // after switching to the docked pane, to retrieve the last docked pane width
+        if( hierarchy_pane.rect.width > 50 )    // 50 is a good margin
+        {
+            cfg->m_AuiPanels.hierarchy_panel_docked_width = hierarchy_pane.rect.width;
+            hierarchy_pane.best_size.x = hierarchy_pane.rect.width;
         }
     }
 }
@@ -404,12 +390,21 @@ void SCH_EDIT_FRAME::setupUIConditions()
                         ( !GetScreen()->Items().empty() || !SELECTION_CONDITIONS::Idle( aSel ) );
             };
 
+    auto hierarchyNavigatorCond =
+            [ this ] ( const SELECTION& aSel )
+            {
+                return m_auimgr.GetPane( SchematicHierarchyPaneName() ).IsShown();
+            };
+
+
 #define ENABLE( x ) ACTION_CONDITIONS().Enable( x )
 #define CHECK( x )  ACTION_CONDITIONS().Check( x )
 
     mgr->SetConditions( ACTIONS::save,                ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
     mgr->SetConditions( ACTIONS::undo,                ENABLE( cond.UndoAvailable() ) );
     mgr->SetConditions( ACTIONS::redo,                ENABLE( cond.RedoAvailable() ) );
+
+    mgr->SetConditions( EE_ACTIONS::showHierarchy,    CHECK( hierarchyNavigatorCond ) );
 
     mgr->SetConditions( ACTIONS::toggleGrid,          CHECK( cond.GridVisible() ) );
     mgr->SetConditions( ACTIONS::toggleCursorStyle,   CHECK( cond.FullscreenCursor() ) );
@@ -421,7 +416,6 @@ void SCH_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( EE_ACTIONS::lineModeFree,     CHECK( cond.LineMode( LINE_MODE::LINE_MODE_FREE ) ) );
     mgr->SetConditions( EE_ACTIONS::lineMode90,       CHECK( cond.LineMode( LINE_MODE::LINE_MODE_90 ) ) );
     mgr->SetConditions( EE_ACTIONS::lineMode45,       CHECK( cond.LineMode( LINE_MODE::LINE_MODE_45 ) ) );
-    mgr->SetConditions( EE_ACTIONS::lineMode135,      CHECK( cond.LineMode( LINE_MODE::LINE_MODE_135 ) ) );
 
     mgr->SetConditions( ACTIONS::cut,                 ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::copy,                ENABLE( hasElements ) );
@@ -481,6 +475,13 @@ void SCH_EDIT_FRAME::setupUIConditions()
                 return cfg && cfg->m_Appearance.show_erc_exclusions;
             };
 
+    auto showAnnotateAutomaticallyCond =
+            [this]( const SELECTION& )
+            {
+                EESCHEMA_SETTINGS* cfg = eeconfig();
+                return cfg && cfg->m_AnnotatePanel.automatic;
+            };
+
     auto remapSymbolsCondition =
             [&]( const SELECTION& aSel )
             {
@@ -493,16 +494,46 @@ void SCH_EDIT_FRAME::setupUIConditions()
     auto belowRootSheetCondition =
             [this]( const SELECTION& aSel )
             {
-                return GetCurrentSheet().Last() != &Schematic().Root();
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoUp();
+            };
+
+    auto navHistoryHasForward =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoForward();
+            };
+
+    auto navHistoryHasBackward =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoBack();
+            };
+
+    auto navSchematicHasPreviousSheet =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoPrevious();
+            };
+
+    auto navSchematicHasNextSheet =
+            [this]( const SELECTION& aSel )
+            {
+                return m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CanGoNext();
             };
 
     mgr->SetConditions( EE_ACTIONS::leaveSheet,          ENABLE( belowRootSheetCondition ) );
+    mgr->SetConditions( EE_ACTIONS::navigateUp,          ENABLE( belowRootSheetCondition ) );
+    mgr->SetConditions( EE_ACTIONS::navigateForward,     ENABLE( navHistoryHasForward ) );
+    mgr->SetConditions( EE_ACTIONS::navigateBack,        ENABLE( navHistoryHasBackward ) );
+    mgr->SetConditions( EE_ACTIONS::navigatePrevious,    ENABLE( navSchematicHasPreviousSheet ) );
+    mgr->SetConditions( EE_ACTIONS::navigateNext,        ENABLE( navSchematicHasNextSheet ) );
     mgr->SetConditions( EE_ACTIONS::remapSymbols,        ENABLE( remapSymbolsCondition ) );
     mgr->SetConditions( EE_ACTIONS::toggleHiddenPins,    CHECK( showHiddenPinsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleHiddenFields,  CHECK( showHiddenFieldsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleERCErrors,     CHECK( showERCErrorsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleERCWarnings,   CHECK( showERCWarningsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleERCExclusions, CHECK( showERCExclusionsCond ) );
+    mgr->SetConditions( EE_ACTIONS::toggleAnnotateAuto,  CHECK( showAnnotateAutomaticallyCond ) );
     mgr->SetConditions( ACTIONS::toggleBoundingBoxes,    CHECK( cond.BoundingBoxes() ) );
 
 
@@ -775,9 +806,6 @@ void SCH_EDIT_FRAME::doCloseWindow()
         m_findReplaceDialog = nullptr;
     }
 
-    if( FindHierarchyNavigator() )
-        FindHierarchyNavigator()->Close( true );
-
     if( Kiway().Player( FRAME_SIMULATOR, false ) )
         Prj().GetProjectFile().m_SchematicSettings->m_NgspiceSimulatorSettings->SaveToFile();
 
@@ -807,6 +835,9 @@ void SCH_EDIT_FRAME::doCloseWindow()
 
     if( !Schematic().GetFileName().IsEmpty() && !Schematic().RootScreen()->IsEmpty() )
         UpdateFileHistory( fileName );
+
+    // Make sure local settings are persisted
+    SaveProjectSettings();
 
     Schematic().RootScreen()->Clear();
 
@@ -938,30 +969,10 @@ void SCH_EDIT_FRAME::OnUpdatePCB( wxCommandEvent& event )
 }
 
 
-HIERARCHY_NAVIG_DLG* SCH_EDIT_FRAME::FindHierarchyNavigator()
+void SCH_EDIT_FRAME::UpdateHierarchyNavigator()
 {
-    wxWindow* navigator = wxWindow::FindWindowByName( HIERARCHY_NAVIG_DLG_WNAME );
-
-    return static_cast< HIERARCHY_NAVIG_DLG* >( navigator );
-}
-
-
-void SCH_EDIT_FRAME::UpdateHierarchyNavigator( bool aForceUpdate )
-{
-    if( aForceUpdate )
-    {
-        if( FindHierarchyNavigator() )
-            FindHierarchyNavigator()->Close();
-
-        HIERARCHY_NAVIG_DLG* hierarchyDialog = new HIERARCHY_NAVIG_DLG( this );
-
-        hierarchyDialog->Show( true );
-    }
-    else
-    {
-        if( FindHierarchyNavigator() )
-            FindHierarchyNavigator()->UpdateHierarchyTree();
-    }
+    m_toolManager->GetTool<SCH_NAVIGATE_TOOL>()->CleanHistory();
+    m_hierarchy->UpdateHierarchyTree();
 }
 
 
@@ -1825,4 +1836,41 @@ void SCH_EDIT_FRAME::UpdateItem( EDA_ITEM* aItem, bool isAddOrDelete, bool aUpda
 
     if( SCH_ITEM* sch_item = dynamic_cast<SCH_ITEM*>( aItem ) )
         sch_item->ClearCaches();
+}
+
+
+void SCH_EDIT_FRAME::DisplayCurrentSheet()
+{
+    m_toolManager->RunAction( ACTIONS::cancelInteractive, true );
+    m_toolManager->RunAction( EE_ACTIONS::clearSelection, true );
+    SCH_SCREEN* screen = GetCurrentSheet().LastScreen();
+
+    wxASSERT( screen );
+
+    SetScreen( screen );
+
+    // update the References
+    GetCurrentSheet().UpdateAllScreenReferences();
+    SetSheetNumberAndCount();
+
+    if( !screen->m_zoomInitialized )
+    {
+        initScreenZoom();
+    }
+    else
+    {
+        // Set zoom to last used in this screen
+        GetCanvas()->GetView()->SetScale( GetScreen()->m_LastZoomLevel );
+        RedrawScreen( (wxPoint) GetScreen()->m_ScrollCenter, false );
+    }
+
+    UpdateTitle();
+
+    HardRedraw();   // Ensure all items are redrawn (especially the drawing-sheet items)
+
+    SCH_EDITOR_CONTROL* editTool = m_toolManager->GetTool<SCH_EDITOR_CONTROL>();
+    TOOL_EVENT dummy;
+    editTool->UpdateNetHighlighting( dummy );
+
+    m_hierarchy->UpdateHierarchySelection();
 }

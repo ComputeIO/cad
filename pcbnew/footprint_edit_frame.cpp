@@ -254,24 +254,10 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     FinishAUIInitialization();
 
+    wxAuiPaneInfo& treePane = m_auimgr.GetPane( "Footprints" );
+
     if( m_editorSettings->m_LibWidth > 0 )
-    {
-        wxAuiPaneInfo& treePane = m_auimgr.GetPane( "Footprints" );
-
-        // wxAUI hack: force width by setting MinSize() and then Fixed()
-        // thanks to ZenJu http://trac.wxwidgets.org/ticket/13180
-        treePane.MinSize( m_editorSettings->m_LibWidth, -1 );
-        treePane.Fixed();
-        m_auimgr.Update();
-
-        // now make it resizable again
-        treePane.Resizable();
-        m_auimgr.Update();
-
-        // Note: DO NOT call m_auimgr.Update() anywhere after this; it will nuke the size
-        // back to minimum.
-        treePane.MinSize( 250, -1 );
-    }
+        SetAuiPaneSize( m_auimgr, treePane, m_editorSettings->m_LibWidth, -1 );
 
     // Apply saved visibility stuff at the end
     FOOTPRINT_EDITOR_SETTINGS* cfg = GetSettings();
@@ -366,7 +352,14 @@ void FOOTPRINT_EDIT_FRAME::ToggleSearchTree()
 {
     wxAuiPaneInfo& treePane = m_auimgr.GetPane( m_treePane );
     treePane.Show( !IsSearchTreeShown() );
-    m_auimgr.Update();
+
+    if( IsSearchTreeShown() )
+        SetAuiPaneSize( m_auimgr, treePane, m_editorSettings->m_LibWidth, -1 );
+    else
+    {
+        m_editorSettings->m_LibWidth = m_treePane->GetSize().x;
+        m_auimgr.Update();
+    }
 }
 
 
@@ -1116,6 +1109,12 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::zoomTool,               CHECK( cond.CurrentTool( ACTIONS::zoomTool ) ) );
     mgr->SetConditions( ACTIONS::selectionTool,          CHECK( cond.CurrentTool( ACTIONS::selectionTool ) ) );
 
+    auto constrainedDrawingModeCond =
+            [this]( const SELECTION& )
+            {
+                return GetSettings()->m_Use45Limit;
+            };
+
     auto highContrastCond =
             [this]( const SELECTION& )
             {
@@ -1140,6 +1139,7 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
                 return m_auimgr.GetPane( "LayersManager" ).IsShown();
             };
 
+    mgr->SetConditions( PCB_ACTIONS::toggleHV45Mode,        CHECK( constrainedDrawingModeCond ) );
     mgr->SetConditions( ACTIONS::highContrastMode,          CHECK( highContrastCond ) );
     mgr->SetConditions( PCB_ACTIONS::flipBoard,             CHECK( boardFlippedCond ) );
     mgr->SetConditions( ACTIONS::toggleBoundingBoxes,       CHECK( cond.BoundingBoxes() ) );

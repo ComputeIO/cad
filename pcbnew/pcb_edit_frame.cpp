@@ -664,59 +664,66 @@ void PCB_EDIT_FRAME::setupUIConditions()
 
     mgr->SetConditions( ACTIONS::toggleBoundingBoxes, CHECK( cond.BoundingBoxes() ) );
 
-    auto enableBoardSetupCondition =
-        [this] ( const SELECTION& )
-        {
-            if( DRC_TOOL* tool = m_toolManager->GetTool<DRC_TOOL>() )
-                return !tool->IsDRCDialogShown();
+    auto constrainedDrawingModeCond =
+            [this]( const SELECTION& )
+            {
+                return GetPcbNewSettings()->m_Use45DegreeLimit;
+            };
 
-            return true;
-        };
+    auto enableBoardSetupCondition =
+            [this] ( const SELECTION& )
+            {
+                if( DRC_TOOL* tool = m_toolManager->GetTool<DRC_TOOL>() )
+                    return !tool->IsDRCDialogShown();
+
+                return true;
+            };
 
     auto boardFlippedCond =
-        [this]( const SELECTION& )
-        {
-            return GetCanvas()->GetView()->IsMirroredX();
-        };
+            [this]( const SELECTION& )
+            {
+                return GetCanvas()->GetView()->IsMirroredX();
+            };
 
     auto layerManagerCond =
-        [this] ( const SELECTION& )
-        {
-            return LayerManagerShown();
-        };
+            [this] ( const SELECTION& )
+            {
+                return LayerManagerShown();
+            };
 
     auto highContrastCond =
-        [this] ( const SELECTION& )
-        {
-            return GetDisplayOptions().m_ContrastModeDisplay != HIGH_CONTRAST_MODE::NORMAL;
-        };
+            [this] ( const SELECTION& )
+            {
+                return GetDisplayOptions().m_ContrastModeDisplay != HIGH_CONTRAST_MODE::NORMAL;
+            };
 
     auto globalRatsnestCond =
-        [this] (const SELECTION& )
-        {
-            return Settings().m_Display.m_ShowGlobalRatsnest;
-        };
+            [this] (const SELECTION& )
+            {
+                return Settings().m_Display.m_ShowGlobalRatsnest;
+            };
 
     auto curvedRatsnestCond =
-        [this] (const SELECTION& )
-        {
-            return Settings().m_Display.m_DisplayRatsnestLinesCurved;
-        };
+            [this] (const SELECTION& )
+            {
+                return Settings().m_Display.m_DisplayRatsnestLinesCurved;
+            };
 
     auto netHighlightCond =
-        [this]( const SELECTION& )
-        {
-            KIGFX::RENDER_SETTINGS* settings = GetCanvas()->GetView()->GetPainter()->GetSettings();
-            return !settings->GetHighlightNetCodes().empty();
-        };
+            [this]( const SELECTION& )
+            {
+                KIGFX::RENDER_SETTINGS* settings = GetCanvas()->GetView()->GetPainter()->GetSettings();
+                return !settings->GetHighlightNetCodes().empty();
+            };
 
     auto enableNetHighlightCond =
-        [this]( const SELECTION& )
-        {
-            BOARD_INSPECTION_TOOL* tool = m_toolManager->GetTool<BOARD_INSPECTION_TOOL>();
-            return tool->IsNetHighlightSet();
-        };
+            [this]( const SELECTION& )
+            {
+                BOARD_INSPECTION_TOOL* tool = m_toolManager->GetTool<BOARD_INSPECTION_TOOL>();
+                return tool->IsNetHighlightSet();
+            };
 
+    mgr->SetConditions( PCB_ACTIONS::toggleHV45Mode,       CHECK( constrainedDrawingModeCond ) );
     mgr->SetConditions( ACTIONS::highContrastMode,         CHECK( highContrastCond ) );
     mgr->SetConditions( PCB_ACTIONS::flipBoard,            CHECK( boardFlippedCond ) );
     mgr->SetConditions( PCB_ACTIONS::showLayersManager,    CHECK( layerManagerCond ) );
@@ -727,44 +734,44 @@ void PCB_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( PCB_ACTIONS::boardSetup,           ENABLE( enableBoardSetupCondition ) );
 
     auto isHighlightMode =
-        [this]( const SELECTION& )
-        {
-            ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
-            return tool->GetRouterMode() == PNS::RM_MarkObstacles;
-        };
+            [this]( const SELECTION& )
+            {
+                ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
+                return tool->GetRouterMode() == PNS::RM_MarkObstacles;
+            };
 
     auto isShoveMode =
-        [this]( const SELECTION& )
-        {
-            ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
-            return tool->GetRouterMode() == PNS::RM_Shove;
-        };
+            [this]( const SELECTION& )
+            {
+                ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
+                return tool->GetRouterMode() == PNS::RM_Shove;
+            };
 
     auto isWalkaroundMode =
-        [this]( const SELECTION& )
-        {
-            ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
-            return tool->GetRouterMode() == PNS::RM_Walkaround;
-        };
+            [this]( const SELECTION& )
+            {
+                ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
+                return tool->GetRouterMode() == PNS::RM_Walkaround;
+            };
 
     mgr->SetConditions( PCB_ACTIONS::routerHighlightMode,  CHECK( isHighlightMode ) );
     mgr->SetConditions( PCB_ACTIONS::routerShoveMode,      CHECK( isShoveMode ) );
     mgr->SetConditions( PCB_ACTIONS::routerWalkaroundMode, CHECK( isWalkaroundMode ) );
 
     auto haveNetCond =
-        [] ( const SELECTION& aSel )
-        {
-            for( EDA_ITEM* item : aSel )
+            [] ( const SELECTION& aSel )
             {
-                if( BOARD_CONNECTED_ITEM* bci = dynamic_cast<BOARD_CONNECTED_ITEM*>( item ) )
+                for( EDA_ITEM* item : aSel )
                 {
-                    if( bci->GetNetCode() > 0 )
-                        return true;
+                    if( BOARD_CONNECTED_ITEM* bci = dynamic_cast<BOARD_CONNECTED_ITEM*>( item ) )
+                    {
+                        if( bci->GetNetCode() > 0 )
+                            return true;
+                    }
                 }
-            }
 
-            return false;
-        };
+                return false;
+            };
 
     mgr->SetConditions( PCB_ACTIONS::showNet,      ENABLE( haveNetCond ) );
     mgr->SetConditions( PCB_ACTIONS::hideNet,      ENABLE( haveNetCond ) );
@@ -784,14 +791,14 @@ void PCB_EDIT_FRAME::setupUIConditions()
     SELECTION_CONDITION zoneMergeCond = SELECTION_CONDITIONS::MoreThan( 1 )
                                     && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Zones );
 
-    mgr->SetConditions( PCB_ACTIONS::zoneDuplicate, ENABLE( singleZoneCond ) );
-    mgr->SetConditions( PCB_ACTIONS::drawZoneCutout, ENABLE( singleZoneCond ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneDuplicate,   ENABLE( singleZoneCond ) );
+    mgr->SetConditions( PCB_ACTIONS::drawZoneCutout,  ENABLE( singleZoneCond ) );
     mgr->SetConditions( PCB_ACTIONS::drawSimilarZone, ENABLE( singleZoneCond ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneMerge, ENABLE( zoneMergeCond ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneFill, ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneUnfill, ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneMerge,       ENABLE( zoneMergeCond ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneFill,        ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneUnfill,      ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
 
-    mgr->SetConditions( PCB_ACTIONS::toggle45, CHECK( cond.Get45degMode() ) );
+    mgr->SetConditions( PCB_ACTIONS::toggleHV45Mode,  CHECK( cond.Get45degMode() ) );
 
 #define CURRENT_TOOL( action ) mgr->SetConditions( action, CHECK( cond.CurrentTool( action ) ) )
 
@@ -803,11 +810,11 @@ void PCB_EDIT_FRAME::setupUIConditions()
 
 
     auto isDrcRunning =
-        [this] ( const SELECTION& )
-        {
-            DRC_TOOL* tool = m_toolManager->GetTool<DRC_TOOL>();
-            return !tool->IsDRCRunning();
-        };
+            [this] ( const SELECTION& )
+            {
+                DRC_TOOL* tool = m_toolManager->GetTool<DRC_TOOL>();
+                return !tool->IsDRCRunning();
+            };
 
 #define CURRENT_EDIT_TOOL( action ) mgr->SetConditions( action, ACTION_CONDITIONS().Check( cond.CurrentTool( action ) ).Enable( isDrcRunning ) )
 
@@ -834,7 +841,6 @@ void PCB_EDIT_FRAME::setupUIConditions()
     CURRENT_EDIT_TOOL( PCB_ACTIONS::drawCenterDimension );
     CURRENT_EDIT_TOOL( PCB_ACTIONS::drawRadialDimension );
     CURRENT_EDIT_TOOL( PCB_ACTIONS::drawLeader );
-    CURRENT_EDIT_TOOL( PCB_ACTIONS::placeTarget );
     CURRENT_EDIT_TOOL( PCB_ACTIONS::drillOrigin );
     CURRENT_EDIT_TOOL( PCB_ACTIONS::gridSetOrigin );
 

@@ -35,7 +35,6 @@ enum LINE_MODE
     LINE_MODE_FREE          = 0,
     LINE_MODE_90            = 1,
     LINE_MODE_45            = 2,
-    LINE_MODE_135           = 3,
 
     LINE_MODE_COUNT,
 };
@@ -51,7 +50,6 @@ public:
         wxString edit_label_visible_columns;
         int  erc_severities;
         bool footprint_preview;
-        bool navigator_stays_open;
         bool print_sheet_reference;
         wxString default_font;
         bool show_hidden_pins;
@@ -63,6 +61,15 @@ public:
         bool show_page_limits;
         bool show_sexpr_file_convert_warning;
         bool show_sheet_filename_case_sensitivity_dialog;
+    };
+
+    struct AUI_PANELS
+    {
+        int  hierarchy_panel_docked_width;  // width of hierarchy tree panel and pane when docked
+        int  hierarchy_panel_float_width;   // width of hierarchy tree panel when floating
+        int  hierarchy_panel_float_height;  // height of hierarchy tree panel when floating
+        bool schematic_hierarchy_float;     // show hierarchy tree panel as floating
+        bool show_schematic_hierarchy;      // show hierarchy tree pane
     };
 
     struct AUTOPLACE_FIELDS
@@ -161,6 +168,8 @@ public:
 
     struct PANEL_ANNOTATE
     {
+        bool automatic;
+        bool recursive;
         int scope;
         int options;
         int method;
@@ -252,6 +261,8 @@ public:
     APPEARANCE m_Appearance;
 
     AUTOPLACE_FIELDS m_AutoplaceFields;
+
+    AUI_PANELS m_AuiPanels;
 
     DRAWING m_Drawing;
 

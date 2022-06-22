@@ -55,6 +55,11 @@
 // Use default column widths instead.
 static int DEFAULT_SINGLE_COL_WIDTH = 660;
 
+static BOARD*                g_lastDRCBoard = nullptr;
+static bool                  g_lastDRCRun = false;
+static bool                  g_lastFootprintTestsRun = false;
+static std::vector<wxString> g_lastIgnored;
+
 
 DIALOG_DRC::DIALOG_DRC( PCB_EDIT_FRAME* aEditorFrame, wxWindow* aParent ) :
         DIALOG_DRC_BASE( aParent ),
@@ -89,6 +94,15 @@ DIALOG_DRC::DIALOG_DRC( PCB_EDIT_FRAME* aEditorFrame, wxWindow* aParent ) :
     m_footprintsDataView->AssociateModel( m_footprintWarningsTreeModel );
 
     m_ignoredList->InsertColumn( 0, wxEmptyString, wxLIST_FORMAT_LEFT, DEFAULT_SINGLE_COL_WIDTH );
+
+    if( m_currentBoard == g_lastDRCBoard )
+    {
+        m_drcRun = g_lastDRCRun;
+        m_footprintTestsRun = g_lastFootprintTestsRun;
+
+        for( const wxString& str : g_lastIgnored )
+            m_ignoredList->InsertItem( m_ignoredList->GetItemCount(), str );
+    }
 
     m_Notebook->SetSelection( 0 );
 
@@ -129,6 +143,15 @@ DIALOG_DRC::DIALOG_DRC( PCB_EDIT_FRAME* aEditorFrame, wxWindow* aParent ) :
 DIALOG_DRC::~DIALOG_DRC()
 {
     m_frame->FocusOnItem( nullptr );
+
+    g_lastDRCBoard = m_currentBoard;
+    g_lastDRCRun = m_drcRun;
+    g_lastFootprintTestsRun = m_footprintTestsRun;
+
+    g_lastIgnored.clear();
+
+    for( int ii = 0; ii < m_ignoredList->GetItemCount(); ++ii )
+        g_lastIgnored.push_back( m_ignoredList->GetItemText( ii ) );
 
     PCBNEW_SETTINGS* settings = m_frame->GetPcbNewSettings();
     settings->m_DrcDialog.refill_zones          = m_cbRefillZones->GetValue();
@@ -239,7 +262,6 @@ void DIALOG_DRC::OnRunDRCClick( wxCommandEvent& aEvent )
         return;
     }
 
-    m_drcRun = false;
     m_footprintTestsRun = false;
     m_cancelled = false;
 
@@ -1104,7 +1126,6 @@ void DIALOG_DRC::OnDeleteAllClick( wxCommandEvent& aEvent )
 
     deleteAllMarkers( s_includeExclusions );
 
-    m_drcRun = false;
     refreshEditor();
     updateDisplayedCounts();
 }
@@ -1196,47 +1217,58 @@ void DIALOG_DRC::updateDisplayedCounts()
     {
         num.Printf( markersOverflowed ? wxT( "%d+" ) : wxT( "%d" ), numMarkers );
         msg.Printf( m_markersTitleTemplate, num );
-        m_Notebook->SetPageText( 0, msg );
-
-        num.Printf( unconnectedOverflowed ? wxT( "%d+" ) : wxT( "%d" ), numUnconnected );
-        msg.sprintf( m_unconnectedTitleTemplate, num );
-        m_Notebook->SetPageText( 1, msg );
-
-        if( m_footprintTestsRun )
-        {
-            num.Printf( footprintsOverflowed ? wxT( "%d+" ) : wxT( "%d" ), numFootprints );
-            msg.sprintf( m_footprintsTitleTemplate, num );
-        }
-        else
-        {
-            msg = m_footprintsTitleTemplate;
-            msg.Replace( wxT( "%s" ), _( "not run" ) );
-        }
-
-        m_Notebook->SetPageText( 2, msg );
-
-        num.Printf( wxT( "%d" ), m_ignoredList->GetItemCount() );
-        msg.sprintf( m_ignoredTitleTemplate, num );
-        m_Notebook->SetPageText( 3, msg );
     }
     else
     {
         msg = m_markersTitleTemplate;
         msg.Replace( wxT( "(%s)" ), wxEmptyString );
-        m_Notebook->SetPageText( 0, msg );
+    }
 
+    m_Notebook->SetPageText( 0, msg );
+
+    if( m_drcRun )
+    {
+        num.Printf( unconnectedOverflowed ? wxT( "%d+" ) : wxT( "%d" ), numUnconnected );
+        msg.sprintf( m_unconnectedTitleTemplate, num );
+    }
+    else
+    {
         msg = m_unconnectedTitleTemplate;
         msg.Replace( wxT( "(%s)" ), wxEmptyString );
-        m_Notebook->SetPageText( 1, msg );
+    }
 
+    m_Notebook->SetPageText( 1, msg );
+
+    if( m_footprintTestsRun )
+    {
+        num.Printf( footprintsOverflowed ? wxT( "%d+" ) : wxT( "%d" ), numFootprints );
+        msg.sprintf( m_footprintsTitleTemplate, num );
+    }
+    else if( m_drcRun )
+    {
+        msg = m_footprintsTitleTemplate;
+        msg.Replace( wxT( "%s" ), _( "not run" ) );
+    }
+    else
+    {
         msg = m_footprintsTitleTemplate;
         msg.Replace( wxT( "(%s)" ), wxEmptyString );
-        m_Notebook->SetPageText( 2, msg );
+    }
 
+    m_Notebook->SetPageText( 2, msg );
+
+    if( m_drcRun )
+    {
+        num.Printf( wxT( "%d" ), m_ignoredList->GetItemCount() );
+        msg.sprintf( m_ignoredTitleTemplate, num );
+    }
+    else
+    {
         msg = m_ignoredTitleTemplate;
         msg.Replace( wxT( "(%s)" ), wxEmptyString );
-        m_Notebook->SetPageText( 3, msg );
     }
+
+    m_Notebook->SetPageText( 3, msg );
 
     // Update badges:
 

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KiCad\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-13 15:03-0700\n"
+"POT-Creation-Date: 2022-06-03 16:53-0700\n"
 "PO-Revision-Date: 2018-07-15 17:07+0200\n"
 "Last-Translator: Simon Richter <Simon.Richter@hogyros.de>\n"
 "Language-Team: Simon Richter <Simon.Richter@hogyros.de>\n"
@@ -2461,6 +2461,9 @@ msgstr "Colors"
 msgid "Schematic Editor"
 msgstr "Schematic Editor"
 
+msgid "Annotation Options"
+msgstr "Annotation Options"
+
 msgid "Field Name Templates"
 msgstr "Field Name Templates"
 
@@ -3419,6 +3422,9 @@ msgstr "Grid axes"
 
 msgid "Locked item shadow"
 msgstr "Locked item shadow"
+
+msgid "Conflicting items shadow"
+msgstr "Conflicting items shadow"
 
 msgid "Illegal character found in logical library name"
 msgstr "Illegal character found in logical library name"
@@ -4979,17 +4985,20 @@ msgstr "Annotation Messages:"
 msgid "Annotate"
 msgstr "Annotate"
 
+msgid "Scope"
+msgstr "Scope"
+
 msgid "Entire schematic"
 msgstr "Entire schematic"
 
 msgid "Current sheet only"
 msgstr "Current sheet only"
 
-msgid "Selection only"
-msgstr "Selection only"
+msgid "Selection"
+msgstr "Selection"
 
-msgid "Scope"
-msgstr "Scope"
+msgid "Recurse into subsheets"
+msgstr "Recurse into subsheets"
 
 msgid "Order"
 msgstr "Order"
@@ -8184,6 +8193,15 @@ msgstr "Set width to 0 to use netclass's wire/bus widths."
 msgid "Wire & Bus Properties"
 msgstr "Wire & Bus Properties"
 
+msgid "Symbol Annotation"
+msgstr "Symbol Annotation"
+
+msgid "Automatically annotate symbols"
+msgstr "Automatically annotate symbols"
+
+msgid "Recursively annotate subsheets"
+msgstr "Recursively annotate subsheets"
+
 msgid ""
 "Some items have the same color as the background\n"
 "and they will not be seen on the screen.  Are you\n"
@@ -8228,9 +8246,6 @@ msgstr "Show page limi&ts"
 
 msgid "Selection && Highlighting"
 msgstr "Selection && Highlighting"
-
-msgid "Draw selected text items as box"
-msgstr "Draw selected text items as box"
 
 msgid "Draw selected child items"
 msgstr "Draw selected child items"
@@ -8304,9 +8319,6 @@ msgstr "Sheet border:"
 
 msgid "Sheet background:"
 msgstr "Sheet background:"
-
-msgid "Selection"
-msgstr "Selection"
 
 msgid "Clicking on a pin selects the symbol"
 msgstr "Clicking on a pin selects the symbol"
@@ -8384,9 +8396,6 @@ msgstr "Dialog Preferences"
 
 msgid "Show footprint previews in Symbol Chooser"
 msgstr "Show footprint previews in Symbol Chooser"
-
-msgid "Keep hierarchy navigator open"
-msgstr "Keep hierarchy navigator open"
 
 msgid "Annotations"
 msgstr "Annotations"
@@ -9141,9 +9150,6 @@ msgstr "Alias of"
 msgid "Unknown"
 msgstr "Unknown"
 
-msgid "Navigator"
-msgstr "Navigator"
-
 msgid "Root"
 msgstr "Root"
 
@@ -9459,6 +9465,9 @@ msgstr "The following libraries were not found:"
 
 msgid "KiCad Schematic Editor"
 msgstr "KiCad Schematic Editor"
+
+msgid "Schematic Hierarchy"
+msgstr "Schematic Hierarchy"
 
 msgid "New schematic file is unsaved"
 msgstr "New schematic file is unsaved"
@@ -12034,14 +12043,17 @@ msgstr "Lines drawn at any angle"
 msgid "Lines drawn horizontally and vertically"
 msgstr "Lines drawn horizontally and vertically"
 
-msgid "Lines drawn horizontally and vertically, with a 45 degree angle end"
-msgstr "Lines drawn horizontally and vertically, with a 45 degree angle end"
-
-msgid "Lines drawn horizontally and vertically, with a 45 degree angle start"
-msgstr "Lines drawn horizontally and vertically, with a 45 degree angle start"
+msgid "Lines drawn horizontally, vertically, and at a 45 degree angle"
+msgstr "Lines drawn horizontally, vertically, and at a 45 degree angle"
 
 msgid "Switch to next line mode"
 msgstr "Switch to next line mode"
+
+msgid "Annotate Automatically"
+msgstr "Annotate Automatically"
+
+msgid "Toggle automatic annotation of new parts symbols"
+msgstr "Toggle automatic annotation of new parts symbols"
 
 msgid "Repair Schematic"
 msgstr "Repair Schematic"
@@ -12058,6 +12070,9 @@ msgstr "Show the Python scripting console"
 msgid "Enter Sheet"
 msgstr "Enter Sheet"
 
+msgid "Change to provided sheet's contents in the schematic editor"
+msgstr "Change to provided sheet's contents in the schematic editor"
+
 msgid "Display the selected sheet's contents in the schematic editor"
 msgstr "Display the selected sheet's contents in the schematic editor"
 
@@ -12066,6 +12081,36 @@ msgstr "Leave Sheet"
 
 msgid "Display the parent sheet in the schematic editor"
 msgstr "Display the parent sheet in the schematic editor"
+
+msgid "Navigate Up"
+msgstr "Navigate Up"
+
+msgid "Navigate up one sheet in the hierarchy"
+msgstr "Navigate up one sheet in the hierarchy"
+
+msgid "Navigate Back"
+msgstr "Navigate Back"
+
+msgid "Move forward in sheet navigation history"
+msgstr "Move forward in sheet navigation history"
+
+msgid "Navigate Forward"
+msgstr "Navigate Forward"
+
+msgid "Move backward in sheet navigation history"
+msgstr "Move backward in sheet navigation history"
+
+msgid "Previous Sheet"
+msgstr "Previous Sheet"
+
+msgid "Move to previous sheet by number"
+msgstr "Move to previous sheet by number"
+
+msgid "Next Sheet"
+msgstr "Next Sheet"
+
+msgid "Move to next sheet by number"
+msgstr "Move to next sheet by number"
 
 msgid "Hierarchy Navigator"
 msgstr "Hierarchy Navigator"
@@ -13374,11 +13419,17 @@ msgstr "Reveal project folder in Finder"
 msgid "Open project directory in file explorer"
 msgstr "Open project directory in file explorer"
 
+msgid "Add Default Repository"
+msgstr "Add Default Repository"
+
 msgid "Please enter fully qualified repository url"
 msgstr "Please enter fully qualified repository url"
 
 msgid "Add repository"
 msgstr "Add repository"
+
+msgid "Add Existing"
+msgstr "Add Existing"
 
 msgid "Manage Repositories"
 msgstr "Manage Repositories"
@@ -13966,14 +14017,6 @@ msgstr "KiCad Error"
 
 msgid "Application failed to load."
 msgstr "Application failed to load."
-
-#, c-format
-msgid "%s closed [pid=%d]\n"
-msgstr "%s closed [pid=%d]\n"
-
-#, c-format
-msgid "%s %s opened [pid=%ld]\n"
-msgstr "%s %s opened [pid=%ld]\n"
 
 #, c-format
 msgid "Error code: %d"
@@ -14618,6 +14661,9 @@ msgstr "Solutions"
 
 msgid "Simple solution:"
 msgstr "Simple solution:"
+
+msgid "Approximation:"
+msgstr "Approximation:"
 
 msgid "3R solution:"
 msgstr "3R solution:"
@@ -16468,9 +16514,6 @@ msgstr ""
 "When a zone is inside another zone:\n"
 "* If its priority is higher, its outlines are removed from the other zone.\n"
 "* If its priority is equal, a DRC error is set."
-
-msgid "Constrain outline to H, V and 45 degrees"
-msgstr "Constrain outline to H, V and 45 degrees"
 
 msgid "Outline display:"
 msgstr "Outline display:"
@@ -18527,8 +18570,8 @@ msgstr "Outline style:"
 msgid "degree"
 msgstr "degree"
 
-msgid "Non Copper Zones Properties"
-msgstr "Non Copper Zones Properties"
+msgid "Non Copper Zone Properties"
+msgstr "Non Copper Zone Properties"
 
 msgid "Ring"
 msgstr "Ring"
@@ -19746,12 +19789,6 @@ msgstr "Keep out footprints"
 msgid "Raise a DRC error if a footprint courtyard overlaps this area"
 msgstr "Raise a DRC error if a footprint courtyard overlaps this area"
 
-msgid "Constrain outline to H, V and 45 deg"
-msgstr "Constrain outline to H, V and 45 deg"
-
-msgid "Draw the area using horizontal, vertical and 45 degree lines only"
-msgstr "Draw the area using horizontal, vertical and 45 degree lines only"
-
 msgid "Rule Area Properties"
 msgstr "Rule Area Properties"
 
@@ -20204,9 +20241,6 @@ msgstr "Failed to open directories to look for libraries"
 
 msgid "Warning: Duplicate Nicknames"
 msgstr "Warning: Duplicate Nicknames"
-
-msgid "Add Existing"
-msgstr "Add Existing"
 
 msgid "Path Substitutions"
 msgstr "Path Substitutions"
@@ -22307,10 +22341,10 @@ msgstr "Save Footprint Association File"
 
 msgid ""
 "File contains pad shapes that are not supported by the Hyperlynx exporter "
-"(supported shapes are oval, rectangle and circle)."
+"(supported shapes are oval, rectangle, rounded rectangle, and circle)."
 msgstr ""
 "File contains pad shapes that are not supported by the Hyperlynx exporter "
-"(supported shapes are oval, rectangle and circle)."
+"(supported shapes are oval, rectangle, rounded rectangle, and circle)."
 
 msgid "They have been exported as oval pads."
 msgstr "They have been exported as oval pads."
@@ -22575,6 +22609,9 @@ msgstr "Solderpaste Margin Override"
 
 msgid "Solderpaste Margin Ratio Override"
 msgstr "Solderpaste Margin Ratio Override"
+
+msgid "Library ID"
+msgstr "Library ID"
 
 #, c-format
 msgid "footprint %s"
@@ -25899,9 +25936,6 @@ msgstr "Unable to resize arc tracks of %s or greater."
 msgid "Drag Arc Track"
 msgstr "Drag Arc Track"
 
-msgid "Select reference point for move..."
-msgstr "Select reference point for move..."
-
 msgid "Edit track width/via size"
 msgstr "Edit track width/via size"
 
@@ -25948,6 +25982,9 @@ msgstr "Selection copied"
 
 msgid "Copy canceled"
 msgstr "Copy canceled"
+
+msgid "Select reference point for move..."
+msgstr "Select reference point for move..."
 
 msgid "_copy"
 msgstr "_copy"
@@ -26568,12 +26605,6 @@ msgstr "Duplicate Zone onto Layer…"
 
 msgid "Duplicate zone outline onto a different layer"
 msgstr "Duplicate zone outline onto a different layer"
-
-msgid "Add Layer Alignment Target"
-msgstr "Add Layer Alignment Target"
-
-msgid "Add a layer alignment target"
-msgstr "Add a layer alignment target"
 
 msgid "Add Footprint"
 msgstr "Add Footprint"
@@ -27382,6 +27413,12 @@ msgstr "Shadow on Locked Items"
 msgid "Show a shadow marker on locked items"
 msgstr "Show a shadow marker on locked items"
 
+msgid "Shadow on Conflicts"
+msgstr "Shadow on Conflicts"
+
+msgid "Show a shadow on overlapping courtyards while moving footprints"
+msgstr "Show a shadow on overlapping courtyards while moving footprints"
+
 msgid "Show drawing sheet borders and title block"
 msgstr "Show drawing sheet borders and title block"
 
@@ -27966,6 +28003,62 @@ msgstr "KiCad Schematic"
 
 msgid "KiCad Printed Circuit Board"
 msgstr "KiCad Printed Circuit Board"
+
+#~ msgid "Keep hierarchy navigator open"
+#~ msgstr "Keep hierarchy navigator open"
+
+#~ msgid "Navigator"
+#~ msgstr "Navigator"
+
+#~ msgid "Lines drawn horizontally and vertically, with a 45 degree angle end"
+#~ msgstr "Lines drawn horizontally and vertically, with a 45 degree angle end"
+
+#~ msgid ""
+#~ "Lines drawn horizontally and vertically, with a 45 degree angle start"
+#~ msgstr ""
+#~ "Lines drawn horizontally and vertically, with a 45 degree angle start"
+
+#~ msgid "Selection only"
+#~ msgstr "Selection only"
+
+#~ msgid "Add Default"
+#~ msgstr "Add Default"
+
+#~ msgid "Constrain outline to H, V and 45 degrees"
+#~ msgstr "Constrain outline to H, V and 45 degrees"
+
+#~ msgid "Non Copper Zones Properties"
+#~ msgstr "Non Copper Zones Properties"
+
+#~ msgid "Constrain outline to H, V and 45 deg"
+#~ msgstr "Constrain outline to H, V and 45 deg"
+
+#~ msgid "Draw the area using horizontal, vertical and 45 degree lines only"
+#~ msgstr "Draw the area using horizontal, vertical and 45 degree lines only"
+
+#~ msgid ""
+#~ "File contains pad shapes that are not supported by the Hyperlynx exporter "
+#~ "(supported shapes are oval, rectangle and circle)."
+#~ msgstr ""
+#~ "File contains pad shapes that are not supported by the Hyperlynx exporter "
+#~ "(supported shapes are oval, rectangle and circle)."
+
+#~ msgid "Add Layer Alignment Target"
+#~ msgstr "Add Layer Alignment Target"
+
+#~ msgid "Add a layer alignment target"
+#~ msgstr "Add a layer alignment target"
+
+#~ msgid "Draw selected text items as box"
+#~ msgstr "Draw selected text items as box"
+
+#, c-format
+#~ msgid "%s closed [pid=%d]\n"
+#~ msgstr "%s closed [pid=%d]\n"
+
+#, c-format
+#~ msgid "%s %s opened [pid=%ld]\n"
+#~ msgstr "%s %s opened [pid=%ld]\n"
 
 #~ msgid "Manage"
 #~ msgstr "Manage"

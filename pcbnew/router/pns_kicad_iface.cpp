@@ -77,9 +77,12 @@ public:
     PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER_IFACE* aRouterIface );
     virtual ~PNS_PCBNEW_RULE_RESOLVER();
 
-    virtual int Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) override;
-    virtual int HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) override;
-    virtual int HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) override;
+    virtual int Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
+                           bool aUseClearanceEpsilon = true ) override;
+    virtual int HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
+                               bool aUseClearanceEpsilon = true ) override;
+    virtual int HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
+                                     bool aUseClearanceEpsilon = true ) override;
 
     virtual int DpCoupledNet( int aNet ) override;
     virtual int DpNetPolarity( int aNet ) override;
@@ -117,9 +120,11 @@ private:
     PCB_VIA            m_dummyVias[2];
     int                m_clearanceEpsilon;
 
-    std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_clearanceCache;
-    std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_holeClearanceCache;
-    std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_holeToHoleClearanceCache;
+    typedef std::tuple<const PNS::ITEM*, const PNS::ITEM*, bool> CLEARANCE_CACHE_KEY;
+
+    std::map<CLEARANCE_CACHE_KEY, int> m_clearanceCache;
+    std::map<CLEARANCE_CACHE_KEY, int> m_holeClearanceCache;
+    std::map<CLEARANCE_CACHE_KEY, int> m_holeToHoleClearanceCache;
 };
 
 
@@ -298,13 +303,15 @@ bool PNS_PCBNEW_RULE_RESOLVER::QueryConstraint( PNS::CONSTRAINT_TYPE aType,
 
 void PNS_PCBNEW_RULE_RESOLVER::ClearCacheForItem( const PNS::ITEM* aItem )
 {
-    m_clearanceCache.erase( std::make_pair( aItem, nullptr ) );
+    m_clearanceCache.erase( std::make_tuple( aItem, nullptr, false ) );
+    m_clearanceCache.erase( std::make_tuple( aItem, nullptr, true ) );
 }
 
 
-int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB )
+int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
+                                         bool aUseClearanceEpsilon )
 {
-    std::pair<const PNS::ITEM*, const PNS::ITEM*> key( aA, aB );
+    CLEARANCE_CACHE_KEY key( aA, aB, aUseClearanceEpsilon );
     auto it = m_clearanceCache.find( key );
 
     if( it != m_clearanceCache.end() )
@@ -322,7 +329,7 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
     if( isCopper( aA ) && ( !aB || isCopper( aB ) ) )
     {
         if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_CLEARANCE, aA, aB, layer, &constraint ) )
-            rv = constraint.m_Value.Min() - m_clearanceEpsilon;
+            rv = constraint.m_Value.Min();
     }
 
     if( isEdge( aA ) || ( aB && isEdge( aB ) ) )
@@ -330,18 +337,22 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
         if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_EDGE_CLEARANCE, aA, aB, layer, &constraint ) )
         {
             if( constraint.m_Value.Min() > rv )
-                rv = constraint.m_Value.Min() - m_clearanceEpsilon;
+                rv = constraint.m_Value.Min();
         }
     }
+
+    if( aUseClearanceEpsilon )
+        rv -= m_clearanceEpsilon;
 
     m_clearanceCache[ key ] = rv;
     return rv;
 }
 
 
-int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB )
+int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
+                                             bool aUseClearanceEpsilon )
 {
-    std::pair<const PNS::ITEM*, const PNS::ITEM*> key( aA, aB );
+    CLEARANCE_CACHE_KEY key( aA, aB, aUseClearanceEpsilon );
     auto it = m_holeClearanceCache.find( key );
 
     if( it != m_holeClearanceCache.end() )
@@ -357,16 +368,20 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITE
         layer = aB->Layer();
 
     if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_CLEARANCE, aA, aB, layer, &constraint ) )
-        rv = constraint.m_Value.Min() - m_clearanceEpsilon;
+        rv = constraint.m_Value.Min();
+
+    if( aUseClearanceEpsilon )
+        rv -= m_clearanceEpsilon;
 
     m_holeClearanceCache[ key ] = rv;
     return rv;
 }
 
 
-int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB )
+int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PNS::ITEM* aB,
+                                                   bool aUseClearanceEpsilon )
 {
-    std::pair<const PNS::ITEM*, const PNS::ITEM*> key( aA, aB );
+    CLEARANCE_CACHE_KEY key( aA, aB, aUseClearanceEpsilon );
     auto it = m_holeToHoleClearanceCache.find( key );
 
     if( it != m_holeToHoleClearanceCache.end() )
@@ -382,7 +397,10 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PN
         layer = aB->Layer();
 
     if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, aA, aB, layer, &constraint ) )
-        rv = constraint.m_Value.Min() - m_clearanceEpsilon;
+        rv = constraint.m_Value.Min();
+
+    if( aUseClearanceEpsilon )
+        rv -= m_clearanceEpsilon;
 
     m_holeToHoleClearanceCache[ key ] = rv;
     return rv;
@@ -1160,7 +1178,7 @@ bool PNS_KICAD_IFACE::IsAnyLayerVisible( const LAYER_RANGE& aLayer ) const
 }
 
 
-bool PNS_KICAD_IFACE::IsFlashedOnLayer( const PNS::ITEM* aItem, int aLayer ) const
+bool PNS_KICAD_IFACE_BASE::IsFlashedOnLayer( const PNS::ITEM* aItem, int aLayer ) const
 {
     /// Default is all layers
     if( aLayer < 0 )
@@ -1391,8 +1409,7 @@ void PNS_KICAD_IFACE::DisplayItem( const PNS::ITEM* aItem, int aClearance, bool 
 
 void PNS_KICAD_IFACE::DisplayRatline( const SHAPE_LINE_CHAIN& aRatline, int aColor )
 {
-    ROUTER_PREVIEW_ITEM* pitem = new ROUTER_PREVIEW_ITEM( nullptr, m_view );
-    pitem->Line( aRatline, 10000, aColor );
+    ROUTER_PREVIEW_ITEM* pitem = new ROUTER_PREVIEW_ITEM( aRatline, m_view );
     m_previewItems->Add( pitem );
     m_view->Update( m_previewItems );
 }

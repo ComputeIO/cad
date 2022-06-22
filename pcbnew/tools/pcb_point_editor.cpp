@@ -210,10 +210,10 @@ std::shared_ptr<EDIT_POINTS> PCB_POINT_EDITOR::makePoints( EDA_ITEM* aItem )
             break;
 
         case SHAPE_T::RECT:
-            points->AddPoint( shape->GetStart() );
-            points->AddPoint( VECTOR2I( shape->GetEnd().x, shape->GetStart().y ) );
-            points->AddPoint( shape->GetEnd() );
-            points->AddPoint( VECTOR2I( shape->GetStart().x, shape->GetEnd().y ) );
+            points->AddPoint( shape->GetTopLeft() );
+            points->AddPoint( VECTOR2I( shape->GetBotRight().x, shape->GetTopLeft().y ) );
+            points->AddPoint( shape->GetBotRight() );
+            points->AddPoint( VECTOR2I( shape->GetTopLeft().x, shape->GetBotRight().y ) );
 
             points->AddLine( points->Point( RECT_TOP_LEFT ), points->Point( RECT_TOP_RIGHT ) );
             points->Line( RECT_TOP ).SetConstraint( new EC_PERPLINE( points->Line( RECT_TOP ) ) );
@@ -616,7 +616,7 @@ int PCB_POINT_EDITOR::OnSelectionChange( const TOOL_EVENT& aEvent )
 
             m_refill = true;
         }
-        else if( evt->IsAction( &PCB_ACTIONS::toggle45 ) )
+        else if( evt->IsAction( &PCB_ACTIONS::toggleHV45Mode ) )
         {
             lock45 = !lock45;
             evt->SetPassEvent( false );
@@ -1111,24 +1111,26 @@ void PCB_POINT_EDITOR::updateItem() const
                     || isModified( m_editPoints->Point( RECT_BOT_RIGHT ) )
                     || isModified( m_editPoints->Point( RECT_BOT_LEFT ) ) )
             {
-                shape->SetPosition( topLeft );
-                shape->SetEnd( botRight );
+                shape->SetLeft( topLeft.x );
+                shape->SetTop( topLeft.y );
+                shape->SetRight( botRight.x );
+                shape->SetBottom( botRight.y );
             }
             else if( isModified( m_editPoints->Line( RECT_TOP ) ) )
             {
-                shape->SetStartY( topLeft.y );
+                shape->SetTop( topLeft.y );
             }
             else if( isModified( m_editPoints->Line( RECT_LEFT ) ) )
             {
-                shape->SetStartX( topLeft.x );
+                shape->SetLeft( topLeft.x );
             }
             else if( isModified( m_editPoints->Line( RECT_BOT ) ) )
             {
-                shape->SetEndY( botRight.y );
+                shape->SetBottom( botRight.y );
             }
             else if( isModified( m_editPoints->Line( RECT_RIGHT ) ) )
             {
-                shape->SetEndX( botRight.x );
+                shape->SetRight( botRight.x );
             }
 
             for( unsigned i = 0; i < m_editPoints->LinesSize(); ++i )
@@ -1216,14 +1218,11 @@ void PCB_POINT_EDITOR::updateItem() const
 
         case SHAPE_T::BEZIER:
             if( isModified( m_editPoints->Point( BEZIER_CURVE_START ) ) )
-                shape->SetStart( m_editPoints->Point( BEZIER_CURVE_START ).
-                                 GetPosition() );
+                shape->SetStart( m_editPoints->Point( BEZIER_CURVE_START ).GetPosition() );
             else if( isModified( m_editPoints->Point( BEZIER_CURVE_CONTROL_POINT1 ) ) )
-                shape->SetBezierC1( m_editPoints->Point( BEZIER_CURVE_CONTROL_POINT1 ).
-                                    GetPosition() );
+                shape->SetBezierC1( m_editPoints->Point( BEZIER_CURVE_CONTROL_POINT1 ).GetPosition() );
             else if( isModified( m_editPoints->Point( BEZIER_CURVE_CONTROL_POINT2 ) ) )
-                shape->SetBezierC2( m_editPoints->Point( BEZIER_CURVE_CONTROL_POINT2 ).
-                                    GetPosition() );
+                shape->SetBezierC2( m_editPoints->Point( BEZIER_CURVE_CONTROL_POINT2 ).GetPosition() );
             else if( isModified( m_editPoints->Point( BEZIER_CURVE_END ) ) )
                 shape->SetEnd( m_editPoints->Point( BEZIER_CURVE_END ).GetPosition() );
 
@@ -1256,7 +1255,7 @@ void PCB_POINT_EDITOR::updateItem() const
         case PAD_SHAPE::CIRCLE:
         {
             VECTOR2I end = m_editPoints->Point( 0 ).GetPosition();
-            int     diameter = (int) EuclideanNorm( end - pad->GetPosition() ) * 2;
+            int      diameter = (int) EuclideanNorm( end - pad->GetPosition() ) * 2;
 
             pad->SetSize( wxSize( diameter, diameter ) );
             break;
@@ -1301,7 +1300,7 @@ void PCB_POINT_EDITOR::updateItem() const
                     dist[3] = botLeft.y - center.y;
                 }
 
-                wxSize padSize( dist[0] + dist[2], dist[1] + dist[3] );
+                wxSize   padSize( dist[0] + dist[2], dist[1] + dist[3] );
                 VECTOR2I deltaOffset( padSize.x / 2 - dist[2], padSize.y / 2 - dist[3] );
 
                 if( pad->GetOrientation() == ANGLE_90 || pad->GetOrientation() == ANGLE_270 )
@@ -1669,12 +1668,12 @@ void PCB_POINT_EDITOR::updatePoints()
 
         if( shape->GetShape() == SHAPE_T::RECT )
         {
-            m_editPoints->Point( RECT_TOP_LEFT ).SetPosition( shape->GetStart() );
-            m_editPoints->Point( RECT_TOP_RIGHT ).SetPosition( shape->GetEnd().x,
-                                                               shape->GetStart().y );
-            m_editPoints->Point( RECT_BOT_RIGHT ).SetPosition( shape->GetEnd() );
-            m_editPoints->Point( RECT_BOT_LEFT ).SetPosition( shape->GetStart().x,
-                                                              shape->GetEnd().y );
+            m_editPoints->Point( RECT_TOP_LEFT ).SetPosition( shape->GetTopLeft() );
+            m_editPoints->Point( RECT_TOP_RIGHT ).SetPosition( shape->GetBotRight().x,
+                                                               shape->GetTopLeft().y );
+            m_editPoints->Point( RECT_BOT_RIGHT ).SetPosition( shape->GetBotRight() );
+            m_editPoints->Point( RECT_BOT_LEFT ).SetPosition( shape->GetTopLeft().x,
+                                                              shape->GetBotRight().y );
         }
         else if( shape->GetShape() == SHAPE_T::POLY )
         {
@@ -1697,12 +1696,12 @@ void PCB_POINT_EDITOR::updatePoints()
             break;
 
         case SHAPE_T::RECT:
-            m_editPoints->Point( RECT_TOP_LEFT ).SetPosition( shape->GetStart() );
-            m_editPoints->Point( RECT_TOP_RIGHT ).SetPosition( shape->GetEnd().x,
-                                                               shape->GetStart().y );
-            m_editPoints->Point( RECT_BOT_RIGHT ).SetPosition( shape->GetEnd() );
-            m_editPoints->Point( RECT_BOT_LEFT ).SetPosition( shape->GetStart().x,
-                                                              shape->GetEnd().y );
+            m_editPoints->Point( RECT_TOP_LEFT ).SetPosition( shape->GetTopLeft() );
+            m_editPoints->Point( RECT_TOP_RIGHT ).SetPosition( shape->GetBotRight().x,
+                                                               shape->GetTopLeft().y );
+            m_editPoints->Point( RECT_BOT_RIGHT ).SetPosition( shape->GetBotRight() );
+            m_editPoints->Point( RECT_BOT_LEFT ).SetPosition( shape->GetTopLeft().x,
+                                                              shape->GetBotRight().y );
             break;
 
         case SHAPE_T::ARC:
@@ -2119,12 +2118,12 @@ bool PCB_POINT_EDITOR::removeCornerCondition( const SELECTION& )
         return false;
     }
 
-    auto vertex = findVertex( *polyset, *m_editedPoint );
+    std::pair<bool, SHAPE_POLY_SET::VERTEX_INDEX> vertex = findVertex( *polyset, *m_editedPoint );
 
     if( !vertex.first )
         return false;
 
-    const auto& vertexIdx = vertex.second;
+    const SHAPE_POLY_SET::VERTEX_INDEX& vertexIdx = vertex.second;
 
     // Check if there are enough vertices so one can be removed without
     // degenerating the polygon.
@@ -2132,7 +2131,9 @@ bool PCB_POINT_EDITOR::removeCornerCondition( const SELECTION& )
     // there are only 2 vertices left, a hole is removed).
     if( vertexIdx.m_contour == 0 &&
         polyset->Polygon( vertexIdx.m_polygon )[vertexIdx.m_contour].PointCount() <= 3 )
+    {
         return false;
+    }
 
     // Remove corner does not work with lines
     if( dynamic_cast<EDIT_LINE*>( m_editedPoint ) )
@@ -2147,9 +2148,9 @@ int PCB_POINT_EDITOR::addCorner( const TOOL_EVENT& aEvent )
     if( !m_editPoints )
         return 0;
 
-    EDA_ITEM* item = m_editPoints->GetParent();
+    EDA_ITEM*            item = m_editPoints->GetParent();
     PCB_BASE_EDIT_FRAME* frame = getEditFrame<PCB_BASE_EDIT_FRAME>();
-    const VECTOR2I& cursorPos = getViewControls()->GetCursorPosition();
+    const VECTOR2I&      cursorPos = getViewControls()->GetCursorPosition();
 
     // called without an active edited polygon
     if( !item || !canAddCorner( *item ) )
@@ -2174,7 +2175,9 @@ int PCB_POINT_EDITOR::addCorner( const TOOL_EVENT& aEvent )
             zone->SetNeedRefill( true );
         }
         else
+        {
             zoneOutline = &( graphicItem->GetPolyShape() );
+        }
 
         commit.Modify( item );
 
@@ -2210,10 +2213,10 @@ int PCB_POINT_EDITOR::addCorner( const TOOL_EVENT& aEvent )
         }
 
         // Find the point on the closest segment
-        auto&    sideOrigin = zoneOutline->CVertex( nearestIdx );
-        auto&    sideEnd = zoneOutline->CVertex( nextNearestIdx );
-        SEG nearestSide( sideOrigin, sideEnd );
-        VECTOR2I nearestPoint = nearestSide.NearestPoint( cursorPos );
+        const VECTOR2I& sideOrigin = zoneOutline->CVertex( nearestIdx );
+        const VECTOR2I& sideEnd = zoneOutline->CVertex( nextNearestIdx );
+        SEG             nearestSide( sideOrigin, sideEnd );
+        VECTOR2I        nearestPoint = nearestSide.NearestPoint( cursorPos );
 
         // Do not add points that have the same coordinates as ones that already belong to polygon
         // instead, add a point in the middle of the side
@@ -2233,7 +2236,7 @@ int PCB_POINT_EDITOR::addCorner( const TOOL_EVENT& aEvent )
     {
         commit.Modify( graphicItem );
 
-        SEG seg( graphicItem->GetStart(), graphicItem->GetEnd() );
+        SEG      seg( graphicItem->GetStart(), graphicItem->GetEnd() );
         VECTOR2I nearestPoint = seg.NearestPoint( cursorPos );
 
         // Move the end of the line to the break point..

@@ -47,6 +47,7 @@
 #include <tools/tool_event_utils.h>
 #include <tools/pcb_grid_helper.h>
 #include <tools/pad_tool.h>
+#include <tools/drc_tool.h>
 #include <view/view_controls.h>
 #include <connectivity/connectivity_algo.h>
 #include <connectivity/connectivity_items.h>
@@ -77,7 +78,9 @@ using namespace std::placeholders;
 class DRC_TEST_PROVIDER_COURTYARD_CLEARANCE_ON_MOVE : public DRC_TEST_PROVIDER_CLEARANCE_BASE
 {
 public:
-    DRC_TEST_PROVIDER_COURTYARD_CLEARANCE_ON_MOVE()
+    DRC_TEST_PROVIDER_COURTYARD_CLEARANCE_ON_MOVE() :
+        DRC_TEST_PROVIDER_CLEARANCE_BASE(),
+        m_largestCourtyardClearance( 0 )
     {
         m_isRuleDriven = false;
     }
@@ -108,6 +111,9 @@ public:
 
 private:
     void testCourtyardClearances();
+
+private:
+    int m_largestCourtyardClearance;
 };
 
 
@@ -129,8 +135,8 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE_ON_MOVE::testCourtyardClearances()
         BOX2I frontBBox = frontA.BBoxFromCaches();
         BOX2I backBBox = backA.BBoxFromCaches();
 
-        frontBBox.Inflate( m_largestClearance );
-        backBBox.Inflate( m_largestClearance );
+        frontBBox.Inflate( m_largestCourtyardClearance );
+        backBBox.Inflate( m_largestCourtyardClearance );
 
         EDA_RECT fpABBox = fpA->GetBoundingBox();
 
@@ -256,15 +262,12 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE_ON_MOVE::Init( BOARD* aBoard )
 bool DRC_TEST_PROVIDER_COURTYARD_CLEARANCE_ON_MOVE::Run()
 {
     m_FpInConflict.clear();
-    m_largestClearance = 0;
+    m_largestCourtyardClearance = 0;
 
-    // Currently, do not use DRC engine for calculation time reasons
-    #if 0
     DRC_CONSTRAINT constraint;
 
     if( m_drcEngine->QueryWorstConstraint( COURTYARD_CLEARANCE_CONSTRAINT, constraint ) )
-        m_largestClearance = constraint.GetValue().Min();
-    #endif
+        m_largestCourtyardClearance = constraint.GetValue().Min();
 
     testCourtyardClearances();
 
@@ -301,6 +304,7 @@ int EDIT_TOOL::MoveWithReference( const TOOL_EVENT& aEvent )
 int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
 {
     PCB_BASE_EDIT_FRAME*  editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
+    BOARD*                board = editFrame->GetBoard();
     KIGFX::VIEW_CONTROLS* controls  = getViewControls();
     VECTOR2I              originalCursorPos = controls->GetCursorPosition();
 
@@ -314,7 +318,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
             },
             // Prompt user regarding locked items if in board editor and in free-pad-mode (if
             // we're not in free-pad mode we delay this until the second RequestSelection()).
-            frame()->Settings().m_AllowFreePads && !m_isFootprintEditor );
+            editFrame->Settings().m_AllowFreePads && !m_isFootprintEditor );
 
     if( m_dragging || selection.Empty() )
         return 0;
@@ -326,7 +330,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
 
     // Now filter out pads if not in free pads mode.  We cannot do this in the first
     // RequestSelection() as we need the item_layers when a pad is the selection front.
-    if( !m_isFootprintEditor && !frame()->Settings().m_AllowFreePads )
+    if( !m_isFootprintEditor && !editFrame->Settings().m_AllowFreePads )
     {
         selection = m_selectionTool->RequestSelection(
                 []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
@@ -393,16 +397,22 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
     TOOL_EVENT*     evt = &aEvent;
     VECTOR2I        prevPos;
 
-    bool lock45          = false;
+    bool hv45Mode        = false;
     bool eatFirstMouseUp = true;
     bool hasRedrawn3D    = false;
     bool allowRedraw3D   = editFrame->Settings().m_Display.m_Live3DRefresh;
     // Courtyard conflicts will be tested only if the LAYER_CONFLICTS_SHADOW gal layer is visible
-    bool showCourtyardConflicts = editFrame->GetBoard()->IsElementVisible( LAYER_CONFLICTS_SHADOW );
+    bool showCourtyardConflicts = !m_isFootprintEditor
+                                    && board->IsElementVisible( LAYER_CONFLICTS_SHADOW );
 
     // Used to test courtyard overlaps
     DRC_TEST_PROVIDER_COURTYARD_CLEARANCE_ON_MOVE drc_on_move;
-    drc_on_move.Init( editFrame->GetBoard() );
+
+    if( showCourtyardConflicts )
+    {
+        drc_on_move.Init( board );
+        drc_on_move.SetDRCEngine( m_toolMgr->GetTool<DRC_TOOL>()->GetDRCEngine().get() );
+    }
 
     // Prime the pump
     m_toolMgr->RunAction( ACTIONS::refreshPreview );
@@ -445,7 +455,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                 if( !selection.HasReferencePoint() )
                     originalPos = m_cursor;
 
-                if( lock45 )
+                if( hv45Mode )
                 {
                     VECTOR2I moveVector = m_cursor - originalPos;
                     m_cursor = originalPos + GetVectorSnapped45( moveVector );
@@ -566,7 +576,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                     // start moving with the reference point attached to the cursor
                     grid.SetAuxAxes( false );
 
-                    if( lock45 )
+                    if( hv45Mode )
                     {
                         VECTOR2I moveVector = m_cursor - originalPos;
                         m_cursor = originalPos + GetVectorSnapped45( moveVector );
@@ -628,8 +638,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                 m_toolMgr->PostEvent( EVENTS::SelectedItemsModified );
             }
 
-            m_toolMgr->RunAction( PCB_ACTIONS::updateLocalRatsnest, false,
-                                  new VECTOR2I( movement ) );
+            m_toolMgr->RunAction( PCB_ACTIONS::updateLocalRatsnest, false, new VECTOR2I( movement ) );
         }
         else if( evt->IsCancelInteractive() || evt->IsActivate() )
         {
@@ -685,9 +694,9 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
 
             break; // finish
         }
-        else if( evt->IsAction( &PCB_ACTIONS::toggle45 ) )
+        else if( evt->IsAction( &PCB_ACTIONS::toggleHV45Mode ) )
         {
-            lock45 = !lock45;
+            hv45Mode = !hv45Mode;
             evt->SetPassEvent( false );
         }
         else

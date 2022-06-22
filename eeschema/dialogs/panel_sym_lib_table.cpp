@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017 Wayne Stambaugh <stambaughw@gmail.com>
  * Copyright (C) 2021 CERN
- * Copyright (C) 2017-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2017-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -28,7 +28,7 @@
 #include <lib_id.h>
 #include <symbol_lib_table.h>
 #include <lib_table_lexer.h>
-#include <grid_tricks.h>
+#include <lib_table_grid_tricks.h>
 #include <widgets/wx_grid.h>
 #include <confirm.h>
 #include <bitmaps.h>
@@ -133,12 +133,11 @@ public:
     }
 };
 
-
-class SYMBOL_GRID_TRICKS : public GRID_TRICKS
+class SYMBOL_GRID_TRICKS : public LIB_TABLE_GRID_TRICKS
 {
 public:
     SYMBOL_GRID_TRICKS( DIALOG_EDIT_LIBRARY_TABLES* aParent, WX_GRID* aGrid ) :
-        GRID_TRICKS( aGrid ),
+        LIB_TABLE_GRID_TRICKS( aGrid ),
         m_dialog( aParent )
     {
     }
@@ -505,12 +504,11 @@ void PANEL_SYM_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
     wxString           detailedMsg   = _( "One of the nicknames will need to be changed after "
                                           "adding this library." );
 
-    wxArrayString files;
-    dlg.GetFilenames( files );
+    wxArrayString filePathsList;
+    dlg.GetPaths( filePathsList );
 
-    for( const wxString& file : files )
+    for( const wxString& filePath : filePathsList )
     {
-        wxString   filePath = dlg.GetDirectory() + wxFileName::GetPathSeparator() + file;
         wxFileName fn( filePath );
         wxString   nickname = LIB_ID::FixIllegalChars( fn.GetName(), true );
         bool       doAdd = true;
@@ -556,7 +554,7 @@ void PANEL_SYM_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
         }
     }
 
-    if( !files.IsEmpty() )
+    if( !filePathsList.IsEmpty() )
     {
         m_cur_grid->MakeCellVisible( m_cur_grid->GetNumberRows() - 1, 0 );
         m_cur_grid->SetGridCursor( m_cur_grid->GetNumberRows() - 1, 1 );

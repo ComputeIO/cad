@@ -40,41 +40,12 @@
 #include <wx/dir.h>
 #include <wx/filedlg.h>
 #include "dialog_pcm.h"
-#include <macros.h>
-#include <sch_io_mgr.h>
-#include <io_mgr.h>
 
-///> Helper widget to select whether a new directory should be created for a project.
-class DIR_CHECKBOX : public wxPanel
-{
-public:
-    DIR_CHECKBOX( wxWindow* aParent )
-            : wxPanel( aParent )
-    {
-        m_cbCreateDir = new wxCheckBox( this, wxID_ANY,
-                                        _( "Create a new folder for the project" ) );
-        m_cbCreateDir->SetValue( true );
-
-        wxBoxSizer* sizer = new wxBoxSizer( wxHORIZONTAL );
-        sizer->Add( m_cbCreateDir, 0, wxALL, 8 );
-
-        SetSizerAndFit( sizer );
-    }
-
-    bool CreateNewDir() const
-    {
-        return m_cbCreateDir->GetValue();
-    }
-
-    static wxWindow* Create( wxWindow* aParent )
-    {
-        return new DIR_CHECKBOX( aParent );
-    }
-
-protected:
-    wxCheckBox* m_cbCreateDir;
-};
-
+#if wxCHECK_VERSION( 3, 1, 7 )
+#include "widgets/filedlg_new_project.h"
+#else
+#include "widgets/legacyfiledlg_new_project.h"
+#endif
 
 KICAD_MANAGER_CONTROL::KICAD_MANAGER_CONTROL() :
         TOOL_INTERACTIVE( "kicad.Control" ),
@@ -96,7 +67,12 @@ int KICAD_MANAGER_CONTROL::NewProject( const TOOL_EVENT& aEvent )
                          ProjectFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     // Add a "Create a new directory" checkbox
-    dlg.SetExtraControlCreator( &DIR_CHECKBOX::Create );
+#if wxCHECK_VERSION( 3, 1, 7 )
+    FILEDLG_NEW_PROJECT newProjectHook;
+    dlg.SetCustomizeHook( newProjectHook );
+#else
+    dlg.SetExtraControlCreator( &LEGACYFILEDLG_NEW_PROJECT::Create );
+#endif
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return -1;
@@ -114,7 +90,15 @@ int KICAD_MANAGER_CONTROL::NewProject( const TOOL_EVENT& aEvent )
         pro.MakeAbsolute();
 
     // Append a new directory with the same name of the project file.
-    if( static_cast<DIR_CHECKBOX*>( dlg.GetExtraControl() )->CreateNewDir() )
+    bool createNewDir = false;
+
+#if wxCHECK_VERSION( 3, 1, 7 )
+    createNewDir = newProjectHook.GetCreateNewDir();
+#else
+    createNewDir = static_cast<LEGACYFILEDLG_NEW_PROJECT*>( dlg.GetExtraControl() )->CreateNewDir();
+#endif
+
+    if( createNewDir )
         pro.AppendDir( pro.GetName() );
 
     // Check if the project directory is empty if it already exists.
@@ -193,7 +177,13 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
                          wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     // Add a "Create a new directory" checkbox
-    dlg.SetExtraControlCreator( &DIR_CHECKBOX::Create );
+#if wxCHECK_VERSION( 3, 1, 7 )
+    FILEDLG_NEW_PROJECT newProjectHook;
+    dlg.SetCustomizeHook( newProjectHook );
+#else
+    dlg.SetExtraControlCreator( &LEGACYFILEDLG_NEW_PROJECT::Create );
+#endif
+
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return -1;
@@ -210,8 +200,15 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
     if( !fn.IsAbsolute() )
         fn.MakeAbsolute();
 
+    bool createNewDir = false;
+#if wxCHECK_VERSION( 3, 1, 7 )
+    createNewDir = newProjectHook.GetCreateNewDir();
+#else
+    createNewDir = static_cast<LEGACYFILEDLG_NEW_PROJECT*>( dlg.GetExtraControl() )->CreateNewDir();
+#endif
+
     // Append a new directory with the same name of the project file.
-    if( static_cast<DIR_CHECKBOX*>( dlg.GetExtraControl() )->CreateNewDir() )
+    if( createNewDir )
         fn.AppendDir( fn.GetName() );
 
     // Check if the project directory is empty if it already exists.
@@ -245,9 +242,9 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
 
     if( ps->GetSelectedTemplate()->GetDestinationFiles( fn, destFiles ) )
     {
-        std::vector< wxFileName > overwrittenFiles;
+        std::vector<wxFileName> overwrittenFiles;
 
-        for( const auto& file : destFiles )
+        for( const wxFileName& file : destFiles )
         {
             if( file.FileExists() )
                 overwrittenFiles.push_back( file );
@@ -257,11 +254,13 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
         {
             wxString extendedMsg = _( "Overwriting files:" ) + "\n";
 
-            for( const auto& file : overwrittenFiles )
+            for( const wxFileName& file : overwrittenFiles )
                 extendedMsg += "\n" + file.GetFullName();
 
-            KIDIALOG msgDlg( m_frame, _( "Similar files already exist in the destination folder." ),
-                             _( "Confirmation" ), wxOK | wxCANCEL | wxICON_WARNING );
+            KIDIALOG msgDlg( m_frame,
+                             _( "Similar files already exist in the destination folder." ),
+                             _( "Confirmation" ),
+                             wxOK | wxCANCEL | wxICON_WARNING );
             msgDlg.SetExtendedMessage( extendedMsg );
             msgDlg.SetOKLabel( _( "Overwrite" ) );
             msgDlg.DoNotShowCheckbox( __FILE__, __LINE__ );
@@ -886,31 +885,13 @@ int KICAD_MANAGER_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
 class TERMINATE_HANDLER : public wxProcess
 {
 public:
-    TERMINATE_HANDLER( const wxString& appName ) :
-            m_appName( appName )
+    TERMINATE_HANDLER( const wxString& appName )
     { }
 
     void OnTerminate( int pid, int status ) override
     {
-        wxString msg = wxString::Format( _( "%s closed [pid=%d]\n" ), m_appName, pid );
-
-        wxWindow* window = wxWindow::FindWindowByName( KICAD_MANAGER_FRAME_NAME );
-
-        if( window )    // Should always happen.
-        {
-            // Be sure the kicad frame manager is found
-            // This dynamic cast is not really mandatory, but ...
-            KICAD_MANAGER_FRAME* frame = dynamic_cast<KICAD_MANAGER_FRAME*>( window );
-
-            if( frame )
-                frame->PrintMsg( msg );
-        }
-
         delete this;
     }
-
-private:
-    wxString m_appName;
 };
 
 
@@ -950,9 +931,6 @@ int KICAD_MANAGER_CONTROL::Execute( const TOOL_EVENT& aEvent )
 
     if( pid > 0 )
     {
-        wxString msg = wxString::Format( _( "%s %s opened [pid=%ld]\n" ), execFile, param, pid );
-        m_frame->PrintMsg( msg );
-
 #ifdef __WXMAC__
         // This non-parameterized use of wxExecute is fine because execFile is not derived
         // from user input.

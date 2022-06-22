@@ -41,6 +41,7 @@
 #include <ratsnest/ratsnest_data.h>
 #include <progress_reporter.h>
 #include <trigo.h>
+#include <drc/drc_rtree.h>
 
 CONNECTIVITY_DATA::CONNECTIVITY_DATA()
 {
@@ -312,9 +313,10 @@ void CONNECTIVITY_DATA::FindIsolatedCopperIslands( ZONE* aZone, std::vector<int>
 #endif
 }
 
-void CONNECTIVITY_DATA::FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones )
+void CONNECTIVITY_DATA::FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones,
+                                                   bool aConnectivityAlreadyRebuilt )
 {
-    m_connAlgo->FindIsolatedCopperIslands( aZones );
+    m_connAlgo->FindIsolatedCopperIslands( aZones, aConnectivityAlreadyRebuilt );
 }
 
 
@@ -409,80 +411,67 @@ bool CONNECTIVITY_DATA::IsConnectedOnLayer( const BOARD_CONNECTED_ITEM *aItem, i
     {
         for( CN_ITEM* connected : citem->ConnectedItems() )
         {
+            CN_ZONE_LAYER* zoneLayer = dynamic_cast<CN_ZONE_LAYER*>( connected );
+
             if( connected->Valid()
                     && connected->Layers().Overlaps( aLayer )
-                    && matchType( connected->Parent()->Type() ) )
+                    && matchType( connected->Parent()->Type() )
+                    && connected->Net() == aItem->GetNetCode() )
             {
-                if( aCheckOptionalFlashing && aItem->Type() == PCB_PAD_T )
+                if( aItem->Type() == PCB_PAD_T && zoneLayer )
                 {
                     const PAD*    pad = static_cast<const PAD*>( aItem );
                     SHAPE_SEGMENT hole( *pad->GetEffectiveHoleShape() );
                     PCB_LAYER_ID  layer = ToLAYER_ID( aLayer );
+                    ZONE*         zone = static_cast<ZONE*>( zoneLayer->Parent() );
+                    int           islandIdx = zoneLayer->SubpolyIndex();
 
-                    if( connected->Net() != aItem->GetNetCode() )
+                    if( zone->IsFilled() )
                     {
-                        // Even if the nets aren't the same, we need to check for a physical
-                        // connection with the unflashed pad's hole (as its walls are plated).
-                        return connected->Parent()->GetEffectiveShape( layer )->Collide( &hole );
-                    }
-                    else if( CN_ZONE_LAYER* zoneLayer = dynamic_cast<CN_ZONE_LAYER*>( connected ) )
-                    {
-                        ZONE* zone = static_cast<ZONE*>( zoneLayer->Parent() );
-                        int   islandIdx = zoneLayer->SubpolyIndex();
+                        const SHAPE_POLY_SET*   zoneFill = zone->GetFill( layer );
+                        const SHAPE_LINE_CHAIN& padHull = pad->GetEffectivePolygon()->Outline( 0 );
 
-                        if( zone->IsFilled() )
+                        for( const VECTOR2I& pt : zoneFill->COutline( islandIdx ).CPoints() )
                         {
-                            const SHAPE_POLY_SET*   zoneFill = zone->GetFill( layer );
-                            const SHAPE_LINE_CHAIN& padHull = pad->GetEffectivePolygon()->Outline( 0 );
+                            // If the entire island is inside the pad's flashing then the pad
+                            // won't actually connect to anything else, so only return true if
+                            // part of the island is *outside* the pad's flashing.
 
-                            for( const VECTOR2I& pt : zoneFill->COutline( islandIdx ).CPoints() )
-                            {
-                                if( !padHull.PointInside( pt ) )
-                                    return true;
-                            }
+                            if( !padHull.PointInside( pt ) )
+                                return true;
                         }
-
-                        // If the zone isn't filled, or the entire island is inside the pad's
-                        // flashing then the pad won't _actually_ connect to anything else.
-                        return false;
                     }
+
+                    continue;
                 }
-                else if( aCheckOptionalFlashing && aItem->Type() == PCB_VIA_T )
+                else if( aItem->Type() == PCB_VIA_T && zoneLayer )
                 {
                     const PCB_VIA* via = static_cast<const PCB_VIA*>( aItem );
                     SHAPE_CIRCLE   hole( via->GetCenter(), via->GetDrillValue() / 2 );
                     PCB_LAYER_ID   layer = ToLAYER_ID( aLayer );
+                    ZONE*          zone = static_cast<ZONE*>( zoneLayer->Parent() );
+                    int            islandIdx = zoneLayer->SubpolyIndex();
 
-                    if( connected->Net() != aItem->GetNetCode() )
+                    if( zone->IsFilled() )
                     {
-                        // Even if the nets aren't the same, we need to check for a physical
-                        // connection with the unflashed via's hole (as its walls are plated).
-                        return connected->Parent()->GetEffectiveShape( layer )->Collide( &hole );
-                    }
-                    else if( CN_ZONE_LAYER* zoneLayer = dynamic_cast<CN_ZONE_LAYER*>( connected ) )
-                    {
-                        ZONE* zone = static_cast<ZONE*>( zoneLayer->Parent() );
-                        int   islandIdx = zoneLayer->SubpolyIndex();
+                        const SHAPE_POLY_SET* zoneFill = zone->GetFill( layer );
+                        SHAPE_CIRCLE          viaHull( via->GetCenter(), via->GetWidth() / 2 );
 
-                        if( zone->IsFilled() )
+                        for( const VECTOR2I& pt : zoneFill->COutline( islandIdx ).CPoints() )
                         {
-                            const SHAPE_POLY_SET* zoneFill = zone->GetFill( layer );
-                            SHAPE_CIRCLE          viaHull( via->GetCenter(), via->GetWidth() / 2 );
+                            // If the entire island is inside the via's flashing then the via
+                            // won't actually connect to anything else, so only return true if
+                            // part of the island is *outside* the via's flashing.
 
-                            for( const VECTOR2I& pt : zoneFill->COutline( islandIdx ).CPoints() )
-                            {
-                                if( !viaHull.SHAPE::Collide( pt ) )
-                                    return true;
-                            }
+                            if( !viaHull.SHAPE::Collide( pt ) )
+                                return true;
                         }
-
-                        // If the zone isn't filled, or the entire island is inside the pad's
-                        // flashing then the pad won't _actually_ connect to anything else.
-                        return false;
                     }
+
+                    continue;
                 }
 
-                return connected->Net() == aItem->GetNetCode();
+                return true;
             }
         }
     }
@@ -753,14 +742,32 @@ bool CONNECTIVITY_DATA::TestTrackEndpointDangling( PCB_TRACK* aTrack, VECTOR2I* 
         for( CN_ITEM* connected : citem->ConnectedItems() )
         {
             BOARD_CONNECTED_ITEM* item = connected->Parent();
+            ZONE*                 zone = dynamic_cast<ZONE*>( item );
+            DRC_RTREE*            rtree = nullptr;
+            bool                  hitStart = false;
+            bool                  hitEnd = false;
 
             if( item->GetFlags() & IS_DELETED )
                 continue;
 
-            std::shared_ptr<SHAPE> shape = item->GetEffectiveShape( layer );
+            if( zone )
+                rtree = zone->GetBoard()->m_CopperZoneRTreeCache[ zone ].get();
 
-            bool hitStart = shape->Collide( aTrack->GetStart(), accuracy );
-            bool hitEnd = shape->Collide( aTrack->GetEnd(), accuracy );
+            if( rtree )
+            {
+                SHAPE_CIRCLE start( aTrack->GetStart(), accuracy );
+                SHAPE_CIRCLE end( aTrack->GetEnd(), accuracy );
+
+                hitStart = rtree->QueryColliding( start.BBox(), &start, layer );
+                hitEnd = rtree->QueryColliding( end.BBox(), &end, layer );
+            }
+            else
+            {
+                std::shared_ptr<SHAPE> shape = item->GetEffectiveShape( layer );
+
+                hitStart = shape->Collide( aTrack->GetStart(), accuracy );
+                hitEnd = shape->Collide( aTrack->GetEnd(), accuracy );
+            }
 
             if( hitStart && hitEnd )
             {

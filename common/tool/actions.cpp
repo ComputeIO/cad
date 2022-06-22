@@ -172,7 +172,8 @@ TOOL_ACTION ACTIONS::selectAll( "common.Interactive.selectAll",
 
 TOOL_ACTION ACTIONS::pasteSpecial( "common.Interactive.pasteSpecial",
         AS_GLOBAL, 0, "",
-        _( "Paste Special..." ), _( "Paste item(s) from clipboard with options" ) );
+        _( "Paste Special..." ), _( "Paste item(s) from clipboard with annotation options" ),
+        BITMAPS::paste_special );
 
 TOOL_ACTION ACTIONS::duplicate( "common.Interactive.duplicate",
         AS_GLOBAL,
@@ -246,17 +247,20 @@ TOOL_ACTION ACTIONS::updateFind( "common.Control.updateFind",
 TOOL_ACTION ACTIONS::prevMarker( "common.Checker.prevMarker",
         AS_GLOBAL,
         0, "",
-        _( "Previous Marker" ), _( "Go to previous marker in Checker window" ) );
+        _( "Previous Marker" ), _( "Go to previous marker in Checker window" ),
+        BITMAPS::marker_previous );
 
 TOOL_ACTION ACTIONS::nextMarker( "common.Checker.nextMarker",
         AS_GLOBAL,
         0, "",
-        _( "Next Marker" ), _( "Go to next marker in Checker window" ) );
+        _( "Next Marker" ), _( "Go to next marker in Checker window" ),
+        BITMAPS::marker_next );
 
 TOOL_ACTION ACTIONS::excludeMarker( "common.Checker.excludeMarker",
         AS_GLOBAL,
         0, "",
-        _( "Exclude Marker" ), _( "Mark current violation in Checker window as an exclusion" ) );
+        _( "Exclude Marker" ), _( "Mark current violation in Checker window as an exclusion" ),
+        BITMAPS::marker_exclude );
 
 // View Controls
 TOOL_ACTION ACTIONS::zoomRedraw( "common.Control.zoomRedraw",
@@ -546,7 +550,7 @@ TOOL_ACTION ACTIONS::highContrastModeCycle( "common.Control.highContrastModeCycl
 
 TOOL_ACTION ACTIONS::toggleBoundingBoxes( "common.Control.toggleBoundingBoxes",
         AS_GLOBAL, 0, "",
-        _( "Draw Bounding Boxes" ), "",
+        _( "Draw Bounding Boxes" ), _( "Draw Bounding Boxes" ),
         BITMAPS::gerbview_show_negative_objects );
 
 TOOL_ACTION ACTIONS::selectionTool( "common.InteractiveSelection.selectionTool",

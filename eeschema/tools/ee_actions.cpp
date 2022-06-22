@@ -89,7 +89,8 @@ TOOL_ACTION EE_ACTIONS::selectNode( "eeschema.InteractiveSelection.SelectNode",
 TOOL_ACTION EE_ACTIONS::selectConnection( "eeschema.InteractiveSelection.SelectConnection",
         AS_GLOBAL,
         MD_ALT + '4', LEGACY_HK_NAME( "Select Connection" ),
-        _( "Select Connection" ), _( "Select a complete connection" ) );
+        _( "Select Connection" ), _( "Select a complete connection" ),
+        BITMAPS::net_highlight_schematic);
 
 TOOL_ACTION EE_ACTIONS::selectionMenu( "eeschema.InteractiveSelection.SelectionMenu",
         AS_GLOBAL );
@@ -466,7 +467,8 @@ TOOL_ACTION EE_ACTIONS::updateSymbol( "eeschema.InteractiveEdit.updateSymbol",
 
 TOOL_ACTION EE_ACTIONS::assignNetclass( "eeschema.InteractiveEdit.assignNetclass",
         AS_GLOBAL, 0, "",
-        _( "Assign Netclass..." ), _( "Assign a netclass to the net of the selected wire" ) );
+        _( "Assign Netclass..." ), _( "Assign a netclass to the net of the selected wire" ),
+        BITMAPS::netlist);
 
 TOOL_ACTION EE_ACTIONS::toggleDeMorgan( "eeschema.InteractiveEdit.toggleDeMorgan",
         AS_GLOBAL, 0, "",
@@ -687,7 +689,7 @@ TOOL_ACTION EE_ACTIONS::toggleERCExclusions( "eeschema.EditorControl.showERCExcl
 TOOL_ACTION EE_ACTIONS::lineModeFree( "eeschema.EditorControl.lineModeFree",
         AS_GLOBAL, 0, "",
         _( "Line Mode for Wires and Buses" ), _( "Lines drawn at any angle" ),
-        BITMAPS::unknown, AF_NONE, (void*) LINE_MODE::LINE_MODE_FREE );
+        BITMAPS::lines_any, AF_NONE, (void*) LINE_MODE::LINE_MODE_FREE );
 
 TOOL_ACTION EE_ACTIONS::lineMode90( "eeschema.EditorControl.lineModeOrthonal",
         AS_GLOBAL, 0, "",
@@ -696,18 +698,18 @@ TOOL_ACTION EE_ACTIONS::lineMode90( "eeschema.EditorControl.lineModeOrthonal",
 
 TOOL_ACTION EE_ACTIONS::lineMode45( "eeschema.EditorControl.lineMode45",
         AS_GLOBAL, 0, "",
-        _( "Line Mode for Wires and Buses" ), _( "Lines drawn horizontally and vertically, with a 45 degree angle end" ),
-        BITMAPS::unknown, AF_NONE, (void*) LINE_MODE::LINE_MODE_45);
-
-TOOL_ACTION EE_ACTIONS::lineMode135( "eeschema.EditorControl.lineMode135",
-        AS_GLOBAL, 0, "",
-        _( "Line Mode for Wires and Buses" ), _( "Lines drawn horizontally and vertically, with a 45 degree angle start" ),
-        BITMAPS::unknown, AF_NONE, (void*) LINE_MODE::LINE_MODE_135);
+        _( "Line Mode for Wires and Buses" ), _( "Lines drawn horizontally, vertically, and at a 45 degree angle" ),
+        BITMAPS::hv45mode, AF_NONE, (void*) LINE_MODE::LINE_MODE_45);
 
 TOOL_ACTION EE_ACTIONS::lineModeNext( "eeschema.EditorControl.lineModeNext",
         AS_GLOBAL, MD_SHIFT + WXK_SPACE, "",
         _( "Line Mode for Wires and Buses" ), _( "Switch to next line mode" ),
         BITMAPS::unknown );
+
+TOOL_ACTION EE_ACTIONS::toggleAnnotateAuto( "eeschema.EditorControl.annotateAutomatically",
+        AS_GLOBAL, 0, "",
+        _( "Annotate Automatically" ), _( "Toggle automatic annotation of new parts symbols" ),
+        BITMAPS::annotate );
 
 TOOL_ACTION EE_ACTIONS::repairSchematic( "eeschema.EditorControl.repairSchematic",
         AS_GLOBAL, 0, "",
@@ -723,6 +725,11 @@ TOOL_ACTION EE_ACTIONS::showPythonConsole( "eeschema.EditorControl.showPythonCon
 
 // SCH_NAVIGATE_TOOL
 //
+TOOL_ACTION EE_ACTIONS::changeSheet( "eeschema.NavigateTool.changeSheet",
+        AS_GLOBAL, 0, "",
+        _( "Enter Sheet" ), _( "Change to provided sheet's contents in the schematic editor" ),
+        BITMAPS::enter_sheet );
+
 TOOL_ACTION EE_ACTIONS::enterSheet( "eeschema.NavigateTool.enterSheet",
         AS_GLOBAL, 0, "",
         _( "Enter Sheet" ), _( "Display the selected sheet's contents in the schematic editor" ),
@@ -734,9 +741,39 @@ TOOL_ACTION EE_ACTIONS::leaveSheet( "eeschema.NavigateTool.leaveSheet",
         _( "Leave Sheet" ), _( "Display the parent sheet in the schematic editor" ),
         BITMAPS::leave_sheet );
 
-TOOL_ACTION EE_ACTIONS::navigateHierarchy( "eeschema.NavigateTool.navigateHierarchy",
-        AS_GLOBAL, 0, "",
-        _( "Hierarchy Navigator" ), _( "Show schematic sheet hierarchy" ),
+TOOL_ACTION EE_ACTIONS::navigateUp( "eeschema.NavigateTool.up",
+        AS_GLOBAL, MD_ALT + WXK_UP, "",
+        _( "Navigate Up" ), _( "Navigate up one sheet in the hierarchy" ),
+        BITMAPS::up );
+
+TOOL_ACTION EE_ACTIONS::navigateBack( "eeschema.NavigateTool.back",
+        AS_GLOBAL,
+        MD_ALT + WXK_LEFT, "",
+        _( "Navigate Back" ), _( "Move forward in sheet navigation history" ),
+        BITMAPS::left );
+
+TOOL_ACTION EE_ACTIONS::navigateForward( "eeschema.NavigateTool.forward",
+        AS_GLOBAL,
+        MD_ALT + WXK_RIGHT, "",
+        _( "Navigate Forward" ), _( "Move backward in sheet navigation history" ),
+        BITMAPS::right );
+
+TOOL_ACTION EE_ACTIONS::navigatePrevious( "eeschema.NavigateTool.previous",
+        AS_GLOBAL,
+        WXK_PAGEUP, "",
+        _( "Previous Sheet" ), _( "Move to previous sheet by number" ),
+        BITMAPS::left );
+
+TOOL_ACTION EE_ACTIONS::navigateNext( "eeschema.NavigateTool.next",
+        AS_GLOBAL,
+        WXK_PAGEDOWN, "",
+        _( "Next Sheet" ), _( "Move to next sheet by number" ),
+        BITMAPS::right );
+
+TOOL_ACTION EE_ACTIONS::showHierarchy( "eeschema.EditorTool.showHierarchy",
+        AS_GLOBAL,
+        MD_CTRL + 'H', "",
+        _( "Hierarchy Navigator" ), _( "Show or hide the schematic sheet hierarchy navigator" ),
         BITMAPS::hierarchy_nav );
 
 TOOL_ACTION EE_ACTIONS::hypertextCommand( "eeschema.NavigateTool.hypertextCommand",

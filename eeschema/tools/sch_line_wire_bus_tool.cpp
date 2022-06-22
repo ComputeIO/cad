@@ -425,7 +425,8 @@ const SCH_SHEET_PIN* SCH_LINE_WIRE_BUS_TOOL::getSheetPin( const VECTOR2I& aPosit
 
 void SCH_LINE_WIRE_BUS_TOOL::computeBreakPoint( const std::pair<SCH_LINE*, SCH_LINE*>& aSegments,
                                                 VECTOR2I&                              aPosition,
-                                                LINE_MODE                              mode )
+                                                LINE_MODE                              mode,
+                                                bool                                   posture )
 {
     wxCHECK_RET( aSegments.first && aSegments.second,
                  wxT( "Cannot compute break point of NULL line segment." ) );
@@ -442,7 +443,7 @@ void SCH_LINE_WIRE_BUS_TOOL::computeBreakPoint( const std::pair<SCH_LINE*, SCH_L
     bool preferHorizontal;
     bool preferVertical;
 
-    if( mode == LINE_MODE_135 )
+    if( ( mode == LINE_MODE_45 ) && posture )
     {
         preferHorizontal = ( nextSegment->GetEndPoint().x - nextSegment->GetStartPoint().x ) != 0;
         preferVertical   = ( nextSegment->GetEndPoint().y - nextSegment->GetStartPoint().y ) != 0;
@@ -475,12 +476,16 @@ void SCH_LINE_WIRE_BUS_TOOL::computeBreakPoint( const std::pair<SCH_LINE*, SCH_L
         switch( mode )
         {
         case LINE_MODE_45:
-            midPoint.x = segment->GetStartPoint().x;
-            midPoint.y = aPosition.y - yDir * abs( delta.x );
-            break;
-        case LINE_MODE_135:
-            midPoint.x = aPosition.x;
-            midPoint.y = segment->GetStartPoint().y + yDir * abs( delta.x );
+            if( !posture )
+            {
+                midPoint.x = segment->GetStartPoint().x;
+                midPoint.y = aPosition.y - yDir * abs( delta.x );
+            }
+            else
+            {
+                midPoint.x = aPosition.x;
+                midPoint.y = segment->GetStartPoint().y + yDir * abs( delta.x );
+            }
             break;
         default:
             midPoint.x = segment->GetStartPoint().x;
@@ -494,12 +499,16 @@ void SCH_LINE_WIRE_BUS_TOOL::computeBreakPoint( const std::pair<SCH_LINE*, SCH_L
         switch( mode )
         {
         case LINE_MODE_45:
-            midPoint.x = aPosition.x - xDir * abs( delta.y );
-            midPoint.y = segment->GetStartPoint().y;
-            break;
-        case LINE_MODE_135:
-            midPoint.x = segment->GetStartPoint().x + xDir * abs( delta.y );
-            midPoint.y = aPosition.y;
+            if( !posture )
+            {
+                midPoint.x = aPosition.x - xDir * abs( delta.y );
+                midPoint.y = segment->GetStartPoint().y;
+            }
+            else
+            {
+                midPoint.x = segment->GetStartPoint().x + xDir * abs( delta.y );
+                midPoint.y = aPosition.y;
+            }
             break;
         default:
             midPoint.x = aPosition.x;
@@ -522,14 +531,14 @@ void SCH_LINE_WIRE_BUS_TOOL::computeBreakPoint( const std::pair<SCH_LINE*, SCH_L
     // /__________
     VECTOR2I deltaMidpoint = midPoint - segment->GetStartPoint();
 
-    if( mode == LINE_MODE::LINE_MODE_45
+    if( mode == LINE_MODE::LINE_MODE_45 && !posture
         && ( ( alg::signbit( deltaMidpoint.x ) != alg::signbit( delta.x ) )
              || ( alg::signbit( deltaMidpoint.y ) != alg::signbit( delta.y ) ) ) )
     {
         preferVertical = false;
         preferHorizontal = false;
     }
-    else if( mode == LINE_MODE::LINE_MODE_135
+    else if( mode == LINE_MODE::LINE_MODE_45 && posture
              && ( ( abs( deltaMidpoint.x ) > abs( delta.x ) )
                   || ( abs( deltaMidpoint.y ) > abs( delta.y ) ) ) )
     {
@@ -558,6 +567,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
     EE_GRID_HELPER        grid( m_toolMgr );
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
     int                   lastMode = m_frame->eeconfig()->m_Drawing.line_mode;
+    static bool           posture = false;
 
     auto setCursor =
             [&]()
@@ -620,7 +630,12 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
     while( TOOL_EVENT* evt = Wait() )
     {
         LINE_MODE currentMode = (LINE_MODE) m_frame->eeconfig()->m_Drawing.line_mode;
-        bool twoSegments = currentMode != LINE_MODE::LINE_MODE_FREE;
+        bool      twoSegments = currentMode != LINE_MODE::LINE_MODE_FREE;
+
+        // The tool hotkey is interpreted as a click when drawing
+        bool isSyntheticClick = ( segment || m_busUnfold.in_progress )
+                                && evt->IsActivate() && evt->HasPosition()
+                                && evt->GetCommandStr().get().compare( aTool ) == 0;
 
         setCursor();
         grid.SetMask( GRID_HELPER::ALL );
@@ -646,8 +661,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         if( currentMode != lastMode )
         {
             // Need to delete extra segment if we have one
-            if( currentMode == LINE_MODE::LINE_MODE_FREE && m_wires.size() >= 2
-                && segment != nullptr )
+            if( segment && currentMode == LINE_MODE::LINE_MODE_FREE && m_wires.size() >= 2 )
             {
                 m_wires.pop_back();
                 m_selectionTool->RemoveItemFromSel( segment );
@@ -657,7 +671,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                 segment->SetEndPoint( cursorPos );
             }
             // Add a segment so we can move orthogonally/45
-            else if( lastMode == LINE_MODE::LINE_MODE_FREE && segment )
+            else if( segment && lastMode == LINE_MODE::LINE_MODE_FREE )
             {
                 segment->SetEndPoint( cursorPos );
 
@@ -672,7 +686,6 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
 
             lastMode = currentMode;
         }
-
 
         //------------------------------------------------------------------------
         // Handle cancel:
@@ -691,7 +704,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                 break;
             }
         }
-        else if( evt->IsActivate() )
+        else if( evt->IsActivate() && !isSyntheticClick )
         {
             if( segment || m_busUnfold.in_progress )
             {
@@ -734,7 +747,9 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         //------------------------------------------------------------------------
         // Handle click:
         //
-        else if( evt->IsClick( BUT_LEFT ) || ( segment && evt->IsDblClick( BUT_LEFT ) ) )
+        else if( evt->IsClick( BUT_LEFT )
+                || ( segment && evt->IsDblClick( BUT_LEFT ) )
+                || isSyntheticClick )
         {
             // First click when unfolding places the label and wire-to-bus entry
             if( m_busUnfold.in_progress && !m_busUnfold.label_placed )
@@ -774,11 +789,8 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                     // When placing lines with the forty-five degree end, the user is
                     // targetting the endpoint with the angled portion, so it's more
                     // intuitive to place both segments at the same time.
-                    if( currentMode == LINE_MODE::LINE_MODE_45
-                        || currentMode == LINE_MODE::LINE_MODE_135 )
-                    {
+                    if( currentMode == LINE_MODE::LINE_MODE_45 )
                         placedSegments++;
-                    }
 
                     segment->SetEndPoint( cursorPos );
 
@@ -799,7 +811,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
             {
                 if( twoSegments && m_wires.size() >= 2 )
                     computeBreakPoint( { m_wires[m_wires.size() - 2], segment }, cursorPos,
-                                       currentMode );
+                                       currentMode, posture );
 
                 finishSegments();
                 segment = nullptr;
@@ -860,7 +872,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                 if( twoSegments && m_wires.size() >= 2 )
                 {
                     computeBreakPoint( { m_wires[m_wires.size() - 2], segment }, cursorPos,
-                                       currentMode );
+                                       currentMode, posture );
                 }
                 else
                 {
@@ -892,7 +904,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                 if( twoSegments && m_wires.size() >= 2 )
                 {
                     computeBreakPoint( { m_wires[m_wires.size() - 2], segment }, cursorPos,
-                                       currentMode );
+                                       currentMode, posture );
                 }
                 else
                 {
@@ -910,12 +922,14 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                 wxBell();
             }
         }
-        else if( evt->IsAction( &EE_ACTIONS::switchSegmentPosture ) )
+        else if( evt->IsAction( &EE_ACTIONS::switchSegmentPosture ) && m_wires.size() >= 2 )
         {
+            posture = !posture;
+
             // The 90 degree mode doesn't have a forced posture like
-            // the 45 and 135 degree modes, so we don't have a mode to toggle
-            // in the UI. Instead, just swap the 90 angle here.
-            if( currentMode == LINE_MODE::LINE_MODE_90 && m_wires.size() >= 2 )
+            // the 45 degree mode and computeBreakPoint maintains existing 90s' postures.
+            // Instead, just swap the 90 angle here.
+            if( currentMode == LINE_MODE::LINE_MODE_90 )
             {
                 m_view->ClearPreview();
 
@@ -936,9 +950,10 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
             }
             else
             {
-                // Posture change for 45/135 will come back around as a mode
-                // change and we'll refresh as needed
-                evt->SetPassEvent();
+                computeBreakPoint( { m_wires[m_wires.size() - 2], segment }, cursorPos, currentMode,
+                                   posture );
+
+                m_toolMgr->RunAction( ACTIONS::refreshPreview );
             }
         }
         //------------------------------------------------------------------------

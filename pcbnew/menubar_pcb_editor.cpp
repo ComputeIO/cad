@@ -339,7 +339,6 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     placeMenu->AppendSeparator();
     placeMenu->Add( PCB_ACTIONS::placeCharacteristics );
     placeMenu->Add( PCB_ACTIONS::placeStackup );
-    placeMenu->Add( PCB_ACTIONS::placeTarget );
 
     placeMenu->AppendSeparator();
     placeMenu->Add( PCB_ACTIONS::drillOrigin );
@@ -408,16 +407,10 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     toolsMenu->Add( ACTIONS::showFootprintEditor );
     toolsMenu->Add( PCB_ACTIONS::updateFootprints );
 
-    // Currently: available only with advanced_config m_AllowTeardrops = true
-    // (AllowTeardrops = 1)
-    if(  ADVANCED_CFG::GetCfg().m_AllowTeardrops )
-    {
-        toolsMenu->AppendSeparator();
-        toolsMenu->Add( _( "Add Teardrops" ), "",
-                        ID_RUN_TEARDROP_TOOL, BITMAPS::via );
-        toolsMenu->Add( _( "Remove Teardrops" ), "",
-                        ID_REMOVE_TEARDROP_TOOL, BITMAPS::via );
-    }
+    // Add/remove teardrops menuitems:
+    toolsMenu->AppendSeparator();
+    toolsMenu->Add( _( "Add Teardrops" ), "", ID_RUN_TEARDROP_TOOL, BITMAPS::via );
+    toolsMenu->Add( _( "Remove Teardrops" ), "", ID_REMOVE_TEARDROP_TOOL, BITMAPS::via );
 
     toolsMenu->AppendSeparator();
     toolsMenu->Add( PCB_ACTIONS::cleanupTracksAndVias );

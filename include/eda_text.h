@@ -120,9 +120,9 @@ public:
     int GetTextThickness() const                { return m_attributes.m_StrokeWidth; };
 
     /**
-     * The EffectiveTextPenWidth uses the text thickness if > 1 or aDefaultWidth.
+     * The EffectiveTextPenWidth uses the text thickness if > 1 or aDefaultPenWidth.
      */
-    int GetEffectiveTextPenWidth( int aDefaultWidth = 0 ) const;
+    int GetEffectiveTextPenWidth( int aDefaultPenWidth = 0 ) const;
 
     virtual void SetTextAngle( const EDA_ANGLE& aAngle );
     const EDA_ANGLE& GetTextAngle() const       { return m_attributes.m_Angle; }
@@ -169,6 +169,7 @@ public:
 
     void CopyText( const EDA_TEXT& aSrc );
 
+    void SetAttributes( const TEXT_ATTRIBUTES& aTextAttrs ) { m_attributes = aTextAttrs; }
     const TEXT_ATTRIBUTES& GetAttributes() const { return m_attributes; }
 
     /**

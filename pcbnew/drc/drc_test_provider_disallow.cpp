@@ -133,7 +133,7 @@ bool DRC_TEST_PROVIDER_DISALLOW::Run()
                             SHAPE_POLY_SET areaPoly = ruleArea->Outline()->CloneDropTriangulation();
                             areaPoly.Deflate( epsilon, 0, SHAPE_POLY_SET::ALLOW_ACUTE_CORNERS );
 
-                            DRC_RTREE* zoneRTree = board->m_CopperZoneRTrees[ copperZone ].get();
+                            DRC_RTREE* zoneRTree = board->m_CopperZoneRTreeCache[ copperZone ].get();
 
                             if( zoneRTree )
                             {
@@ -154,11 +154,15 @@ bool DRC_TEST_PROVIDER_DISALLOW::Run()
                         if( m_drcEngine->IsCancelled() )
                             break;
 
-                        std::pair<BOARD_ITEM*, BOARD_ITEM*> key( ruleArea, copperZone );
+                        std::tuple<BOARD_ITEM*, BOARD_ITEM*, PCB_LAYER_ID> key( ruleArea,
+                                                                                copperZone,
+                                                                                UNDEFINED_LAYER );
+
                         {
                             std::unique_lock<std::mutex> cacheLock( board->m_CachesMutex );
                             board->m_InsideAreaCache[ key ] = isInside;
                         }
+
                         done.fetch_add( 1 );
                     }
 
@@ -207,10 +211,11 @@ bool DRC_TEST_PROVIDER_DISALLOW::Run()
                 if( constraint.m_DisallowFlags && constraint.GetSeverity() != RPT_SEVERITY_IGNORE )
                 {
                     std::shared_ptr<DRC_ITEM> drcItem = DRC_ITEM::Create( DRCE_ALLOWED_ITEMS );
+                    wxString msg;
 
-                    m_msg.Printf( drcItem->GetErrorText() + wxS( " (%s)" ), constraint.GetName() );
+                    msg.Printf( drcItem->GetErrorText() + wxS( " (%s)" ), constraint.GetName() );
 
-                    drcItem->SetErrorMessage( m_msg );
+                    drcItem->SetErrorMessage( msg );
                     drcItem->SetItems( item );
                     drcItem->SetViolatingRule( constraint.GetParentRule() );
 

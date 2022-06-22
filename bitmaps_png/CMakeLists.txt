@@ -299,6 +299,7 @@ set( BMAPS_MID
     hotkeys
     hole_to_hole_clearance
     hole_to_copper_clearance
+    hv45mode
     icon_cvpcb_24
     icon_footprint_browser
     icon_gerbview_24
@@ -328,6 +329,7 @@ set( BMAPS_MID
     library_archive_as
     library
     library_table
+    lines_any
     lines90
     list_nets
     load_drill
@@ -335,6 +337,9 @@ set( BMAPS_MID
     load_module_board
     lock_unlock
     locked
+    marker_exclude
+    marker_next
+    marker_previous
     measurement
     pcb_target
     mirror_h
@@ -386,6 +391,7 @@ set( BMAPS_MID
     pagelayout_special_view_mode
     part_properties
     paste
+    paste_special
     pin2pin
     pin_size_to
     pin_show_etype

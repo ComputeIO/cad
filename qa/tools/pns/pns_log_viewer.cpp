@@ -78,8 +78,9 @@ void PNS_LOG_VIEWER_OVERLAY::AnnotatedPoint( const VECTOR2I p, int size, std::st
     Line( p + VECTOR2D( size, size ), p - VECTOR2D( size, size ) );
     Line( p + VECTOR2D( -size, size ), p - VECTOR2D( -size, size ) );
 
-    //if( aShowVertexNumbers)
-      //  m_labelMgr->Add( aL, GetStrokeColor() );
+    if( name.length() > 0 )
+        m_labelMgr->Add( p, name, GetStrokeColor() );
+    
 }
 
 
@@ -243,6 +244,13 @@ void PNS_LOG_VIEWER_FRAME::drawLoggedItems( int iter )
                 auto cir = static_cast<SHAPE_CIRCLE*>( sh );
                 m_overlay->Circle( cir->GetCenter(), cir->GetRadius() );
 
+                break;
+            }
+            case SH_SEGMENT:
+            {
+                auto seg = static_cast<SHAPE_SEGMENT*>( sh );
+                m_overlay->Line( seg->GetSeg().A, seg->GetSeg().B );
+                
                 break;
             }
             case SH_RECT:
@@ -620,7 +628,7 @@ void PNS_LOG_VIEWER_FRAME::updateDumpPanel( int iter )
     buildListTree( rootItem, st->m_entries );
     m_itemList->CheckItemRecursively( rootItem, wxCHK_UNCHECKED );
 
-    expandAllChildren( m_itemList );
+    collapseAllChildren( m_itemList );
 
     m_itemList->Refresh();
 }

@@ -173,18 +173,23 @@ bool DRC_TEST_PROVIDER_SILK_CLEARANCE::Run()
     };
 
     targetTree.QueryCollidingPairs( &silkTree, layerPairs,
-            [&]( const DRC_RTREE::LAYER_PAIR& aLayers, DRC_RTREE::ITEM_WITH_SHAPE* aRefItem,
-                 DRC_RTREE::ITEM_WITH_SHAPE* aTestItem, bool* aCollisionDetected ) -> bool
+            [&]( const DRC_RTREE::LAYER_PAIR& aLayers, DRC_RTREE::ITEM_WITH_SHAPE* aRefItemShape,
+                 DRC_RTREE::ITEM_WITH_SHAPE* aTestItemShape, bool* aCollisionDetected ) -> bool
             {
+                BOARD_ITEM* aRefItem = aRefItemShape->parent;
+                SHAPE*      aRefShape = aRefItemShape->shape;
+                BOARD_ITEM* aTestItem = aTestItemShape->parent;
+                SHAPE*      aTestShape = aTestItemShape->shape;
+
+
                 if( m_drcEngine->IsErrorLimitExceeded( DRCE_OVERLAPPING_SILK ) )
                     return false;
 
-                if( isInvisibleText( aRefItem->parent ) || isInvisibleText( aTestItem->parent ) )
+                if( isInvisibleText( aRefItem ) || isInvisibleText( aTestItem ) )
                     return true;
 
                 DRC_CONSTRAINT constraint = m_drcEngine->EvalRules( SILK_CLEARANCE_CONSTRAINT,
-                                                                    aRefItem->parent,
-                                                                    aTestItem->parent,
+                                                                    aRefItem, aTestItem,
                                                                     aLayers.second );
 
                 if( constraint.IsNull() || constraint.GetSeverity() == RPT_SEVERITY_IGNORE )
@@ -200,33 +205,33 @@ bool DRC_TEST_PROVIDER_SILK_CLEARANCE::Run()
 
                 // Graphics are often compound shapes so ignore collisions between shapes in a
                 // single footprint or on the board.
-                PCB_SHAPE* refGraphic = dynamic_cast<PCB_SHAPE*>( aRefItem->parent );
-                PCB_SHAPE* testGraphic = dynamic_cast<PCB_SHAPE*>( aTestItem->parent );
-
-                if( refGraphic && testGraphic )
+                if( aRefItem->Type() == PCB_SHAPE_T && aTestItem->Type() == PCB_SHAPE_T )
                 {
-                    FOOTPRINT *refParentFP = dynamic_cast<FOOTPRINT*>( refGraphic->GetParent() );
-                    FOOTPRINT *testParentFP = dynamic_cast<FOOTPRINT*>( testGraphic->GetParent() );
-
-                    if( refParentFP == testParentFP ) // also true when both are nullptr
-                        return true;
+                    return true;
+                }
+                else if( aRefItem->Type() == PCB_FP_SHAPE_T && aTestItem->Type() == PCB_FP_SHAPE_T
+                        &&  aRefItem->GetParentFootprint() == aTestItem->GetParentFootprint() )
+                {
+                    return true;
                 }
 
-                if( aRefItem->shape->Collide( aTestItem->shape, minClearance, &actual, &pos ) )
+                if( aRefShape->Collide( aTestShape, minClearance, &actual, &pos ) )
                 {
                     std::shared_ptr<DRC_ITEM> drcItem = DRC_ITEM::Create( DRCE_OVERLAPPING_SILK );
 
                     if( minClearance > 0 )
                     {
-                        m_msg.Printf( _( "(%s clearance %s; actual %s)" ),
+                        wxString msg;
+
+                        msg.Printf( _( "(%s clearance %s; actual %s)" ),
                                       constraint.GetParentRule()->m_Name,
                                       MessageTextFromValue( userUnits(), minClearance ),
                                       MessageTextFromValue( userUnits(), actual ) );
 
-                        drcItem->SetErrorMessage( drcItem->GetErrorText() + wxS( " " ) + m_msg );
+                        drcItem->SetErrorMessage( drcItem->GetErrorText() + wxS( " " ) + msg );
                     }
 
-                    drcItem->SetItems( aRefItem->parent, aTestItem->parent );
+                    drcItem->SetItems( aRefItem, aTestItem );
                     drcItem->SetViolatingRule( constraint.GetParentRule() );
 
                     reportViolation( drcItem, pos, aLayers.second );

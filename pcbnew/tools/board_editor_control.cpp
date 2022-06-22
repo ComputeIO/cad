@@ -69,6 +69,8 @@
 #include <wx/filedlg.h>
 #include <wx/log.h>
 
+#include <widgets/legacyfiledlg_netlist_options.h>
+
 using namespace std::placeholders;
 
 
@@ -121,56 +123,6 @@ public:
     {
         return new LOCK_CONTEXT_MENU();
     }
-};
-
-
-/**
- * Helper widget to add controls to a wxFileDialog to set netlist configuration options.
- */
-class NETLIST_OPTIONS_HELPER : public wxPanel
-{
-public:
-    NETLIST_OPTIONS_HELPER( wxWindow* aParent )
-            : wxPanel( aParent )
-    {
-        m_cbOmitExtras = new wxCheckBox( this, wxID_ANY, _( "Omit extra information" ) );
-        m_cbOmitNets = new wxCheckBox( this, wxID_ANY, _( "Omit nets" ) );
-        m_cbOmitFpUuids = new wxCheckBox( this, wxID_ANY,
-                                          _( "Do not prefix path with footprint UUID." ) );
-
-        wxBoxSizer* sizer = new wxBoxSizer( wxHORIZONTAL );
-        sizer->Add( m_cbOmitExtras, 0, wxALL, 5 );
-        sizer->Add( m_cbOmitNets, 0, wxALL, 5 );
-        sizer->Add( m_cbOmitFpUuids, 0, wxALL, 5 );
-
-        SetSizerAndFit( sizer );
-    }
-
-    int GetNetlistOptions() const
-    {
-        int options = 0;
-
-        if( m_cbOmitExtras->GetValue() )
-            options |= CTL_OMIT_EXTRA;
-
-        if( m_cbOmitNets->GetValue() )
-            options |= CTL_OMIT_NETS;
-
-        if( m_cbOmitFpUuids->GetValue() )
-            options |= CTL_OMIT_FP_UUID;
-
-        return options;
-    }
-
-    static wxWindow* Create( wxWindow* aParent )
-    {
-        return new NETLIST_OPTIONS_HELPER( aParent );
-    }
-
-protected:
-    wxCheckBox* m_cbOmitExtras;
-    wxCheckBox* m_cbOmitNets;
-    wxCheckBox* m_cbOmitFpUuids;
 };
 
 
@@ -478,7 +430,7 @@ int BOARD_EDITOR_CONTROL::ExportNetlist( const TOOL_EVENT& aEvent )
                       _( "KiCad board netlist files" ) + AddFileExtListToFilter( { "pcb_net" } ),
                       wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
-    dlg.SetExtraControlCreator( &NETLIST_OPTIONS_HELPER::Create );
+    dlg.SetExtraControlCreator( &LEGACYFILEDLG_NETLIST_OPTIONS::Create );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return 0;
@@ -494,8 +446,8 @@ int BOARD_EDITOR_CONTROL::ExportNetlist( const TOOL_EVENT& aEvent )
         return 0;
     }
 
-    const NETLIST_OPTIONS_HELPER* noh =
-            dynamic_cast<const NETLIST_OPTIONS_HELPER*>( dlg.GetExtraControl() );
+    const LEGACYFILEDLG_NETLIST_OPTIONS* noh =
+            dynamic_cast<const LEGACYFILEDLG_NETLIST_OPTIONS*>( dlg.GetExtraControl() );
     wxCHECK( noh, 0 );
 
     NETLIST netlist;
@@ -1274,124 +1226,6 @@ int BOARD_EDITOR_CONTROL::modifyLockSelected( MODIFY_MODE aMode )
 }
 
 
-int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
-{
-    if( m_inPlaceTarget )
-        return 0;
-
-    REENTRANCY_GUARD guard( &m_inPlaceTarget );
-
-    KIGFX::VIEW* view = getView();
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
-    BOARD* board = getModel<BOARD>();
-    PCB_TARGET* target = new PCB_TARGET( board );
-
-    // Init the new item attributes
-    target->SetLayer( Edge_Cuts );
-    target->SetWidth( board->GetDesignSettings().GetLineThickness( Edge_Cuts ) );
-    target->SetSize( Millimeter2iu( 5 ) );
-    VECTOR2I cursorPos = controls->GetCursorPosition();
-    target->SetPosition( wxPoint( cursorPos.x, cursorPos.y ) );
-
-    // Add a VIEW_GROUP that serves as a preview for the new item
-    KIGFX::VIEW_GROUP preview( view );
-    preview.Add( target );
-    view->Add( &preview );
-
-    m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
-
-    std::string tool = aEvent.GetCommandStr().get();
-    m_frame->PushTool( tool );
-    Activate();
-
-    auto setCursor =
-            [&]()
-            {
-                m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
-            };
-
-    // Set initial cursor
-    setCursor();
-
-    // Main loop: keep receiving events
-    while( TOOL_EVENT* evt = Wait() )
-    {
-        setCursor();
-        cursorPos = controls->GetCursorPosition( !evt->DisableGridSnapping() );
-
-        if( evt->IsCancelInteractive() )
-        {
-            frame()->PopTool( tool );
-            break;
-        }
-        else if( evt->IsActivate() )
-        {
-            if( evt->IsMoveTool() )
-            {
-                // leave ourselves on the stack so we come back after the move
-                break;
-            }
-            else
-            {
-                frame()->PopTool( tool );
-                break;
-            }
-        }
-        else if( evt->IsAction( &PCB_ACTIONS::incWidth ) )
-        {
-            target->SetWidth( target->GetWidth() + WIDTH_STEP );
-            view->Update( &preview );
-        }
-        else if( evt->IsAction( &PCB_ACTIONS::decWidth ) )
-        {
-            int width = target->GetWidth();
-
-            if( width > WIDTH_STEP )
-            {
-                target->SetWidth( width - WIDTH_STEP );
-                view->Update( &preview );
-            }
-        }
-        else if( evt->IsClick( BUT_LEFT ) )
-        {
-            assert( target->GetSize() > 0 );
-            assert( target->GetWidth() > 0 );
-
-            BOARD_COMMIT commit( m_frame );
-            commit.Add( target );
-            commit.Push( wxT( "Place a layer alignment target" ) );
-
-            preview.Remove( target );
-
-            // Create next PCB_TARGET
-            target = new PCB_TARGET( *target );
-            preview.Add( target );
-        }
-        else if( evt->IsClick( BUT_RIGHT ) )
-        {
-            m_menu.ShowContextMenu( selection() );
-        }
-        else if( evt->IsMotion() )
-        {
-            target->SetPosition( wxPoint( cursorPos.x, cursorPos.y ) );
-            view->Update( &preview );
-        }
-        else
-        {
-            evt->SetPassEvent();
-        }
-    }
-
-    preview.Clear();
-    delete target;
-    view->Remove( &preview );
-
-    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
-
-    return 0;
-}
-
-
 static bool mergeZones( EDA_DRAW_FRAME* aFrame, BOARD_COMMIT& aCommit,
                         std::vector<ZONE*>& aOriginZones, std::vector<ZONE*>& aMergedZones )
 {
@@ -1675,7 +1509,6 @@ void BOARD_EDITOR_CONTROL::setTransitions()
     Go( &BOARD_EDITOR_CONTROL::ZoneDuplicate,          PCB_ACTIONS::zoneDuplicate.MakeEvent() );
 
     // Placing tools
-    Go( &BOARD_EDITOR_CONTROL::PlaceTarget,            PCB_ACTIONS::placeTarget.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::PlaceFootprint,         PCB_ACTIONS::placeFootprint.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::DrillOrigin,            PCB_ACTIONS::drillOrigin.MakeEvent() );
 

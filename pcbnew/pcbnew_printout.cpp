@@ -109,7 +109,7 @@ bool PCBNEW_PRINTOUT::OnPrintPage( int aPage )
     if( extractLayer == UNDEFINED_LAYER )
         layerName = _( "Multiple Layers" );
     else
-        layerName = LSET::Name( extractLayer );
+        layerName = m_board->GetLayerName( extractLayer );
 
     // In Pcbnew we can want the layer EDGE always printed
     if( m_pcbnewSettings.m_PrintEdgeCutsOnAllPages )
@@ -260,9 +260,6 @@ void PCBNEW_PRINTOUT::setupPainter( KIGFX::PAINTER& aPainter )
         painter.GetSettings()->SetLayerColor( LAYER_VIA_HOLES, COLOR4D::BLACK );
         break;
     }
-
-    painter.GetSettings()->m_DrawIndividualViaLayers =
-                        m_pcbnewSettings.m_Pagination == PCBNEW_PRINTOUT_SETTINGS::LAYER_PER_PAGE;
 }
 
 

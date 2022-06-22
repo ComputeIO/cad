@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014-2017 CERN
- * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
@@ -195,9 +195,9 @@ public:
     int SetAnchor( const TOOL_EVENT& aEvent );
 
     /**
-     * Toggle the 45 degree angle constraint for graphic lines.
+     * Toggle the horizontal/veritcal/45-degree constraint for drawing tools.
      */
-    int ToggleLine45degMode( const TOOL_EVENT& aEvent );
+    int ToggleHV45Mode( const TOOL_EVENT& toolEvent );
 
     ///< Set up handlers for various events.
     void setTransitions() override;
@@ -220,8 +220,7 @@ private:
      * @return False if the tool was canceled before the origin was set or origin and end are
      *         the same point.
      */
-    bool drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
-                      OPT<VECTOR2D> aStartingPoint );
+    bool drawShape( const std::string& aTool, PCB_SHAPE** aGraphic, OPT<VECTOR2D> aStartingPoint );
 
     /**
      * Start drawing an arc.
@@ -278,8 +277,9 @@ private:
 
     PCB_LAYER_ID              m_layer;             // The layer we last drew on
     STROKE_PARAMS             m_stroke;            // Current stroke for multi-segment drawing
-    static const unsigned int WIDTH_STEP;          // Amount of width change for one -/+ key press
+    TEXT_ATTRIBUTES           m_textAttrs;
 
+    static const unsigned int WIDTH_STEP;          // Amount of width change for one -/+ key press
 
     friend class              ZONE_CREATE_HELPER;  // give internal access to helper classes
 };

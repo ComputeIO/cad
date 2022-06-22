@@ -123,6 +123,11 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                 m_toolMgr->RunAction( EE_ACTIONS::restartMove );
             }
         }
+        else
+        {
+            // The tool hotkey is interpreted as a click when already dragging/moving
+            m_toolMgr->RunAction( ACTIONS::cursorClick );
+        }
 
         return 0;
     }
@@ -387,7 +392,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                 splitMoves.emplace_back( VECTOR2I( delta.x + m_moveOffset.x, 0 ) );
             }
             else
+            {
                 splitMoves.emplace_back( VECTOR2I( delta.x, 0 ) );
+            }
 
             if( alg::signbit( m_moveOffset.y ) != alg::signbit( ( m_moveOffset + delta ).y ) )
             {
@@ -395,7 +402,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                 splitMoves.emplace_back( VECTOR2I( 0, delta.y + m_moveOffset.y ) );
             }
             else
+            {
                 splitMoves.emplace_back( VECTOR2I( 0, delta.y ) );
+            }
 
 
             m_moveOffset += delta;
@@ -1169,13 +1178,15 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
             {
                 // Add a new wire between the symbol or junction and the selected item so
                 // the selected item can be dragged.
-                if( test->GetLayer() == LAYER_BUS_JUNCTION ||
-                    aOriginalItem->GetLayer() == LAYER_BUS )
+                if( test->GetLayer() == LAYER_BUS_JUNCTION
+                        || aOriginalItem->GetLayer() == LAYER_BUS )
                 {
                     newWire = new SCH_LINE( aPoint, LAYER_BUS );
                 }
                 else
+                {
                     newWire = new SCH_LINE( aPoint, LAYER_WIRE );
+                }
 
                 newWire->SetFlags( IS_NEW );
                 m_frame->AddToScreen( newWire, m_frame->GetScreen() );
@@ -1236,6 +1247,26 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
                         }
                     }
                 }
+            }
+            else if( test->IsConnected( aPoint ) && !newWire )
+            {
+                // Add a new wire between the label and the selected item so the selected item
+                // can be dragged.
+                if( test->GetLayer() == LAYER_BUS_JUNCTION
+                        || aOriginalItem->GetLayer() == LAYER_BUS )
+                {
+                    newWire = new SCH_LINE( aPoint, LAYER_BUS );
+                }
+                else
+                {
+                    newWire = new SCH_LINE( aPoint, LAYER_WIRE );
+                }
+
+                newWire->SetFlags( IS_NEW );
+                m_frame->AddToScreen( newWire, m_frame->GetScreen() );
+
+                newWire->SetFlags( SELECTED_BY_DRAG | STARTPOINT );
+                aList.push_back( newWire );
             }
 
             break;

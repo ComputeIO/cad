@@ -218,6 +218,9 @@ DIALOG_PAD_PROPERTIES::DIALOG_PAD_PROPERTIES( PCB_BASE_FRAME* aParent, PAD* aPad
     // Do not allow locking items in the footprint editor
     m_locked->Show( !m_isFpEditor );
 
+    updateHoleControls();
+    updatePadSizeControls();
+
     // Usually, TransferDataToWindow is called by OnInitDialog
     // calling it here fixes all widget sizes so FinishDialogSettings can safely fix minsizes
     TransferDataToWindow();
@@ -232,6 +235,12 @@ DIALOG_PAD_PROPERTIES::DIALOG_PAD_PROPERTIES( PCB_BASE_FRAME* aParent, PAD* aPad
     m_padNetSelector->Connect( NET_SELECTED,
                                wxCommandEventHandler( DIALOG_PAD_PROPERTIES::OnValuesChanged ),
                                nullptr, this );
+
+    if( m_padType->GetSelection() != PTH_DLG_TYPE && m_padType->GetSelection() != NPTH_DLG_TYPE )
+    {
+        m_gbSizerHole->Show( false );
+        m_staticline6->Show( false );
+    }
 
     // Now all widgets have the size fixed, call FinishDialogSettings
     finishDialogSettings();
@@ -901,6 +910,7 @@ void DIALOG_PAD_PROPERTIES::OnPadShapeSelection( wxCommandEvent& event )
     if( m_MainSizer->GetSize().y < m_MainSizer->GetMinSize().y )
         m_MainSizer->SetSizeHints( this );
 
+    updatePadSizeControls();
     redraw();
 }
 
@@ -908,6 +918,7 @@ void DIALOG_PAD_PROPERTIES::OnPadShapeSelection( wxCommandEvent& event )
 void DIALOG_PAD_PROPERTIES::OnDrillShapeSelected( wxCommandEvent& event )
 {
     transferDataToPad( m_dummyPad );
+    updateHoleControls();
     redraw();
 }
 
@@ -974,6 +985,8 @@ void DIALOG_PAD_PROPERTIES::PadTypeSelected( wxCommandEvent& event )
     // Update Layers dropdown list and selects the "best" layer set for the new pad type:
     updatePadLayersList( {}, m_dummyPad->GetRemoveUnconnected(), m_dummyPad->GetKeepTopBottom() );
 
+    m_gbSizerHole->Show( hasHole );
+    m_staticline6->Show( hasHole );
     if( !hasHole )
     {
         m_holeX.ChangeValue( 0 );
@@ -1004,6 +1017,8 @@ void DIALOG_PAD_PROPERTIES::PadTypeSelected( wxCommandEvent& event )
 
     transferDataToPad( m_dummyPad );
 
+    // Layout adjustment is needed if the hole details got shown/hidden
+    m_LeftBoxSizer->Layout();
     redraw();
 }
 
@@ -1030,7 +1045,7 @@ void DIALOG_PAD_PROPERTIES::OnUpdateUI( wxUpdateUIEvent& event )
     m_holeShapeLabel->Enable( hasHole );
     m_holeShapeCtrl->Enable( hasHole );
     m_holeX.Enable( hasHole );
-    m_holeY.Enable( hasHole && m_holeShapeCtrl->GetSelection() == 1 );
+    m_holeY.Enable( hasHole && m_holeShapeCtrl->GetSelection() == CHOICE_SHAPE_OVAL );
 
     // Enable/disable number and net
     m_padNumLabel->Enable( hasConnection );
@@ -1693,6 +1708,28 @@ PAD_PROP DIALOG_PAD_PROPERTIES::getSelectedProperty()
     return prop;
 }
 
+void DIALOG_PAD_PROPERTIES::updateHoleControls()
+{
+    m_holeXLabel->SetLabel( ( m_holeShapeCtrl->GetSelection() == CHOICE_SHAPE_CIRCLE )
+                                    ? _( "Diameter:" )
+                                    : _( "Hole size X:" ) );
+    m_holeY.Show( m_holeShapeCtrl->GetSelection() != CHOICE_SHAPE_CIRCLE
+                  && m_holeShapeCtrl->GetSelection() != CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR );
+    m_holeXLabel->GetParent()->Layout();
+}
+
+void DIALOG_PAD_PROPERTIES::updatePadSizeControls()
+{
+    m_sizeXLabel->SetLabel( m_PadShapeSelector->GetSelection() == CHOICE_SHAPE_CIRCLE
+                                            || m_PadShapeSelector->GetSelection()
+                                                       == CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR
+                                    ? _( "Diameter:" )
+                                    : _( "Pad size X:" ) );
+    m_sizeY.Show( m_PadShapeSelector->GetSelection() != CHOICE_SHAPE_CIRCLE
+                  && m_PadShapeSelector->GetSelection() != CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR );
+    m_sizeXLabel->GetParent()->Layout();
+}
+
 
 bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
 {
@@ -1741,7 +1778,7 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
 
     aPad->SetPosition( wxPoint( m_posX.GetValue(), m_posY.GetValue() ) );
 
-    if( m_holeShapeCtrl->GetSelection() == 0 )
+    if( m_holeShapeCtrl->GetSelection() == CHOICE_SHAPE_CIRCLE )
     {
         aPad->SetDrillShape( PAD_DRILL_SHAPE_CIRCLE );
         aPad->SetDrillSize( wxSize( m_holeX.GetValue(), m_holeX.GetValue() ) );

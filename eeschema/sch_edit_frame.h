@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras wanadoo.fr
  * Copyright (C) 2008 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,7 +59,7 @@ class SCHEMATIC;
 class DIALOG_SCH_FIND;
 class wxFindReplaceData;
 class RESCUER;
-class HIERARCHY_NAVIG_DLG;
+class HIERARCHY_NAVIG_PANEL;
 
 // @todo Move this to transform alone with all of the transform manipulation code.
 /// enum used in RotationMiroir()
@@ -232,16 +232,9 @@ public:
     void ShowFindReplaceDialog( bool aReplace );
 
     /**
-     * Run the Hierarchy Navigator dialog.
-     * @param aForceUpdate: When true, creates a new dialog. And if a dialog
-     * already exist, it destroys it first.
+     * Update the hierarchy navigation tree and history
      */
-    void UpdateHierarchyNavigator( bool aForceUpdate = false );
-
-    /**
-     * @return a reference to the Hierarchy Navigator dialog if exists, or nullptr.
-     */
-    HIERARCHY_NAVIG_DLG* FindHierarchyNavigator();
+    void UpdateHierarchyNavigator();
 
     void ShowFindReplaceStatus( const wxString& aMsg, int aStatusTime );
     void ClearFindReplaceStatus();
@@ -365,7 +358,7 @@ public:
      * @param aCurrentSheetOnly Where to clear the annotation. See #ANNOTATE_SCOPE_T
      * @param appendUndo true to add the action to the previous undo list
      */
-    void DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool* appendUndo );
+    void DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool aRecursive, bool* appendUndo );
 
     /**
      * Annotate the symbols in the schematic that are not currently annotated. Multi-unit symbols
@@ -375,6 +368,7 @@ public:
      * @param aAnnotateScope See #ANNOTATE_SCOPE_T
      * @param aSortOption Define the annotation order.  See #ANNOTATE_ORDER_T.
      * @param aAlgoOption Define the annotation style.  See #ANNOTATE_ALGO_T.
+     * @param aRecursive  Annotation should descend into and annotate subsheets
      * @param aStartNumber The start number for non-sheet-based annotation styles.
      * @param aResetAnnotation Clear any previous annotation if true.  Otherwise, keep the
      *                         existing symbol annotation.
@@ -384,13 +378,17 @@ public:
      *                          used to handle annotation in complex hierarchies.
      * @param aReporter A sink for error messages.  Use NULL_REPORTER if you don't need errors.
      *
+     * @param appendUndo True if the annotation operation should be added to an existing undo,
+     *                   false if it should be separately undo-able.
+     *
      * When the sheet number is used in annotation, each sheet annotation starts from sheet
      * number * 100.  In other words the first sheet uses 100 to 199, the second sheet uses
      * 200 to 299, and so on.
      */
     void AnnotateSymbols( ANNOTATE_SCOPE_T aAnnotateScope, ANNOTATE_ORDER_T aSortOption,
-                          ANNOTATE_ALGO_T aAlgoOption, int aStartNumber, bool aResetAnnotation,
-                          bool aRepairTimestamps, REPORTER& aReporter );
+                          ANNOTATE_ALGO_T aAlgoOption, bool aRecursive, int aStartNumber,
+                          bool aResetAnnotation, bool aRepairTimestamps, REPORTER& aReporter,
+                          bool appendUndo = false );
 
     /**
      * Check for annotation errors.
@@ -409,7 +407,8 @@ public:
      *                       Otherwise check the entire schematic.
      */
     int CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler,
-                       ANNOTATE_SCOPE_T         aAnnotateScope = ANNOTATE_ALL );
+                       ANNOTATE_SCOPE_T         aAnnotateScope = ANNOTATE_ALL,
+                       bool                     aRecursive = true );
 
     /**
      * Run a modal version of the annotate dialog for a specific purpose.
@@ -828,6 +827,20 @@ public:
      */
     virtual void CheckForAutoSaveFile( const wxFileName& aFileName ) override;
 
+
+    /**
+     * Toggle the show/hide state of the left side schematic navigation panel
+     */
+    void ToggleSchematicHierarchy();
+
+    /**
+     * @return the name of the wxAuiPaneInfo managing the Hierarchy Navigator panel
+     */
+    static const wxString SchematicHierarchyPaneName()
+    {
+        return wxT( "SchematicHierarchy" );
+    }
+
     DECLARE_EVENT_TABLE()
 
 protected:
@@ -851,6 +864,9 @@ protected:
     void onSize( wxSizeEvent& aEvent );
 
 private:
+    // Called when resizing the Hierarchy Navigator panel
+    void OnResizeHierarchyNavigator( wxSizeEvent& aEvent );
+
     // Sets up the tool framework
     void setupTools();
 
@@ -934,6 +950,9 @@ private:
                                                   ///< to call a custom net list generator.
 
     DIALOG_SCH_FIND*        m_findReplaceDialog;
+
+    HIERARCHY_NAVIG_PANEL*  m_hierarchy;
+    bool                    m_showHierarchy;
 };
 
 

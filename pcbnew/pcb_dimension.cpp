@@ -78,13 +78,12 @@ void PCB_DIMENSION_BASE::updateText()
         break;
 
     case DIM_UNITS_FORMAT::BARE_SUFFIX: // normal
-        text += wxS( " " );
         text += GetAbbreviatedUnitsLabel( m_units );
         break;
 
     case DIM_UNITS_FORMAT::PAREN_SUFFIX: // parenthetical
         text += wxT( " (" );
-        text += GetAbbreviatedUnitsLabel( m_units );
+        text += GetAbbreviatedUnitsLabel( m_units ).Trim( false );
         text += wxT( ")" );
         break;
     }
@@ -581,6 +580,14 @@ void PCB_DIM_ALIGNED::SwapData( BOARD_ITEM* aImage )
     std::swap( *static_cast<PCB_DIM_ALIGNED*>( this ), *static_cast<PCB_DIM_ALIGNED*>( aImage ) );
 
     Update();
+}
+
+
+void PCB_DIM_ALIGNED::Mirror( const VECTOR2I& axis_pos, bool aMirrorLeftRight )
+{
+    PCB_DIMENSION_BASE::Mirror( axis_pos, aMirrorLeftRight );
+
+    m_height = -m_height;
 }
 
 
