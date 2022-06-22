@@ -40,7 +40,6 @@
 #include <wx/dir.h>
 #include <wx/filedlg.h>
 #include "dialog_pcm.h"
-#include <richio.h>
 #include <macros.h>
 #include <sch_io_mgr.h>
 #include <io_mgr.h>
