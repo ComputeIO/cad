@@ -429,6 +429,38 @@ int GERBVIEW_CONTROL::UpdateMessagePanel( const TOOL_EVENT& aEvent )
 }
 
 
+int GERBVIEW_CONTROL::LoadZipfile( const TOOL_EVENT& aEvent )
+{
+    m_frame->LoadZipArchiveFile( *aEvent.Parameter<wxString*>() );
+    canvas()->Refresh();
+
+    return 0;
+}
+
+
+int GERBVIEW_CONTROL::LoadGerbFiles( const TOOL_EVENT& aEvent )
+{
+    wxString files = *aEvent.Parameter<wxString*>();
+    std::vector<wxString> aFileNameList;
+
+    files = files.AfterFirst( '"' );
+
+    // Gerber files are enclosed with "".
+    // Load files names in array.
+    while( !files.empty() )
+    {
+        aFileNameList.push_back( files.BeforeFirst( '"' ) );
+        files = files.AfterFirst( '"' );
+        files = files.AfterFirst( '"' );
+    }
+
+    if( !aFileNameList.empty() )
+        m_frame->OpenProjectFiles( aFileNameList, KICTL_CREATE );
+
+    return 0;
+}
+
+
 void GERBVIEW_CONTROL::setTransitions()
 {
     Go( &GERBVIEW_CONTROL::OpenAutodetected,   GERBVIEW_ACTIONS::openAutodetected.MakeEvent() );
@@ -465,4 +497,7 @@ void GERBVIEW_CONTROL::setTransitions()
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, EVENTS::UnselectedEvent );
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, EVENTS::ClearedEvent );
     Go( &GERBVIEW_CONTROL::UpdateMessagePanel, ACTIONS::updateUnits.MakeEvent() );
+
+    Go( &GERBVIEW_CONTROL::LoadZipfile,        GERBVIEW_ACTIONS::loadZipFile.MakeEvent() );
+    Go( &GERBVIEW_CONTROL::LoadGerbFiles,      GERBVIEW_ACTIONS::loadGerbFiles.MakeEvent() );
 }

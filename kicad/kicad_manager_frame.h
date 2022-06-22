@@ -28,7 +28,6 @@
 
 #include <wx/process.h>
 #include <kiway_player.h>
-#include <wx/dnd.h>
 
 class PROJECT_TREE;
 class PROJECT_TREE_PANE;
@@ -160,11 +159,7 @@ private:
     void setupTools();
     void setupActions();
 
-    /**
-     * Handles event fired when a file is dropped to window.
-     * Opens project file. Does nothing if it is not a kicad project file.
-     */
-    void OnDropFiles( wxDropFilesEvent& aEvent );
+    void DoWithAcceptedFiles() override;
 
     APP_SETTINGS_BASE* config() const override;
 

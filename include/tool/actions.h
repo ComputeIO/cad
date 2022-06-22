@@ -57,6 +57,7 @@ public:
     static TOOL_ACTION print;
     static TOOL_ACTION plot;
     static TOOL_ACTION quit;
+    static TOOL_ACTION ddAddLibrary;    // for drag and drop lib
 
     // Generic edit actions
     static TOOL_ACTION cancelInteractive;
@@ -217,5 +218,3 @@ public:
 };
 
 #endif // __ACTIONS_H
-
-
