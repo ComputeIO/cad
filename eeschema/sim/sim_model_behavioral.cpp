@@ -158,7 +158,7 @@ SIM_MODEL::PARAM::INFO SIM_MODEL_BEHAVIORAL::makeParams( wxString aName, wxStrin
     PARAM::INFO paramInfo = {};
 
     paramInfo.name = aName;
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = aUnit;
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.description = aDescription;

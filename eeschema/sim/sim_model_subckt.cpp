@@ -38,9 +38,9 @@ namespace SIM_MODEL_SUBCKT_SPICE_PARSER
     template <> struct spiceUnitSelector<modelName> : std::true_type {};
     template <> struct spiceUnitSelector<dotSubcktPinName> : std::true_type {};
     template <> struct spiceUnitSelector<param> : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::INTEGER, NOTATION::SPICE>>
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE_INT, NOTATION::SPICE>>
         : std::true_type {};
-    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE::FLOATING, NOTATION::SPICE>>
+    template <> struct spiceUnitSelector<number<SIM_VALUE::TYPE_FLOAT, NOTATION::SPICE>>
         : std::true_type {};
 }
 
@@ -92,10 +92,10 @@ bool SIM_MODEL_SUBCKT::ReadSpiceCode( const std::string& aSpiceCode )
                     AddParam( *m_paramInfos.back() );
                 }
                 else if( subnode->is_type<
-                        SIM_MODEL_SUBCKT_SPICE_PARSER::number<SIM_VALUE::TYPE::INTEGER,
+                        SIM_MODEL_SUBCKT_SPICE_PARSER::number<SIM_VALUE::TYPE_INT,
                                                         SIM_MODEL_SUBCKT_SPICE_PARSER::NOTATION::SPICE>>()
                     || subnode->is_type<
-                        SIM_MODEL_SUBCKT_SPICE_PARSER::number<SIM_VALUE::TYPE::FLOATING,
+                        SIM_MODEL_SUBCKT_SPICE_PARSER::number<SIM_VALUE::TYPE_FLOAT,
                                                         SIM_MODEL_SUBCKT_SPICE_PARSER::NOTATION::SPICE>>() )
                 {
                     wxASSERT( m_paramInfos.size() > 0 );

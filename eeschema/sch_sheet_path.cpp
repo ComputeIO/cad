@@ -1191,7 +1191,7 @@ void SCH_SHEET_LIST::MigrateSimModelNameFields()
                             unit = "Meg";
 
                         std::unique_ptr<SIM_VALUE> simValue =
-                            SIM_VALUE::Create( SIM_VALUE::TYPE::FLOATING );
+                            SIM_VALUE::Create( SIM_VALUE::TYPE_FLOAT );
                         simValue->FromString( prefix + unit + suffix, SIM_VALUE::NOTATION::SPICE );
 
                         if( value == simValue->ToString() )

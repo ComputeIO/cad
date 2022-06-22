@@ -75,7 +75,7 @@ public:
                   std::shared_ptr<SIM_LIBRARY> aLibrary,
                   std::shared_ptr<SIM_MODEL> aModel,
                   int aParamIndex,
-                  SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE::FLOATING,
+                  SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE_FLOAT,
                   SIM_VALUE_GRAMMAR::NOTATION aNotation = SIM_VALUE_GRAMMAR::NOTATION::SI );
 
     wxValidator* DoGetValidator() const override;

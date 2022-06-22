@@ -517,28 +517,28 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
 
     switch( param.info.type )
     {
-    case TYPE::BOOLEAN:
+    case SIM_VALUE::TYPE_BOOL:
         // TODO.
         prop = new wxBoolProperty( paramDescription, param.info.name );
         prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
         break;
 
-    case TYPE::INTEGER:
+    case SIM_VALUE::TYPE_INT:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE::TYPE::INTEGER );
+                                 aParamIndex, SIM_VALUE::TYPE_INT );
         break;
 
-    case TYPE::FLOATING:
+    case SIM_VALUE::TYPE_FLOAT:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE::TYPE::FLOATING );
+                                 aParamIndex, SIM_VALUE::TYPE_FLOAT );
         break;
 
-    //case TYPE::COMPLEX:
+    //case TYPE_COMPLEX:
     //  break;
 
-    case TYPE::STRING:
+    case SIM_VALUE::TYPE_STRING:
         prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE::TYPE::STRING );
+                                 aParamIndex, SIM_VALUE::TYPE_STRING );
         break;
 
     default:
@@ -558,15 +558,15 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
 
     switch( param.info.type )
     {
-    case TYPE::BOOLEAN:           typeStr = wxString( "Bool"           ); break;
-    case TYPE::INTEGER:            typeStr = wxString( "Int"            ); break;
-    case TYPE::FLOATING:          typeStr = wxString( "Float"          ); break;
-    case TYPE::COMPLEX:        typeStr = wxString( "Complex"        ); break;
-    case TYPE::STRING:         typeStr = wxString( "String"         ); break;
-    case TYPE::BOOLEAN_VECTOR:    typeStr = wxString( "Bool Vector"    ); break;
-    case TYPE::INTEGER_VECTOR:     typeStr = wxString( "Int Vector"     ); break;
-    case TYPE::FLOATING_VECTOR:   typeStr = wxString( "Float Vector"   ); break;
-    case TYPE::COMPLEX_VECTOR: typeStr = wxString( "Complex Vector" ); break;
+    case SIM_VALUE::TYPE_BOOL:           typeStr = wxString( "Bool"           ); break;
+    case SIM_VALUE::TYPE_INT:            typeStr = wxString( "Int"            ); break;
+    case SIM_VALUE::TYPE_FLOAT:          typeStr = wxString( "Float"          ); break;
+    case SIM_VALUE::TYPE_COMPLEX:        typeStr = wxString( "Complex"        ); break;
+    case SIM_VALUE::TYPE_STRING:         typeStr = wxString( "String"         ); break;
+    case SIM_VALUE::TYPE_BOOL_VECTOR:    typeStr = wxString( "Bool Vector"    ); break;
+    case SIM_VALUE::TYPE_INT_VECTOR:     typeStr = wxString( "Int Vector"     ); break;
+    case SIM_VALUE::TYPE_FLOAT_VECTOR:   typeStr = wxString( "Float Vector"   ); break;
+    case SIM_VALUE::TYPE_COMPLEX_VECTOR: typeStr = wxString( "Complex Vector" ); break;
     }
 
     prop->SetCell( static_cast<int>( PARAM_COLUMN::TYPE ), typeStr );

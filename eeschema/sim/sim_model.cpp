@@ -1209,7 +1209,7 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
     {
         if( node->is_type<SIM_MODEL_PARSER::param>() )
             paramName = node->string();
-        // TODO: Do something with number<SIM_VALUE::TYPE::INTEGER, ...>.
+        // TODO: Do something with number<SIM_VALUE::TYPE_INT, ...>.
         // It doesn't seem too useful?
         else if( node->is_type<SIM_MODEL_PARSER::quotedStringContent>() 
             || node->is_type<SIM_MODEL_PARSER::unquotedString>() )
@@ -1377,7 +1377,7 @@ TYPE SIM_MODEL::readTypeFromSpiceStrings( const wxString& aTypeString,
                                           const wxString& aVersion,
                                           bool aSkipDefaultLevel )
 {
-    std::unique_ptr<SIM_VALUE> readLevel = SIM_VALUE::Create( SIM_VALUE::TYPE::INTEGER, aLevel );
+    std::unique_ptr<SIM_VALUE> readLevel = SIM_VALUE::Create( SIM_VALUE::TYPE_INT, aLevel );
 
     for( TYPE type : TYPE_ITERATOR() )
     {

@@ -64,8 +64,8 @@ namespace SIM_MODEL_GRAMMAR
                                      opt<sep>,
                                      one<'='>,
                                      opt<sep>,
-                                     sor<//number<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>,
-                                         //number<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>,
+                                     sor<//number<SIM_VALUE::TYPE_FLOAT, NOTATION::SI>,
+                                         //number<SIM_VALUE::TYPE_INT, NOTATION::SI>,
                                          quotedString,
                                          unquotedString>> {};
 
@@ -341,7 +341,7 @@ public:
             wxString name;
             unsigned id = 0; // Legacy (don't remove).
             DIR dir = DIR::INOUT;
-            SIM_VALUE::TYPE type = SIM_VALUE::TYPE::FLOATING;
+            SIM_VALUE::TYPE type = SIM_VALUE::TYPE_FLOAT;
             FLAGS flags = {}; // Legacy (don't remove).
             wxString unit = "";
             CATEGORY category = CATEGORY::PRINCIPAL;

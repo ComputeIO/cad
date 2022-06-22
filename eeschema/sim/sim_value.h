@@ -48,18 +48,18 @@ class SIM_VALUE
 public:
     using NOTATION = SIM_VALUE_GRAMMAR::NOTATION;
 
-    enum class TYPE
+    enum TYPE
     {
-        BOOLEAN,
-        INTEGER,
-        FLOATING,
-        COMPLEX,
-        STRING,
+        TYPE_BOOL,
+        TYPE_INT,
+        TYPE_FLOAT,
+        TYPE_COMPLEX,
+        TYPE_STRING,
 
-        BOOLEAN_VECTOR,
-        INTEGER_VECTOR,
-        FLOATING_VECTOR,
-        COMPLEX_VECTOR
+        TYPE_BOOL_VECTOR,
+        TYPE_INT_VECTOR,
+        TYPE_FLOAT_VECTOR,
+        TYPE_COMPLEX_VECTOR
     };
 
     static std::unique_ptr<SIM_VALUE> Create( TYPE aType, wxString aString );
@@ -122,14 +122,14 @@ namespace SIM_VALUE_GRAMMAR
     template <SIM_VALUE::TYPE ValueType>
     struct significand;
     
-    template <> struct significand<SIM_VALUE::TYPE::FLOATING> :
+    template <> struct significand<SIM_VALUE::TYPE_FLOAT> :
         sor<seq<intPart, one<'.'>, fracPart>,
             seq<intPart, one<'.'>>,
             intPart,
             seq<one<'.'>, fracPart>,
             one<'.'>> {};
 
-    template <> struct significand<SIM_VALUE::TYPE::INTEGER> : intPart {};
+    template <> struct significand<SIM_VALUE::TYPE_INT> : intPart {};
 
 
     struct exponentPrefix : one<'e', 'E'> {};
@@ -140,17 +140,17 @@ namespace SIM_VALUE_GRAMMAR
     template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct metricSuffix;
 
-    template <> struct metricSuffix<SIM_VALUE::TYPE::INTEGER, NOTATION::SI>
+    template <> struct metricSuffix<SIM_VALUE::TYPE_INT, NOTATION::SI>
         : one<'k', 'K', 'M', 'G', 'T', 'P', 'E'> {};
-    template <> struct metricSuffix<SIM_VALUE::TYPE::INTEGER, NOTATION::SPICE>
+    template <> struct metricSuffix<SIM_VALUE::TYPE_INT, NOTATION::SPICE>
         : sor<TAO_PEGTL_ISTRING( "k" ),
               TAO_PEGTL_ISTRING( "Meg" ),
               TAO_PEGTL_ISTRING( "G" ),
               TAO_PEGTL_ISTRING( "T" )> {};
 
-    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOATING, NOTATION::SI>
+    template <> struct metricSuffix<SIM_VALUE::TYPE_FLOAT, NOTATION::SI>
         : one<'a', 'f', 'p', 'n', 'u', 'm', 'k', 'K', 'M', 'G', 'T', 'P', 'E'> {};
-    template <> struct metricSuffix<SIM_VALUE::TYPE::FLOATING, NOTATION::SPICE>
+    template <> struct metricSuffix<SIM_VALUE::TYPE_FLOAT, NOTATION::SPICE>
         : sor<TAO_PEGTL_ISTRING( "f" ),
               TAO_PEGTL_ISTRING( "p" ),
               TAO_PEGTL_ISTRING( "n" ),
@@ -173,7 +173,7 @@ namespace SIM_VALUE_GRAMMAR
 
 
     bool IsValid( const wxString& aString,
-                  SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE::FLOATING,
+                  SIM_VALUE::TYPE aValueType = SIM_VALUE::TYPE_FLOAT,
                   NOTATION aNotation = NOTATION::SI );
 }
 

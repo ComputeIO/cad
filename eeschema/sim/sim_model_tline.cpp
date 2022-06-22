@@ -124,7 +124,7 @@ std::vector<PARAM::INFO> SIM_MODEL_TLINE::makeZ0ParamInfo()
     PARAM::INFO paramInfo = {};
 
     paramInfo.name = "z0";
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "Ω";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "";
@@ -134,7 +134,7 @@ std::vector<PARAM::INFO> SIM_MODEL_TLINE::makeZ0ParamInfo()
     paramInfos.push_back( paramInfo );
 
     paramInfo.name = "td";
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "s";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "";
@@ -153,7 +153,7 @@ std::vector<PARAM::INFO> SIM_MODEL_TLINE::makeRlgcParamInfo()
     PARAM::INFO paramInfo = {};
 
     paramInfo.name = "len";
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "m";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "";
@@ -163,7 +163,7 @@ std::vector<PARAM::INFO> SIM_MODEL_TLINE::makeRlgcParamInfo()
     paramInfos.push_back( paramInfo );
 
     paramInfo.name = "r";
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "Ω/m";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
@@ -173,7 +173,7 @@ std::vector<PARAM::INFO> SIM_MODEL_TLINE::makeRlgcParamInfo()
     paramInfos.push_back( paramInfo );
 
     paramInfo.name = "l";
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "H/m";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
@@ -183,7 +183,7 @@ std::vector<PARAM::INFO> SIM_MODEL_TLINE::makeRlgcParamInfo()
     paramInfos.push_back( paramInfo );
 
     paramInfo.name = "g";
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "1/(Ω m)";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
@@ -193,7 +193,7 @@ std::vector<PARAM::INFO> SIM_MODEL_TLINE::makeRlgcParamInfo()
     paramInfos.push_back( paramInfo );
 
     paramInfo.name = "c";
-    paramInfo.type = SIM_VALUE::TYPE::FLOATING;
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "C/m";
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
