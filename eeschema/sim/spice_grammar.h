@@ -218,11 +218,11 @@ namespace SPICE_GRAMMAR
                            dotInclude,
                            dotLine,
                            unknownLine> {};
-    struct spiceUnitGrammar : must<spiceUnit, eof> {};
+    struct spiceUnitGrammar : must<spiceUnit, tao::pegtl::eof> {};
 
 
     struct spiceSource : star<spiceUnit> {};
-    struct spiceSourceGrammar : must<spiceSource, eof> {};
+    struct spiceSourceGrammar : must<spiceSource, tao::pegtl::eof> {};
 }
 
 #endif // SPICE_GRAMMAR_H

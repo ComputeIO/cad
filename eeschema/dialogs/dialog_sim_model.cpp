@@ -434,7 +434,7 @@ void DIALOG_SIM_MODEL<T>::loadLibrary( const wxString& aFilePath )
 template <typename T>
 void DIALOG_SIM_MODEL<T>::addParamPropertyIfRelevant( int aParamIndex )
 {
-    if( curModel().GetParam( aParamIndex ).info.dir == SIM_MODEL::PARAM::DIR::OUT )
+    if( curModel().GetParam( aParamIndex ).info.dir == SIM_MODEL::PARAM::DIR_OUT )
         return;
 
     switch( curModel().GetParam( aParamIndex ).info.category )

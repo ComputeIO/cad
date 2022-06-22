@@ -48,6 +48,8 @@ class SIM_VALUE
 public:
     using NOTATION = SIM_VALUE_GRAMMAR::NOTATION;
 
+    // Names like BOOL, INT, FLOAT need to be prefixed or MS Windows compilers will complain (enum
+    // class doesn't help).
     enum TYPE
     {
         TYPE_BOOL,
@@ -169,7 +171,7 @@ namespace SIM_VALUE_GRAMMAR
                         sor<metricSuffix<ValueType, Notation>, not_at<alnum>>> {};
 
     template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
-    struct numberGrammar : must<number<ValueType, Notation>, eof> {};
+    struct numberGrammar : must<number<ValueType, Notation>, tao::pegtl::eof> {};
 
 
     bool IsValid( const wxString& aString,

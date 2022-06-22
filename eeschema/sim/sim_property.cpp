@@ -28,7 +28,7 @@
 #include <confirm.h>
 #include <wx/combo.h>
 #include <wx/combobox.h>
-#include <wx/gtk/notebook.h>
+#include <wx/notebook.h>
 
 
 wxBEGIN_EVENT_TABLE( SIM_VALIDATOR, wxValidator )

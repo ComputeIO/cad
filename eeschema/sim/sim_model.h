@@ -50,7 +50,7 @@ namespace SIM_MODEL_GRAMMAR
     struct pinSequenceGrammar : must<opt<sep>,
                                      pinSequence,
                                      opt<sep>,
-                                     eof> {};
+                                     tao::pegtl::eof> {};
 
     struct unquotedString : plus<not_at<space>, any> {};
     struct quotedStringContent : star<not_at<one<'"'>>, any> {}; // TODO: Allow escaping '"'.
@@ -76,7 +76,7 @@ namespace SIM_MODEL_GRAMMAR
     struct fieldParamValuePairsGrammar : must<opt<sep>,
                                               fieldParamValuePairs,
                                               opt<sep>,
-                                              eof> {};
+                                              tao::pegtl::eof> {};
 }
 
 
@@ -310,11 +310,12 @@ public:
 
     struct PARAM
     {
-        enum class DIR
+        // MS Windows compilers complain about the names IN and OUT, so we prefix them.
+        enum DIR
         {
-            IN,
-            OUT,
-            INOUT
+            DIR_IN,
+            DIR_OUT,
+            DIR_INOUT
         };
 
         enum class CATEGORY
@@ -340,7 +341,7 @@ public:
         {
             wxString name;
             unsigned id = 0; // Legacy (don't remove).
-            DIR dir = DIR::INOUT;
+            DIR dir = DIR_INOUT;
             SIM_VALUE::TYPE type = SIM_VALUE::TYPE_FLOAT;
             FLAGS flags = {}; // Legacy (don't remove).
             wxString unit = "";
