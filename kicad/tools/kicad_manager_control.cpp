@@ -40,6 +40,9 @@
 #include <wx/dir.h>
 #include <wx/filedlg.h>
 #include "dialog_pcm.h"
+#include <io_mgr.h>
+#include <sch_io_mgr.h>
+#include <macros.h>
 
 #if wxCHECK_VERSION( 3, 1, 7 )
 #include "widgets/filedlg_new_project.h"
