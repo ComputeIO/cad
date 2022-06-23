@@ -610,6 +610,12 @@ int SYMBOL_EDITOR_CONTROL::AddSymbolToSchematic( const TOOL_EVENT& aEvent )
             return 0;
         }
 
+        if( !schframe->ToolStackIsEmpty() )
+        {
+            DisplayErrorMessage( m_frame, _( "Schematic editor has another tool active." ) );
+            return 0;
+        }
+
         wxCHECK( libSymbol->GetLibId().IsValid(), 0 );
 
         SCH_SYMBOL* symbol = new SCH_SYMBOL( *libSymbol, libId, &schframe->GetCurrentSheet(),
