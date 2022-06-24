@@ -871,6 +871,7 @@ else()
     # This is the symlink we use in the installation directory, so it will not resolve in the build directory.
     add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python/_pcbnew.${PYMOD_EXT}
         DEPENDS pcbnew_kiface
+        COMMAND test -d "${CMAKE_CURRENT_BINARY_DIR}/python" || mkdir "${CMAKE_CURRENT_BINARY_DIR}/python"
         COMMAND ln -sf "${PCBNEW_PYTHON_SYMLINK}" "${CMAKE_CURRENT_BINARY_DIR}/python/_pcbnew.${PYMOD_EXT}"
         COMMENT "Creating install symlink from _pcbnew.${PYMOD_EXT} to _pcbnew${KIFACE_SUFFIX}."
         )
