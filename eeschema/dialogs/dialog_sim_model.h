@@ -55,7 +55,7 @@ private:
     void updateModelParamsTab();
     void updateModelCodeTab();
     void updatePinAssignmentsTab();
-    void updatePinAssignmentsGridEditors();
+    //void updatePinAssignmentsGridEditors();
 
     void loadLibrary( const wxString& aFilePath );
     
@@ -68,6 +68,7 @@ private:
     wxString getSymbolPinString( int aSymbolPinNumber ) const;
     wxString getModelPinString( int aModelPinNumber ) const;
     unsigned getModelPinNumber( const wxString& aModelPinString ) const;
+    wxArrayString getModelPinChoices() const;
 
     void onRadioButton( wxCommandEvent& aEvent ) override;
     void onBrowseButtonClick( wxCommandEvent& aEvent ) override;

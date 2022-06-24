@@ -304,8 +304,7 @@ void DIALOG_SIM_MODEL<T>::updateModelCodeTab()
 template <typename T>
 void DIALOG_SIM_MODEL<T>::updatePinAssignmentsTab()
 {
-    if( &curModel() == m_prevModel )
-        return;
+    // First reset the grid.
 
     m_pinAssignmentsGrid->ClearRows();
     std::vector<SCH_PIN*> pinList = m_symbol.GetAllPins();
@@ -314,20 +313,11 @@ void DIALOG_SIM_MODEL<T>::updatePinAssignmentsTab()
 
     for( int i = 0; i < m_pinAssignmentsGrid->GetNumberRows(); ++i )
     {
-        wxString symbolPinString = getSymbolPinString( i + 1 );
-
-        m_pinAssignmentsGrid->SetReadOnly( i, static_cast<int>( PIN_COLUMN::SYMBOL ) );
-        m_pinAssignmentsGrid->SetCellValue( i, static_cast<int>( PIN_COLUMN::SYMBOL ),
-                                            symbolPinString );
-
-        // Using `new` here shouldn't cause a memory leak because `SetCellEditor()` calls
-        // `DecRef()` on its last editor.
-        m_pinAssignmentsGrid->SetCellEditor( i, static_cast<int>( PIN_COLUMN::MODEL ),
-                                             new wxGridCellChoiceEditor() );
         m_pinAssignmentsGrid->SetCellValue( i, static_cast<int>( PIN_COLUMN::MODEL ),
                                             "Not Connected" );
     }
 
+    // Now set the grid values.
     for( unsigned i = 0; i < curModel().GetPinCount(); ++i )
     {
         unsigned symbolPinNumber = curModel().GetPin( i ).symbolPinNumber;
@@ -343,62 +333,33 @@ void DIALOG_SIM_MODEL<T>::updatePinAssignmentsTab()
                                             modelPinString );
     }
 
-    updatePinAssignmentsGridEditors();
+    wxArrayString modelPinChoices = getModelPinChoices();
 
-    // TODO: Show a preview of the symbol with the pin numbers shown.
-    // TODO: Maybe show a preview of the code for subcircuits and code models.
-}
-
-
-template <typename T>
-void DIALOG_SIM_MODEL<T>::updatePinAssignmentsGridEditors()
-{
-    wxString modelPinChoicesString = "";
-    bool isFirst = true;
-
-    for( unsigned i = 0; i < curModel().GetPinCount(); ++i )
-    {
-        const SIM_MODEL::PIN& modelPin = curModel().GetPin( i );
-        int modelPinNumber = static_cast<int>( i + 1 );
-
-        if( modelPin.symbolPinNumber != SIM_MODEL::PIN::NOT_CONNECTED )
-            continue;
-
-        if( isFirst )
-        {
-            modelPinChoicesString << getModelPinString( modelPinNumber );
-            isFirst = false;
-        }
-        else
-            modelPinChoicesString << "," << getModelPinString( modelPinNumber );
-    }
-
-    if( !isFirst )
-        modelPinChoicesString << ",";
-
-    modelPinChoicesString << "Not Connected";
-
+    // Now set up cell editors, including dropdown options.
     for( int i = 0; i < m_pinAssignmentsGrid->GetNumberRows(); ++i )
     {
-        wxGridCellChoiceEditor* editor = static_cast<wxGridCellChoiceEditor*>(
-            m_pinAssignmentsGrid->GetCellEditor( i, static_cast<int>( PIN_COLUMN::MODEL ) ) );
+        wxString symbolPinString = getSymbolPinString( i + 1 );
 
-        if( !editor )
-        {
-            // Shouldn't happen.
-            wxFAIL_MSG( "Grid cell editor is null" );
-            return;
-        }
+        m_pinAssignmentsGrid->SetReadOnly( i, static_cast<int>( PIN_COLUMN::SYMBOL ) );
+        m_pinAssignmentsGrid->SetCellValue( i, static_cast<int>( PIN_COLUMN::SYMBOL ),
+                                            symbolPinString );
 
         wxString curModelPinString = m_pinAssignmentsGrid->GetCellValue(
                 i, static_cast<int>( PIN_COLUMN::MODEL ) );
 
-        if( curModelPinString == "Not Connected" )
-            editor->SetParameters( modelPinChoicesString );
-        else
-            editor->SetParameters( curModelPinString + "," + modelPinChoicesString );
+        wxArrayString actualModelPinChoices( modelPinChoices );
 
+        if( curModelPinString != "Not Connected" )
+            actualModelPinChoices.Insert( curModelPinString, 0 );
+
+        // Using `new` here shouldn't cause a memory leak because `SetCellEditor()` calls
+        // `DecRef()` on its last editor.
+        m_pinAssignmentsGrid->SetCellEditor( i, static_cast<int>( PIN_COLUMN::MODEL ),
+                                             new wxGridCellChoiceEditor( actualModelPinChoices ) );
     }
+
+    // TODO: Show a preview of the symbol with the pin numbers shown.
+    // TODO: Maybe show a preview of the code for subcircuits and code models.
 }
 
 
@@ -655,6 +616,34 @@ unsigned DIALOG_SIM_MODEL<T>::getModelPinNumber( const wxString& aModelPinString
 
 
 template <typename T>
+wxArrayString DIALOG_SIM_MODEL<T>::getModelPinChoices() const
+{
+    wxArrayString modelPinChoices;
+    bool          isFirst = true;
+
+    for( unsigned i = 0; i < curModel().GetPinCount(); ++i )
+    {
+        const SIM_MODEL::PIN& modelPin = curModel().GetPin( i );
+        int                   modelPinNumber = static_cast<int>( i + 1 );
+
+        if( modelPin.symbolPinNumber != SIM_MODEL::PIN::NOT_CONNECTED )
+            continue;
+
+        if( isFirst )
+        {
+            modelPinChoices.Add( getModelPinString( modelPinNumber ) );
+            isFirst = false;
+        }
+        else
+            modelPinChoices.Add( getModelPinString( modelPinNumber ) );
+    }
+
+    modelPinChoices.Add( "Not Connected" );
+    return modelPinChoices;
+}
+
+
+template <typename T>
 void DIALOG_SIM_MODEL<T>::onRadioButton( wxCommandEvent& aEvent )
 {
     updateWidgets();
@@ -748,7 +737,7 @@ void DIALOG_SIM_MODEL<T>::onPinAssignmentsGridCellChange( wxGridEvent& aEvent )
     if( modelPinNumber != SIM_MODEL::PIN::NOT_CONNECTED )
         curModel().SetPinSymbolPinNumber( modelPinNumber - 1, symbolPinNumber );
 
-    updatePinAssignmentsGridEditors();
+    updatePinAssignmentsTab();
 
     aEvent.Skip();
 }
