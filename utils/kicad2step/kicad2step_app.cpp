@@ -78,7 +78,7 @@ static const wxCmdLineEntryDesc cmdLineDesc[] = {
     { wxCMD_LINE_SWITCH, NULL, "grid-origin", _( "Use Grid Origin for output origin" ).mb_str(),
       wxCMD_LINE_VAL_NONE, wxCMD_LINE_PARAM_OPTIONAL },
     { wxCMD_LINE_OPTION, NULL, "user-origin",
-      _( "User-specified output origin ex. 1x1in, 1x1inch, 25.4x25.4mm (default mm)" ).mb_str(),
+      _( "User-specified output origin ex. 1x1in, 1x1inch, 25.4 x 25.4mm (default mm)" ).mb_str(),
       wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL },
     { wxCMD_LINE_SWITCH, NULL, "no-virtual",
       _( "Exclude 3D models for components with 'virtual' attribute" ).mb_str(),
