@@ -52,8 +52,8 @@ public:
     virtual bool OnCmdLineParsed( wxCmdLineParser& parser ) override;
 
 private:
-    KICAD2STEP*      m_converter;
-    KICAD2MCAD_PRMS  m_params;
+    KICAD2STEP*     m_converter;
+    KICAD2MCAD_PRMS m_params;
 };
 
 
@@ -150,16 +150,16 @@ bool KICAD2MCAD_APP::OnCmdLineParsed( wxCmdLineParser& parser )
 
     if( parser.Found( wxT( "user-origin" ), &tstr ) )
     {
-        std::regex re_pattern(REGEX_QUANTITY REGEX_DELIMITER REGEX_QUANTITY REGEX_UNIT,
-                         std::regex_constants::icase);
+        std::regex  re_pattern( REGEX_QUANTITY REGEX_DELIMITER REGEX_QUANTITY REGEX_UNIT,
+                                std::regex_constants::icase );
         std::smatch sm;
         std::string str( tstr.ToUTF8() );
-        std::regex_search(str, sm, re_pattern);
-        m_params.m_xOrigin = atof(sm.str(1).c_str());
-        m_params.m_yOrigin = atof(sm.str(2).c_str());
-        std::string tunit(sm[3]);
+        std::regex_search( str, sm, re_pattern );
+        m_params.m_xOrigin = atof( sm.str( 1 ).c_str() );
+        m_params.m_yOrigin = atof( sm.str( 2 ).c_str() );
+        std::string tunit( sm[3] );
 
-        if( ( !sm.str(1).compare(" ") || !sm.str(2).compare(" ") ) || (sm.size() != 4) )
+        if( ( !sm.str( 1 ).compare( " " ) || !sm.str( 2 ).compare( " " ) ) || ( sm.size() != 4 ) )
         {
             parser.Usage();
             return false;
