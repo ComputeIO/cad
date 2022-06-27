@@ -241,7 +241,7 @@ public:
         PMOS_HISIMHV2,
 
 
-        V_DC,
+        V,
         V_SIN,
         V_PULSE,
         V_EXP,
@@ -257,7 +257,7 @@ public:
         V_RANDPOISSON,
         V_BEHAVIORAL,
 
-        I_DC,
+        I,
         I_SIN,
         I_PULSE,
         I_EXP,

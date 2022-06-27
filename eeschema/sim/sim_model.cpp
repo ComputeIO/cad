@@ -203,7 +203,7 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::NMOS_HISIMHV2:        return { DEVICE_TYPE::NMOS,   "HISIMHV2",       "HiSIM_HV2"                  };
     case TYPE::PMOS_HISIMHV2:        return { DEVICE_TYPE::PMOS,   "HISIMHV2",       "HiSIM_HV2"                  };
 
-    case TYPE::V_DC:                 return { DEVICE_TYPE::V,      "DC",             "DC",                        };
+    case TYPE::V:                 return { DEVICE_TYPE::V,      "DC",             "DC",                        };
     case TYPE::V_SIN:                return { DEVICE_TYPE::V,      "SIN",            "Sine"                       };
     case TYPE::V_PULSE:              return { DEVICE_TYPE::V,      "PULSE",          "Pulse"                      };
     case TYPE::V_EXP:                return { DEVICE_TYPE::V,      "EXP",            "Exponential"                };
@@ -219,7 +219,7 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::V_RANDPOISSON:        return { DEVICE_TYPE::V,      "RANDPOISSON",    "Random Poisson"             };
     case TYPE::V_BEHAVIORAL:         return { DEVICE_TYPE::V,      "=",              "Behavioral"                 };
 
-    case TYPE::I_DC:                 return { DEVICE_TYPE::I,      "DC",             "DC",                        };
+    case TYPE::I:                 return { DEVICE_TYPE::I,      "DC",             "DC",                        };
     case TYPE::I_SIN:                return { DEVICE_TYPE::I,      "SIN",            "Sine"                       };
     case TYPE::I_PULSE:              return { DEVICE_TYPE::I,      "PULSE",          "Pulse"                      };
     case TYPE::I_EXP:                return { DEVICE_TYPE::I,      "EXP",            "Exponential"                };
@@ -333,7 +333,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::NMOS_HISIMHV2:        return { "M", "nmos",   "",        "73", true,  false, "2.2.0" };
     case TYPE::PMOS_HISIMHV2:        return { "M", "pmos",   "",        "73", true,  false, "2.2.0" };
 
-    case TYPE::V_DC:                 return { "V", ""        };
+    case TYPE::V:                 return { "V", ""        };
     case TYPE::V_SIN:                return { "V", "",       "SIN"      };
     case TYPE::V_PULSE:              return { "V", "",       "PULSE"    };
     case TYPE::V_EXP:                return { "V", "",       "EXP"      };
@@ -349,7 +349,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::V_RANDPOISSON:        return { "V", "",       "TRRANDOM" };
     case TYPE::V_BEHAVIORAL:         return { "B"  };
 
-    case TYPE::I_DC:                 return { "V", ""        };
+    case TYPE::I:                 return { "V", ""        };
     case TYPE::I_PULSE:              return { "V", "",       "PULSE"    };
     case TYPE::I_SIN:                return { "V", "",       "SIN"      };
     case TYPE::I_EXP:                return { "V", "",       "EXP"      };
@@ -505,7 +505,6 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
         { "C", TYPE::C },
         { "L", TYPE::L },
         { "TLINE", TYPE::TLINE_Z0 },
-        { "VDC", TYPE::V_DC },
         { "VSIN", TYPE::V_SIN },
         { "VPULSE", TYPE::V_PULSE },
         { "VEXP", TYPE::V_EXP },
@@ -519,8 +518,6 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
         { "VRANDNORMAL", TYPE::V_RANDNORMAL },
         { "VRANDEXP", TYPE::V_RANDEXP },
         { "VRANDPOISSON", TYPE::V_RANDPOISSON },
-        { "VBEHAVIORAL", TYPE::V_BEHAVIORAL },
-        { "IDC", TYPE::I_DC },
         { "ISIN", TYPE::I_SIN },
         { "IPULSE", TYPE::I_PULSE },
         { "IEXP", TYPE::I_EXP },
@@ -534,7 +531,7 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
         { "IRANDNORMAL", TYPE::I_RANDNORMAL },
         { "IRANDEXP", TYPE::I_RANDEXP },
         { "IRANDPOISSON", TYPE::I_RANDPOISSON },
-        { "IBEHAVIORAL", TYPE::I_BEHAVIORAL }
+        { "I", TYPE::I },
     };
 
     TYPE type = TYPE::NONE;
@@ -547,6 +544,14 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
             break;
         }
     }
+
+    // We handle "V" and "I" later because it collides and std::map is unordered.
+
+    if( type == TYPE::NONE && aRef.StartsWith( "V" ) )
+        type = TYPE::V;
+
+    if( type == TYPE::NONE && aRef.StartsWith( "I" ) )
+        type = TYPE::I;
 
     wxString value = aValue;
 
@@ -566,6 +571,16 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
     case TYPE::L:
         if( value.Trim( false ).StartsWith( "=" ) )
             type = TYPE::L_BEHAVIORAL;
+        break;
+    
+    case TYPE::V:
+        if( value.Trim( false ).StartsWith( "=" ) )
+            type = TYPE::V_BEHAVIORAL;
+        break;
+
+    case TYPE::I:
+        if( value.Trim( false ).StartsWith( "=" ) )
+            type = TYPE::I_BEHAVIORAL;
         break;
 
     case TYPE::TLINE_Z0:
@@ -1327,8 +1342,8 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
     case TYPE::TLINE_RLGC:
         return std::make_unique<SIM_MODEL_TLINE>( aType );
 
-    case TYPE::V_DC:
-    case TYPE::I_DC:
+    case TYPE::V:
+    case TYPE::I:
     case TYPE::V_SIN:
     case TYPE::I_SIN:
     case TYPE::V_PULSE:

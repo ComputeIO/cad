@@ -159,8 +159,8 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParamInfos( TYPE aType )
 
     switch( aType )
     {
-    case TYPE::V_DC:          return vdc;
-    case TYPE::I_DC:          return idc;
+    case TYPE::V:          return vdc;
+    case TYPE::I:          return idc;
     case TYPE::V_SIN:         return vsin;
     case TYPE::I_SIN:         return isin;
     case TYPE::V_PULSE:       return vpulse;
