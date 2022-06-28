@@ -62,5 +62,6 @@
 #define UNIT_MSECOND 1e-3 // millisecond to second
 #define UNIT_USECOND 1e-6 // microsecond to second
 #define UNIT_NSECOND 1e-9 // nanosecond to second
+#define UNIT_PSECOND 1e-12 // picosecond to second
 
 #endif  // UNITS_SCALES_H

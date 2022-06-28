@@ -266,10 +266,8 @@ UNIT_SELECTOR_TIME::UNIT_SELECTOR_TIME( wxWindow* parent, wxWindowID id, const w
                                         long style ) :
         UNIT_SELECTOR( parent, id, pos, size, choices, style )
 {
-    Append( _( "s" ) );
-    Append( _( "ms" ) );
-    Append( _( "µs" ) );
     Append( _( "ns" ) );
+    Append( _( "ps" ) );
 }
 
 /*
@@ -281,10 +279,8 @@ double UNIT_SELECTOR_TIME::GetUnitScale()
 {
     switch( GetCurrentSelection() )
     {
-    case 0: return UNIT_SECOND; break;
-    case 1: return UNIT_MSECOND; break;
-    case 2: return UNIT_USECOND; break;
-    case 3: return UNIT_NSECOND; break;
+    case 0: return UNIT_NSECOND; break;
+    case 1: return UNIT_PSECOND; break;
     }
     return 1.0;
 }
