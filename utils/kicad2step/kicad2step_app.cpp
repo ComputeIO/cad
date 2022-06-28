@@ -31,7 +31,6 @@
 #include <sstream>
 #include <iostream>
 #include <regex>
-#include <stdlib.h>
 
 #include "kicad2step.h"
 #include "kicad2step_frame_base.h"
