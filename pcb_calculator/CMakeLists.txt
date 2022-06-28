@@ -36,6 +36,8 @@ set( PCB_CALCULATOR_SRCS
     calculator_panels/panel_transline_base.cpp
     calculator_panels/panel_via_size.cpp
     calculator_panels/panel_via_size_base.cpp
+    calculator_panels/panel_wavelength.cpp
+    calculator_panels/panel_wavelength_base.cpp
     transline_ident.cpp
     widgets/unit_selector.cpp
     transline/transline.cpp
