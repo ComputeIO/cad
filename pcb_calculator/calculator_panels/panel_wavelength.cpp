@@ -21,6 +21,9 @@
 #include <pcb_calculator_settings.h>
 #include <string_utils.h>
 #include <widgets/unit_selector.h>
+#include <wx/choicdlg.h>
+#include "pcb_calculator_utils.h"
+#include "common_data.h"
 
 #define SPEED_LIGHT 299792458
 
@@ -231,5 +234,25 @@ void PANEL_WAVELENGTH::OnPermeabilityChange( wxCommandEvent& event )
             m_permeability = value;
             update( m_frequency );
         }
+    }
+}
+
+void PANEL_WAVELENGTH::OnButtonPermittivity( wxCommandEvent& event )
+{
+    wxArrayString list = StandardRelativeDielectricConstantList();
+    list.Add( "" ); // Add an empty line for no selection
+
+    // Find the previous choice index:
+    wxString prevChoiceStr = m_permittivityCtrl->GetValue();
+    int      prevChoice = 0;
+    findMatch( list, prevChoiceStr, prevChoice );
+
+    int index = wxGetSingleChoiceIndex( wxEmptyString, _( "Relative Dielectric Constants" ), list,
+                                        prevChoice );
+
+    if( index >= 0 && !list.Item( index ).IsEmpty() )
+    {
+        m_permittivityCtrl->SetValue( list.Item( index ).BeforeFirst( ' ' ) );
+        // wx automatically calls onPermittivity()
     }
 }

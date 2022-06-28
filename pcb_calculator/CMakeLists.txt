@@ -52,6 +52,7 @@ set( PCB_CALCULATOR_SRCS
     attenuators/attenuator_classes.cpp
     dialogs/dialog_regulator_form_base.cpp
     dialogs/dialog_regulator_form.cpp
+    pcb_calculator_utils.cpp
     ../common/env_vars.cpp      # needed on MSW to avoid a link issue (a symbol not found)
     )
 

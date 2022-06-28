@@ -24,6 +24,10 @@ class UNIT_SELECTOR_TIME;
 #include <wx/settings.h>
 #include <wx/textctrl.h>
 #include <wx/choice.h>
+#include <wx/button.h>
+#include <wx/bitmap.h>
+#include <wx/image.h>
+#include <wx/icon.h>
 #include <wx/sizer.h>
 #include <wx/panel.h>
 
@@ -55,6 +59,7 @@ class PANEL_WAVELENGTH_BASE : public CALCULATOR_PANEL
 		UNIT_SELECTOR_SPEED* m_speedUnit;
 		wxStaticText* m_staticText181111;
 		wxTextCtrl* m_permittivityCtrl;
+		wxButton* m_button1;
 		wxStaticText* m_staticText42;
 		wxTextCtrl* m_permeabilityCtrl;
 
@@ -65,6 +70,7 @@ class PANEL_WAVELENGTH_BASE : public CALCULATOR_PANEL
 		virtual void OnWavelengthVacuumChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnWavelengthMediumChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnPermittivityChange( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnButtonPermittivity( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnPermeabilityChange( wxCommandEvent& event ) { event.Skip(); }
 
 

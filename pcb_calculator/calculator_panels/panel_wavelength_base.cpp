@@ -86,18 +86,22 @@ PANEL_WAVELENGTH_BASE::PANEL_WAVELENGTH_BASE( wxWindow* parent, wxWindowID id, c
 	m_speedUnit->SetSelection( 0 );
 	fgSizer3->Add( m_speedUnit, 0, wxALL, 5 );
 
-	m_staticText181111 = new wxStaticText( this, wxID_ANY, _("Relative permittivity:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText181111 = new wxStaticText( this, wxID_ANY, _("er:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText181111->Wrap( -1 );
+	m_staticText181111->SetToolTip( _("relative permittivity (dielectric constant)") );
+
 	fgSizer3->Add( m_staticText181111, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
 	m_permittivityCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizer3->Add( m_permittivityCtrl, 0, wxALL, 5 );
 
+	m_button1 = new wxButton( this, wxID_ANY, _("..."), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizer3->Add( m_button1, 0, wxALL, 5 );
 
-	fgSizer3->Add( 0, 0, 1, wxEXPAND, 5 );
-
-	m_staticText42 = new wxStaticText( this, wxID_ANY, _("Relative permeability:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText42 = new wxStaticText( this, wxID_ANY, _("mur:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText42->Wrap( -1 );
+	m_staticText42->SetToolTip( _("relative permeability") );
+
 	fgSizer3->Add( m_staticText42, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL, 5 );
 
 	m_permeabilityCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
@@ -124,6 +128,7 @@ PANEL_WAVELENGTH_BASE::PANEL_WAVELENGTH_BASE( wxWindow* parent, wxWindowID id, c
 	m_wavelengthMediumUnit->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::updateUnits ), NULL, this );
 	m_speedUnit->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::updateUnits ), NULL, this );
 	m_permittivityCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::OnPermittivityChange ), NULL, this );
+	m_button1->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::OnButtonPermittivity ), NULL, this );
 	m_permeabilityCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::OnPermeabilityChange ), NULL, this );
 }
 
@@ -140,6 +145,7 @@ PANEL_WAVELENGTH_BASE::~PANEL_WAVELENGTH_BASE()
 	m_wavelengthMediumUnit->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::updateUnits ), NULL, this );
 	m_speedUnit->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::updateUnits ), NULL, this );
 	m_permittivityCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::OnPermittivityChange ), NULL, this );
+	m_button1->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::OnButtonPermittivity ), NULL, this );
 	m_permeabilityCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_WAVELENGTH_BASE::OnPermeabilityChange ), NULL, this );
 
 }

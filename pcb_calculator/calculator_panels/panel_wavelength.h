@@ -43,6 +43,7 @@ public:
     void OnWavelengthMediumChange( wxCommandEvent& event );
     void OnPermittivityChange( wxCommandEvent& event );
     void OnPermeabilityChange( wxCommandEvent& event );
+    void OnButtonPermittivity( wxCommandEvent& event );
 
 private:
     void update( double aFrequency );
