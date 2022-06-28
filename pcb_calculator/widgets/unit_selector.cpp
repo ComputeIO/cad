@@ -241,7 +241,7 @@ UNIT_SELECTOR_SPEED::UNIT_SELECTOR_SPEED( wxWindow* parent, wxWindowID id, const
     Append( _( "m/s" ) );
     Append( _( "ft/s" ) );
     Append( _( "km/h" ) );
-    Append( _( "mi/s" ) );
+    Append( _( "mi/h" ) );
 }
 
 /*

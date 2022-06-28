@@ -56,7 +56,7 @@
 #define UNIT_METER_PER_SECOND 1.0           // meter per second to meter per second
 #define UNIT_KILOMETER_PER_HOUR ( 1 / 3.6 ) // km/h to m/s
 #define UNIT_FEET_PER_SECOND 0.3048         // ft/s to m/s
-#define UNIT_MILES_PER_HOUR 1609.34         // mi/s to m/s
+#define UNIT_MILES_PER_HOUR 1609.34         // mi/h to m/s
 
 #define UNIT_SECOND 1.0   // second to second
 #define UNIT_MSECOND 1e-3 // millisecond to second
