@@ -291,7 +291,10 @@ void NETLIST_EXPORTER_SPICE::readEnabledField( SCH_SYMBOL& aSymbol, SPICE_ITEM& 
     SCH_FIELD* field = aSymbol.FindField( ENABLED_FIELD );
 
     if( !field )
+    {
+        aItem.enabled = true;
         return;
+    }
 
     aItem.enabled = StringToBool( field->GetShownText() );
 }
