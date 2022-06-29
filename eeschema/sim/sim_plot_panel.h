@@ -35,6 +35,7 @@
 #include <wx/sizer.h>
 #include "sim_panel_base.h"
 #include "sim_plot_colors.h"
+#include "kiwave.h"
 
 class SIM_PLOT_FRAME;
 class SIM_PLOT_PANEL;
@@ -196,14 +197,12 @@ public:
         return m_axis_x ? m_axis_x->GetName() : "";
     }
 
-    wxString GetLabelY1() const
+     wxString GetLabelY( size_t index ) const
     {
-        return m_axis_y1 ? m_axis_y1->GetName() : "";
-    }
-
-    wxString GetLabelY2() const
-    {
-        return m_axis_y2 ? m_axis_y2->GetName() : "";
+        if ( index >= m_axis_y.size() )
+            return _( "" );
+        else
+            return m_axis_y.at( index )->GetName();
     }
 
     bool TraceShown( const wxString& aName ) const
@@ -226,17 +225,26 @@ public:
     void ShowGrid( bool aEnable )
     {
         m_axis_x->SetTicks( !aEnable );
-        m_axis_y1->SetTicks( !aEnable );
-        m_axis_y2->SetTicks( !aEnable );
+        
+        for (mpScaleY* axis: m_axis_y )
+        {
+            axis->SetTicks( !aEnable );
+        }
         m_plotWin->UpdateAll();
     }
 
     bool IsGridShown() const
     {
-        if( !m_axis_x || !m_axis_y1 )
+        if( !m_axis_x )
             return false;
 
-        assert( m_axis_x->GetTicks() == m_axis_y1->GetTicks() );
+        bool shown = m_axis_x->GetTicks();
+
+        for (mpScaleY* axis: m_axis_y )
+        {
+            assert( shown == axis->GetTicks() );
+        }
+
         return !m_axis_x->GetTicks();
     }
 
@@ -314,8 +322,7 @@ private:
     std::map<wxString, TRACE*> m_traces;
 
     mpScaleXBase* m_axis_x;
-    mpScaleY* m_axis_y1;
-    mpScaleY* m_axis_y2;
+    std::vector<mpScaleY*> m_axis_y;
     mpInfoLegend* m_legend;
 
     bool m_dotted_cp;

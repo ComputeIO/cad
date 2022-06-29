@@ -1678,8 +1678,8 @@ void SIM_PLOT_FRAME::onCursorUpdate( wxCommandEvent& event )
     const long X_COL = m_cursors->AppendColumn( plotPanel->GetLabelX(), wxLIST_FORMAT_LEFT,
                                                 size.x / 4 );
 
-    wxString labelY1 = plotPanel->GetLabelY1();
-    wxString labelY2 = plotPanel->GetLabelY2();
+    wxString labelY1 = plotPanel->GetLabelY( 0 );
+    wxString labelY2 = plotPanel->GetLabelY( 1 );
     wxString labelY;
 
     if( !labelY2.IsEmpty() )
