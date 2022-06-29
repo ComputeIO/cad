@@ -23,8 +23,20 @@
  */
 
 #include <sim/sim_model_source.h>
+#include <pegtl.hpp>
+#include <pegtl/contrib/parse_tree.hpp>
 
 using PARAM = SIM_MODEL::PARAM;
+
+
+namespace SIM_MODEL_SOURCE_PARSER
+{
+    using namespace SIM_MODEL_SOURCE_GRAMMAR;
+
+    template <typename Rule> struct pwlValuesSelector : std::false_type {};
+    template <> struct pwlValuesSelector<number<SIM_VALUE::TYPE_FLOAT, NOTATION::SI>>
+        : std::true_type {};
+}
 
 
 SIM_MODEL_SOURCE::SIM_MODEL_SOURCE( TYPE aType )
@@ -96,12 +108,51 @@ wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
     {
         wxString argList = "";
         
-        for( const PARAM& param : GetParams() )
+        switch( GetType() )
         {
-            wxString argStr = param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+        case TYPE::V_PWL:
+        case TYPE::I_PWL:
+        {
+            tao::pegtl::string_input<> in( GetParam( 0 ).value->ToString().ToStdString(),
+                                           "from_content" );
+            std::unique_ptr<tao::pegtl::parse_tree::node> root;
 
-            if( argStr != "" )
-                argList << argStr << " ";
+            try
+            {
+                root = tao::pegtl::parse_tree::parse<SIM_MODEL_SOURCE_PARSER::pwlValuesGrammar,
+                                                     SIM_MODEL_SOURCE_PARSER::pwlValuesSelector>
+                    ( in );
+            }
+            catch( const tao::pegtl::parse_error& e )
+            {
+                break;
+            }
+
+            if( root )
+            {
+                for( const auto& node : root->children )
+                {
+                    if( node->is_type<SIM_MODEL_SOURCE_PARSER::number<SIM_VALUE::TYPE_FLOAT,
+                                                                      SIM_VALUE::NOTATION::SI>>() )
+                    {
+                        std::unique_ptr<SIM_VALUE> value = SIM_VALUE::Create( SIM_VALUE::TYPE_FLOAT,
+                                                                              node->string() );
+                        argList << value->ToString( SIM_VALUE::NOTATION::SPICE ) << " ";
+                    }
+                }
+            }
+        }
+            break;
+
+        default:
+            for( const PARAM& param : GetParams() )
+            {
+                wxString argStr = param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+
+                if( argStr != "" )
+                    argList << argStr << " ";
+            }
+            break;
         }
 
         model << wxString::Format( "%s( %s)", GetSpiceInfo().inlineTypeString, argList );
@@ -159,8 +210,8 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParamInfos( TYPE aType )
 
     switch( aType )
     {
-    case TYPE::V:          return vdc;
-    case TYPE::I:          return idc;
+    case TYPE::V:             return vdc;
+    case TYPE::I:             return idc;
     case TYPE::V_SIN:         return vsin;
     case TYPE::I_SIN:         return isin;
     case TYPE::V_PULSE:       return vpulse;
@@ -594,7 +645,37 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePwlParamInfos( wxString aPrefix, 
     std::vector<PARAM::INFO> paramInfos;
     PARAM::INFO paramInfo;
 
-    paramInfo.name = "t";
+    paramInfo.name = "pwl";
+    paramInfo.type = SIM_VALUE::TYPE_STRING;
+    paramInfo.unit = "s," + aUnit;
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "";
+    paramInfo.description = aUnit == "V" ? "Time-voltage points" : "Time-current points";
+    paramInfos.push_back( paramInfo );
+
+    // TODO: Ngspice doesn't support "td" and "r" for current sources, so let's disable that for
+    // now.
+
+    /*paramInfo.name = "td";
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
+    paramInfo.unit = "s";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = aUnit == "V" ? "Time-voltage points" : "Time-current points";
+    paramInfo.isSpiceInstanceParam = true;
+    paramInfos.push_back( paramInfo );
+
+    paramInfo.name = "repeat";
+    paramInfo.type = SIM_VALUE::TYPE_BOOL;
+    paramInfo.unit = "";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "Repeat forever";
+    paramInfo.isSpiceInstanceParam = true;
+    paramInfo.spiceInstanceName = "r";
+    paramInfos.push_back( paramInfo );*/
+
+    /*paramInfo.name = "t";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT_VECTOR;
     paramInfo.unit = "s";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
@@ -624,7 +705,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePwlParamInfos( wxString aPrefix, 
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
     paramInfo.description = "Delay";
-    paramInfos.push_back( paramInfo );
+    paramInfos.push_back( paramInfo );*/
 
     appendAcParamInfos( paramInfos, aUnit );
     return paramInfos;

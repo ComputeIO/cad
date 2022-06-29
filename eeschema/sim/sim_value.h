@@ -95,6 +95,7 @@ public:
     wxString ToSimpleString() const override;
 
     void operator=( const T& aValue );
+    bool operator==( const T& aOther ) const;
     bool operator==( const SIM_VALUE& aOther ) const override;
 
 private:
@@ -102,6 +103,12 @@ private:
 
     OPT<T> m_value = NULLOPT;
 };
+
+template class SIM_VALUE_INSTANCE<bool>;
+template class SIM_VALUE_INSTANCE<long>;
+template class SIM_VALUE_INSTANCE<double>;
+//template class SIM_VALUE_INSTANCE<std::complex<double>>;
+template class SIM_VALUE_INSTANCE<wxString>;
 
 
 namespace SIM_VALUE_GRAMMAR

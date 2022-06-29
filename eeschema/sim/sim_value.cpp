@@ -642,6 +642,13 @@ wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToSimpleString() const
 
 
 template <typename T>
+bool SIM_VALUE_INSTANCE<T>::operator==( const T& aOther ) const
+{
+    return m_value == aOther;
+}
+
+
+template <typename T>
 bool SIM_VALUE_INSTANCE<T>::operator==( const SIM_VALUE& aOther ) const
 {
     const SIM_VALUE_INSTANCE<T>* otherValue = dynamic_cast<const SIM_VALUE_INSTANCE<T>*>( &aOther );

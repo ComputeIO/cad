@@ -48,7 +48,6 @@ namespace SIM_MODEL_PARSER
 {
     using namespace SIM_MODEL_GRAMMAR;
 
-
     template <typename Rule> struct fieldParamValuePairsSelector : std::false_type {};
 
     template <> struct fieldParamValuePairsSelector<param> : std::true_type {};
@@ -333,7 +332,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::NMOS_HISIMHV2:        return { "M", "nmos",   "",        "73", true,  false, "2.2.0" };
     case TYPE::PMOS_HISIMHV2:        return { "M", "pmos",   "",        "73", true,  false, "2.2.0" };
 
-    case TYPE::V:                 return { "V", ""        };
+    case TYPE::V:                    return { "V", ""        };
     case TYPE::V_SIN:                return { "V", "",       "SIN"      };
     case TYPE::V_PULSE:              return { "V", "",       "PULSE"    };
     case TYPE::V_EXP:                return { "V", "",       "EXP"      };
@@ -349,20 +348,20 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::V_RANDPOISSON:        return { "V", "",       "TRRANDOM" };
     case TYPE::V_BEHAVIORAL:         return { "B"  };
 
-    case TYPE::I:                 return { "V", ""        };
-    case TYPE::I_PULSE:              return { "V", "",       "PULSE"    };
-    case TYPE::I_SIN:                return { "V", "",       "SIN"      };
-    case TYPE::I_EXP:                return { "V", "",       "EXP"      };
+    case TYPE::I:                    return { "I", ""        };
+    case TYPE::I_PULSE:              return { "I", "",       "PULSE"    };
+    case TYPE::I_SIN:                return { "I", "",       "SIN"      };
+    case TYPE::I_EXP:                return { "I", "",       "EXP"      };
     /*case TYPE::I_SFAM:               return { "V", "",       "AM"       };
     case TYPE::I_SFFM:               return { "V", "",       "SFFM"     };*/
-    case TYPE::I_PWL:                return { "V", "",       "PWL"      };
-    case TYPE::I_WHITENOISE:         return { "V", "",       "TRNOISE"  };
-    case TYPE::I_PINKNOISE:          return { "V", "",       "TRNOISE"  };
-    case TYPE::I_BURSTNOISE:         return { "V", "",       "TRNOISE"  };
-    case TYPE::I_RANDUNIFORM:        return { "V", "",       "TRRANDOM" };
-    case TYPE::I_RANDNORMAL:         return { "V", "",       "TRRANDOM" };
-    case TYPE::I_RANDEXP:            return { "V", "",       "TRRANDOM" };
-    case TYPE::I_RANDPOISSON:        return { "V", "",       "TRRANDOM" };
+    case TYPE::I_PWL:                return { "I", "",       "PWL"      };
+    case TYPE::I_WHITENOISE:         return { "I", "",       "TRNOISE"  };
+    case TYPE::I_PINKNOISE:          return { "I", "",       "TRNOISE"  };
+    case TYPE::I_BURSTNOISE:         return { "I", "",       "TRNOISE"  };
+    case TYPE::I_RANDUNIFORM:        return { "I", "",       "TRRANDOM" };
+    case TYPE::I_RANDNORMAL:         return { "I", "",       "TRRANDOM" };
+    case TYPE::I_RANDEXP:            return { "I", "",       "TRRANDOM" };
+    case TYPE::I_RANDPOISSON:        return { "I", "",       "TRRANDOM" };
     case TYPE::I_BEHAVIORAL:         return { "B"  };
 
     case TYPE::SUBCKT:               return { "X"  };
@@ -397,8 +396,6 @@ TYPE SIM_MODEL::ReadTypeFromSpiceCode( const std::string& aSpiceCode )
         wxLogDebug( "%s", e.what() );
         return TYPE::NONE;
     }
-
-    wxASSERT( root );
 
     for( const auto& node : root->children )
     {
@@ -531,7 +528,6 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
         { "IRANDNORMAL", TYPE::I_RANDNORMAL },
         { "IRANDEXP", TYPE::I_RANDEXP },
         { "IRANDPOISSON", TYPE::I_RANDPOISSON },
-        { "I", TYPE::I },
     };
 
     TYPE type = TYPE::NONE;
@@ -785,9 +781,6 @@ bool SIM_MODEL::ReadSpiceCode( const std::string& aSpiceCode )
         return false;
     }
 
-
-    wxASSERT( root );
-
     for( const auto& node : root->children )
     {
         if( node->is_type<SIM_MODEL_SPICE_PARSER::dotModel>() )
@@ -975,8 +968,14 @@ wxString SIM_MODEL::GenerateSpiceItemLine( const wxString& aRefName,
     for( const PARAM& param : GetParams() )
     {
         if( param.info.isSpiceInstanceParam )
-            result << param.info.name << "="
-                << param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE ) << " ";
+        {
+            wxString name = ( param.info.spiceInstanceName == "" ) ?
+                param.info.name : param.info.spiceInstanceName;
+            wxString value = param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+
+            if( value != "" )
+                result << name << "=" << value << " ";
+        }
     }
 
     result << "\n";
@@ -1173,7 +1172,12 @@ wxString SIM_MODEL::GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst 
     else
         result << " ";
 
-    result << aParam.info.name + "=" + aParam.value->ToString();
+    wxString value = aParam.value->ToString();
+
+    if( value.Contains( " " ) )
+        value = "\"" + value + "\"";
+
+    result << aParam.info.name + "=" + value;
     return result;
 }
 
@@ -1215,8 +1219,6 @@ bool SIM_MODEL::ParseParamsField( const wxString& aParamsField )
     {
         return false;
     }
-
-    wxASSERT( root );
 
     wxString paramName = "";
 
@@ -1285,8 +1287,6 @@ bool SIM_MODEL::ParsePinsField( unsigned aSymbolPinCount, const wxString& aPinsF
     {
         return false;
     }
-
-    wxASSERT( root );
 
     if( root->children.size() != GetPinCount() )
         return false;

@@ -351,6 +351,7 @@ public:
             wxString description = "";
             bool isInstanceParam = false;
             bool isSpiceInstanceParam = false;
+            wxString spiceInstanceName = "";
         };
 
         std::unique_ptr<SIM_VALUE> value;

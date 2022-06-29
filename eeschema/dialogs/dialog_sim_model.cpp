@@ -270,7 +270,7 @@ void DIALOG_SIM_MODEL<T>::updateModelParamsTab()
     // Either enable all properties or disable all except the principal ones.
     for( wxPropertyGridIterator it = m_paramGrid->GetIterator(); !it.AtEnd(); ++it )
     {
-        SIM_PROPERTY* prop = dynamic_cast<SIM_PROPERTY*>( *it );
+        SIM_STRING_PROPERTY* prop = dynamic_cast<SIM_STRING_PROPERTY*>( *it );
 
         if( !prop ) // Not all properties are SIM_PROPERTY yet. TODO.
             continue;
@@ -482,25 +482,26 @@ wxPGProperty* DIALOG_SIM_MODEL<T>::newParamProperty( int aParamIndex ) const
     {
     case SIM_VALUE::TYPE_BOOL:
         // TODO.
-        prop = new wxBoolProperty( paramDescription, param.info.name );
+        prop = new SIM_BOOL_PROPERTY( paramDescription, param.info.name, m_library,
+                                      curModelSharedPtr(), aParamIndex );
         prop->SetAttribute( wxPG_BOOL_USE_CHECKBOX, true );
         break;
 
     case SIM_VALUE::TYPE_INT:
-        prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE::TYPE_INT );
+        prop = new SIM_STRING_PROPERTY( paramDescription, param.info.name, m_library,
+                                        curModelSharedPtr(), aParamIndex, SIM_VALUE::TYPE_INT );
         break;
 
     case SIM_VALUE::TYPE_FLOAT:
-        prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
-                                 aParamIndex, SIM_VALUE::TYPE_FLOAT );
+        prop = new SIM_STRING_PROPERTY( paramDescription, param.info.name, m_library,
+                                        curModelSharedPtr(), aParamIndex, SIM_VALUE::TYPE_FLOAT );
         break;
 
     //case TYPE_COMPLEX:
     //  break;
 
     case SIM_VALUE::TYPE_STRING:
-        prop = new SIM_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
+        prop = new SIM_STRING_PROPERTY( paramDescription, param.info.name, m_library, curModelSharedPtr(),
                                  aParamIndex, SIM_VALUE::TYPE_STRING );
         break;
 
