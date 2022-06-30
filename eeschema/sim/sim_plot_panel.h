@@ -35,11 +35,40 @@
 #include <wx/sizer.h>
 #include "sim_panel_base.h"
 #include "sim_plot_colors.h"
-#include "kiwave.h"
 
 class SIM_PLOT_FRAME;
 class SIM_PLOT_PANEL;
 class TRACE;
+
+enum class SIM_QUANTITY
+{
+    VOLTAGE,
+    CURRENT,
+    GAIN,
+    PHASE,
+    NOISE,
+    FREQUENCY,
+    TIME,
+    TEMPERATURE,
+    RESISTANCE
+};
+
+
+class SIM_PLOT_AXIS_Y : public mpScaleY
+{
+public:
+    SIM_PLOT_AXIS_Y( SIM_QUANTITY aQ, const wxString& name, int flags = mpALIGN_CENTER,
+                     bool ticks = true );
+    SIM_QUANTITY m_quantity;
+};
+
+class SIM_PLOT_AXIS_X : public mpScaleX
+{
+public:
+    SIM_PLOT_AXIS_X( SIM_QUANTITY aQ, const wxString& name, int flags = mpALIGN_CENTER,
+                     bool ticks = true );
+    SIM_QUANTITY m_quantity;
+};
 
 ///< Cursor attached to a trace to follow its values:
 class CURSOR : public mpInfoLayer
@@ -95,8 +124,8 @@ private:
 class TRACE : public mpFXYVector
 {
 public:
-    TRACE( const wxString& aName, SIM_PLOT_TYPE aType ) :
-            mpFXYVector( aName ), m_cursor( nullptr ), m_type( aType )
+    TRACE( const wxString& aName, SIM_PLOT_TYPE aType, SIM_QUANTITY aQuantity ) :
+            mpFXYVector( aName ), m_cursor( nullptr ), m_type( aType ), m_quantity( aQuantity )
     {
         SetContinuity( true );
         SetDrawOutsideMargins( false );
@@ -162,6 +191,7 @@ public:
         return m_param;
     }
 
+    SIM_QUANTITY m_quantity;
 
 protected:
     CURSOR* m_cursor;
@@ -172,7 +202,6 @@ private:
     ///< Name of the signal parameter
     wxString m_param;
 };
-
 
 class SIM_PLOT_PANEL : public SIM_PANEL_BASE
 {
@@ -297,6 +326,9 @@ public:
         return m_plotWin;
     }
 
+    void             addAxeY( SIM_QUANTITY aQuantity );
+    SIM_PLOT_AXIS_Y* GetAxeY( SIM_QUANTITY aQuantity );
+
 protected:
     bool addTrace( const wxString& aTitle, const wxString& aName, int aPoints, const double* aX,
                    const double* aY, SIM_PLOT_TYPE aType );
@@ -321,8 +353,8 @@ private:
     // Traces to be plotted
     std::map<wxString, TRACE*> m_traces;
 
-    mpScaleXBase* m_axis_x;
-    std::vector<mpScaleY*> m_axis_y;
+    SIM_PLOT_AXIS_X*              m_axis_x;
+    std::vector<SIM_PLOT_AXIS_Y*> m_axis_y;
     mpInfoLegend* m_legend;
 
     bool m_dotted_cp;

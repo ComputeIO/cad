@@ -33,6 +33,20 @@
 #include <limits>
 
 
+SIM_PLOT_AXIS_Y::SIM_PLOT_AXIS_Y( SIM_QUANTITY aQ, const wxString& name, int flags, bool ticks ) :
+        mpScaleY( name, flags, ticks )
+{
+    m_quantity = aQ;
+}
+
+
+SIM_PLOT_AXIS_X::SIM_PLOT_AXIS_X( SIM_QUANTITY aQ, const wxString& name, int flags, bool ticks ) :
+        mpScaleX( name, flags, ticks )
+{
+    m_quantity = aQ;
+}
+
+
 static wxString formatFloat( double x, int nDigits )
 {
     wxString rv, fmt;
@@ -133,7 +147,8 @@ template <typename parent>
 class LIN_SCALE : public parent
 {
 public:
-    LIN_SCALE( wxString name, wxString unit, int flags ) : parent( name, flags ), m_unit( unit ){};
+    LIN_SCALE( SIM_QUANTITY aQ, wxString name, wxString unit, int flags ) :
+            parent( aQ, name, flags ), m_unit( unit ){};
 
     void formatLabels() override
     {
@@ -170,7 +185,8 @@ template <typename parent>
 class LOG_SCALE : public parent
 {
 public:
-    LOG_SCALE( wxString name, wxString unit, int flags ) : parent( name, flags ), m_unit( unit ){};
+    LOG_SCALE( SIM_QUANTITY aQ, wxString name, wxString unit, int flags ) :
+            parent( aQ, name, flags ), m_unit( unit ){};
 
     void formatLabels() override
     {
@@ -334,6 +350,58 @@ SIM_PLOT_PANEL::~SIM_PLOT_PANEL()
     // ~mpWindow destroys all the added layers, so there is no need to destroy m_traces contents
 }
 
+SIM_PLOT_AXIS_Y* SIM_PLOT_PANEL::GetAxeY( SIM_QUANTITY aQuantity )
+{
+    for( SIM_PLOT_AXIS_Y* axis : m_axis_y )
+    {
+        if( axis->m_quantity == aQuantity )
+        {
+            return axis;
+        }
+    }
+    return nullptr;
+}
+void SIM_PLOT_PANEL::addAxeY( SIM_QUANTITY aQuantity )
+{
+    // A plot pane only has a single axis per quantity;
+    if( GetAxeY( aQuantity ) )
+    {
+        return;
+    }
+
+    int align = ( m_axis_y.size() % 2 ) == 0 ? mpALIGN_LEFT : mpALIGN_RIGHT;
+
+    switch( aQuantity )
+    {
+    case SIM_QUANTITY::VOLTAGE:
+        m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>( SIM_QUANTITY::VOLTAGE, _( "Voltage" ),
+                                                            wxT( "V" ), align ) );
+        break;
+    case SIM_QUANTITY::CURRENT:
+        m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>( SIM_QUANTITY::CURRENT, _( "Current" ),
+                                                            wxT( "A" ), align ) );
+        break;
+    case SIM_QUANTITY::GAIN:
+        m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>( SIM_QUANTITY::GAIN, _( "Gain" ),
+                                                            wxT( "dBV" ), align ) );
+        break;
+    case SIM_QUANTITY::PHASE:
+        m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>( SIM_QUANTITY::PHASE, _( "Phase" ),
+                                                            wxT( "\u00B0" ), align ) );
+        break;
+    case SIM_QUANTITY::NOISE:
+        m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>(
+                SIM_QUANTITY::NOISE, _( "noise [(V or A)^2/Hz]" ), wxT( "" ), align ) );
+        break;
+    }
+
+    if( m_axis_y.size() > 1 )
+    {
+        m_axis_y.back()->SetMasterScale( m_axis_y.front() );
+    }
+
+    m_plotWin->AddLayer( m_axis_y.back() );
+}
 
 void SIM_PLOT_PANEL::updateAxes()
 {
@@ -345,11 +413,8 @@ void SIM_PLOT_PANEL::updateAxes()
     switch( GetType() )
     {
         case ST_AC:
-            m_axis_x = new LOG_SCALE<mpScaleXLog>( _( "Frequency" ), wxT( "Hz" ), mpALIGN_BOTTOM );
-            m_axis_y.push_back( new LIN_SCALE<mpScaleY>( _( "Gain" ), wxT( "dBV" ), mpALIGN_LEFT ) );
-            m_axis_y.push_back( new LIN_SCALE<mpScaleY>( _( "Phase" ), wxT( "\u00B0" ),
-                                                 mpALIGN_RIGHT ) ); // degree sign
-            m_axis_y.back()->SetMasterScale( m_axis_y.front() );
+            m_axis_x = new LOG_SCALE<SIM_PLOT_AXIS_X>( SIM_QUANTITY::FREQUENCY, _( "Frequency" ),
+                                                       wxT( "Hz" ), mpALIGN_BOTTOM );
             break;
 
         case ST_DC:
@@ -357,15 +422,13 @@ void SIM_PLOT_PANEL::updateAxes()
             break;
 
         case ST_NOISE:
-            m_axis_x = new LOG_SCALE<mpScaleXLog>( _( "Frequency" ), wxT( "Hz" ), mpALIGN_BOTTOM );
-            m_axis_y.push_back( new mpScaleY( _( "noise [(V or A)^2/Hz]" ), mpALIGN_LEFT ) );
+            m_axis_x = new LOG_SCALE<SIM_PLOT_AXIS_X>( SIM_QUANTITY::FREQUENCY, _( "Frequency" ),
+                                                       wxT( "Hz" ), mpALIGN_BOTTOM );
             break;
 
         case ST_TRANSIENT:
-            m_axis_x = new LIN_SCALE<mpScaleX>( _( "Time" ), wxT( "s" ), mpALIGN_BOTTOM );
-            m_axis_y.push_back( new LIN_SCALE<mpScaleY>( _( "Voltage" ), wxT( "V" ), mpALIGN_LEFT ) );
-            m_axis_y.push_back( new LIN_SCALE<mpScaleY>( _( "Current" ), wxT( "A" ), mpALIGN_RIGHT ) );
-            m_axis_y.back()->SetMasterScale( m_axis_y.front() );
+            m_axis_x = new LIN_SCALE<SIM_PLOT_AXIS_X>( SIM_QUANTITY::TIME, _( "Time" ), wxT( "s" ),
+                                                       mpALIGN_BOTTOM );
             break;
 
         default:
@@ -415,26 +478,28 @@ void SIM_PLOT_PANEL::prepareDCAxes()
         // Make sure that we have a reliable default (even if incorrectly labeled)
         default:
         case 'v':
-            m_axis_x =
-                    new LIN_SCALE<mpScaleX>( _( "Voltage (swept)" ), wxT( "V" ), mpALIGN_BOTTOM );
+            m_axis_x = new LIN_SCALE<SIM_PLOT_AXIS_X>( SIM_QUANTITY::VOLTAGE, ( "Voltage (swept)" ),
+                                                       wxT( "V" ), mpALIGN_BOTTOM );
             break;
         case 'i':
-            m_axis_x =
-                    new LIN_SCALE<mpScaleX>( _( "Current (swept)" ), wxT( "A" ), mpALIGN_BOTTOM );
+            m_axis_x = new LIN_SCALE<SIM_PLOT_AXIS_X>(
+                    SIM_QUANTITY::CURRENT, _( "Current (swept)" ), wxT( "A" ), mpALIGN_BOTTOM );
             break;
         case 'r':
-            m_axis_x = new LIN_SCALE<mpScaleX>( _( "Resistance (swept)" ), wxT( "\u03A9" ),
-                                                mpALIGN_BOTTOM );
+            m_axis_x = new LIN_SCALE<SIM_PLOT_AXIS_X>( SIM_QUANTITY::RESISTANCE,
+                                                       ( "Resistance (swept)" ), wxT( "\u03A9" ),
+                                                       mpALIGN_BOTTOM );
             break;
         case 't':
-            m_axis_x = new LIN_SCALE<mpScaleX>( _( "Temperature (swept)" ), wxT( "\u00B0C" ),
-                                                mpALIGN_BOTTOM );
+            m_axis_x = new LIN_SCALE<SIM_PLOT_AXIS_X>( SIM_QUANTITY::TEMPERATURE,
+                                                       _( "Temperature (swept)" ), wxT( "\u00B0C" ),
+                                                       mpALIGN_BOTTOM );
             break;
         }
 
         m_axis_y.clear();
-        m_axis_y.push_back( new LIN_SCALE<mpScaleY>( _( "Voltage (measured)" ), wxT( "V" ), mpALIGN_LEFT ) );
-        m_axis_y.push_back( new LIN_SCALE<mpScaleY>( _( "Current" ), wxT( "A" ), mpALIGN_RIGHT ) );
+        addAxeY( SIM_QUANTITY::VOLTAGE );
+        addAxeY( SIM_QUANTITY::CURRENT );
     }
 }
 
@@ -465,7 +530,6 @@ void SIM_PLOT_PANEL::UpdateTraceStyle( TRACE* trace )
     trace->SetPen( wxPen( trace->GetTraceColour(), 2, penStyle ) );
 }
 
-
 bool SIM_PLOT_PANEL::addTrace( const wxString& aTitle, const wxString& aName, int aPoints,
                                const double* aX, const double* aY, SIM_PLOT_TYPE aType )
 {
@@ -478,29 +542,37 @@ bool SIM_PLOT_PANEL::addTrace( const wxString& aTitle, const wxString& aName, in
     auto prev = m_traces.find( name );
     bool addedNewEntry = ( prev == m_traces.end() );
 
+    std::cout << name << std::endl;
+
+    SIM_QUANTITY quantity = SIM_QUANTITY::VOLTAGE;
+
+    if( SPT_AC_MAG & aType )
+    {
+        quantity = SIM_QUANTITY::GAIN;
+    }
+    else if( SPT_AC_PHASE & aType )
+    {
+        quantity = SIM_QUANTITY::PHASE;
+    }
+    else if( SPT_VOLTAGE & aType )
+    {
+        quantity = SIM_QUANTITY::VOLTAGE;
+    }
+    else if( SPT_CURRENT & aType )
+    {
+        quantity = SIM_QUANTITY::CURRENT;
+    }
+    else
+    {
+        std::cerr << "Unhandled Y axis" << std::endl;
+    }
+
     if( addedNewEntry )
     {
-        if( GetType() == ST_TRANSIENT )
-        {
-            bool hasVoltageTraces = false;
-
-            for( const auto& tr : m_traces )
-            {
-                if( !( tr.second->GetType() & SPT_CURRENT ) )
-                {
-                    hasVoltageTraces = true;
-                    break;
-                }
-            }
-
-            if( !hasVoltageTraces )
-                m_axis_y.at( 1 )->SetMasterScale( nullptr );
-            else
-                m_axis_y.at( 1 )->SetMasterScale( m_axis_y.at( 0 ) );
-        }
-
         // New entry
-        trace = new TRACE( aName, aType );
+        addAxeY( quantity );
+
+        trace = new TRACE( aName, aType, quantity );
         trace->SetTraceColour( m_colors.GenerateColor( m_traces ) );
         UpdateTraceStyle( trace );
         m_traces[name] = trace;
@@ -541,10 +613,7 @@ bool SIM_PLOT_PANEL::addTrace( const wxString& aTitle, const wxString& aName, in
 
     trace->SetData( std::vector<double>( aX, aX + aPoints ), tmp );
 
-    if( ( aType & SPT_AC_PHASE ) || ( aType & SPT_CURRENT ) )
-        trace->SetScale( m_axis_x, m_axis_y.at( 1 ) );
-    else
-        trace->SetScale( m_axis_x, m_axis_y.at( 0 ) );
+    trace->SetScale( m_axis_x, GetAxeY( quantity ) );
 
     m_plotWin->UpdateAll();
 
@@ -565,6 +634,26 @@ bool SIM_PLOT_PANEL::deleteTrace( const wxString& aName )
             m_plotWin->DelLayer( cursor, true );
 
         m_plotWin->DelLayer( trace, true, true );
+
+        SIM_PLOT_AXIS_Y* axis = GetAxeY( trace->m_quantity );
+
+        if( axis )
+        {
+            int cnt = 0;
+            for( auto& t : m_traces )
+            {
+                if( t.second->m_quantity == trace->m_quantity )
+                {
+                    cnt++;
+                }
+            }
+
+            if( cnt <= 1 )
+            {
+                m_plotWin->DelLayer( axis, true, true );
+            }
+        }
+
         ResetScales();
 
         return true;
