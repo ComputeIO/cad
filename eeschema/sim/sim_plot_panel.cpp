@@ -435,8 +435,6 @@ void SIM_PLOT_PANEL::updateAxes()
     if( m_axis_x )
         return;
 
-    m_axis_y.clear();
-
     switch( GetType() )
     {
         case ST_AC:
@@ -469,16 +467,6 @@ void SIM_PLOT_PANEL::updateAxes()
         m_axis_x->SetNameAlign ( mpALIGN_BOTTOM );
 
         m_plotWin->AddLayer( m_axis_x );
-    }
-
-    int i = 0;
-
-    for (mpScaleY* axis: m_axis_y )
-    {
-        axis->SetTicks( false );
-        axis->SetNameAlign ( ( i%2 == 0 ) ? mpALIGN_LEFT : mpALIGN_RIGHT );
-        m_plotWin->AddLayer( axis );
-        i++;
     }
 }
 
@@ -688,6 +676,9 @@ bool SIM_PLOT_PANEL::deleteTrace( const wxString& aName )
                 }
 
                 m_master_axis->SetMasterScale( nullptr );
+
+                // The current system cannot draw a grid if the only axis is on the right...
+                m_master_axis->SetAlign( mpALIGN_LEFT );
 
                 m_plotWin->DelLayer( axis, false, true );
 
