@@ -98,7 +98,7 @@ class DIALOG_SIM_MODEL_BASE : public DIALOG_SHIM
 
 	public:
 
-		DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Spice Model Editor"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 600,800 ), long style = wxDEFAULT_DIALOG_STYLE|wxSTAY_ON_TOP );
+		DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxT("Spice Model Editor"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 600,800 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER );
 
 		~DIALOG_SIM_MODEL_BASE();
 
