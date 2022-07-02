@@ -13,7 +13,7 @@
 
 DIALOG_SIM_MODEL_BASE::DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DIALOG_SHIM( parent, id, title, pos, size, style )
 {
-	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
+	this->SetSizeHints( wxSize( 600,800 ), wxDefaultSize );
 
 	wxBoxSizer* bSizer8;
 	bSizer8 = new wxBoxSizer( wxVERTICAL );
@@ -226,6 +226,7 @@ DIALOG_SIM_MODEL_BASE::DIALOG_SIM_MODEL_BASE( wxWindow* parent, wxWindowID id, c
 
 	this->SetSizer( bSizer8 );
 	this->Layout();
+	bSizer8->Fit( this );
 
 	this->Centre( wxBOTH );
 
