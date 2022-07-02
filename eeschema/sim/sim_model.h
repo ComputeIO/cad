@@ -254,7 +254,7 @@ public:
         V_RANDUNIFORM,
         V_RANDNORMAL,
         V_RANDEXP,
-        V_RANDPOISSON,
+        //V_RANDPOISSON,
         V_BEHAVIORAL,
 
         I,
@@ -270,7 +270,7 @@ public:
         I_RANDUNIFORM,
         I_RANDNORMAL,
         I_RANDEXP,
-        I_RANDPOISSON,
+        //I_RANDPOISSON,
         I_BEHAVIORAL,
 
 

@@ -98,15 +98,15 @@ wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
 {
     wxString model;
 
-    wxString ac = FindParam( "ac" )->value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
-    wxString ph = FindParam( "ph" )->value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
+    wxString ac = FindParam( "ac" )->value->ToSpiceString();
+    wxString ph = FindParam( "ph" )->value->ToSpiceString();
 
     if( ac != "" )
         model << wxString::Format( "AC %s %s ", ac, ph );
 
     if( GetSpiceInfo().inlineTypeString != "" )
     {
-        wxString argList = "";
+        wxString args = "";
         
         switch( GetType() )
         {
@@ -137,12 +137,82 @@ wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
                     {
                         std::unique_ptr<SIM_VALUE> value = SIM_VALUE::Create( SIM_VALUE::TYPE_FLOAT,
                                                                               node->string() );
-                        argList << value->ToString( SIM_VALUE::NOTATION::SPICE ) << " ";
+                        args << value->ToString( SIM_VALUE::NOTATION::SPICE ) << " ";
                     }
                 }
             }
         }
             break;
+
+        // TODO: dt should be tstep by default.
+
+        case TYPE::V_WHITENOISE:
+        case TYPE::I_WHITENOISE:
+            args << getParamValueString( "rms", "0" ) << " ";
+            args << getParamValueString( "dt", "0" ) << " ";
+            args << "0 0 0 0 0 ";
+            break;
+
+        case TYPE::V_PINKNOISE:
+        case TYPE::I_PINKNOISE:
+            args << "0 ";
+            args << getParamValueString( "dt", "0" ) << " ";
+            args << getParamValueString( "slope", "0" ) << " ";
+            args << getParamValueString( "rms", "0" ) << " ";
+            args << "0 0 0 ";
+            break;
+
+        case TYPE::V_BURSTNOISE:
+        case TYPE::I_BURSTNOISE:
+            args << "0 0 0 0 ";
+            args << getParamValueString( "ampl", "0" ) << " ";
+            args << getParamValueString( "tcapt", "0" ) << " ";
+            args << getParamValueString( "temit", "0" ) << " ";
+            break;
+        
+        case TYPE::V_RANDUNIFORM:
+        case TYPE::I_RANDUNIFORM:
+        {
+            args << "1 ";
+            args << getParamValueString( "dt", "0" ) << " ";
+            args << getParamValueString( "td", "0" ) << " ";
+
+            auto min = dynamic_cast<SIM_VALUE_FLOAT&>( *FindParam( "max" )->value );
+            auto max = dynamic_cast<SIM_VALUE_FLOAT&>( *FindParam( "min" )->value );
+            SIM_VALUE_FLOAT range = max - min;
+            SIM_VALUE_FLOAT offset = ( max + min ) / SIM_VALUE_FLOAT( 2 );
+
+            args << range.ToSpiceString() << " ";
+            args << offset.ToSpiceString() << " ";
+        }
+            break;
+
+        case TYPE::V_RANDNORMAL:
+        case TYPE::I_RANDNORMAL:
+            args << "2 ";
+            args << getParamValueString( "dt", "0" ) << " ";
+            args << getParamValueString( "td", "0" ) << " ";
+            args << getParamValueString( "stddev", "0" ) << " ";
+            args << getParamValueString( "mean", "0" ) << " ";
+            break;
+
+        case TYPE::V_RANDEXP:
+        case TYPE::I_RANDEXP:
+            args << "3 ";
+            args << getParamValueString( "dt", "0" ) << " ";
+            args << getParamValueString( "td", "0" ) << " ";
+            args << getParamValueString( "mean", "0" ) << " ";
+            args << getParamValueString( "offset", "0" ) << " ";
+            break;
+
+        /*case TYPE::V_RANDPOISSON:
+        case TYPE::I_RANDPOISSON:
+            args << "4 ";
+            args << FindParam( "dt" )->value->ToSpiceString() << " ";
+            args << FindParam( "td" )->value->ToSpiceString() << " ";
+            args << FindParam( "lambda" )->value->ToSpiceString() << " ";
+            args << FindParam( "offset" )->value->ToSpiceString() << " ";
+            break;*/
 
         default:
             for( const PARAM& param : GetParams() )
@@ -150,17 +220,95 @@ wxString SIM_MODEL_SOURCE::GenerateSpiceItemLine( const wxString& aRefName,
                 wxString argStr = param.value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
                 if( argStr != "" )
-                    argList << argStr << " ";
+                    args << argStr << " ";
             }
             break;
         }
 
-        model << wxString::Format( "%s( %s)", GetSpiceInfo().inlineTypeString, argList );
+        model << wxString::Format( "%s( %s)", GetSpiceInfo().inlineTypeString, args );
     }
     else
         model << GetParam( 0 ).value->ToString( SIM_VALUE_GRAMMAR::NOTATION::SPICE );
 
     return SIM_MODEL::GenerateSpiceItemLine( aRefName, model, aPinNetNames );
+}
+
+
+bool SIM_MODEL_SOURCE::SetParamValue( unsigned aParamIndex, const wxString& aValue,
+                                      SIM_VALUE_GRAMMAR::NOTATION aNotation )
+{
+    // Sources are special. All preceding parameter values must be filled. If they are not, fill
+    // them out automatically. If a value is nulled, delete everything after it.
+    if( aValue == "" )
+    {
+        for( unsigned i = aParamIndex; i < GetParamCount(); ++i )
+            SIM_MODEL::SetParamValue( i, "", aNotation );
+    }
+    else
+    {
+        for( unsigned i = 0; i < aParamIndex; ++i )
+        {
+            if( GetParam( i ).value->ToString() == "" )
+                SIM_MODEL::SetParamValue( i, "0", aNotation );
+        }
+    }
+
+    return SIM_MODEL::SetParamValue( aParamIndex, aValue, aNotation );
+}
+
+
+wxString SIM_MODEL_SOURCE::GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const
+{
+    if( aParam.value->ToString() == "0" )
+        return "";
+
+    return SIM_MODEL::GenerateParamValuePair( aParam, aIsFirst );
+}
+
+
+template <typename T>
+void SIM_MODEL_SOURCE::inferredReadDataFields( unsigned aSymbolPinCount,
+                                               const std::vector<T>* aFields )
+{
+    ParsePinsField( aSymbolPinCount, PINS_FIELD );
+
+    if( ( InferTypeFromRefAndValue( GetFieldValue( aFields, REFERENCE_FIELD ),
+                                    GetFieldValue( aFields, VALUE_FIELD ) ) == GetType()
+            && ParseParamsField( GetFieldValue( aFields, VALUE_FIELD ) ) )
+        || GetFieldValue( aFields, VALUE_FIELD ) == DeviceTypeInfo( GetDeviceType() ).fieldValue )
+    {
+        m_isInferred = true;
+    }
+}
+
+
+template <typename T>
+void SIM_MODEL_SOURCE::inferredWriteDataFields( std::vector<T>& aFields ) const
+{
+    wxString value = GetFieldValue( &aFields, PARAMS_FIELD );
+
+    if( value == "" )
+        value = GetDeviceTypeInfo().fieldValue;
+
+    WriteInferredDataFields( aFields, value );
+}
+
+
+std::vector<wxString> SIM_MODEL_SOURCE::getPinNames() const
+{
+    return { "+", "-" };
+}
+
+
+wxString SIM_MODEL_SOURCE::getParamValueString( const wxString& aParamName,
+                                                const wxString& aDefaultValue ) const
+{
+    wxString result = FindParam( aParamName )->value->ToSpiceString();
+
+    if( result == "" )
+        result = aDefaultValue;
+
+    return result;
 }
 
 
@@ -236,79 +384,13 @@ const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParamInfos( TYPE aType )
     case TYPE::I_RANDNORMAL:  return irandomnormal;
     case TYPE::V_RANDEXP:     return vrandomexp;
     case TYPE::I_RANDEXP:     return irandomexp;
-    case TYPE::V_RANDPOISSON: return vrandompoisson;
-    case TYPE::I_RANDPOISSON: return irandompoisson;
+    //case TYPE::V_RANDPOISSON: return vrandompoisson;
+    //case TYPE::I_RANDPOISSON: return irandompoisson;
     default:
         wxFAIL_MSG( "Unhandled SIM_MODEL type in SIM_MODEL_SOURCE" );
         static std::vector<PARAM::INFO> empty;
         return empty;
     }
-}
-
-
-bool SIM_MODEL_SOURCE::SetParamValue( unsigned aParamIndex, const wxString& aValue,
-                                      SIM_VALUE_GRAMMAR::NOTATION aNotation )
-{
-    // Sources are special. All preceding parameter values must be filled. If they are not, fill
-    // them out automatically. If a value is nulled, delete everything after it.
-    if( aValue == "" )
-    {
-        for( unsigned i = aParamIndex; i < GetParamCount(); ++i )
-            SIM_MODEL::SetParamValue( i, "", aNotation );
-    }
-    else
-    {
-        for( unsigned i = 0; i < aParamIndex; ++i )
-        {
-            if( GetParam( i ).value->ToString() == "" )
-                SIM_MODEL::SetParamValue( i, "0", aNotation );
-        }
-    }
-
-    return SIM_MODEL::SetParamValue( aParamIndex, aValue, aNotation );
-}
-
-
-wxString SIM_MODEL_SOURCE::GenerateParamValuePair( const PARAM& aParam, bool& aIsFirst ) const
-{
-    if( aParam.value->ToString() == "0" )
-        return "";
-
-    return SIM_MODEL::GenerateParamValuePair( aParam, aIsFirst );
-}
-
-
-template <typename T>
-void SIM_MODEL_SOURCE::inferredReadDataFields( unsigned aSymbolPinCount,
-                                               const std::vector<T>* aFields )
-{
-    ParsePinsField( aSymbolPinCount, PINS_FIELD );
-
-    if( ( InferTypeFromRefAndValue( GetFieldValue( aFields, REFERENCE_FIELD ),
-                                    GetFieldValue( aFields, VALUE_FIELD ) ) == GetType()
-            && ParseParamsField( GetFieldValue( aFields, VALUE_FIELD ) ) )
-        || GetFieldValue( aFields, VALUE_FIELD ) == DeviceTypeInfo( GetDeviceType() ).fieldValue )
-    {
-        m_isInferred = true;
-    }
-}
-
-
-template <typename T>
-void SIM_MODEL_SOURCE::inferredWriteDataFields( std::vector<T>& aFields ) const
-{
-    wxString value = GetFieldValue( &aFields, PARAMS_FIELD );
-
-    if( value == "" )
-        value = GetDeviceTypeInfo().fieldValue;
-
-    WriteInferredDataFields( aFields, value );
-}
-
-
-std::vector<wxString> SIM_MODEL_SOURCE::getPinNames() const
-{
-    return { "+", "-" };
 }
 
 
@@ -718,15 +800,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeWhiteNoiseParamInfos( wxString aP
     std::vector<PARAM::INFO> paramInfos;
     PARAM::INFO paramInfo;
 
-    paramInfo.name = "dc";
-    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
-    paramInfo.unit = aUnit;
-    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
-    paramInfo.defaultValue = "";
-    paramInfo.description = "DC offset";
-    paramInfos.push_back( paramInfo );
-
-    paramInfo.name = "na";
+    paramInfo.name = "rms";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = aUnit;
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
@@ -734,7 +808,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeWhiteNoiseParamInfos( wxString aP
     paramInfo.description = "White noise RMS amplitude";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "nt";
+    paramInfo.name = "dt";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "s";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
@@ -753,23 +827,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePinkNoiseParamInfos( wxString aPr
     std::vector<PARAM::INFO> paramInfos;
     PARAM::INFO paramInfo;
 
-    paramInfo.name = "dc";
-    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
-    paramInfo.unit = aUnit;
-    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
-    paramInfo.defaultValue = "";
-    paramInfo.description = "DC offset";
-    paramInfos.push_back( paramInfo );
-
-    paramInfo.name = "nalpha";
-    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
-    paramInfo.unit = "";
-    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
-    paramInfo.defaultValue = "0";
-    paramInfo.description = "1/f noise exponent";
-    paramInfos.push_back( paramInfo );
-
-    paramInfo.name = "namp";
+    paramInfo.name = "rms";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
@@ -777,7 +835,15 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makePinkNoiseParamInfos( wxString aPr
     paramInfo.description = "1/f noise RMS amplitude";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "nt";
+    paramInfo.name = "slope";
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
+    paramInfo.unit = "";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "1";
+    paramInfo.description = "1/f noise exponent";
+    paramInfos.push_back( paramInfo );
+
+    paramInfo.name = "dt";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "s";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
@@ -796,7 +862,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeBurstNoiseParamInfos( wxString aP
     std::vector<PARAM::INFO> paramInfos;
     PARAM::INFO paramInfo;
 
-    paramInfo.name = "rtsam";
+    paramInfo.name = "ampl";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = aUnit;
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
@@ -804,7 +870,7 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeBurstNoiseParamInfos( wxString aP
     paramInfo.description = "Burst noise amplitude";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "rtscapt";
+    paramInfo.name = "tcapt";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "s";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
@@ -812,20 +878,12 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeBurstNoiseParamInfos( wxString aP
     paramInfo.description = "Burst noise trap capture time";
     paramInfos.push_back( paramInfo );
 
-    paramInfo.name = "rtsemt";
+    paramInfo.name = "temit";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "s";
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0";
     paramInfo.description = "Burst noise trap emission time";
-    paramInfos.push_back( paramInfo );
-
-    paramInfo.name = "nt";
-    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
-    paramInfo.unit = "s";
-    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
-    paramInfo.defaultValue = "0";
-    paramInfo.description = "Time step";
     paramInfos.push_back( paramInfo );
 
     appendAcParamInfos( paramInfos, aUnit );
@@ -853,6 +911,14 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomUniformParamInfos( wxString
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "0.5";
     paramInfo.description = "Max. value";
+    paramInfos.push_back( paramInfo );
+
+    paramInfo.name = "dt";
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
+    paramInfo.unit = "s";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "Time step";
     paramInfos.push_back( paramInfo );
 
     paramInfo.name = "td";
@@ -890,6 +956,14 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomNormalParamInfos( wxString 
     paramInfo.description = "Standard deviation";
     paramInfos.push_back( paramInfo );
 
+    paramInfo.name = "dt";
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
+    paramInfo.unit = "s";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "Time step";
+    paramInfos.push_back( paramInfo );
+
     paramInfo.name = "td";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "s";
@@ -925,6 +999,14 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomExpParamInfos( wxString aPr
     paramInfo.description = "Mean";
     paramInfos.push_back( paramInfo );
 
+    paramInfo.name = "dt";
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
+    paramInfo.unit = "s";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "Time step";
+    paramInfos.push_back( paramInfo );
+
     paramInfo.name = "td";
     paramInfo.type = SIM_VALUE::TYPE_FLOAT;
     paramInfo.unit = "s";
@@ -958,6 +1040,14 @@ std::vector<PARAM::INFO> SIM_MODEL_SOURCE::makeRandomPoissonParamInfos( wxString
     paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
     paramInfo.defaultValue = "1";
     paramInfo.description = "Mean";
+    paramInfos.push_back( paramInfo );
+
+    paramInfo.name = "dt";
+    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
+    paramInfo.unit = "s";
+    paramInfo.category = SIM_MODEL::PARAM::CATEGORY::PRINCIPAL;
+    paramInfo.defaultValue = "0";
+    paramInfo.description = "Time step";
     paramInfos.push_back( paramInfo );
 
     paramInfo.name = "td";

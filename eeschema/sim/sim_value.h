@@ -76,6 +76,7 @@ public:
 
     virtual bool FromString( const wxString& aString, NOTATION aNotation = NOTATION::SI ) = 0;
     virtual wxString ToString( NOTATION aNotation = NOTATION::SI ) const = 0;
+    wxString ToSpiceString() const { return ToString( NOTATION::SPICE ); }
 
     // For parsers that don't accept strings with our suffixes.
     virtual wxString ToSimpleString() const = 0;
@@ -83,11 +84,11 @@ public:
 
 
 template <typename T>
-class SIM_VALUE_INSTANCE : public SIM_VALUE
+class SIM_VALUE_INST : public SIM_VALUE
 {
 public:
-    SIM_VALUE_INSTANCE() = default;
-    SIM_VALUE_INSTANCE( const T& aValue );
+    SIM_VALUE_INST() = default;
+    SIM_VALUE_INST( const T& aValue );
 
     // TODO: Don't pass aNotation. Make a FromSpiceString() function instead.
     bool FromString( const wxString& aString, NOTATION aNotation = NOTATION::SI ) override;
@@ -98,17 +99,38 @@ public:
     bool operator==( const T& aOther ) const;
     bool operator==( const SIM_VALUE& aOther ) const override;
 
+    template <typename Type>
+    friend SIM_VALUE_INST<Type> operator+( const SIM_VALUE_INST<Type>& aLeft,
+                                           const SIM_VALUE_INST<Type>& aRight );
+
+    template <typename Type>
+    friend SIM_VALUE_INST<Type> operator-( const SIM_VALUE_INST<Type>& aLeft,
+                                           const SIM_VALUE_INST<Type>& aRight );
+
+    template <typename Type>
+    friend SIM_VALUE_INST<Type> operator*( const SIM_VALUE_INST<Type>& aLeft,
+                                           const SIM_VALUE_INST<Type>& aRight );
+
+    template <typename Type>
+    friend SIM_VALUE_INST<Type> operator/( const SIM_VALUE_INST<Type>& aLeft,
+                                           const SIM_VALUE_INST<Type>& aRight );
+
 private:
     wxString getMetricSuffix();
 
     OPT<T> m_value = NULLOPT;
 };
 
-template class SIM_VALUE_INSTANCE<bool>;
-template class SIM_VALUE_INSTANCE<long>;
-template class SIM_VALUE_INSTANCE<double>;
+template class SIM_VALUE_INST<bool>;
+template class SIM_VALUE_INST<long>;
+template class SIM_VALUE_INST<double>;
 //template class SIM_VALUE_INSTANCE<std::complex<double>>;
-template class SIM_VALUE_INSTANCE<wxString>;
+template class SIM_VALUE_INST<wxString>;
+
+typedef SIM_VALUE_INST<bool> SIM_VALUE_BOOL;
+typedef SIM_VALUE_INST<long> SIM_VALUE_LONG;
+typedef SIM_VALUE_INST<double> SIM_VALUE_FLOAT;
+typedef SIM_VALUE_INST<wxString> SIM_VALUE_STRING;
 
 
 namespace SIM_VALUE_GRAMMAR
@@ -136,7 +158,8 @@ namespace SIM_VALUE_GRAMMAR
             seq<intPart, one<'.'>>,
             intPart,
             seq<one<'.'>, fracPart>,
-            one<'.'>> {};
+            one<'.'>,
+            one<'-'>> {};
 
     template <> struct significand<SIM_VALUE::TYPE_INT> : intPart {};
 
@@ -175,7 +198,8 @@ namespace SIM_VALUE_GRAMMAR
     template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct number : seq<opt<significand<ValueType>>,
                         opt<exponentWithPrefix>,
-                        sor<metricSuffix<ValueType, Notation>, not_at<alnum>>> {};
+                        sor<metricSuffix<ValueType, Notation>,
+                            not_at<alnum>>> {};
 
     template <SIM_VALUE::TYPE ValueType, NOTATION Notation>
     struct numberGrammar : must<number<ValueType, Notation>, tao::pegtl::eof> {};

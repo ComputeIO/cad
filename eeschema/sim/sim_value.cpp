@@ -371,15 +371,15 @@ std::unique_ptr<SIM_VALUE> SIM_VALUE::Create( TYPE aType )
 {
     switch( aType )
     {
-    case TYPE_BOOL:           return std::make_unique<SIM_VALUE_INSTANCE<bool>>();
-    case TYPE_INT:            return std::make_unique<SIM_VALUE_INSTANCE<long>>();
-    case TYPE_FLOAT:          return std::make_unique<SIM_VALUE_INSTANCE<double>>();
-    case TYPE_COMPLEX:        return std::make_unique<SIM_VALUE_INSTANCE<std::complex<double>>>();
-    case TYPE_STRING:         return std::make_unique<SIM_VALUE_INSTANCE<wxString>>();
-    case TYPE_BOOL_VECTOR:    return std::make_unique<SIM_VALUE_INSTANCE<bool>>();
-    case TYPE_INT_VECTOR:     return std::make_unique<SIM_VALUE_INSTANCE<long>>();
-    case TYPE_FLOAT_VECTOR:   return std::make_unique<SIM_VALUE_INSTANCE<double>>();
-    case TYPE_COMPLEX_VECTOR: return std::make_unique<SIM_VALUE_INSTANCE<std::complex<double>>>();
+    case TYPE_BOOL:           return std::make_unique<SIM_VALUE_INST<bool>>();
+    case TYPE_INT:            return std::make_unique<SIM_VALUE_INST<long>>();
+    case TYPE_FLOAT:          return std::make_unique<SIM_VALUE_INST<double>>();
+    case TYPE_COMPLEX:        return std::make_unique<SIM_VALUE_INST<std::complex<double>>>();
+    case TYPE_STRING:         return std::make_unique<SIM_VALUE_INST<wxString>>();
+    case TYPE_BOOL_VECTOR:    return std::make_unique<SIM_VALUE_INST<bool>>();
+    case TYPE_INT_VECTOR:     return std::make_unique<SIM_VALUE_INST<long>>();
+    case TYPE_FLOAT_VECTOR:   return std::make_unique<SIM_VALUE_INST<double>>();
+    case TYPE_COMPLEX_VECTOR: return std::make_unique<SIM_VALUE_INST<std::complex<double>>>();
     }
     
     wxFAIL_MSG( _( "Unknown SIM_VALUE type" ) );
@@ -400,13 +400,13 @@ bool SIM_VALUE::operator!=( const SIM_VALUE& aOther ) const
 
 
 template <typename T>
-SIM_VALUE_INSTANCE<T>::SIM_VALUE_INSTANCE( const T& aValue ) : m_value( aValue )
+SIM_VALUE_INST<T>::SIM_VALUE_INST( const T& aValue ) : m_value( aValue )
 {
 }
 
 
 template <>
-bool SIM_VALUE_INSTANCE<bool>::FromString( const wxString& aString, NOTATION aNotation )
+bool SIM_VALUE_INST<bool>::FromString( const wxString& aString, NOTATION aNotation )
 {
     SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
     m_value = NULLOPT;
@@ -432,7 +432,7 @@ bool SIM_VALUE_INSTANCE<bool>::FromString( const wxString& aString, NOTATION aNo
 
 
 template <>
-bool SIM_VALUE_INSTANCE<long>::FromString( const wxString& aString, NOTATION aNotation )
+bool SIM_VALUE_INST<long>::FromString( const wxString& aString, NOTATION aNotation )
 {
     SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
     m_value = NULLOPT;
@@ -455,7 +455,7 @@ bool SIM_VALUE_INSTANCE<long>::FromString( const wxString& aString, NOTATION aNo
 
 
 template <>
-bool SIM_VALUE_INSTANCE<double>::FromString( const wxString& aString, NOTATION aNotation )
+bool SIM_VALUE_INST<double>::FromString( const wxString& aString, NOTATION aNotation )
 {
     SIM_VALUE_PARSER::PARSE_RESULT parseResult = SIM_VALUE_PARSER::Parse( aString, aNotation );
     m_value = NULLOPT;
@@ -488,7 +488,7 @@ bool SIM_VALUE_INSTANCE<double>::FromString( const wxString& aString, NOTATION a
 
 
 template <>
-bool SIM_VALUE_INSTANCE<std::complex<double>>::FromString( const wxString& aString,
+bool SIM_VALUE_INST<std::complex<double>>::FromString( const wxString& aString,
                                                            NOTATION aNotation )
 {
     // TODO
@@ -506,7 +506,7 @@ bool SIM_VALUE_INSTANCE<std::complex<double>>::FromString( const wxString& aStri
 
 
 template <>
-bool SIM_VALUE_INSTANCE<wxString>::FromString( const wxString& aString, NOTATION aNotation )
+bool SIM_VALUE_INST<wxString>::FromString( const wxString& aString, NOTATION aNotation )
 {
     m_value = aString;
     return true;
@@ -514,7 +514,7 @@ bool SIM_VALUE_INSTANCE<wxString>::FromString( const wxString& aString, NOTATION
 
 
 template <typename T>
-wxString SIM_VALUE_INSTANCE<T>::ToString( NOTATION aNotation ) const
+wxString SIM_VALUE_INST<T>::ToString( NOTATION aNotation ) const
 {
     static_assert( std::is_same<T, std::vector<T>>::value );
 
@@ -522,7 +522,7 @@ wxString SIM_VALUE_INSTANCE<T>::ToString( NOTATION aNotation ) const
 
     for( auto it = m_value.cbegin(); it != m_value.cend(); it++ )
     {
-        string += SIM_VALUE_INSTANCE<T>( *it ).ToString();
+        string += SIM_VALUE_INST<T>( *it ).ToString();
         string += ",";
     }
 
@@ -531,7 +531,7 @@ wxString SIM_VALUE_INSTANCE<T>::ToString( NOTATION aNotation ) const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<bool>::ToString( NOTATION aNotation ) const
+wxString SIM_VALUE_INST<bool>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -543,7 +543,7 @@ wxString SIM_VALUE_INSTANCE<bool>::ToString( NOTATION aNotation ) const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<long>::ToString( NOTATION aNotation ) const
+wxString SIM_VALUE_INST<long>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -569,7 +569,7 @@ wxString SIM_VALUE_INSTANCE<long>::ToString( NOTATION aNotation ) const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<double>::ToString( NOTATION aNotation ) const
+wxString SIM_VALUE_INST<double>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -591,7 +591,7 @@ wxString SIM_VALUE_INSTANCE<double>::ToString( NOTATION aNotation ) const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToString( NOTATION aNotation ) const
+wxString SIM_VALUE_INST<std::complex<double>>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -603,7 +603,7 @@ wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToString( NOTATION aNotation 
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<wxString>::ToString( NOTATION aNotation ) const
+wxString SIM_VALUE_INST<wxString>::ToString( NOTATION aNotation ) const
 {
     LOCALE_IO toggle;
 
@@ -615,7 +615,7 @@ wxString SIM_VALUE_INSTANCE<wxString>::ToString( NOTATION aNotation ) const
 
 
 template <typename T>
-wxString SIM_VALUE_INSTANCE<T>::ToSimpleString() const
+wxString SIM_VALUE_INST<T>::ToSimpleString() const
 {
     if( m_value )
     {
@@ -629,7 +629,7 @@ wxString SIM_VALUE_INSTANCE<T>::ToSimpleString() const
 
 
 template <>
-wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToSimpleString() const
+wxString SIM_VALUE_INST<std::complex<double>>::ToSimpleString() const
 {
     // TODO
 
@@ -642,19 +642,65 @@ wxString SIM_VALUE_INSTANCE<std::complex<double>>::ToSimpleString() const
 
 
 template <typename T>
-bool SIM_VALUE_INSTANCE<T>::operator==( const T& aOther ) const
+bool SIM_VALUE_INST<T>::operator==( const T& aOther ) const
 {
     return m_value == aOther;
 }
 
 
 template <typename T>
-bool SIM_VALUE_INSTANCE<T>::operator==( const SIM_VALUE& aOther ) const
+bool SIM_VALUE_INST<T>::operator==( const SIM_VALUE& aOther ) const
 {
-    const SIM_VALUE_INSTANCE<T>* otherValue = dynamic_cast<const SIM_VALUE_INSTANCE<T>*>( &aOther );
+    const SIM_VALUE_INST<T>* otherValue = dynamic_cast<const SIM_VALUE_INST<T>*>( &aOther );
 
     if( otherValue )
         return m_value == otherValue->m_value;
 
     return false;
 }
+
+template <typename T>
+SIM_VALUE_INST<T> operator+( const SIM_VALUE_INST<T>& aLeft, const SIM_VALUE_INST<T>& aRight )
+{
+    return SIM_VALUE_INST( *aLeft.m_value + *aRight.m_value );
+}
+
+template SIM_VALUE_INST<long> operator+( const SIM_VALUE_INST<long>& aLeft,
+                                         const SIM_VALUE_INST<long>& aRight );
+template SIM_VALUE_INST<double> operator+( const SIM_VALUE_INST<double>& aLeft,
+                                           const SIM_VALUE_INST<double>& aRight );
+
+
+template <typename T>
+SIM_VALUE_INST<T> operator-( const SIM_VALUE_INST<T>& aLeft, const SIM_VALUE_INST<T>& aRight )
+{
+    return SIM_VALUE_INST( *aLeft.m_value - *aRight.m_value );
+}
+
+template SIM_VALUE_INST<long> operator-( const SIM_VALUE_INST<long>& aLeft,
+                                         const SIM_VALUE_INST<long>& aRight );
+template SIM_VALUE_INST<double> operator-( const SIM_VALUE_INST<double>& aLeft,
+                                           const SIM_VALUE_INST<double>& aRight );
+
+
+template <typename T>
+SIM_VALUE_INST<T> operator*( const SIM_VALUE_INST<T>& aLeft, const SIM_VALUE_INST<T>& aRight )
+{
+    return SIM_VALUE_INST( *aLeft.m_value * *aRight.m_value );
+}
+
+template SIM_VALUE_INST<long> operator*( const SIM_VALUE_INST<long>& aLeft,
+                                         const SIM_VALUE_INST<long>& aRight );
+template SIM_VALUE_INST<double> operator*( const SIM_VALUE_INST<double>& aLeft,
+                                           const SIM_VALUE_INST<double>& aRight );
+
+template <typename T>
+SIM_VALUE_INST<T> operator/( const SIM_VALUE_INST<T>& aLeft, const SIM_VALUE_INST<T>& aRight )
+{
+    return SIM_VALUE_INST( *aLeft.m_value / *aRight.m_value );
+}
+
+template SIM_VALUE_INST<long> operator/( const SIM_VALUE_INST<long>& aLeft,
+                                         const SIM_VALUE_INST<long>& aRight );
+template SIM_VALUE_INST<double> operator/( const SIM_VALUE_INST<double>& aLeft,
+                                           const SIM_VALUE_INST<double>& aRight );

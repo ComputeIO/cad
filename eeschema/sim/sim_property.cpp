@@ -310,7 +310,7 @@ SIM_BOOL_PROPERTY::SIM_BOOL_PROPERTY( const wxString& aLabel, const wxString& aN
       m_model( aModel ),
       m_paramIndex( aParamIndex )
 {
-    auto simValue = dynamic_cast<SIM_VALUE_INSTANCE<bool>*>(
+    auto simValue = dynamic_cast<SIM_VALUE_INST<bool>*>(
         m_model->GetParam( m_paramIndex ).value.get() );
 
     wxCHECK( simValue, /*void*/ );
@@ -329,7 +329,7 @@ void SIM_BOOL_PROPERTY::OnSetValue()
 {
     wxPGProperty::OnSetValue();
 
-    auto simValue = dynamic_cast<SIM_VALUE_INSTANCE<bool>*>(
+    auto simValue = dynamic_cast<SIM_VALUE_INST<bool>*>(
         m_model->GetParam( m_paramIndex ).value.get() );
 
     wxCHECK( simValue, /*void*/ );

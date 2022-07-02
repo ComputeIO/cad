@@ -78,6 +78,8 @@ private:
 
     std::vector<wxString> getPinNames() const override;
 
+    wxString getParamValueString( const wxString& aParamName, const wxString& aDefaultValue ) const;
+
     static const std::vector<PARAM::INFO>& makeParamInfos( TYPE aType );
 
     static std::vector<PARAM::INFO> makeDcParamInfos( wxString aPrefix, wxString aUnit );

@@ -123,6 +123,18 @@ wxString SIM_MODEL_BEHAVIORAL::GenerateSpiceItemLine( const wxString& aRefName,
 }
 
 
+bool SIM_MODEL_BEHAVIORAL::parseValueField( const wxString& aValueField )
+{
+    wxString expr = aValueField;
+    
+    if( !expr.Replace( "=", "", false ) )
+        return false;
+
+    SetParamValue( 0, expr.Trim( false ).Trim( true ) );
+    return true;
+}
+
+
 template <typename T>
 void SIM_MODEL_BEHAVIORAL::inferredReadDataFields( unsigned aSymbolPinCount,
                                                    const std::vector<T>* aFields )
@@ -131,7 +143,7 @@ void SIM_MODEL_BEHAVIORAL::inferredReadDataFields( unsigned aSymbolPinCount,
 
     if( ( InferTypeFromRefAndValue( GetFieldValue( aFields, REFERENCE_FIELD ),
                                     GetFieldValue( aFields, VALUE_FIELD ) ) == GetType()
-            && ParseParamsField( GetFieldValue( aFields, VALUE_FIELD ) ) )
+            && parseValueField( GetFieldValue( aFields, VALUE_FIELD ) ) )
         // If Value is device type, this is an empty model
         || GetFieldValue( aFields, VALUE_FIELD ) == DeviceTypeInfo( GetDeviceType() ).fieldValue )
     {
@@ -143,12 +155,12 @@ void SIM_MODEL_BEHAVIORAL::inferredReadDataFields( unsigned aSymbolPinCount,
 template <typename T>
 void SIM_MODEL_BEHAVIORAL::inferredWriteDataFields( std::vector<T>& aFields ) const
 {
-    wxString value = GetFieldValue( &aFields, PARAMS_FIELD );
+    wxString value = GetParam( 0 ).value->ToString();
 
     if( value == "" )
         value = GetDeviceTypeInfo().fieldValue;
 
-    WriteInferredDataFields( aFields, value );
+    WriteInferredDataFields( aFields, "=" + value );
 }
 
 
@@ -158,7 +170,7 @@ SIM_MODEL::PARAM::INFO SIM_MODEL_BEHAVIORAL::makeParams( wxString aName, wxStrin
     PARAM::INFO paramInfo = {};
 
     paramInfo.name = aName;
-    paramInfo.type = SIM_VALUE::TYPE_FLOAT;
+    paramInfo.type = SIM_VALUE::TYPE_STRING;
     paramInfo.unit = aUnit;
     paramInfo.category = PARAM::CATEGORY::PRINCIPAL;
     paramInfo.description = aDescription;

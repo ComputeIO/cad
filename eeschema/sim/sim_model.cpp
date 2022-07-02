@@ -215,7 +215,7 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     case TYPE::V_RANDUNIFORM:        return { DEVICE_TYPE::V,      "RANDUNIFORM",    "Random uniform"             };
     case TYPE::V_RANDNORMAL:         return { DEVICE_TYPE::V,      "RANDNORMAL",     "Random normal"              };
     case TYPE::V_RANDEXP:            return { DEVICE_TYPE::V,      "RANDEXP",        "Random exponential"         };
-    case TYPE::V_RANDPOISSON:        return { DEVICE_TYPE::V,      "RANDPOISSON",    "Random Poisson"             };
+    //case TYPE::V_RANDPOISSON:        return { DEVICE_TYPE::V,      "RANDPOISSON",    "Random Poisson"             };
     case TYPE::V_BEHAVIORAL:         return { DEVICE_TYPE::V,      "=",              "Behavioral"                 };
 
     case TYPE::I:                 return { DEVICE_TYPE::I,      "DC",             "DC",                        };
@@ -225,13 +225,13 @@ SIM_MODEL::INFO SIM_MODEL::TypeInfo( TYPE aType )
     /*case TYPE::I_SFAM:               return { DEVICE_TYPE::I,      "SFAM",           "Single-frequency AM"        };
     case TYPE::I_SFFM:               return { DEVICE_TYPE::I,      "SFFM",           "Single-frequency FM"        };*/
     case TYPE::I_PWL:                return { DEVICE_TYPE::I,      "PWL",            "Piecewise linear"           };
-    case TYPE::I_WHITENOISE:         return { DEVICE_TYPE::I,      "WHITENOISE",     "White Noise"                };
-    case TYPE::I_PINKNOISE:          return { DEVICE_TYPE::I,      "PINKNOISE",      "Pink Noise (1/f)"           };
-    case TYPE::I_BURSTNOISE:         return { DEVICE_TYPE::I,      "BURSTNOISE",     "Burst Noise"                };
+    case TYPE::I_WHITENOISE:         return { DEVICE_TYPE::I,      "WHITENOISE",     "White noise"                };
+    case TYPE::I_PINKNOISE:          return { DEVICE_TYPE::I,      "PINKNOISE",      "Pink noise (1/f)"           };
+    case TYPE::I_BURSTNOISE:         return { DEVICE_TYPE::I,      "BURSTNOISE",     "Burst noise"                };
     case TYPE::I_RANDUNIFORM:        return { DEVICE_TYPE::I,      "RANDUNIFORM",    "Random uniform"             };
     case TYPE::I_RANDNORMAL:         return { DEVICE_TYPE::I,      "RANDNORMAL",     "Random normal"              };
     case TYPE::I_RANDEXP:            return { DEVICE_TYPE::I,      "RANDEXP",        "Random exponential"         };
-    case TYPE::I_RANDPOISSON:        return { DEVICE_TYPE::I,      "RANDPOISSON",    "Random Poisson"             };
+    //case TYPE::I_RANDPOISSON:        return { DEVICE_TYPE::I,      "RANDPOISSON",    "Random Poisson"             };
     case TYPE::I_BEHAVIORAL:         return { DEVICE_TYPE::I,      "=",              "Behavioral"                 };
 
     case TYPE::SUBCKT:               return { DEVICE_TYPE::SUBCKT, "",               ""                           };
@@ -345,7 +345,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::V_RANDUNIFORM:        return { "V", "",       "TRRANDOM" };
     case TYPE::V_RANDNORMAL:         return { "V", "",       "TRRANDOM" };
     case TYPE::V_RANDEXP:            return { "V", "",       "TRRANDOM" };
-    case TYPE::V_RANDPOISSON:        return { "V", "",       "TRRANDOM" };
+    //case TYPE::V_RANDPOISSON:        return { "V", "",       "TRRANDOM" };
     case TYPE::V_BEHAVIORAL:         return { "B"  };
 
     case TYPE::I:                    return { "I", ""        };
@@ -361,7 +361,7 @@ SIM_MODEL::SPICE_INFO SIM_MODEL::SpiceInfo( TYPE aType )
     case TYPE::I_RANDUNIFORM:        return { "I", "",       "TRRANDOM" };
     case TYPE::I_RANDNORMAL:         return { "I", "",       "TRRANDOM" };
     case TYPE::I_RANDEXP:            return { "I", "",       "TRRANDOM" };
-    case TYPE::I_RANDPOISSON:        return { "I", "",       "TRRANDOM" };
+    //case TYPE::I_RANDPOISSON:        return { "I", "",       "TRRANDOM" };
     case TYPE::I_BEHAVIORAL:         return { "B"  };
 
     case TYPE::SUBCKT:               return { "X"  };
@@ -514,7 +514,7 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
         { "VRANDUNIFORM", TYPE::V_RANDUNIFORM },
         { "VRANDNORMAL", TYPE::V_RANDNORMAL },
         { "VRANDEXP", TYPE::V_RANDEXP },
-        { "VRANDPOISSON", TYPE::V_RANDPOISSON },
+        //{ "VRANDPOISSON", TYPE::V_RANDPOISSON },
         { "ISIN", TYPE::I_SIN },
         { "IPULSE", TYPE::I_PULSE },
         { "IEXP", TYPE::I_EXP },
@@ -527,7 +527,7 @@ TYPE SIM_MODEL::InferTypeFromRefAndValue( const wxString& aRef, const wxString& 
         { "IRANDUNIFORM", TYPE::I_RANDUNIFORM },
         { "IRANDNORMAL", TYPE::I_RANDNORMAL },
         { "IRANDEXP", TYPE::I_RANDEXP },
-        { "IRANDPOISSON", TYPE::I_RANDPOISSON },
+        //{ "IRANDPOISSON", TYPE::I_RANDPOISSON },
     };
 
     TYPE type = TYPE::NONE;
@@ -1368,8 +1368,8 @@ std::unique_ptr<SIM_MODEL> SIM_MODEL::create( TYPE aType )
     case TYPE::I_RANDNORMAL:
     case TYPE::V_RANDEXP:
     case TYPE::I_RANDEXP:
-    case TYPE::V_RANDPOISSON:
-    case TYPE::I_RANDPOISSON:
+    //case TYPE::V_RANDPOISSON:
+    //case TYPE::I_RANDPOISSON:
         return std::make_unique<SIM_MODEL_SOURCE>( aType );
 
     case TYPE::SUBCKT:
