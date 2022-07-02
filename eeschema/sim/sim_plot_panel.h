@@ -60,6 +60,9 @@ public:
     SIM_PLOT_AXIS_Y( SIM_QUANTITY aQ, const wxString& name, int flags = mpALIGN_CENTER,
                      bool ticks = true );
     SIM_QUANTITY m_quantity;
+
+    /** Get Y axis alignment.*/
+    int GetAlign() { return m_flags; };
 };
 
 class SIM_PLOT_AXIS_X : public mpScaleX
@@ -203,6 +206,7 @@ private:
     wxString m_param;
 };
 
+
 class SIM_PLOT_PANEL : public SIM_PANEL_BASE
 {
     friend class SIM_WORKBOOK;
@@ -267,14 +271,14 @@ public:
         if( !m_axis_x )
             return false;
 
-        bool shown = m_axis_x->GetTicks();
+        bool hidden = m_axis_x->GetTicks();
 
         for (mpScaleY* axis: m_axis_y )
         {
-            assert( shown == axis->GetTicks() );
+            assert( hidden == axis->GetTicks() );
         }
 
-        return !m_axis_x->GetTicks();
+        return !hidden;
     }
 
     void ShowLegend( bool aEnable )
@@ -355,6 +359,7 @@ private:
 
     SIM_PLOT_AXIS_X*              m_axis_x;
     std::vector<SIM_PLOT_AXIS_Y*> m_axis_y;
+    SIM_PLOT_AXIS_Y*              m_master_axis;
     mpInfoLegend* m_legend;
 
     bool m_dotted_cp;

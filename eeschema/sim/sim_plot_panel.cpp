@@ -30,6 +30,7 @@
 #include "sim_plot_frame.h"
 
 #include <algorithm>
+#include <vector>
 #include <limits>
 
 
@@ -37,6 +38,7 @@ SIM_PLOT_AXIS_Y::SIM_PLOT_AXIS_Y( SIM_QUANTITY aQ, const wxString& name, int fla
         mpScaleY( name, flags, ticks )
 {
     m_quantity = aQ;
+    m_nameFlags = flags;
 }
 
 
@@ -369,14 +371,25 @@ void SIM_PLOT_PANEL::addAxeY( SIM_QUANTITY aQuantity )
         return;
     }
 
-    int align = ( m_axis_y.size() % 2 ) == 0 ? mpALIGN_LEFT : mpALIGN_RIGHT;
+    int left = 0;
+    int right = 0;
+
+    for( SIM_PLOT_AXIS_Y* axis : m_axis_y )
+    {
+        if( axis->GetAlign() == mpALIGN_LEFT )
+        {
+            left++;
+        }
+        else if( axis->GetAlign() == mpALIGN_RIGHT )
+        {
+            right++;
+        }
+    }
+
+    int align = left <= right ? mpALIGN_LEFT : mpALIGN_RIGHT;
 
     switch( aQuantity )
     {
-    case SIM_QUANTITY::VOLTAGE:
-        m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>( SIM_QUANTITY::VOLTAGE, _( "Voltage" ),
-                                                            wxT( "V" ), align ) );
-        break;
     case SIM_QUANTITY::CURRENT:
         m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>( SIM_QUANTITY::CURRENT, _( "Current" ),
                                                             wxT( "A" ), align ) );
@@ -393,14 +406,28 @@ void SIM_PLOT_PANEL::addAxeY( SIM_QUANTITY aQuantity )
         m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>(
                 SIM_QUANTITY::NOISE, _( "noise [(V or A)^2/Hz]" ), wxT( "" ), align ) );
         break;
+    case SIM_QUANTITY::VOLTAGE:
+    default:
+        m_axis_y.push_back( new LIN_SCALE<SIM_PLOT_AXIS_Y>( SIM_QUANTITY::VOLTAGE, _( "Voltage" ),
+                                                            wxT( "V" ), align ) );
+        break;
     }
+
+    SIM_PLOT_AXIS_Y* axis = m_axis_y.back();
 
     if( m_axis_y.size() > 1 )
     {
-        m_axis_y.back()->SetMasterScale( m_axis_y.front() );
+        axis->SetMasterScale( m_master_axis );
+        axis->SetTicks( m_master_axis->GetTicks() );
+    }
+    else
+    {
+        m_master_axis = axis;
+        axis->SetTicks( m_axis_x->GetTicks() );
     }
 
-    m_plotWin->AddLayer( m_axis_y.back() );
+    m_plotWin->AddLayer( axis );
+    m_plotWin->UpdateAll();
 }
 
 void SIM_PLOT_PANEL::updateAxes()
@@ -498,8 +525,6 @@ void SIM_PLOT_PANEL::prepareDCAxes()
         }
 
         m_axis_y.clear();
-        addAxeY( SIM_QUANTITY::VOLTAGE );
-        addAxeY( SIM_QUANTITY::CURRENT );
     }
 }
 
@@ -529,6 +554,7 @@ void SIM_PLOT_PANEL::UpdateTraceStyle( TRACE* trace )
                                   : wxPENSTYLE_SOLID;
     trace->SetPen( wxPen( trace->GetTraceColour(), 2, penStyle ) );
 }
+
 
 bool SIM_PLOT_PANEL::addTrace( const wxString& aTitle, const wxString& aName, int aPoints,
                                const double* aX, const double* aY, SIM_PLOT_TYPE aType )
@@ -648,9 +674,26 @@ bool SIM_PLOT_PANEL::deleteTrace( const wxString& aName )
                 }
             }
 
-            if( cnt <= 1 )
+            if( cnt < 1 )
             {
-                m_plotWin->DelLayer( axis, true, true );
+                if( ( axis == m_axis_y.front() ) && ( m_axis_y.size() > 1 ) )
+                {
+                    m_master_axis = m_axis_y.at( 1 );
+                    m_master_axis->SetTicks( !IsGridShown() );
+
+                    for( SIM_PLOT_AXIS_Y* ax : m_axis_y )
+                    {
+                        ax->SetMasterScale( m_master_axis );
+                    }
+                }
+
+                m_master_axis->SetMasterScale( nullptr );
+
+                m_plotWin->DelLayer( axis, false, true );
+
+                m_axis_y.erase( std::find( m_axis_y.begin(), m_axis_y.end(), axis ) );
+
+                m_plotWin->UpdateAll();
             }
         }
 
