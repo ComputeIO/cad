@@ -3677,16 +3677,16 @@
       (reference "IDC1") (unit 1) (value "dc=1") (footprint "")
     )
     (path "/5b2fd2dc-d066-4c39-8bc9-ea8e365975ae"
-      (reference "IEXP1") (unit 1) (value "i2=1 td1=1m tau1=500u td2=2m tau2=500u") (footprint "")
+      (reference "IEXP1") (unit 1) (value "y2=1 td1=1m tau1=500u td2=2m tau2=500u") (footprint "")
     )
     (path "/3bacb257-993d-44eb-922e-40ef9a788e8f"
       (reference "IPINKNOISE1") (unit 1) (value "rms=1m slope=1 dt=1u") (footprint "")
     )
     (path "/530cae72-e62d-4472-a544-cf6e7504a547"
-      (reference "IPULSE1") (unit 1) (value "i2=1 td=1m tr=1u tf=1u tw=1m per=2m") (footprint "")
+      (reference "IPULSE1") (unit 1) (value "y2=1 td=1m tr=1u tf=1u tw=1m per=2m") (footprint "")
     )
     (path "/aeb4fd99-50d3-4ee5-82f6-2e8e513f2af7"
-      (reference "IPWL1") (unit 1) (value "pwl=\"1 2 3 4\"") (footprint "")
+      (reference "IPWL1") (unit 1) (value "pwl=\"0 0 1m 1 2m 0 3m 0.5 4m 0\"") (footprint "")
     )
     (path "/b28bf5f4-50a4-4b7b-a795-258142b8b285"
       (reference "IRANDEXP1") (unit 1) (value "offset=1 mean=1m dt=1u") (footprint "")
@@ -3785,16 +3785,16 @@
       (reference "VDC1") (unit 1) (value "dc=1") (footprint "")
     )
     (path "/b2411a13-3e8d-4353-8659-2d857db7af3d"
-      (reference "VEXP1") (unit 1) (value "v2=1 td1=1m tau1=500u td2=2m tau2=500u") (footprint "")
+      (reference "VEXP1") (unit 1) (value "y2=1 td1=1m tau1=500u td2=2m tau2=500u") (footprint "")
     )
     (path "/cb12fd1f-7d81-46ec-a880-ef1712525887"
       (reference "VPINKNOISE1") (unit 1) (value "rms=1m slope=1 dt=1u") (footprint "")
     )
     (path "/b7c3917c-3f65-47ba-9428-cd2c6af6c0a0"
-      (reference "VPULSE1") (unit 1) (value "v2=1 td=1m tr=1u tf=1u tw=1m per=2m") (footprint "")
+      (reference "VPULSE1") (unit 1) (value "y2=1 td=1m tr=1u tf=1u tw=1m per=2m") (footprint "")
     )
     (path "/ea0404ea-1765-4d60-b23c-3011191dd829"
-      (reference "VPWL1") (unit 1) (value "pwl=\"1 2 3 4\"") (footprint "")
+      (reference "VPWL1") (unit 1) (value "pwl=\"0 0 1m 1 2m 0 3m 0.5 4m 0\"") (footprint "")
     )
     (path "/955c3193-72c9-433e-bd84-a687bb47b0b7"
       (reference "VRANDEXP1") (unit 1) (value "offset=1 mean=1m dt=1u") (footprint "")

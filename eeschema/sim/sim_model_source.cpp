@@ -314,47 +314,47 @@ wxString SIM_MODEL_SOURCE::getParamValueString( const wxString& aParamName,
 
 const std::vector<PARAM::INFO>& SIM_MODEL_SOURCE::makeParamInfos( TYPE aType )
 {
-    static std::vector<PARAM::INFO> vdc = makeDcParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> idc = makeDcParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vdc = makeDcParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> idc = makeDcParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vsin = makeSinParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> isin = makeSinParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vsin = makeSinParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> isin = makeSinParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vpulse = makePulseParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> ipulse = makePulseParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vpulse = makePulseParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> ipulse = makePulseParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vexp = makeExpParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> iexp = makeExpParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vexp = makeExpParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> iexp = makeExpParamInfos( "y", "A" );
 
-    /*static std::vector<PARAM::INFO> vsfam = makeSfamParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> isfam = makeSfamParamInfos( "i", "A" );
+    /*static std::vector<PARAM::INFO> vsfam = makeSfamParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> isfam = makeSfamParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vsffm = makeSffmParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> isffm = makeSffmParamInfos( "i", "A" );*/
+    static std::vector<PARAM::INFO> vsffm = makeSffmParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> isffm = makeSffmParamInfos( "y", "A" );*/
 
-    static std::vector<PARAM::INFO> vpwl = makePwlParamInfos( "v", "Voltage", "V" );
-    static std::vector<PARAM::INFO> ipwl = makePwlParamInfos( "i", "Current", "A" );
+    static std::vector<PARAM::INFO> vpwl = makePwlParamInfos( "y", "Voltage", "V" );
+    static std::vector<PARAM::INFO> ipwl = makePwlParamInfos( "y", "Current", "A" );
 
-    static std::vector<PARAM::INFO> vwhitenoise = makeWhiteNoiseParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> iwhitenoise = makeWhiteNoiseParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vwhitenoise = makeWhiteNoiseParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> iwhitenoise = makeWhiteNoiseParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vpinknoise = makePinkNoiseParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> ipinknoise = makePinkNoiseParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vpinknoise = makePinkNoiseParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> ipinknoise = makePinkNoiseParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vburstnoise = makeBurstNoiseParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> iburstnoise = makeBurstNoiseParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vburstnoise = makeBurstNoiseParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> iburstnoise = makeBurstNoiseParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vrandomuniform = makeRandomUniformParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> irandomuniform = makeRandomUniformParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vrandomuniform = makeRandomUniformParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> irandomuniform = makeRandomUniformParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vrandomnormal = makeRandomNormalParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> irandomnormal = makeRandomNormalParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vrandomnormal = makeRandomNormalParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> irandomnormal = makeRandomNormalParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vrandomexp = makeRandomExpParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> irandomexp = makeRandomExpParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vrandomexp = makeRandomExpParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> irandomexp = makeRandomExpParamInfos( "y", "A" );
 
-    static std::vector<PARAM::INFO> vrandompoisson = makeRandomPoissonParamInfos( "v", "V" );
-    static std::vector<PARAM::INFO> irandompoisson = makeRandomPoissonParamInfos( "i", "A" );
+    static std::vector<PARAM::INFO> vrandompoisson = makeRandomPoissonParamInfos( "y", "V" );
+    static std::vector<PARAM::INFO> irandompoisson = makeRandomPoissonParamInfos( "y", "A" );
 
     switch( aType )
     {
