@@ -57,8 +57,8 @@ enum class SIM_QUANTITY
 class SIM_PLOT_AXIS_Y : public mpScaleY
 {
 public:
-    SIM_PLOT_AXIS_Y( SIM_QUANTITY aQ, const wxString& name, int flags = mpALIGN_CENTER,
-                     bool ticks = true );
+    SIM_PLOT_AXIS_Y( SIM_QUANTITY aQ, const wxString& name = "", const wxString& aUnit = "",
+                     int flags = mpALIGN_CENTER, bool ticks = true );
     SIM_QUANTITY m_quantity;
 
     /** Get Y axis alignment.*/
@@ -68,8 +68,8 @@ public:
 class SIM_PLOT_AXIS_X : public mpScaleX
 {
 public:
-    SIM_PLOT_AXIS_X( SIM_QUANTITY aQ, const wxString& name, int flags = mpALIGN_CENTER,
-                     bool ticks = true );
+    SIM_PLOT_AXIS_X( SIM_QUANTITY aQ, const wxString& name = "", const wxString& aUnit = "",
+                     int flags = mpALIGN_CENTER, bool ticks = true );
     SIM_QUANTITY m_quantity;
 };
 
@@ -329,6 +329,8 @@ public:
     {
         return m_plotWin;
     }
+
+    void OnRightClick( wxMouseEvent& event ); // !< Mouse handler, will show context menu
 
     void             addAxeY( SIM_QUANTITY aQuantity );
     SIM_PLOT_AXIS_Y* GetAxeY( SIM_QUANTITY aQuantity );
