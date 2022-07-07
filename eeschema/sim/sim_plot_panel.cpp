@@ -28,6 +28,7 @@
 #include "sim_plot_colors.h"
 #include "sim_plot_panel.h"
 #include "sim_plot_frame.h"
+#include "sim_plot_axis_horizontal.h"
 
 #include <algorithm>
 #include <vector>
@@ -349,8 +350,31 @@ void SIM_PLOT_PANEL::OnRightClick( wxMouseEvent& event )
 
     if( ( clickedX > leftM ) && ( clickedX < sizeX - rightM ) && ( clickedY > sizeY - botM ) )
     {
-        m_axis_x->m_log = !m_axis_x->m_log;
+        double minX, maxX;
+        //m_axis_x->GetDataRange( minX, maxX );
+        m_axis_x->getVisibleDataRange( *m_plotWin, minX, maxX );
+        SIM_PLOT_AXIS_HORIZONTAL dlg( this, wxString( "time" ), minX, 1, maxX, m_axis_x->m_log );
+
+        if( dlg.ShowModal() == wxID_OK )
+        {
+            bool update = false;
+
+            m_axis_x->m_log = dlg.m_logCheckbox->GetValue();
+            //m_axis_x->SetDataRange( dlg.m_left, dlg.m_right );
+            m_plotWin->Fit( m_axis_x->TransformToPlot( dlg.m_left ),
+                            m_axis_x->TransformToPlot( dlg.m_right ), m_plotWin->GetDesiredYmin(),
+                            m_plotWin->GetDesiredYmax(), &sizeX, &sizeY );
+
+            if( update )
+            {
+                m_plotWin->UpdateAll();
+            }
+        }
+        /*
+        m_axis_x->m_log 
+        = !m_axis_x->m_log;
         m_plotWin->UpdateAll();
+        */
     }
     else
     {

@@ -1163,7 +1163,6 @@ void mpScaleXBase::getVisibleDataRange( mpWindow& w, double& minV, double& maxV 
     maxV    = TransformFromPlot( pxmax );
 }
 
-
 IMPLEMENT_ABSTRACT_CLASS( mpScaleXBase, mpLayer )
 IMPLEMENT_DYNAMIC_CLASS( mpScaleX, mpScaleXBase )
 
