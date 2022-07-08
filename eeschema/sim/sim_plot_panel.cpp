@@ -346,7 +346,7 @@ void SIM_PLOT_PANEL::OnRightClick( wxMouseEvent& event )
     int sizeX = m_plotWin->GetScrX();
     int sizeY = m_plotWin->GetScrY();
 
-    // @TODO implement function that returns the bouding boxe of axes...
+    // @TODO implement a function that returns the bouding boxe of axes...
 
     if( ( clickedX > leftM ) && ( clickedX < sizeX - rightM ) && ( clickedY > sizeY - botM ) )
     {

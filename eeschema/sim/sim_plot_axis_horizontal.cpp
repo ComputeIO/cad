@@ -24,6 +24,9 @@
 
 #include "sim_plot_axis_horizontal.h"
 #include "sim/spice_value.h"
+#include <ki_exception.h>
+#include <confirm.h>
+
 
 SIM_PLOT_AXIS_HORIZONTAL::SIM_PLOT_AXIS_HORIZONTAL( wxWindow* aParent, wxString aQuantity,
                                                     double aLeft, double aTick, double aRight,
@@ -51,11 +54,40 @@ SIM_PLOT_AXIS_HORIZONTAL::SIM_PLOT_AXIS_HORIZONTAL( wxWindow* aParent, wxString 
     m_logCheckbox->SetValue( m_log );
 }
 
+
 void SIM_PLOT_AXIS_HORIZONTAL::OnOKButtonClick( wxCommandEvent& event )
 {
-    m_left = SPICE_VALUE( m_leftCtrl->GetValue() ).ToDouble();
-    m_right = SPICE_VALUE( m_rightCtrl->GetValue() ).ToDouble();
     m_log = m_logCheckbox->GetValue();
+
+    try
+    {
+        m_left = SPICE_VALUE( m_leftCtrl->GetValue() ).ToDouble();
+        m_right = SPICE_VALUE( m_rightCtrl->GetValue() ).ToDouble();
+    }
+    catch( const KI_PARAM_ERROR& e )
+    {
+        DisplayErrorMessage( this, e.What() );
+        return;
+    }
+
+    if( std::isnan( m_left ) || std::isnan( m_right ) )
+    {
+        DisplayErrorMessage( this, _( "Axis limit is not a number." ) );
+        return;
+    }
+
+    if( m_right <= m_left )
+    {
+        DisplayErrorMessage( this, _( "The right value is lower than the left value." ) );
+        return;
+    }
+
+    if( m_log && ( m_left < 0 ) )
+    {
+        DisplayErrorMessage( this, _( "Logarithmic axes require strictly positive values." ) );
+        return;
+    }
+
 
     event.Skip();
 }
