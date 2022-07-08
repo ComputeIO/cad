@@ -55,6 +55,30 @@ SIM_PLOT_AXIS_HORIZONTAL::SIM_PLOT_AXIS_HORIZONTAL( wxWindow* aParent, wxString 
 }
 
 
+void SIM_PLOT_AXIS_HORIZONTAL::OnLogCheckBox( wxCommandEvent& event )
+{
+    m_log = m_logCheckbox->GetValue();
+
+    if( m_log )
+    {
+        try
+        {
+            m_ticks = SPICE_VALUE( m_ticksCtrl->GetValue() ).ToDouble();
+        }
+        catch( const KI_PARAM_ERROR& e )
+        {
+        }
+
+        m_ticksCtrl->SetValue( "--NA--" );
+        m_ticksCtrl->Enable( false );
+    }
+    else
+    {
+        m_ticksCtrl->SetValue( SPICE_VALUE( m_ticks ).ToSpiceString() );
+        m_ticksCtrl->Enable( true );
+    }
+}
+
 void SIM_PLOT_AXIS_HORIZONTAL::OnOKButtonClick( wxCommandEvent& event )
 {
     m_log = m_logCheckbox->GetValue();

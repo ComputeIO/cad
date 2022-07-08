@@ -46,6 +46,7 @@ public:
 
 
     virtual void OnOKButtonClick( wxCommandEvent& event ) override;
+    virtual void OnLogCheckBox( wxCommandEvent& event ) override;
 };
 
 #endif

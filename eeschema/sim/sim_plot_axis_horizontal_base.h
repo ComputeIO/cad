@@ -46,6 +46,7 @@ class SIM_PLOT_AXIS_HORIZONTAL_BASE : public wxDialog
 		wxButton* m_sdbSizer1Cancel;
 
 		// Virtual event handlers, override them in your derived class
+		virtual void OnLogCheckBox( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnOKButtonClick( wxCommandEvent& event ) { event.Skip(); }
 
 

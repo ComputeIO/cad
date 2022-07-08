@@ -96,12 +96,14 @@ SIM_PLOT_AXIS_HORIZONTAL_BASE::SIM_PLOT_AXIS_HORIZONTAL_BASE( wxWindow* parent, 
 	this->Centre( wxBOTH );
 
 	// Connect Events
+	m_logCheckbox->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SIM_PLOT_AXIS_HORIZONTAL_BASE::OnLogCheckBox ), NULL, this );
 	m_sdbSizer1OK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SIM_PLOT_AXIS_HORIZONTAL_BASE::OnOKButtonClick ), NULL, this );
 }
 
 SIM_PLOT_AXIS_HORIZONTAL_BASE::~SIM_PLOT_AXIS_HORIZONTAL_BASE()
 {
 	// Disconnect Events
+	m_logCheckbox->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( SIM_PLOT_AXIS_HORIZONTAL_BASE::OnLogCheckBox ), NULL, this );
 	m_sdbSizer1OK->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( SIM_PLOT_AXIS_HORIZONTAL_BASE::OnOKButtonClick ), NULL, this );
 
 }
