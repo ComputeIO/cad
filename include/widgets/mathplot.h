@@ -771,8 +771,8 @@ public:
         return m_absVisibleMaxV;
     }
 
-    virtual double TransformToPlot( double x ) const { return 0.0; };
-    virtual double TransformFromPlot( double xplot ) const { return 0.0; };
+    virtual double TransformToPlot( double x ) const;
+    virtual double TransformFromPlot( double xplot ) const;
 
     struct TickLabel
     {
@@ -886,8 +886,7 @@ public:
 
     // virtual double X2p( mpWindow &w, double x );
     // virtual double P2x( mpWindow &w, double x );
-    virtual double TransformToPlot( double x ) const override;
-    virtual double TransformFromPlot( double xplot ) const override;
+
 
 protected:
     virtual void recalculateTicks( wxDC& dc, mpWindow& w ) override;
@@ -929,17 +928,6 @@ public:
     /** Set Y axis alignment.
      *  @param align alignment (choose between mpALIGN_BORDER_LEFT, mpALIGN_LEFT, mpALIGN_CENTER, mpALIGN_RIGHT, mpALIGN_BORDER_RIGHT) */
     void SetAlign( int align ) { m_flags = align; };
-
-    /** Set Y axis ticks or grid
-     *  @param ticks true to plot axis ticks, false to plot grid. */
-    void SetTicks( bool ticks ) { m_ticks = ticks; };
-
-    /** Get Y axis ticks or grid
-     *  @return true if plot is drawing axis ticks, false if the grid is active. */
-    bool GetTicks() const { return m_ticks; };
-
-    virtual double  TransformToPlot( double x ) const override;
-    virtual double  TransformFromPlot( double xplot ) const override;
 
 
     void SetMasterScale( mpScaleY* masterScale )

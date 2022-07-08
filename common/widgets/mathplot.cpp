@@ -2779,7 +2779,7 @@ mpFXYVector::mpFXYVector( const wxString& name, int flags ) : mpFXY( name, flags
 }
 
 
-double mpScaleX::TransformToPlot( double x ) const
+double mpScaleBase::TransformToPlot( double x ) const
 {
     if( m_log )
     {
@@ -2795,7 +2795,7 @@ double mpScaleX::TransformToPlot( double x ) const
 }
 
 
-double mpScaleX::TransformFromPlot( double xplot ) const
+double mpScaleBase::TransformFromPlot( double xplot ) const
 {
     if( m_log )
     {
@@ -2809,19 +2809,6 @@ double mpScaleX::TransformFromPlot( double xplot ) const
         return xplot / m_scale - m_offset;
     }
 }
-
-
-double mpScaleY::TransformToPlot( double x ) const
-{
-    return (x + m_offset) * m_scale;
-}
-
-
-double mpScaleY::TransformFromPlot( double xplot ) const
-{
-    return xplot / m_scale - m_offset;
-}
-
 
 
 #if 0
