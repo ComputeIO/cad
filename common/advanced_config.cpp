@@ -191,7 +191,7 @@ static const wxChar AllowManualCanvasScale[] = wxT( "AllowManualCanvasScale" );
 
 static const wxChar UpdateUIEventInterval[] = wxT( "UpdateUIEventInterval" );
 
-static const wxChar AllowTeardrops[] = wxT( "AllowTeardrops" );
+static const wxChar DRCMinConnectionWidth[] = wxT( "MinConnectionWidth" );
 
 static const wxChar V3DRT_BevelHeight_um[] = wxT( "V3DRT_BevelHeight_um" );
 
@@ -323,6 +323,8 @@ ADVANCED_CFG::ADVANCED_CFG()
     m_3DRT_BevelHeight_um       = 30;
     m_3DRT_BevelExtentFactor    = 1.0 / 16.0;
 
+    m_DRCMinConnectionWidth     = 0.0;
+
     loadFromConfigFile();
 }
 
@@ -424,6 +426,9 @@ void ADVANCED_CFG::loadSettings( wxConfigBase& aCfg )
 
     configParams.push_back( new PARAM_CFG_DOUBLE( true, AC_KEYS::SmallDrillMarkSize,
                                                   &m_SmallDrillMarkSize, m_SmallDrillMarkSize, 0.0, 3.0 ) );
+
+    configParams.push_back( new PARAM_CFG_DOUBLE( true, AC_KEYS::DRCMinConnectionWidth,
+                                                  &m_DRCMinConnectionWidth, m_DRCMinConnectionWidth, 0.0, 100.0 ) );
 
     configParams.push_back( new PARAM_CFG_BOOL( true, AC_KEYS::HotkeysDumper,
                                                 &m_HotkeysDumper, m_HotkeysDumper ) );

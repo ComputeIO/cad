@@ -374,6 +374,30 @@ public:
         return collision;
     }
 
+    /**
+     * Gets the BOARD_ITEMs that overlap the specified point/layer
+     * @param aPt Position on the tree
+     * @param aLayer Layer to search
+     * @return vector of overlapping BOARD_ITEMS*
+     */
+    std::vector<BOARD_ITEM*> GetObjectsAt( const VECTOR2I& aPt, PCB_LAYER_ID aLayer )
+    {
+        std::vector<BOARD_ITEM*> retval;
+        int min[2] = { aPt.x, aPt.y };
+        int max[2] = { aPt.x, aPt.y };
+
+        auto visitor =
+                [&]( ITEM_WITH_SHAPE* aItem ) -> bool
+                {
+                    retval.push_back( aItem->parent );
+                    return true;
+                };
+
+        m_tree[aLayer]->Search( min, max, visitor );
+
+        return retval;
+    }
+
     typedef std::pair<PCB_LAYER_ID, PCB_LAYER_ID> LAYER_PAIR;
 
     struct PAIR_INFO
