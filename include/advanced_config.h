@@ -102,11 +102,6 @@ public:
     double m_DRCEpsilon;
 
     /**
-     * Minimum width allowed for copper connections.  Units are mm.
-     */
-    double m_DRCMinConnectionWidth;
-
-    /**
      * Sliver tolerances for DRC.  Units are mm and deg.
      */
     double m_SliverWidthTolerance;

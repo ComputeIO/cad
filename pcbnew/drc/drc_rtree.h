@@ -380,16 +380,16 @@ public:
      * @param aLayer Layer to search
      * @return vector of overlapping BOARD_ITEMS*
      */
-    std::vector<BOARD_ITEM*> GetObjectsAt( const VECTOR2I& aPt, PCB_LAYER_ID aLayer )
+    std::set<BOARD_ITEM*> GetObjectsAt( const VECTOR2I& aPt, PCB_LAYER_ID aLayer, int aClearance = 0 )
     {
-        std::vector<BOARD_ITEM*> retval;
-        int min[2] = { aPt.x, aPt.y };
-        int max[2] = { aPt.x, aPt.y };
+        std::set<BOARD_ITEM*> retval;
+        int min[2] = { aPt.x - aClearance, aPt.y - aClearance };
+        int max[2] = { aPt.x + aClearance, aPt.y + aClearance };
 
         auto visitor =
                 [&]( ITEM_WITH_SHAPE* aItem ) -> bool
                 {
-                    retval.push_back( aItem->parent );
+                    retval.insert( aItem->parent );
                     return true;
                 };
 

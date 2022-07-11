@@ -27,6 +27,8 @@
 #include <optional>
 #include <utility>
 
+#include <wx/debug.h>
+
 #include <advanced_config.h>
 #include <board.h>
 #include <board_connected_item.h>
@@ -298,35 +300,93 @@ private:
         // So, once directions = 15, we have all directions
         int directions = 0;
 
-        Vertex* p0 = aA;
-        Vertex* p  = p0->next;
+        // This is a failsafe in case of invalid lists.  Never check
+        // more than the total number of points in m_vertices
+        size_t checked = 0;
+        size_t total_pts = m_vertices.size();
 
-        while( p0 != aB && directions != 15 )
+        Vertex* p0 = aA;
+        Vertex* p;
+        Vertex* nz = p0->nextZ;
+        Vertex* pz = p0->prevZ;
+
+        auto same_point = []( const Vertex* a, const Vertex* b ) -> bool
+            {
+                return a && b && a->x == b->x && a->y == b->y;
+            };
+
+        // If we hit a fracture point, we want to continue around the
+        // edge we are working on and not switch to the pair edge
+        // However, this will depend on which direction the initial
+        // fracture hit is.  If we find that we skip directly to
+        // a new fracture point, then we know that we are proceeding
+        // in the wrong direction from the fracture and should
+        // fall through to the next point
+        if( same_point( p0, nz ) &&
+                !( same_point( nz->next, nz->next->prevZ ) || same_point( nz->next, nz->next->nextZ ) ) )
+            p = nz->next;
+        else if( same_point( p0, pz ) &&
+                !( same_point( pz->next, pz->next->prevZ ) || same_point( pz->next, pz->next->nextZ ) ) )
+            p = pz->next;
+        else
+            p = p0->next;
+
+        while( p0 != aB && checked < total_pts && directions != 15 )
         {
             int bit2x = std::signbit( p->x - p0->x );
             int bit2y = std::signbit( p->y - p0->y );
             directions |= ( 1 << ( 2 + bit2x ) ) + ( 1 << bit2y );
 
             p0 = p;
-            p = p->next;
+            if( same_point( p0, p0->nextZ ) )
+                p = p->nextZ->next;
+            else if( same_point( p0, p0->prevZ ) )
+                p = p->prevZ->next;
+            else
+                p = p->next;
+
+            ++checked;
         }
+
+        wxCHECK_MSG( checked < total_pts, false, wxT( "Invalid polygon detected.  Missing points to check" ) );
 
         if( directions != 15 )
             return false;
 
         p0 = aA;
-        p = p0->prev;
-        directions = 0;
+        nz = p0->nextZ;
+        pz = p0->prevZ;
 
-        while( p0 != aB && directions != 15 )
+        if( nz && same_point( p0, nz ) &&
+                !( same_point( nz->prev, nz->prev->nextZ ) || same_point( nz->prev, nz->prev->prevZ ) ) )
+            p = nz->prev;
+        else if( pz && same_point( p0, pz ) &&
+                !( same_point( pz->prev, pz->prev->nextZ ) || same_point( pz->prev, pz->prev->prevZ ) ) )
+            p = pz->prev;
+        else
+            p = p0->prev;
+
+        directions = 0;
+        checked = 0;
+
+        while( p0 != aB && checked < total_pts && directions != 15 )
         {
             int bit2x = std::signbit( p->x - p0->x );
             int bit2y = std::signbit( p->y - p0->y );
             directions |= ( 1 << ( 2 + bit2x ) ) + ( 1 << bit2y );
 
             p0 = p;
-            p = p->prev;
+            if( same_point( p, p->nextZ ) )
+                p = p->nextZ->prev;
+            else if( same_point( p, p->prevZ ) )
+                p = p->prevZ->prev;
+            else
+                p = p->prev;
+
+            ++checked;
         }
+
+        wxCHECK_MSG( checked < total_pts, false, wxT( "Invalid polygon detected.  Missing points to check" ) );
 
         return ( directions == 15 );
     }
@@ -385,7 +445,8 @@ private:
             VECTOR2D diff( p->x - aPt->x, p->y - aPt->y );
             SEG::ecoord dist2 = diff.SquaredEuclideanNorm();
 
-            if( delta_i > 1 && dist2 < limit2 && dist2 < min_dist && locallyInside( p, aPt ) && isSubstantial( p, aPt ) )
+            if( delta_i > 1 && dist2 < limit2 && dist2 < min_dist && dist2 > 0.0
+                    && locallyInside( p, aPt ) && isSubstantial( p, aPt ) )
             {
                 min_dist = dist2;
                 retval = p;
@@ -402,7 +463,8 @@ private:
             VECTOR2D diff( p->x - aPt->x, p->y - aPt->y );
             SEG::ecoord dist2 = diff.SquaredEuclideanNorm();
 
-            if( delta_i > 1 && dist2 < limit2 && dist2 < min_dist && locallyInside( p, aPt ) && isSubstantial( p, aPt ) )
+            if( delta_i > 1 && dist2 < limit2 && dist2 < min_dist && dist2 > 0.0
+                    && locallyInside( p, aPt ) && isSubstantial( p, aPt ) )
             {
                 min_dist = dist2;
                 retval = p;
@@ -493,7 +555,7 @@ bool DRC_TEST_PROVIDER_CONNECTION_WIDTH::Run()
     LSEQ   copperLayers = copperLayerSet.Seq();
 
     BOARD* board = m_drcEngine->GetBoard();
-
+    BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
     PROGRESS_REPORTER* reporter = m_drcEngine->GetProgressReporter();
 
     if( reporter && reporter->IsCancelled() )
@@ -515,10 +577,9 @@ bool DRC_TEST_PROVIDER_CONNECTION_WIDTH::Run()
             for( BOARD_CONNECTED_ITEM* item : aItems )
                 item->TransformShapeWithClearanceToPolygon( poly, aLayer, 0, ARC_HIGH_DEF, ERROR_OUTSIDE);
 
-            poly.Simplify( SHAPE_POLY_SET::PM_FAST );
+            poly.Fracture(SHAPE_POLY_SET::PM_FAST);
 
-            // TODO: Separate this parameter
-            int minimum_width = Millimeter2iu( ADVANCED_CFG::GetCfg().m_DRCMinConnectionWidth );
+            int minimum_width = bds.m_MinConn;
             POLYGON_TEST test( minimum_width );
 
             for( int ii = 0; ii < poly.OutlineCount(); ++ii )
@@ -532,7 +593,7 @@ bool DRC_TEST_PROVIDER_CONNECTION_WIDTH::Run()
                 {
                     VECTOR2I location = ( chain.CPoint( pt.first ) + chain.CPoint( pt.second ) ) / 2;
                     int dist = ( chain.CPoint( pt.first ) - chain.CPoint( pt.second ) ).EuclideanNorm();
-                    std::vector<BOARD_ITEM*> items = tree->GetObjectsAt( location, aLayer );
+                    std::set<BOARD_ITEM*> items = tree->GetObjectsAt( location, aLayer, minimum_width );
 
                     std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_CONNECTION_WIDTH );
                     wxString msg;
@@ -545,7 +606,7 @@ bool DRC_TEST_PROVIDER_CONNECTION_WIDTH::Run()
 
                     for( BOARD_ITEM* item : items )
                     {
-                        if( item->HitTest( location ) )
+                        if( item->HitTest( location, minimum_width ) )
                             drce->AddItem( item );
                     }
 
