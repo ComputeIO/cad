@@ -36,6 +36,7 @@
 #include <drc/drc_test_provider.h>
 #include <drc/drc_rtree.h>
 #include <footprint.h>
+#include <geometry/seg.h>
 #include <geometry/shape_poly_set.h>
 #include <math/box2.h>
 #include <math/vector2d.h>
@@ -53,14 +54,14 @@
     - DRCE_CONNECTION_WIDTH
 */
 
-class DRC_TEST_PROVIDER_COPPER_WIDTH : public DRC_TEST_PROVIDER
+class DRC_TEST_PROVIDER_CONNECTION_WIDTH : public DRC_TEST_PROVIDER
 {
 public:
-    DRC_TEST_PROVIDER_COPPER_WIDTH()
+    DRC_TEST_PROVIDER_CONNECTION_WIDTH()
     {
     }
 
-    virtual ~DRC_TEST_PROVIDER_COPPER_WIDTH()
+    virtual ~DRC_TEST_PROVIDER_CONNECTION_WIDTH()
     {
     }
 
@@ -81,10 +82,10 @@ private:
 };
 
 
-class PolygonTest
+class POLYGON_TEST
 {
 public:
-    PolygonTest( int aLimit ) :
+    POLYGON_TEST( int aLimit ) :
         m_limit( aLimit )
     {
     };
@@ -135,7 +136,7 @@ public:
 private:
     struct Vertex
     {
-        Vertex( int aIndex, double aX, double aY, PolygonTest* aParent ) :
+        Vertex( int aIndex, double aX, double aY, POLYGON_TEST* aParent ) :
                 i( aIndex ),
                 x( aX ),
                 y( aY ),
@@ -217,7 +218,7 @@ private:
 
             queue.push_back( this );
 
-            for( auto p = next; p && p != this; p = p->next )
+            for( Vertex* p = next; p && p != this; p = p->next )
                 queue.push_back( p );
 
             std::sort( queue.begin(), queue.end(), []( const Vertex* a, const Vertex* b )
@@ -227,7 +228,7 @@ private:
 
             Vertex* prev_elem = nullptr;
 
-            for( auto elem : queue )
+            for( Vertex* elem : queue )
             {
                 if( prev_elem )
                     prev_elem->nextZ = elem;
@@ -242,7 +243,7 @@ private:
         const int    i;
         const double x;
         const double y;
-        PolygonTest* parent;
+        POLYGON_TEST* parent;
 
         // previous and next vertices nodes in a polygon ring
         Vertex* prev = nullptr;
@@ -369,9 +370,9 @@ private:
             return nullptr;
 
         // z-order range for the current point ± limit bounding box
-        const int32_t maxZ = zOrder( aPt->x + m_limit, aPt->y + m_limit );
-        const int32_t minZ = zOrder( aPt->x - m_limit, aPt->y - m_limit );
-        const VECTOR2I::extended_type  limit2 = static_cast<VECTOR2I::extended_type>( m_limit ) * m_limit;
+        const int32_t     maxZ = zOrder( aPt->x + m_limit, aPt->y + m_limit );
+        const int32_t     minZ = zOrder( aPt->x - m_limit, aPt->y - m_limit );
+        const SEG::ecoord limit2 = SEG::Square( m_limit );
 
         // first look for points in increasing z-order
         Vertex* p = aPt->nextZ;
@@ -382,7 +383,7 @@ private:
         {
             int delta_i = std::abs( p->i - aPt->i );
             VECTOR2D diff( p->x - aPt->x, p->y - aPt->y );
-            VECTOR2I::extended_type dist2 = diff.SquaredEuclideanNorm();
+            SEG::ecoord dist2 = diff.SquaredEuclideanNorm();
 
             if( delta_i > 1 && dist2 < limit2 && dist2 < min_dist && locallyInside( p, aPt ) && isSubstantial( p, aPt ) )
             {
@@ -399,7 +400,7 @@ private:
         {
             int delta_i = std::abs( p->i - aPt->i );
             VECTOR2D diff( p->x - aPt->x, p->y - aPt->y );
-            VECTOR2I::extended_type dist2 = diff.SquaredEuclideanNorm();
+            SEG::ecoord dist2 = diff.SquaredEuclideanNorm();
 
             if( delta_i > 1 && dist2 < limit2 && dist2 < min_dist && locallyInside( p, aPt ) && isSubstantial( p, aPt ) )
             {
@@ -474,13 +475,13 @@ private:
 };
 
 
-wxString DRC_TEST_PROVIDER_COPPER_WIDTH::layerDesc( PCB_LAYER_ID aLayer )
+wxString DRC_TEST_PROVIDER_CONNECTION_WIDTH::layerDesc( PCB_LAYER_ID aLayer )
 {
     return wxString::Format( wxT( "(%s)" ), m_drcEngine->GetBoard()->GetLayerName( aLayer ) );
 }
 
 
-bool DRC_TEST_PROVIDER_COPPER_WIDTH::Run()
+bool DRC_TEST_PROVIDER_CONNECTION_WIDTH::Run()
 {
     if( m_drcEngine->IsErrorLimitExceeded( DRCE_CONNECTION_WIDTH ) )
         return true;    // Continue with other tests
@@ -503,8 +504,8 @@ bool DRC_TEST_PROVIDER_COPPER_WIDTH::Run()
     DRC_RTREE*    tree = board->m_CopperItemRTreeCache.get();
 
     auto min_checker =
-            [&](const std::set<BOARD_CONNECTED_ITEM*>& aItems, PCB_LAYER_ID aLayer ) -> size_t
-            {
+        [&](const std::set<BOARD_CONNECTED_ITEM*>& aItems, PCB_LAYER_ID aLayer ) -> size_t
+        {
 
             if( reporter && reporter->IsCancelled() )
                 return 0;
@@ -518,7 +519,7 @@ bool DRC_TEST_PROVIDER_COPPER_WIDTH::Run()
 
             // TODO: Separate this parameter
             int minimum_width = Millimeter2iu( ADVANCED_CFG::GetCfg().m_DRCMinConnectionWidth );
-            PolygonTest test( minimum_width );
+            POLYGON_TEST test( minimum_width );
 
             for( int ii = 0; ii < poly.OutlineCount(); ++ii )
             {
@@ -527,7 +528,7 @@ bool DRC_TEST_PROVIDER_COPPER_WIDTH::Run()
                 test.FindPairs( chain );
                 auto& ret = test.GetVertices();
 
-                for( auto& pt : ret )
+                for( const std::pair<int, int>& pt : ret )
                 {
                     VECTOR2I location = ( chain.CPoint( pt.first ) + chain.CPoint( pt.second ) ) / 2;
                     int dist = ( chain.CPoint( pt.first ) - chain.CPoint( pt.second ) ).EuclideanNorm();
@@ -556,7 +557,7 @@ bool DRC_TEST_PROVIDER_COPPER_WIDTH::Run()
                 reporter->AdvanceProgress();
 
             return 1;
-            };
+        };
 
     for( PCB_LAYER_ID layer : copperLayers )
     {
@@ -587,6 +588,12 @@ bool DRC_TEST_PROVIDER_COPPER_WIDTH::Run()
             {
                 if( pad->FlashLayer( static_cast<int>( layer ) ) )
                     layer_items[pad->GetNetCode()].emplace( pad );
+            }
+
+            for( FP_ZONE* zone : fp->Zones() )
+            {
+                if( !zone->GetIsRuleArea() && zone->IsOnLayer( layer ) )
+                    layer_items[zone->GetNetCode()].emplace( zone );
             }
         }
     }
@@ -627,5 +634,5 @@ bool DRC_TEST_PROVIDER_COPPER_WIDTH::Run()
 
 namespace detail
 {
-static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_COPPER_WIDTH> dummy;
+static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_CONNECTION_WIDTH> dummy;
 }
