@@ -106,6 +106,8 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_push_pad_properties_base.cpp
     dialogs/dialog_graphic_item_properties.cpp
     dialogs/dialog_graphic_item_properties_base.cpp
+    dialogs/dialog_image_properties.cpp
+    dialogs/dialog_image_properties_base.cpp
     dialogs/dialog_import_settings.cpp
     dialogs/dialog_import_settings_base.cpp
     dialogs/dialog_imported_layers_base.cpp
@@ -478,6 +480,7 @@ add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pcbnew_wrap.cxx
     DEPENDS python/swig/netinfo.i
     DEPENDS python/swig/pad.i
     DEPENDS python/swig/pcb_group.i
+    DEPENDS python/swig/pcb_bitmap.i
     DEPENDS python/swig/pcb_text.i
     DEPENDS python/swig/pcb_group.i
     DEPENDS python/swig/plugins.i
@@ -670,7 +673,7 @@ target_link_libraries( pcbnew_kiface_objects
 target_include_directories( pcbnew_kiface_objects PRIVATE
     $<TARGET_PROPERTY:thread-pool,INTERFACE_INCLUDE_DIRECTORIES>
     )
-    
+
 if( KICAD_STEP_EXPORT_LIB )
     add_definitions( -DKICAD_STEP_EXPORT_LIB )
 endif()
@@ -725,7 +728,7 @@ target_link_libraries( pcbnew_kiface
     PRIVATE
         ${PCBNEW_KIFACE_LIBRARIES}
     )
-    
+
 set_source_files_properties( pcbnew.cpp PROPERTIES
     # The KIFACE is in pcbnew.cpp, export it:
     COMPILE_DEFINITIONS     "BUILD_KIWAY_DLL;COMPILING_DLL"

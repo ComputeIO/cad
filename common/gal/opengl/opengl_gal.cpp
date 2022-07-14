@@ -59,16 +59,6 @@
 using namespace std::placeholders;
 using namespace KIGFX;
 
-// A ugly workaround to avoid serious issues (crashes) when using bitmaps cache
-// to speedup redraw.
-// issues arise when using bitmaps in page layout, when the page layout containd bitmaps,
-// and is common to schematic and board editor,
-// and the schematic is a hierarchy and when using cross-probing
-// When the cross probing from pcbnew to eeschema switches to a sheet, the bitmaps cache
-// becomes broken (in fact the associated texture).
-// I hope (JPC) it will be fixed later, but a slightly slower refresh is better than a crash
-#define DISABLE_BITMAP_CACHE
-
 // The current font is "Ubuntu Mono" available under Ubuntu Font Licence 1.0
 // (see ubuntu-font-licence-1.0.txt for details)
 #include "gl_resources.h"
@@ -186,9 +176,7 @@ GLuint GL_BITMAP_CACHE::cacheBitmap( const BITMAP_BASE* aBitmap )
 
     bmp.id = textureID;
 
-#ifndef DISABLE_BITMAP_CACHE
     m_bitmaps[aBitmap] = bmp;
-#endif
 
     return textureID;
 }
@@ -1244,8 +1232,10 @@ void OPENGL_GAL::DrawCurve( const VECTOR2D& aStartPoint, const VECTOR2D& aContro
 }
 
 
-void OPENGL_GAL::DrawBitmap( const BITMAP_BASE& aBitmap )
+void OPENGL_GAL::DrawBitmap( const BITMAP_BASE& aBitmap, double alphaBlend )
 {
+    GLfloat alpha = std::clamp( alphaBlend, 0.0, 1.0 );
+
     // We have to calculate the pixel size in users units to draw the image.
     // m_worldUnitLength is a factor used for converting IU to inches
     double scale = 1.0 / ( aBitmap.GetPPI() * m_worldUnitLength );
@@ -1263,32 +1253,28 @@ void OPENGL_GAL::DrawBitmap( const BITMAP_BASE& aBitmap )
     if( !glIsTexture( texture_id ) ) // ensure the bitmap texture is still valid
         return;
 
-    auto oldTarget = GetTarget();
-
     glPushMatrix();
     glTranslated( trans.x, trans.y, trans.z );
 
-    SetTarget( TARGET_NONCACHED );
     glEnable( GL_TEXTURE_2D );
     glActiveTexture( GL_TEXTURE0 );
     glBindTexture( GL_TEXTURE_2D, texture_id );
 
     glBegin( GL_QUADS );
-    glColor4f( 1.0, 1.0, 1.0, 1.0 );
+    glColor4f( 1.0, 1.0, 1.0, alpha );
     glTexCoord2f( 0.0, 0.0 );
     glVertex3f( v0.x, v0.y, m_layerDepth );
-    glColor4f( 1.0, 1.0, 1.0, 1.0 );
+    glColor4f( 1.0, 1.0, 1.0, alpha );
     glTexCoord2f( 1.0, 0.0 );
     glVertex3f( v1.x, v0.y, m_layerDepth );
-    glColor4f( 1.0, 1.0, 1.0, 1.0 );
+    glColor4f( 1.0, 1.0, 1.0, alpha );
     glTexCoord2f( 1.0, 1.0 );
     glVertex3f( v1.x, v1.y, m_layerDepth );
-    glColor4f( 1.0, 1.0, 1.0, 1.0 );
+    glColor4f( 1.0, 1.0, 1.0, alpha );
     glTexCoord2f( 0.0, 1.0 );
     glVertex3f( v0.x, v1.y, m_layerDepth );
     glEnd();
 
-    SetTarget( oldTarget );
     glBindTexture( GL_TEXTURE_2D, 0 );
 
 #ifdef DISABLE_BITMAP_CACHE

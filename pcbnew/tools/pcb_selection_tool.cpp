@@ -33,6 +33,7 @@ using namespace std::placeholders;
 #include <board_design_settings.h>
 #include <board_item.h>
 #include <clipper.hpp>
+#include <pcb_bitmap.h>
 #include <pcb_track.h>
 #include <footprint.h>
 #include <pad.h>
@@ -2028,6 +2029,7 @@ bool PCB_SELECTION_TOOL::itemPassesFilter( BOARD_ITEM* aItem, bool aMultiSelect 
     case PCB_FP_SHAPE_T:
     case PCB_SHAPE_T:
     case PCB_TARGET_T:
+    case PCB_BITMAP_T:
         if( !m_filter.graphics )
             return false;
 
@@ -2719,6 +2721,11 @@ void PCB_SELECTION_TOOL::GuessSelectionCandidates( GENERAL_COLLECTOR& aCollector
             // Vias rarely hide other things, and we don't want them deferring to short track
             // segments underneath them -- so artificially reduce their size from πr² to 1.5r².
             area = SEG::Square( static_cast<PCB_VIA*>( item )->GetDrill() / 2 ) * 1.5;
+        }
+        else if( item->Type() == PCB_BITMAP_T )
+        {
+            VECTOR2I size = static_cast<const PCB_BITMAP*>( item )->GetSize();
+            area = size.x * size.y;
         }
         else
         {
