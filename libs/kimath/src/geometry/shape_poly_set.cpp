@@ -1704,30 +1704,24 @@ bool SHAPE_POLY_SET::CollideVertex( const VECTOR2I& aPoint,
                                     int aClearance ) const
 {
     // Shows whether there was a collision
-    bool collision = false;
-
-    // Difference vector between each vertex and aPoint.
-    VECTOR2D    delta;
-    double      distance, clearance;
-
-    // Convert clearance to double for precision when comparing distances
-    clearance = aClearance;
+    bool   collision = false;
+    double clearanceSq = SEG::Square( aClearance );
 
     for( CONST_ITERATOR iterator = CIterateWithHoles(); iterator; iterator++ )
     {
         // Get the difference vector between current vertex and aPoint
-        delta = *iterator - aPoint;
+        VECTOR2D delta = VECTOR2D( *iterator ) - aPoint;
 
-        // Compute distance
-        distance = delta.EuclideanNorm();
+        // Compute squared distance
+        double distanceSq = delta.SquaredEuclideanNorm();
 
         // Check for collisions
-        if( distance <= clearance )
+        if( distanceSq <= clearanceSq )
         {
             collision = true;
 
-            // Update aClearance to look for closer vertices
-            clearance = distance;
+            // Update clearanceSq to look for closer vertices
+            clearanceSq = distanceSq;
 
             // Store the indices that identify the vertex
             aClosestVertex = iterator.GetIndex();
@@ -1743,20 +1737,21 @@ bool SHAPE_POLY_SET::CollideEdge( const VECTOR2I& aPoint,
                                   int aClearance ) const
 {
     // Shows whether there was a collision
-    bool collision = false;
+    bool        collision = false;
+    SEG::ecoord clearanceSq = SEG::Square( aClearance );
 
     for( CONST_SEGMENT_ITERATOR iterator = CIterateSegmentsWithHoles(); iterator; iterator++ )
     {
-        const SEG currentSegment = *iterator;
-        int distance = currentSegment.Distance( aPoint );
+        const SEG   currentSegment = *iterator;
+        SEG::ecoord distanceSq = currentSegment.SquaredDistance( aPoint );
 
         // Check for collisions
-        if( distance <= aClearance )
+        if( distanceSq <= clearanceSq )
         {
             collision = true;
 
-            // Update aClearance to look for closer edges
-            aClearance = distance;
+            // Update clearanceSq to look for closer edges
+            clearanceSq = distanceSq;
 
             // Store the indices that identify the vertex
             aClosestVertex = iterator.GetIndex();
