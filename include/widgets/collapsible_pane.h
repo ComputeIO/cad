@@ -21,7 +21,7 @@
 #define KICAD_COLLAPSIBLE_PANE_H
 
 #include <wx/control.h>
-#include <wx/containr.h>
+#include <wx/container.h>
 #include <wx/statbox.h> // needed to provide a hint that wx libraries instantiated wxNavigationEnabled<wxControl>
 
 

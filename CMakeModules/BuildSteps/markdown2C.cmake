@@ -23,6 +23,6 @@ STRING( REPLACE "\n" "\\n\"\n\"" buff_m "${linem}" )
 # create the full string compatible "C":
 # _HKI( "<md string>"\n
 # to make it translatable. We use here the marker _HKI because
-# the translation will be explicitely called in Kicad code
+# the translation will be explicitly called in Kicad code
 # Write the buffer between quotes
 file( APPEND ${outputFile} "_HKI( \"" "${buff_m}" "\" );\n" )

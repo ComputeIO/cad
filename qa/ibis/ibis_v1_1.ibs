@@ -42,7 +42,7 @@ C_pkg           1m              NA            NA
   1     VCC             POWER           1m      0.8m    NA            
   2     GND             GND             1m      NA      2m               
   3     X               Input           1m      NA      NA
-  4     Y               Ouput           1m      0.8m    2m
+  4     Y               Output          1m      0.8m    2m
 
 [Model]         Input
 Model_type      Input

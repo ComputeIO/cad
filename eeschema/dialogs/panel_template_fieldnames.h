@@ -17,8 +17,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PANEL_EESCHEMA_DEFUALT_FIELDS_H
-#define PANEL_EESCHEMA_DEFUALT_FIELDS_H
+#ifndef PANEL_EESCHEMA_DEFAULT_FIELDS_H
+#define PANEL_EESCHEMA_DEFAULT_FIELDS_H
 
 #include <template_fieldnames.h>
 #include "panel_template_fieldnames_base.h"
@@ -76,4 +76,4 @@ protected:
 };
 
 
-#endif //PANEL_EESCHEMA_DEFUALT_FIELDS_H
+#endif //PANEL_EESCHEMA_DEFAULT_FIELDS_H

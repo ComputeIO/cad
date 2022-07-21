@@ -69,13 +69,13 @@ public:
     }
 
     /**
-     * Set prefered length and height ratio for teardrops
-     * the prefered length and height are VIAPAD width * aLenghtRatio and
+     * Set preferred length and height ratio for teardrops
+     * the preferred length and height are VIAPAD width * aLengthRatio and
      * VIAPAD width * aHeightRatio
      */
-    void SetTeardropSizeRatio( double aLenghtRatio = 0.5, double aHeightRatio = 1.0 )
+    void SetTeardropSizeRatio( double aLengthRatio = 0.5, double aHeightRatio = 1.0 )
     {
-        m_LengthRatio = aLenghtRatio;
+        m_LengthRatio = aLengthRatio;
         m_HeightRatio = aHeightRatio;
     }
 

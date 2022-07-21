@@ -595,7 +595,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
         Report( _( "Cannot remove temporary input file" ), RPT_SEVERITY_WARNING );
     }
 
-    if( std::remove( "temp_ouput.spice" ) )
+    if( std::remove( "temp_output.spice" ) )
     {
         Report( _( "Cannot remove temporary output file" ), RPT_SEVERITY_WARNING );
     }
@@ -657,7 +657,7 @@ void KIBIS_PIN::getKuKdFromFile( std::string* aSimul )
         Report( _( "Cannot remove temporary input file" ), RPT_SEVERITY_WARNING );
     }
 
-    if( std::remove( "temp_ouput.spice" ) )
+    if( std::remove( "temp_output.spice" ) )
     {
         Report( _( "Cannot remove temporary output file" ), RPT_SEVERITY_WARNING );
     }
