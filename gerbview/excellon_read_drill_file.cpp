@@ -463,7 +463,7 @@ bool EXCELLON_IMAGE::LoadFile( const wxString & aFullFileName, EXCELLON_DEFAULTS
     if( m_Current_File == nullptr )
         return false;
 
-    // Initial format setting, usualy defined in file, but not always...
+    // Initial format setting, usually defined in file, but not always...
     m_NoTrailingZeros = aDefaults->m_LeadingZero;
     m_GerbMetric = aDefaults->m_UnitsMM;
 
@@ -723,7 +723,7 @@ void EXCELLON_IMAGE::readFileFormat( char*& aText )
     int characteristicDigits = 0;
 
     // Example String: ;FILE_FORMAT=4:4
-    // The ;FILE_FORMAT potion will already be stripped off.
+    // The ;FILE_FORMAT portion will already be stripped off.
     // Parse the rest strictly as single_digit:single_digit like 4:4 or 2:4
     // Don't allow anything clever like spaces or multiple digits
     if( *aText != '=' )

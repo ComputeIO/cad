@@ -86,7 +86,7 @@ private:
     ///< System drag preferences take precedence if available
     static const int DragDistanceThreshold = 8;
 
-    ///< Mininum distance before drag is activated in the X axis
+    ///< Minimum distance before drag is activated in the X axis
     int m_sysDragMinX;
     ///< Maximum distance before drag is activated in the Y axis
     int m_sysDragMinY;

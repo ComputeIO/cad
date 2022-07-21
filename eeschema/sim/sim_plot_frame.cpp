@@ -481,7 +481,7 @@ void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
     {
         updateTuners();
         applyTuners();
-        // Prevents memory leak on succeding simulations by deleting old vectors
+        // Prevents memory leak on succeeding simulations by deleting old vectors
         m_simulator->Clean();
         m_simulator->Run();
     }

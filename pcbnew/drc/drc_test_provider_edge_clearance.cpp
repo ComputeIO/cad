@@ -309,7 +309,7 @@ bool DRC_TEST_PROVIDER_EDGE_CLEARANCE::Run()
                         }
                         else
                         {
-                            // TODO: check postion being outside board boundary
+                            // TODO: check position being outside board boundary
                         }
                     }
                 }

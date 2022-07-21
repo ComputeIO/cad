@@ -179,7 +179,7 @@ public:
     int GetTeardropMaxLenTrack() { return m_teardropMaxLenSettingTrack.GetValue(); }
     int GetTeardropMaxHeightTrack() { return m_teardropMaxHeightSettingTrack.GetValue(); }
 
-    // Optins to filter pads
+    // Options to filter pads
     bool TeardropOnPadVia() { return m_cbPadVia->GetValue(); }
     bool IncludeNotPTH() { return m_cbSmdSimilarPads->GetValue(); }
     bool RoundShapesOnly() { return m_cbRoundShapesOnly->GetValue(); }

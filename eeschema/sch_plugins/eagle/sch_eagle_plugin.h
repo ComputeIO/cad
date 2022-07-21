@@ -178,7 +178,7 @@ private:
      * Create net labels to emulate implicit connections in Eagle.
      *
      * Each named power input pin creates an implicit connection in Eagle. To emulate this behavior
-     * one needs to attach global net labels to the mentioned pins. This is is also expected for the
+     * one needs to attach global net labels to the mentioned pins. This is also expected for the
      * units that are not instantiated in the schematics, therefore such units need to be stored
      * in order to create them at later stage.
      *

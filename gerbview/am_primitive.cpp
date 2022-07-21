@@ -845,7 +845,7 @@ SHAPE_POLY_SET* APERTURE_MACRO::GetApertureMacroShape( const GERBER_DRAW_ITEM* a
     // Merge and cleanup basic shape polygons
     m_shape.Simplify( SHAPE_POLY_SET::PM_FAST );
 
-    // A hole can be is defined inside a polygon, or the polygons themselve can create
+    // A hole can be is defined inside a polygon, or the polygons themselves can create
     // a hole when merged, so we must fracture the polygon to be able to drawn it
     // (i.e link holes by overlapping edges)
     m_shape.Fracture( SHAPE_POLY_SET::PM_FAST );

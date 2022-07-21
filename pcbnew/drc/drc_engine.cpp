@@ -1224,8 +1224,8 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRules( DRC_CONSTRAINT_T aConstraintType, const BO
         return constraint;
 
     // Special case for pad zone connections which can iherit from their parent footprints.
-    // We've already checked for local overrides, and there were no rules targetting the pad
-    // itself, so we know we're inheriting and need to see if there are any rules targetting
+    // We've already checked for local overrides, and there were no rules targeting the pad
+    // itself, so we know we're inheriting and need to see if there are any rules targeting
     // the parent footprint.
     if( pad && parentFootprint && (   aConstraintType == ZONE_CONNECTION_CONSTRAINT
                                    || aConstraintType == THERMAL_RELIEF_GAP_CONSTRAINT

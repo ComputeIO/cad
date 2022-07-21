@@ -143,7 +143,7 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
     endif()
 
 
-    # Warn about out of order intialization
+    # Warn about out of order initialization
     CHECK_CXX_COMPILER_FLAG( "-Wreorder" COMPILER_SUPPORTS_WREORDER )
 
     if( COMPILER_SUPPORTS_WREORDER )

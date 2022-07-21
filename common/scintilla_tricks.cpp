@@ -128,7 +128,7 @@ bool isCtrlSlash( wxKeyEvent& aEvent )
     // OK, now the wxWidgets hacks start.
     // (We should abandon these if https://trac.wxwidgets.org/ticket/18911 gets resolved.)
 
-    // Many Latin America and European keyboars have have the / over the 7.  We know that
+    // Many Latin America and European keyboards have have the / over the 7.  We know that
     // wxWidgets messes this up and returns Shift+7 through GetUnicodeKey().  However, other
     // keyboards (such as France and Belgium) have 7 in the shifted position, so a Shift+7
     // *could* be legitimate.

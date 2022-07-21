@@ -178,7 +178,7 @@ public:
      *
      * @param aTerm                 term to look for
      * @param aMatchersTriggered    out: number of matcher that found the term
-     * @param aPostion              out: where the term was found, or EDA_PATTERN_NOT_FOUND
+     * @param aPosition             out: where the term was found, or EDA_PATTERN_NOT_FOUND
      *
      * @return true if any matchers found the term
      */

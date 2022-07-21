@@ -581,7 +581,7 @@ public:
     std::vector<KIID_PATH> GetPaths() const;
 
     /**
-     * Fetch the instance information for all of the sheets in the hiearchy.
+     * Fetch the instance information for all of the sheets in the hierarchy.
      *
      * @return all of the sheet instance data for the hierarchy.
      */

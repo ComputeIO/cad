@@ -156,7 +156,7 @@ class PadArray(object):
 
     def AddPad(self, pad):
         """!
-        Add a pad to the array, under the same moodule as the main
+        Add a pad to the array, under the same module as the main
         prototype pad
         @param pad: pad to add
         """

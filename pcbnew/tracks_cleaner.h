@@ -45,7 +45,7 @@ public:
      * @param aCleanVias = true to remove superimposed vias
      * @param aRemoveMisConnected = true to remove segments connecting 2 different nets
      *                              (short circuits)
-     * @param aMergeSegments = true to merge collinear segmenst and remove 0 len segm
+     * @param aMergeSegments = true to merge collinear segments and remove 0 len segm
      * @param aDeleteUnconnected = true to remove dangling tracks
      * @param aDeleteTracksinPad = true to remove tracks fully inside pads
      * @param aDeleteDanglingVias = true to remove a via that is only connected to a single layer

@@ -133,7 +133,7 @@ private:
      * @param aFilePath path to the archive
      * @param aPackageId id of the package
      * @param isMultiThreaded MUST be set to true if the caller is not running in the main thread
-     * @return true if archive was extracted successfuly
+     * @return true if archive was extracted successfully
      */
     bool extract( const wxString& aFilePath, const wxString& aPackageId, bool isMultiThreaded );
 

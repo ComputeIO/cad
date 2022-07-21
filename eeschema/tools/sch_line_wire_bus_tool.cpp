@@ -798,7 +798,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                     int placedSegments = 1;
 
                     // When placing lines with the forty-five degree end, the user is
-                    // targetting the endpoint with the angled portion, so it's more
+                    // targeting the endpoint with the angled portion, so it's more
                     // intuitive to place both segments at the same time.
                     if( currentMode == LINE_MODE::LINE_MODE_45 )
                         placedSegments++;

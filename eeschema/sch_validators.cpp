@@ -202,7 +202,7 @@ bool SCH_FIELD_VALIDATOR::Validate( wxWindow* aParent )
 }
 
 
-// Match opening curly brace, preceeded by start-of-line or by a character not including $_^~
+// Match opening curly brace, preceded by start-of-line or by a character not including $_^~
 wxRegEx SCH_NETNAME_VALIDATOR::m_busGroupRegex( R"((^|[^$_\^~]){)", wxRE_ADVANCED );
 
 

@@ -60,7 +60,7 @@ class PANEL_SETUP_BOARD_STACKUP_BASE : public wxPanel
 		wxButton* m_buttonAdjust;
 		wxButton* m_buttonExport;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void onCopperLayersSelCount( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onAddDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemoveDielectricLayer( wxCommandEvent& event ) { event.Skip(); }

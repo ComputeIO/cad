@@ -69,7 +69,7 @@ class APPEARANCE_CONTROLS_BASE : public WX_PANEL
 		wxStaticText* m_viewportsLabel;
 		wxChoice* m_cbViewports;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnSetFocus( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnSize( wxSizeEvent& event ) { event.Skip(); }
 		virtual void OnNotebookPageChanged( wxNotebookEvent& event ) { event.Skip(); }

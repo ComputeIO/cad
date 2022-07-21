@@ -208,7 +208,7 @@ void SHAPE_LINE_CHAIN::amendArc( size_t aArcIndex, const VECTOR2I& aNewStart,
 
     SHAPE_ARC& theArc = m_arcs[aArcIndex];
 
-    // Try to preseve the centre of the original arc
+    // Try to preserve the centre of the original arc
     SHAPE_ARC newArc;
     newArc.ConstructFromStartEndCenter( aNewStart, aNewEnd, theArc.GetCenter(),
                                         theArc.IsClockwise() );

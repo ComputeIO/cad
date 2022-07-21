@@ -434,7 +434,7 @@ public:
     }
 
     /**
-     * Set the status of negatives presense in a particular layer.
+     * Set the status of negatives presence in a particular layer.
      *
      * @param aLayer is the layer to set as containing negatives (or not).
      * @param aNegatives is the layer negatives state.
@@ -661,14 +661,14 @@ public:
     /**
      * Update all items in the view according to the given flags.
      *
-     * @param aUpdateFlags is is according to KIGFX::VIEW_UPDATE_FLAGS
+     * @param aUpdateFlags is according to KIGFX::VIEW_UPDATE_FLAGS
      */
     void UpdateAllItems( int aUpdateFlags );
 
     /**
      * Update items in the view according to the given flags and condition.
      *
-     * @param aUpdateFlags is is according to KIGFX::VIEW_UPDATE_FLAGS.
+     * @param aUpdateFlags is according to KIGFX::VIEW_UPDATE_FLAGS.
      * @param aCondition is a function returning true if the item should be updated.
      */
     void UpdateAllItemsConditionally( int aUpdateFlags,

@@ -1086,7 +1086,7 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
             m_out->Print( 0, " (shape %s)", getSheetPinShapeToken( label->GetShape() ) );
         }
 
-        // The angle of the text is always 0 or 90 degrees for readibility reasons,
+        // The angle of the text is always 0 or 90 degrees for readability reasons,
         // but the item itself can have more rotation (-90 and 180 deg)
         switch( aText->GetTextSpinStyle() )
         {

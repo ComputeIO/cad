@@ -407,7 +407,7 @@ class comp():
 
     '''
     return the footprint name. if empty and aLibraryToo = True, return the
-    footprint name from libary
+    footprint name from library
     '''
     def getFootprint(self, aLibraryToo = True):
         ret = self.element.get("footprint")
@@ -419,7 +419,7 @@ class comp():
 
     '''
     return the datasheet name. if empty and aLibraryToo = True, return the
-    datasheet name from libary
+    datasheet name from library
     '''
     def getDatasheet(self, aLibraryToo = True):
         ret = self.element.get("datasheet")

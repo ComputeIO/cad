@@ -76,7 +76,7 @@ int CircleToEndSegmentDeltaRadius( int aRadius, int aSegCount )
     double alpha = M_PI / aSegCount;
 
     // aRadius is the radius of the circle tangent to the middle of each segment
-    // and aRadius/cos(aplha) is the radius of the circle defined by seg ends
+    // and aRadius/cos(alpha) is the radius of the circle defined by seg ends
     int delta = KiROUND( aRadius * ( 1/cos(alpha) - 1 ) );
 
     return delta;

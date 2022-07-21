@@ -55,7 +55,7 @@ enum ERROR_LOC { ERROR_OUTSIDE, ERROR_INSIDE };
 int GetArcToSegmentCount( int aRadius, int aErrorMax, const EDA_ANGLE& aArcAngle );
 
 /**
- * @return the radius diffence of the circle defined by segments inside the circle
+ * @return the radius difference of the circle defined by segments inside the circle
  * and the radius of the circle tangent to the middle of segments (defined by
  * segments outside this circle)
  * @param aInnerCircleRadius is the radius of the circle tangent to the middle

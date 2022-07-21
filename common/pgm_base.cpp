@@ -464,7 +464,7 @@ bool PGM_BASE::InitPgm( bool aHeadless, bool aSkipPyInit )
     ReadPdfBrowserInfos();      // needs GetCommonSettings()
 
     // Create the python scripting stuff
-    // Skip it fot applications that do not use it
+    // Skip it for applications that do not use it
     if( !aSkipPyInit )
         m_python_scripting = std::make_unique<SCRIPTING>();
 
