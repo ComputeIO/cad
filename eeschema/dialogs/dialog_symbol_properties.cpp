@@ -720,7 +720,7 @@ bool DIALOG_SYMBOL_PROPERTIES::TransferDataFromWindow()
         }
     }
 
-    // Keep fields other than the reference, include/exclude flags, and alternate pin assignments
+    // Keep fields other than the reference, include/exclude flags, and alternate pin assignements
     // in sync in multi-unit parts.
     if( m_symbol->GetUnitCount() > 1 && m_symbol->IsAnnotated( &GetParent()->GetCurrentSheet() ) )
     {

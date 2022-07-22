@@ -41,7 +41,7 @@ class PANEL_SYM_COLOR_SETTINGS_BASE : public wxPanel
 		wxRadioButton* m_themeRB;
 		wxChoice* m_themes;
 
-		// Virtual event handlers, override them in your derived class
+		// Virtual event handlers, overide them in your derived class
 		virtual void OnThemeChanged( wxCommandEvent& event ) { event.Skip(); }
 
 

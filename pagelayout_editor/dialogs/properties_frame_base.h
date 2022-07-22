@@ -148,7 +148,7 @@ class PANEL_PROPERTIES_BASE : public wxPanel
 		wxStaticText* m_bottomMarginUnits;
 		wxButton* m_buttonGeneralOptsOK;
 
-		// Virtual event handlers, override them in your derived class
+		// Virtual event handlers, overide them in your derived class
 		virtual void OnPageChanged( wxNotebookEvent& event ) { event.Skip(); }
 		virtual void onHelp( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAcceptPrms( wxCommandEvent& event ) { event.Skip(); }

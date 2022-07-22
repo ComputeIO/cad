@@ -51,7 +51,7 @@ class PANEL_GERBVIEW_EXCELLON_SETTINGS_BASE : public RESETTABLE_PANEL
 		wxStaticText* m_staticText9;
 		wxChoice* m_choiceMantissaInch;
 
-		// Virtual event handlers, override them in your derived class
+		// Virtual event handlers, overide them in your derived class
 		virtual void onUnitsChange( wxCommandEvent& event ) { event.Skip(); }
 
 

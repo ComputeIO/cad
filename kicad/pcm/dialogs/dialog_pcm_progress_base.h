@@ -48,7 +48,7 @@ class DIALOG_PCM_PROGRESS_BASE : public wxDialog
 		wxButton* m_buttonCancel;
 		wxButton* m_buttonClose;
 
-		// Virtual event handlers, override them in your derived class
+		// Virtual event handlers, overide them in your derived class
 		virtual void OnCancelClicked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCloseClicked( wxCommandEvent& event ) { event.Skip(); }
 
