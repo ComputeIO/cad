@@ -21,7 +21,7 @@
 #pragma once
 
 // Default format for coordinates: they are the default values, not the actual values
-// defaut format is 3:3 in mm and 2:4 in inch
+// default format is 3:3 in mm and 2:4 in inch
 //
 // number of digits in mantissa:
 #define FMT_MANTISSA_MM     3

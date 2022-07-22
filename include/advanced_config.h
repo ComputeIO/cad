@@ -140,7 +140,7 @@ public:
 
     /**
      * Save files in compact display mode
-     * When is is not specified, points are written one per line
+     * When it's not specified, points are written one per line
      */
     bool m_CompactSave;
 
@@ -223,7 +223,7 @@ public:
     /**
      * 3D-Viewer, Raytracing
      * Bevel height of layer items. Controls the start of curvature normal on the edge.
-     * Value is in micrometre. Good values should be arround or less than the copper thickness.
+     * Value is in micrometre. Good values should be around or less than the copper thickness.
      */
     int m_3DRT_BevelHeight_um;
 

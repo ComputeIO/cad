@@ -45,7 +45,7 @@
 #define GRID_CELL_MARGIN 4
 
 // Notes: These strings are static, so wxGetTranslation must be called to display the
-// transalted text
+// translated text
 static std::vector<std::pair<PCM_PACKAGE_TYPE, wxString>> PACKAGE_TYPE_LIST = {
     { PT_PLUGIN, _( "Plugins (%d)" ) },
     { PT_LIBRARY, _( "Libraries (%d)" ) },

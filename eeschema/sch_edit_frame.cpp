@@ -311,7 +311,7 @@ void SCH_EDIT_FRAME::OnResizeHierarchyNavigator( wxSizeEvent& aEvent )
     // Store the current pane size
     // It allows to retrieve the last defined pane size when switching between
     // docked and floating pane state
-    // Note: *DO NOT* call m_auimgr.Update() here: it crashes Kicad at leat on Windows
+    // Note: *DO NOT* call m_auimgr.Update() here: it crashes Kicad at least on Windows
 
     EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
     wxAuiPaneInfo&     hierarchy_pane = m_auimgr.GetPane( SchematicHierarchyPaneName() );

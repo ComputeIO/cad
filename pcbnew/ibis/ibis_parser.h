@@ -59,7 +59,7 @@ public:
      * All KIBIS messages are concentrated at a single point in the code. 
      * 
      * @param aMsg Message
-     * @param aSeverity Message sevirity
+     * @param aSeverity Message severity
      */
     void Report( std::string aMsg, SEVERITY aSeverity ) { std::cout << aMsg << std::endl; };
 };
@@ -75,7 +75,7 @@ public:
      * Call m_reporter->Report if m_reporter exists.
      * 
      * @param aMsg Message
-     * @param aSeverity Message sevirity
+     * @param aSeverity Message severity
      */
     void           Report( std::string aMsg, SEVERITY aSeverity = RPT_SEVERITY_INFO )
     {
@@ -357,7 +357,7 @@ public:
      * @param aPort2 Spice node
      * @param aPort2 Name of the generated model
      * @param aCorner Power supply corner
-     * @return Multline spice directives
+     * @return Multiline spice directives
      */
     std::string Spice( int aN, std::string aPort1, std::string aPort2, std::string aModelName,
                     IBIS_CORNER aCorner );

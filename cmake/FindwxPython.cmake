@@ -100,7 +100,7 @@ else()
 endif()
 
 
-# Fix an incosistency between the toolkit names reported by wx.version() and wx-config for cocoa
+# Fix an inconsistency between the toolkit names reported by wx.version() and wx-config for cocoa
 if( WXPYTHON_TOOLKIT STREQUAL "osx-cocoa" )
     set( WXPYTHON_TOOLKIT "osx_cocoa" )
 endif()

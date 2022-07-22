@@ -240,7 +240,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
         /*
          * For a fillet, we need to know the arc end point
          * A straight segment will be needed between aP0 and arcEnd in case distance aP0,mp0 is bigger
-         * than the distance mp0,aP1, if the distance is shorter the straigth segment is  between
+         * than the distance mp0,aP1, if the distance is shorter the straight segment is between
          * arcEnd and aP1. If both distances are equal, we don't need a straight segment.
          *
          * aP0 ----- arcEnd ---__
@@ -253,7 +253,7 @@ const SHAPE_LINE_CHAIN DIRECTION_45::BuildInitialTrace( const VECTOR2I& aP0, con
          */
         SHAPE_ARC arc;
 
-        if( w == h ) // we only need one arc without a straigth line.
+        if( w == h ) // we only need one arc without a straight line.
         {
             arc.ConstructFromStartEndCenter( aP0, aP1, aP1 - mp0, sh == sw != startDiagonal );
             pl.Append( arc );

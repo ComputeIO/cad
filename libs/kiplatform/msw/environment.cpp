@@ -279,7 +279,7 @@ bool KIPLATFORM::ENV::VerifyFileSignature( const wxString& aPath )
 
     trustData.cbStruct = sizeof( trustData );
     trustData.dwUIChoice = WTD_UI_NONE;
-    // revocation checking incurs latency penalities due to need for online queries
+    // revocation checking incurs latency penalties due to need for online queries
     trustData.fdwRevocationChecks = WTD_REVOKE_NONE;
     trustData.dwUnionChoice = WTD_CHOICE_FILE;
     trustData.dwStateAction = WTD_STATEACTION_VERIFY;

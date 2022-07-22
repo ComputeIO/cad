@@ -107,7 +107,7 @@ struct TEMPLATE_FIELDNAME
      *
      * @param aFieldNdx The field number index, > 0.
      * @param aTranslateForHI If true, return the translated field name,
-     * else get the canonical name (defualt). Translation is intended only for dialogs
+     * else get the canonical name (default). Translation is intended only for dialogs
      */
     static const wxString GetDefaultFieldName( int aFieldNdx, bool aTranslateForHI = false );
 

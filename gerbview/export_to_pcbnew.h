@@ -153,7 +153,7 @@ private:
     void export_segarc_copper_item( const GERBER_DRAW_ITEM* aGbrItem, int aLayer );
 
     /**
-     * Basic write function to write a a #PCB_TRACK to the board file from a non flashed item.
+     * Basic write function to write a #PCB_TRACK to the board file from a non flashed item.
      */
     void writeCopperLineItem( const VECTOR2I& aStart, const VECTOR2I& aEnd, int aWidth,
                               int aLayer );

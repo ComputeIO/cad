@@ -302,7 +302,7 @@ private:
      * @brief Recursively called function to travel through the connected wires and find a connected
      * net name label
      * @param line - the wire segment to start the recursive lookup
-     * @param checkedLines - a lsit containing the already checked wire segments, to prevent the
+     * @param checkedLines - a list containing the already checked wire segments, to prevent the
      * infinite recursion in the case if someone draws a rectangle for e.g.
      * @param aSheet - the sheet where the lookup is performed
      * @return With the net name if a connected label found, otherwise with an empty string

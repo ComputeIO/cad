@@ -8,7 +8,7 @@ principles for KiCad.
 
 == How to submit translations
 There are two ways to submit translations to KiCad.  We maintain an
-online translation service, curtesy of https://hosted.weblate.org/projects/kicad[Weblate]
+online translation service, courtesy of https://hosted.weblate.org/projects/kicad[Weblate]
 that you can use to suggest translations or changes.  You can also
 run a local translation program of your choice and submit a pull request
 with the modified file.

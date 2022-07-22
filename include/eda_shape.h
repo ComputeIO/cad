@@ -218,7 +218,7 @@ public:
      * @param aStart Cached start point
      * @param aMid Cached mid point
      * @param aEnd Cached end point
-     * @param aCenter Calculated center point using the preceeding three
+     * @param aCenter Calculated center point using the preceding three
      */
     void SetCachedArcData( const VECTOR2I& aStart, const VECTOR2I& aMid, const VECTOR2I& aEnd, const VECTOR2I& aCenter );
 
@@ -291,7 +291,7 @@ public:
      * @param aCornerBuffer is a buffer to store the polygon.
      * @param aClearanceValue is the clearance around the pad.
      * @param aError is the maximum deviation from a true arc.
-     * @param aErrorLoc whether any approximation error shoule be placed inside or outside
+     * @param aErrorLoc whether any approximation error should be placed inside or outside
      * @param ignoreLineWidth is used for edge cut items where the line width is only
      *        for visualization
      */

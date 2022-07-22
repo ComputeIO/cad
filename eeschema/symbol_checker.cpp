@@ -39,7 +39,7 @@ static bool sort_by_pin_number( const LIB_PIN* ref, const LIB_PIN* tst );
  * @param aSymbol is the library symbol to check
  * @param aMessages is a room to store error messages
  * @param aGridForPins (in IU) is the grid to test pin positions ( >= 25 mils )
- * should be 25, 50 or 100 mils (convered to IUs)
+ * should be 25, 50 or 100 mils (converted to IUs)
  * @param aDisplayUnits is the unit to display coordinates in messages
  */
 void CheckLibSymbol( LIB_SYMBOL* aSymbol, std::vector<wxString>& aMessages,

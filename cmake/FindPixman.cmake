@@ -58,7 +58,7 @@ IF(NOT PKGCONFIG_FOUND AND WIN32 AND NOT CYGWIN)
   # MINGW should go here too
   IF(MSVC)
     # Implementation details:
-    # We are using the libraries located in the VC subdir instead of the parent directory eventhough :
+    # We are using the libraries located in the VC subdir instead of the parent directory even though:
     FIND_LIBRARY(PIXMAN
       NAMES
         pixman-1

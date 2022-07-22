@@ -244,7 +244,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadDocs()
             case '\n':
             case '\r':
             case '#':
-                // Empty line or commment
+                // Empty line or comment
                 break;
 
             default:
@@ -909,7 +909,7 @@ LIB_TEXT* SCH_LEGACY_PLUGIN_CACHE::loadText( std::unique_ptr<LIB_SYMBOL>& aSymbo
     // Here things are murky and not well defined.  At some point it appears the format
     // was changed to add text properties.  However rather than add the token to the end of
     // the text definition, it was added after the string and no mention if the file
-    // verion was bumped or not so this code make break on very old symbol libraries.
+    // version was bumped or not so this code make break on very old symbol libraries.
     //
     // Update: apparently even in the latest version this can be different so added a test
     //         for end of line before checking for the text properties.
@@ -925,7 +925,7 @@ LIB_TEXT* SCH_LEGACY_PLUGIN_CACHE::loadText( std::unique_ptr<LIB_SYMBOL>& aSymbo
         if( parseInt( aReader, line, &line ) > 0 )
             text->SetBold( true );
 
-        // Some old libaries version > 2.0 do not have these options for text justification:
+        // Some old libraries version > 2.0 do not have these options for text justification:
         if( !is_eol( *line ) )
         {
             switch( parseChar( aReader, line, &line ) )
@@ -933,7 +933,7 @@ LIB_TEXT* SCH_LEGACY_PLUGIN_CACHE::loadText( std::unique_ptr<LIB_SYMBOL>& aSymbo
             case 'L': text->SetHorizJustify( GR_TEXT_H_ALIGN_LEFT );   break;
             case 'C': text->SetHorizJustify( GR_TEXT_H_ALIGN_CENTER ); break;
             case 'R': text->SetHorizJustify( GR_TEXT_H_ALIGN_RIGHT );  break;
-            default: SCH_PARSE_ERROR( "invalid horizontal text justication; expected L, C, or R",
+            default: SCH_PARSE_ERROR( "invalid horizontal text justification; expected L, C, or R",
                                       aReader, line );
             }
 
@@ -942,7 +942,7 @@ LIB_TEXT* SCH_LEGACY_PLUGIN_CACHE::loadText( std::unique_ptr<LIB_SYMBOL>& aSymbo
             case 'T': text->SetVertJustify( GR_TEXT_V_ALIGN_TOP );    break;
             case 'C': text->SetVertJustify( GR_TEXT_V_ALIGN_CENTER ); break;
             case 'B': text->SetVertJustify( GR_TEXT_V_ALIGN_BOTTOM ); break;
-            default: SCH_PARSE_ERROR( "invalid vertical text justication; expected T, C, or B",
+            default: SCH_PARSE_ERROR( "invalid vertical text justification; expected T, C, or B",
                                       aReader, line );
             }
         }

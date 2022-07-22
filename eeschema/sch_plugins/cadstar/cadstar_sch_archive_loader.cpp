@@ -1838,7 +1838,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymbolFieldAttribute( const ATTRIBUTE_LOCAT
 
     if( aIsMirrored )
     {
-        // We need to change the aligment when the symbol is mirrored based on the text orientation
+        // We need to change the alignment when the symbol is mirrored based on the text orientation
         // To ensure the anchor point is the same in KiCad.
 
         int textIsVertical = KiROUND( textAngle.AsDegrees() / 90.0 ) % 2;

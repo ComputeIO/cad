@@ -2256,7 +2256,7 @@ void SCH_ALTIUM_PLUGIN::ParseDesignator( const std::map<wxString, wxString>& aPr
     m_rootSheet->LocatePathOfScreen( m_currentSheet->GetScreen(), &sheetpath );
 
     // Graphics symbols have no reference. '#GRAPHIC' allows them to not have footprint associated.
-    // Note: not all unnamed imported symbols are necessarilly graphics.
+    // Note: not all unnamed imported symbols are necessarily graphics.
     bool emptyRef = elem.text.IsEmpty();
     symbol->SetRef( &sheetpath, emptyRef ? "#GRAPHIC" : elem.text );
 

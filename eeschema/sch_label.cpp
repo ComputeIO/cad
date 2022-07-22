@@ -158,7 +158,7 @@ SCH_LABEL_BASE::SCH_LABEL_BASE( const VECTOR2I& aPos, const wxString& aText, KIC
         m_isDangling( true )
 {
     SetMultilineAllowed( false );
-    ClearFieldsAutoplaced();    // fiels are not yet autoplaced.
+    ClearFieldsAutoplaced();    // fields are not yet autoplaced.
 }
 
 
