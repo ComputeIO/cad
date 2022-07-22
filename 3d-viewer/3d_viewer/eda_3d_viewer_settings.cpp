@@ -241,7 +241,7 @@ bool EDA_3D_VIEWER_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<int>( aCfg,  "ShowGrid3D",                "render.grid_type" );
     ret &= fromLegacy<int>( aCfg,  "Render_Material",           "render.material_mode" );
     ret &= fromLegacy<bool>( aCfg, "Render_OGL_ShowCopperThickness", "render.opengl_copper_thickness" );
-    ret &= fromLegacy<bool>( aCfg, "Render_OGL_ShowModelBoundingBoxes", "render.opengl_show_model_bbox" );
+    ret &= fromLegacy<bool>( aCfg, "Render_OGL_ShowModelBoudingBoxes", "render.opengl_show_model_bbox" );
     ret &= fromLegacy<bool>( aCfg, "Render_RAY_AntiAliasing",   "render.raytrace_anti_aliasing" );
     ret &= fromLegacy<bool>( aCfg, "Render_RAY_Backfloor",      "render.raytrace_backfloor" );
     ret &= fromLegacy<bool>( aCfg, "Render_RAY_PostProcess",    "render.raytrace_post_processing" );
