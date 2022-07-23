@@ -1219,10 +1219,7 @@ bool EE_SELECTION_TOOL::selectMultiple()
     bool cancelled = false;     // Was the tool canceled while it was running?
     m_multiple = true;          // Multiple selection mode is active
     KIGFX::VIEW*    view = getView();
-    SCH_EDIT_FRAME* editFrame = dynamic_cast<SCH_EDIT_FRAME*>( m_frame );
-
-    if( !editFrame )
-        return cancelled;
+    SCH_EDIT_FRAME* schEditFrame = dynamic_cast<SCH_EDIT_FRAME*>( m_frame );
 
     KIGFX::PREVIEW::SELECTION_AREA area;
     view->Add( &area );
@@ -1298,22 +1295,26 @@ bool EE_SELECTION_TOOL::selectMultiple()
 
                 if( SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( item ) )
                 {
-                    int unit = symbol->GetUnitSelection( &editFrame->Schematic().CurrentSheet() );
+                    if( schEditFrame )
+                    {
+                        int unit = symbol->GetUnitSelection(
+                                &schEditFrame->Schematic().CurrentSheet() );
 
-                    symbol->RunOnChildren(
-                            [&]( SCH_ITEM* aChild )
-                            {
-                                // Filter pins by unit
-                                SCH_PIN* pin = dyn_cast<SCH_PIN*>( aChild );
-
-                                if( pin && unit && pin->GetLibPin()->GetUnit()
-                                    && ( pin->GetLibPin()->GetUnit() != unit ) )
+                        symbol->RunOnChildren(
+                                [&]( SCH_ITEM* aChild )
                                 {
-                                    return;
-                                }
+                                    // Filter pins by unit
+                                    SCH_PIN* pin = dyn_cast<SCH_PIN*>( aChild );
 
-                                nearbyChildren.push_back( aChild );
-                            } );
+                                    if( pin && unit && pin->GetLibPin()->GetUnit()
+                                        && ( pin->GetLibPin()->GetUnit() != unit ) )
+                                    {
+                                        return;
+                                    }
+
+                                    nearbyChildren.push_back( aChild );
+                                } );
+                    }
                 }
                 else if( SCH_ITEM* sch_item = dynamic_cast<SCH_ITEM*>( item ) )
                 {
