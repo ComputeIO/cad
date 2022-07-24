@@ -105,16 +105,9 @@ public:
      */
     void AcceptDragInAsClick( bool aAcceptDragIn = true );
 
-    void SetShowBadge( bool aShowBadge )
-    {
-        m_showBadge = aShowBadge;
-    }
+    void SetShowBadge( bool aShowBadge ) { m_showBadge = aShowBadge; }
 
-    void SetBadgeText( const wxString& aText )
-    {
-        m_badgeText = aText;
-        Refresh();
-    }
+    void SetBadgeText( const wxString& aText ) { m_badgeText = aText; }
 
     void SetBadgeColors( const wxColor& aBadgeColor, const wxColor& aBadgeTextColor )
     {

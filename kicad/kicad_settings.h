@@ -40,6 +40,7 @@ public:
 
     std::vector<std::pair<wxString, wxString>> m_PcmRepositories;
     wxString                                   m_PcmLastDownloadDir;
+    bool                                       m_PcmCheckForUpdates;
 
 protected:
     virtual std::string getLegacyFrameName() const override { return "KicadFrame"; }

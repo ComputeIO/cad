@@ -46,7 +46,7 @@ BITMAP_BUTTON::BITMAP_BUTTON( wxWindow* aParent, wxWindowID aId, const wxPoint& 
     if( aSize == wxDefaultSize )
         SetMinSize( wxButton::GetDefaultSize() + wxSize( m_padding * 2, m_padding * 2) );
 
-    m_badgeFont = GetFont().Smaller();
+    m_badgeFont = GetFont().Smaller().MakeBold();
 
     setupEvents();
 }

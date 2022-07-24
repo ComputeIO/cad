@@ -44,6 +44,8 @@ PANEL_KICAD_LAUNCHER::PANEL_KICAD_LAUNCHER( wxWindow* aParent ) :
 
 void PANEL_KICAD_LAUNCHER::CreateLaunchers()
 {
+    m_frame->SetPcmButton( nullptr );
+
     if( m_toolsSizer->GetRows() > 0 )
     {
         m_toolsSizer->Clear( true );
@@ -156,13 +158,14 @@ void PANEL_KICAD_LAUNCHER::CreateLaunchers()
                  _( "Edit drawing sheet borders and title blocks for use in schematics and PCB "
                     "designs" ) );
 
-    BITMAP_BUTTON* bb = addLauncher( KICAD_MANAGER_ACTIONS::showPluginManager,
-                    KiScaledBitmap( BITMAPS::icon_pcm, this, 48, true ),
-                    _( "Manage downloadable packages from KiCad and 3rd party repositories" ),
-                    ( KIPLATFORM::POLICY::GetPolicyState( POLICY_KEY_PCM ) != KIPLATFORM::POLICY::STATE::DISABLED ) );
+    BITMAP_BUTTON* bb =
+            addLauncher( KICAD_MANAGER_ACTIONS::showPluginManager,
+                         KiScaledBitmap( BITMAPS::icon_pcm, this, 48, true ),
+                         _( "Manage downloadable packages from KiCad and 3rd party repositories" ),
+                         ( KIPLATFORM::POLICY::GetPolicyState( POLICY_KEY_PCM )
+                           != KIPLATFORM::POLICY::STATE::DISABLED ) );
 
-    bb->SetShowBadge( true );
-    bb->SetBadgeText( "123" );
+    m_frame->SetPcmButton( bb );
 
     Layout();
 }
