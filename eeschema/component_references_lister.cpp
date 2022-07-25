@@ -376,7 +376,12 @@ wxString buildFullReference( const SCH_REFERENCE& aItem, int aUnitNumber = -1 )
 }
 
 
-void SCH_REFERENCE_LIST::ReannotateDuplicates( const SCH_REFERENCE_LIST& aAdditionalReferences )
+void SCH_REFERENCE_LIST::ReannotateByOptions( ANNOTATE_ORDER_T             aSortOption,
+                                              ANNOTATE_ALGO_T              aAlgoOption,
+                                              int                          aStartNumber,
+                                              const SCH_REFERENCE_LIST&    aAdditionalRefs,
+                                              bool                         aStartAtCurrent,
+                                              SCH_SHEET_LIST*              aHierarchy )
 {
     SplitReferences();
 
@@ -388,6 +393,17 @@ void SCH_REFERENCE_LIST::ReannotateDuplicates( const SCH_REFERENCE_LIST& aAdditi
         SCH_REFERENCE& ref = flatList[i];
         wxString       refstr = ref.GetSymbol()->GetRef( &ref.GetSheetPath() );
 
+        // Update sheet numbers based on the reference's sheet's position within the full
+        // hierarchy; we do this now before we annotate so annotation by sheet number * X
+        // works correctly.
+        if( aHierarchy )
+        {
+            SCH_SHEET_PATH* path = aHierarchy->FindSheetForPath( &ref.GetSheetPath() );
+            wxASSERT_MSG( path, wxT( "Attempting to annotate item on sheet not part of the hierarchy?" ) );
+
+            ref.SetSheetNumber( path->GetVirtualPageNumber() );
+        }
+
         // Never lock unassigned references
         if( refstr[refstr.Len() - 1] == '?' )
             continue;
@@ -397,7 +413,56 @@ void SCH_REFERENCE_LIST::ReannotateDuplicates( const SCH_REFERENCE_LIST& aAdditi
         lockedSymbols[refstr].AddItem( ref );
     }
 
-    Annotate( false, 0, 0, lockedSymbols, aAdditionalReferences, true );
+    AnnotateByOptions( aSortOption, aAlgoOption, aStartNumber, lockedSymbols, aAdditionalRefs,
+                       aStartAtCurrent );
+}
+
+
+void SCH_REFERENCE_LIST::ReannotateDuplicates( const SCH_REFERENCE_LIST& aAdditionalReferences )
+{
+    ReannotateByOptions( UNSORTED, INCREMENTAL_BY_REF, 0, aAdditionalReferences, true, nullptr );
+}
+
+
+void SCH_REFERENCE_LIST::AnnotateByOptions( ANNOTATE_ORDER_T             aSortOption,
+                                            ANNOTATE_ALGO_T              aAlgoOption,
+                                            int                          aStartNumber,
+                                            SCH_MULTI_UNIT_REFERENCE_MAP aLockedUnitMap,
+                                            const SCH_REFERENCE_LIST&    aAdditionalRefs,
+                                            bool                         aStartAtCurrent )
+{
+    switch( aSortOption )
+    {
+    default:
+    case SORT_BY_X_POSITION: SortByXCoordinate(); break;
+    case SORT_BY_Y_POSITION: SortByYCoordinate(); break;
+    }
+
+    bool useSheetNum;
+    int  idStep;
+
+    switch( aAlgoOption )
+    {
+    default:
+    case INCREMENTAL_BY_REF:
+        useSheetNum = false;
+        idStep = 1;
+        break;
+
+    case SHEET_NUMBER_X_100:
+        useSheetNum = true;
+        idStep = 100;
+        aStartAtCurrent = false; // Not implemented for sheet # * 100
+        break;
+
+    case SHEET_NUMBER_X_1000:
+        useSheetNum = true;
+        idStep = 1000;
+        aStartAtCurrent = false; // Not implemented for sheet # * 1000
+        break;
+    }
+
+    Annotate( useSheetNum, idStep, aStartNumber, aLockedUnitMap, aAdditionalRefs, aStartAtCurrent );
 }
 
 
