@@ -462,6 +462,7 @@ void GERBVIEW_FRAME::ApplyDisplaySettingsToGAL()
 {
     auto painter = static_cast<KIGFX::GERBVIEW_PAINTER*>( GetCanvas()->GetView()->GetPainter() );
     KIGFX::GERBVIEW_RENDER_SETTINGS* settings = painter->GetSettings();
+    settings->SetHighContrast( gvconfig()->m_Display.m_HighContrastMode );
     settings->LoadColors( Pgm().GetSettingsManager().GetColorSettings() );
 
     GetCanvas()->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
@@ -524,6 +525,8 @@ void GERBVIEW_FRAME::SortLayersByX2Attributes()
 
 void GERBVIEW_FRAME::RemapLayers( std::unordered_map<int, int> remapping )
 {
+    std::unordered_map<int, COLOR4D> newColors;
+
     ReFillLayerWidget();
     syncLayerBox( true );
 
@@ -533,9 +536,17 @@ void GERBVIEW_FRAME::RemapLayers( std::unordered_map<int, int> remapping )
     {
         view_remapping[ GERBER_DRAW_LAYER( entry.first ) ] = GERBER_DRAW_LAYER( entry.second );
         view_remapping[ GERBER_DCODE_LAYER( entry.first ) ] = GERBER_DCODE_LAYER( entry.second );
+        newColors[entry.second] = GetLayerColor( GERBER_DRAW_LAYER( entry.first ) );
     }
 
     GetCanvas()->GetView()->ReorderLayerData( view_remapping );
+
+    for( const std::pair<const int, COLOR4D>& entry : newColors )
+    {
+        m_LayersManager->SetLayerColor( entry.first, entry.second );
+        SetLayerColor( GERBER_DRAW_LAYER( entry.first ), entry.second );
+    }
+
     GetCanvas()->Refresh();
 }
 
