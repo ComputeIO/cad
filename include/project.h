@@ -29,6 +29,7 @@
 #include <map>
 #include <vector>
 #include <kiid.h>
+#include <system_strings.h>
 #include <wx_filename.h>
 #include <wx/string.h>
 #include <core/typeinfo.h>
@@ -86,6 +87,8 @@ public:
     virtual bool TextVarResolver( wxString* aToken ) const;
 
     virtual std::map<wxString, wxString>& GetTextVars() const;
+
+    virtual SYSTEM_STRINGS* GetSystemStrings() { return &m_systString; }
 
     /**
      * Return the full path and name of the project.
@@ -323,6 +326,14 @@ private:
     }
 
     /**
+     * Set the system strings.
+     *
+     * This should only be called by #SETTINGS_MANAGER on load,
+     * after having set projec file.
+     */
+    virtual void setSystemStrings() { m_systString.SetTextVars( &GetTextVars() ); }
+
+    /**
      * Set the local settings backing store.
      *
      * This should only be called by #SETTINGS_MANAGER on load.
@@ -358,6 +369,8 @@ private:
 
     /// @see this::Elem() and enum ELEM_T.
     _ELEM*          m_elems[ELEM_COUNT];
+
+    SYSTEM_STRINGS m_systString;
 };
 
 

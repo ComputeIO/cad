@@ -1057,6 +1057,8 @@ bool SETTINGS_MANAGER::loadProjectFile( PROJECT& aProject )
     aProject.setProjectFile( file );
     file->SetProject( &aProject );
 
+    aProject.setSystemStrings();
+
     wxString path( fullFn.GetPath() );
 
     return file->LoadFromFile( path );
