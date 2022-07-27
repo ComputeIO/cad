@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016-2018 CERN
- * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  * @author Maciej Suminski <maciej.suminski@cern.ch>
@@ -307,9 +307,7 @@ bool NGSPICE::LoadNetlist( const string& aNetlist )
 
 bool NGSPICE::Run()
 {
-    wxBusyCursor dummy;
-
-    LOCALE_IO c_locale;                     // ngspice works correctly only with C locale
+    LOCALE_IO toggle;                       // ngspice works correctly only with C locale
     bool success = Command( "bg_run" );     // bg_* commands execute in a separate thread
 
     if( success )

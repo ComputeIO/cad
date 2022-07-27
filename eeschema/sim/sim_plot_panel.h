@@ -40,6 +40,39 @@ class SIM_PLOT_FRAME;
 class SIM_PLOT_PANEL;
 class TRACE;
 
+enum class SIM_QUANTITY
+{
+    VOLTAGE,
+    CURRENT,
+    GAIN,
+    PHASE,
+    NOISE,
+    FREQUENCY,
+    TIME,
+    TEMPERATURE,
+    RESISTANCE
+};
+
+
+class SIM_PLOT_AXIS_Y : public mpScaleY
+{
+public:
+    SIM_PLOT_AXIS_Y( SIM_QUANTITY aQ, const wxString& name = "", const wxString& aUnit = "",
+                     int flags = mpALIGN_CENTER, bool ticks = true );
+    SIM_QUANTITY m_quantity;
+
+    /** Get Y axis alignment.*/
+    int GetAlign() { return m_flags; };
+};
+
+class SIM_PLOT_AXIS_X : public mpScaleX
+{
+public:
+    SIM_PLOT_AXIS_X( SIM_QUANTITY aQ, const wxString& name = "", const wxString& aUnit = "",
+                     int flags = mpALIGN_CENTER, bool ticks = true );
+    SIM_QUANTITY m_quantity;
+};
+
 ///< Cursor attached to a trace to follow its values:
 class CURSOR : public mpInfoLayer
 {
@@ -94,8 +127,8 @@ private:
 class TRACE : public mpFXYVector
 {
 public:
-    TRACE( const wxString& aName, SIM_PLOT_TYPE aType, const wxString& aParam ) :
-            mpFXYVector( aName ), m_cursor( nullptr ), m_type( aType ), m_param( aParam )
+    TRACE( const wxString& aName, SIM_PLOT_TYPE aType, SIM_QUANTITY aQuantity ) :
+            mpFXYVector( aName ), m_cursor( nullptr ), m_type( aType ), m_quantity( aQuantity )
     {
         SetContinuity( true );
         SetDrawOutsideMargins( false );
@@ -161,6 +194,7 @@ public:
         return m_param;
     }
 
+    SIM_QUANTITY m_quantity;
 
 protected:
     CURSOR* m_cursor;
@@ -196,14 +230,12 @@ public:
         return m_axis_x ? m_axis_x->GetName() : "";
     }
 
-    wxString GetLabelY1() const
+     wxString GetLabelY( size_t index ) const
     {
-        return m_axis_y1 ? m_axis_y1->GetName() : "";
-    }
-
-    wxString GetLabelY2() const
-    {
-        return m_axis_y2 ? m_axis_y2->GetName() : "";
+        if ( index >= m_axis_y.size() )
+            return _( "" );
+        else
+            return m_axis_y.at( index )->GetName();
     }
 
     bool TraceShown( const wxString& aName ) const
@@ -226,18 +258,27 @@ public:
     void ShowGrid( bool aEnable )
     {
         m_axis_x->SetTicks( !aEnable );
-        m_axis_y1->SetTicks( !aEnable );
-        m_axis_y2->SetTicks( !aEnable );
+        
+        for (mpScaleY* axis: m_axis_y )
+        {
+            axis->SetTicks( !aEnable );
+        }
         m_plotWin->UpdateAll();
     }
 
     bool IsGridShown() const
     {
-        if( !m_axis_x || !m_axis_y1 )
+        if( !m_axis_x )
             return false;
 
-        assert( m_axis_x->GetTicks() == m_axis_y1->GetTicks() );
-        return !m_axis_x->GetTicks();
+        bool hidden = m_axis_x->GetTicks();
+
+        for (mpScaleY* axis: m_axis_y )
+        {
+            assert( hidden == axis->GetTicks() );
+        }
+
+        return !hidden;
     }
 
     void ShowLegend( bool aEnable )
@@ -289,9 +330,14 @@ public:
         return m_plotWin;
     }
 
+    void OnRightClick( wxMouseEvent& event ); // !< Mouse handler, will show context menu
+
+    void             addAxeY( SIM_QUANTITY aQuantity );
+    SIM_PLOT_AXIS_Y* GetAxeY( SIM_QUANTITY aQuantity );
+
 protected:
     bool addTrace( const wxString& aTitle, const wxString& aName, int aPoints, const double* aX,
-                   const double* aY, SIM_PLOT_TYPE aType, const wxString& aParam );
+                   const double* aY, SIM_PLOT_TYPE aType );
 
     bool deleteTrace( const wxString& aName );
 
@@ -313,9 +359,9 @@ private:
     // Traces to be plotted
     std::map<wxString, TRACE*> m_traces;
 
-    mpScaleXBase* m_axis_x;
-    mpScaleY* m_axis_y1;
-    mpScaleY* m_axis_y2;
+    SIM_PLOT_AXIS_X*              m_axis_x;
+    std::vector<SIM_PLOT_AXIS_Y*> m_axis_y;
+    SIM_PLOT_AXIS_Y*              m_master_axis;
     mpInfoLegend* m_legend;
 
     bool m_dotted_cp;

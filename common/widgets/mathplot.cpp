@@ -844,53 +844,86 @@ void mpScaleX::recalculateTicks( wxDC& dc, mpWindow& w )
     GetDataRange( minV, maxV );
     getVisibleDataRange( w, minVvis, maxVvis );
 
-    m_absVisibleMaxV = std::max( std::abs( minVvis ), std::abs( maxVvis ) );
-
     m_tickValues.clear();
     m_tickLabels.clear();
 
-    double  minErr = 1000000000000.0;
-    double  bestStep = 1.0;
-
-    for( int i = 10; i <= 20; i += 2 )
+    if( m_log )
     {
-        double  curr_step    = fabs( maxVvis - minVvis ) / (double) i;
-        double  base    = pow( 10, floor( log10( curr_step ) ) );
-        double  stepInt = floor( curr_step / base ) * base;
-        double  err = fabs( curr_step - stepInt );
+        double minDecade = pow( 10, floor( log10( minV ) ) );
+        double maxDecade = pow( 10, ceil( log10( maxV ) ) );
+        double visibleDecades = log( maxVvis / minVvis ) / log( 10 );
 
-        if( err < minErr )
+        double d;
+
+        m_tickValues.clear();
+        m_tickLabels.clear();
+
+        if( minDecade == 0.0 )
+            return;
+
+
+        for( d = minDecade; d <= maxDecade; d *= 10.0 )
         {
-            minErr = err;
-            bestStep = stepInt;
+            m_tickLabels.emplace_back( d );
+
+            for( double dd = d; dd < d * 10; dd += d )
+            {
+                if( visibleDecades < 2 )
+                    m_tickLabels.emplace_back( dd );
+
+                m_tickValues.push_back( dd );
+            }
+        }
+    }
+    else
+    {
+        m_absVisibleMaxV = std::max( std::abs( minVvis ), std::abs( maxVvis ) );
+
+
+        double minErr = 1000000000000.0;
+        double bestStep = 1.0;
+
+        for( int i = 10; i <= 20; i += 2 )
+        {
+            double curr_step = fabs( maxVvis - minVvis ) / (double) i;
+            double base = pow( 10, floor( log10( curr_step ) ) );
+            double stepInt = floor( curr_step / base ) * base;
+            double err = fabs( curr_step - stepInt );
+
+            if( err < minErr )
+            {
+                minErr = err;
+                bestStep = stepInt;
+            }
+        }
+
+
+        double v = floor( minVvis / bestStep ) * bestStep;
+
+        double zeroOffset = 100000000.0;
+
+        while( v < maxVvis )
+        {
+            m_tickValues.push_back( v );
+
+            if( fabs( v ) < zeroOffset )
+                zeroOffset = fabs( v );
+
+            v += bestStep;
+        }
+
+        if( zeroOffset <= bestStep )
+        {
+            for( double& t : m_tickValues )
+                t -= zeroOffset;
+        }
+
+        for( double t : m_tickValues )
+        {
+            m_tickLabels.emplace_back( t );
         }
     }
 
-
-    double v = floor( minVvis / bestStep ) * bestStep;
-
-    double zeroOffset = 100000000.0;
-
-    while( v < maxVvis )
-    {
-        m_tickValues.push_back( v );
-
-        if( fabs( v ) < zeroOffset )
-            zeroOffset = fabs( v );
-
-        v += bestStep;
-    }
-
-    if( zeroOffset <= bestStep )
-    {
-        for( double& t : m_tickValues )
-            t -= zeroOffset;
-    }
-
-    for( double t : m_tickValues )
-    {
-        m_tickLabels.emplace_back( t );
-    }
 
     updateTickLabels( dc, w );
 }
@@ -1130,48 +1163,8 @@ void mpScaleXBase::getVisibleDataRange( mpWindow& w, double& minV, double& maxV 
     maxV    = TransformFromPlot( pxmax );
 }
 
-
-void mpScaleXLog::recalculateTicks( wxDC& dc, mpWindow& w )
-{
-    double minV, maxV, minVvis, maxVvis;
-
-    GetDataRange( minV, maxV );
-    getVisibleDataRange( w, minVvis, maxVvis );
-
-    // double decades = log( maxV / minV ) / log(10);
-    double  minDecade   = pow( 10, floor( log10( minV ) ) );
-    double  maxDecade   = pow( 10, ceil( log10( maxV ) ) );
-    double visibleDecades = log( maxVvis / minVvis ) / log( 10 );
-
-    double d;
-
-    m_tickValues.clear();
-    m_tickLabels.clear();
-
-    if( minDecade == 0.0 )
-        return;
-
-
-    for( d = minDecade; d<=maxDecade; d *= 10.0 )
-    {
-        m_tickLabels.emplace_back( d );
-
-        for( double dd = d; dd < d * 10; dd += d )
-        {
-            if( visibleDecades < 2 )
-                m_tickLabels.emplace_back( dd );
-
-            m_tickValues.push_back( dd );
-        }
-    }
-
-    updateTickLabels( dc, w );
-}
-
-
 IMPLEMENT_ABSTRACT_CLASS( mpScaleXBase, mpLayer )
 IMPLEMENT_DYNAMIC_CLASS( mpScaleX, mpScaleXBase )
-IMPLEMENT_DYNAMIC_CLASS( mpScaleXLog, mpScaleXBase )
 
 mpScaleXBase::mpScaleXBase( const wxString& name, int flags, bool ticks, unsigned int type )
 {
@@ -1186,12 +1179,6 @@ mpScaleXBase::mpScaleXBase( const wxString& name, int flags, bool ticks, unsigne
 
 
 mpScaleX::mpScaleX( const wxString& name, int flags, bool ticks, unsigned int type ) :
-    mpScaleXBase( name, flags, ticks, type )
-{
-}
-
-
-mpScaleXLog::mpScaleXLog( const wxString& name, int flags, bool ticks, unsigned int type ) :
     mpScaleXBase( name, flags, ticks, type )
 {
 }
@@ -1584,7 +1571,7 @@ EVT_SCROLLWIN_TOP( mpWindow::OnScrollTop )
 EVT_SCROLLWIN_BOTTOM( mpWindow::OnScrollBottom )
 
 EVT_MIDDLE_DOWN( mpWindow::OnMouseMiddleDown )  // JLB
-EVT_RIGHT_UP( mpWindow::OnShowPopupMenu )
+//EVT_RIGHT_UP( mpWindow::OnShowPopupMenu )
 EVT_MOUSEWHEEL( mpWindow::OnMouseWheel )        // JLB
 #if wxCHECK_VERSION( 3, 1, 0 ) || defined( USE_OSX_MAGNIFY_EVENT )
 EVT_MAGNIFY( mpWindow::OnMagnify )
@@ -2792,45 +2779,35 @@ mpFXYVector::mpFXYVector( const wxString& name, int flags ) : mpFXY( name, flags
 }
 
 
-double mpScaleX::TransformToPlot( double x ) const
+double mpScaleBase::TransformToPlot( double x ) const
 {
-    return (x + m_offset) * m_scale;
+    if( m_log )
+    {
+        double xlogmin = log10( m_minV );
+        double xlogmax = log10( m_maxV );
+
+        return ( log10( x ) - xlogmin ) / ( xlogmax - xlogmin );
+    }
+    else
+    {
+        return ( x + m_offset ) * m_scale;
+    }
 }
 
 
-double mpScaleX::TransformFromPlot( double xplot ) const
+double mpScaleBase::TransformFromPlot( double xplot ) const
 {
-    return xplot / m_scale - m_offset;
-}
+    if( m_log )
+    {
+        double xlogmin = log10( m_minV );
+        double xlogmax = log10( m_maxV );
 
-
-double mpScaleY::TransformToPlot( double x ) const
-{
-    return (x + m_offset) * m_scale;
-}
-
-
-double mpScaleY::TransformFromPlot( double xplot ) const
-{
-    return xplot / m_scale - m_offset;
-}
-
-
-double mpScaleXLog::TransformToPlot( double x ) const
-{
-    double  xlogmin = log10( m_minV );
-    double  xlogmax = log10( m_maxV );
-
-    return ( log10( x ) - xlogmin) / (xlogmax - xlogmin);
-}
-
-
-double mpScaleXLog::TransformFromPlot( double xplot ) const
-{
-    double  xlogmin = log10( m_minV );
-    double  xlogmax = log10( m_maxV );
-
-    return pow( 10.0, xplot * (xlogmax - xlogmin) + xlogmin );
+        return pow( 10.0, xplot * ( xlogmax - xlogmin ) + xlogmin );
+    }
+    else
+    {
+        return xplot / m_scale - m_offset;
+    }
 }
 
 

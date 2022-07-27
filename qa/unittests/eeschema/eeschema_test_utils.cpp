@@ -22,6 +22,8 @@
  */
 
 #include "eeschema_test_utils.h"
+#include <qa_utils/wx_utils/unit_test_utils.h>
+#include <wildcards_and_files_ext.h>
 
 #include <cstdlib>
 #include <memory>
@@ -30,8 +32,6 @@
 #include <eeschema/sch_screen.h>
 #include <eeschema/schematic.h>
 #include <eeschema/connection_graph.h>
-#include <qa_utils/wx_utils/unit_test_utils.h>
-#include <wildcards_and_files_ext.h>
 
 
 #ifndef QA_EESCHEMA_DATA_LOCATION
@@ -62,23 +62,21 @@ wxFileName KI_TEST::GetEeschemaTestDataDir()
 }
 
 
-void KI_TEST::SCHEMATIC_TEST_FIXTURE::loadSchematic( const wxString& aRelativePath )
+void KI_TEST::SCHEMATIC_TEST_FIXTURE::LoadSchematic( const wxString& aBaseName )
 {
-    wxFileName fn = getSchematicFile( aRelativePath );
+    wxFileName fn = GetSchematicPath( aBaseName );
 
     BOOST_TEST_MESSAGE( fn.GetFullPath() );
 
     wxFileName pro( fn );
     pro.SetExt( ProjectFileExtension );
 
-    m_schematic.Reset();
-    m_schematic.CurrentSheet().clear();
-
     m_manager.LoadProject( pro.GetFullPath() );
+
     m_manager.Prj().SetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS, nullptr );
 
+    m_schematic.Reset();
     m_schematic.SetProject( &m_manager.Prj() );
-
     m_schematic.SetRoot( m_pi->Load( fn.GetFullPath(), &m_schematic ) );
 
     BOOST_REQUIRE_EQUAL( m_pi->GetError().IsEmpty(), true );
@@ -110,7 +108,7 @@ void KI_TEST::SCHEMATIC_TEST_FIXTURE::loadSchematic( const wxString& aRelativePa
 }
 
 
-wxFileName KI_TEST::SCHEMATIC_TEST_FIXTURE::getSchematicFile( const wxString& aBaseName )
+wxFileName KI_TEST::SCHEMATIC_TEST_FIXTURE::GetSchematicPath( const wxString& aBaseName )
 {
     wxFileName fn = KI_TEST::GetEeschemaTestDataDir();
     fn.AppendDir( "netlists" );
@@ -121,3 +119,43 @@ wxFileName KI_TEST::SCHEMATIC_TEST_FIXTURE::getSchematicFile( const wxString& aB
     return fn;
 }
 
+
+template <typename Exporter>
+wxString TEST_NETLIST_EXPORTER_FIXTURE<Exporter>::GetNetlistPath( bool aTest )
+{
+    wxFileName netFile = m_schematic.Prj().GetProjectFullName();
+
+    if( aTest )
+        netFile.SetName( netFile.GetName() + "_test" );
+
+    netFile.SetExt( NetlistFileExtension );
+
+    return netFile.GetFullPath();
+}
+
+
+template <typename Exporter>
+void TEST_NETLIST_EXPORTER_FIXTURE<Exporter>::WriteNetlist()
+{
+    auto exporter = std::make_unique<Exporter>( &m_schematic );
+    BOOST_REQUIRE_EQUAL( exporter->WriteNetlist( GetNetlistPath( true ), GetNetlistOptions() ),
+                                                 true );
+}
+
+
+template <typename Exporter>
+void TEST_NETLIST_EXPORTER_FIXTURE<Exporter>::Cleanup()
+{
+    wxRemoveFile( GetNetlistPath( true ) );
+    m_schematic.Reset();
+}
+
+
+template <typename Exporter>
+void TEST_NETLIST_EXPORTER_FIXTURE<Exporter>::TestNetlist( const wxString& aBaseName )
+{
+    LoadSchematic( aBaseName );
+    WriteNetlist();
+    CompareNetlists();
+    Cleanup();
+}

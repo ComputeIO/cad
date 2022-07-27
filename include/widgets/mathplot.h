@@ -771,8 +771,8 @@ public:
         return m_absVisibleMaxV;
     }
 
-    virtual double TransformToPlot( double x ) const { return 0.0; };
-    virtual double TransformFromPlot( double xplot ) const { return 0.0; };
+    virtual double TransformToPlot( double x ) const;
+    virtual double TransformFromPlot( double xplot ) const;
 
     struct TickLabel
     {
@@ -787,6 +787,9 @@ public:
     };
 
     std::vector<TickLabel>& TickLabels() { return m_tickLabels; };
+
+    wxString m_unit;
+    bool     m_log = false;
 
 protected:
 
@@ -808,7 +811,7 @@ protected:
     }
 
     virtual const wxString formatLabel( double value, int nDigits ) { return wxT( "" ); }
-    virtual void formatLabels() {};
+    virtual void           formatLabels();
 
     virtual double getTickPos( int n ) const
     {
@@ -883,51 +886,13 @@ public:
 
     // virtual double X2p( mpWindow &w, double x );
     // virtual double P2x( mpWindow &w, double x );
-    virtual double TransformToPlot( double x ) const override;
-    virtual double TransformFromPlot( double xplot ) const override;
+
 
 protected:
     virtual void recalculateTicks( wxDC& dc, mpWindow& w ) override;
 
 
     DECLARE_DYNAMIC_CLASS( mpScaleX )
-};
-
-
-class WXDLLIMPEXP_MATHPLOT mpScaleXLog : public mpScaleXBase
-{
-public:
-    /** Full constructor.
-     *  @param name Label to plot by the ruler
-     *  @param flags Set the position of the scale with respect to the window.
-     *  @param ticks Select ticks or grid. Give true (default) for drawing axis ticks, false for drawing the grid.
-     *  @param type mpX_NORMAL for normal labels, mpX_TIME for time axis in hours, minutes, seconds.
-     */
-    mpScaleXLog( const wxString& name = wxT("log(X)"), int flags = mpALIGN_CENTER,
-                 bool ticks = true, unsigned int type = mpX_NORMAL );
-
-    virtual double TransformToPlot( double x ) const override;
-    virtual double TransformFromPlot( double xplot ) const override;
-
-    /** Layer plot handler.
-     *  This implementation will plot the ruler adjusted to the visible area.
-     */
-    // virtual double X2p( mpWindow &w, double x );
-    // virtual double P2x( mpWindow &w, double x );
-
-protected:
-    void recalculateTicks( wxDC& dc, mpWindow& w ) override;
-
-    // int tickCount() const;
-    // int labelCount() const;
-    // const wxString getLabel( int n );
-    // double getTickPos( int n );
-    // double getLabelPos( int n );
-
-    void computeLabelExtents( wxDC& dc, mpWindow& w );
-
-
-    DECLARE_DYNAMIC_CLASS( mpScaleXLog )
 };
 
 
@@ -963,17 +928,6 @@ public:
     /** Set Y axis alignment.
      *  @param align alignment (choose between mpALIGN_BORDER_LEFT, mpALIGN_LEFT, mpALIGN_CENTER, mpALIGN_RIGHT, mpALIGN_BORDER_RIGHT) */
     void SetAlign( int align ) { m_flags = align; };
-
-    /** Set Y axis ticks or grid
-     *  @param ticks true to plot axis ticks, false to plot grid. */
-    void SetTicks( bool ticks ) { m_ticks = ticks; };
-
-    /** Get Y axis ticks or grid
-     *  @return true if plot is drawing axis ticks, false if the grid is active. */
-    bool GetTicks() const { return m_ticks; };
-
-    virtual double  TransformToPlot( double x ) const override;
-    virtual double  TransformFromPlot( double xplot ) const override;
 
 
     void SetMasterScale( mpScaleY* masterScale )

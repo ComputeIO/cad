@@ -249,7 +249,7 @@ set( EESCHEMA_SRCS
     netlist_exporters/netlist_exporter_cadstar.cpp
     netlist_exporters/netlist_exporter_kicad.cpp
     netlist_exporters/netlist_exporter_orcadpcb2.cpp
-    netlist_exporters/netlist_exporter_pspice.cpp
+    netlist_exporters/netlist_exporter_spice.cpp
     netlist_exporters/netlist_exporter_xml.cpp
     netlist_exporters/netlist_generator.cpp
 
@@ -308,16 +308,32 @@ if( KICAD_SPICE )
         dialogs/dialog_signal_list_base.cpp
         dialogs/dialog_sim_settings.cpp
         dialogs/dialog_sim_settings_base.cpp
-        dialogs/dialog_spice_model.cpp
-        dialogs/dialog_spice_model_base.cpp
+        dialogs/dialog_sim_model.cpp
+        dialogs/dialog_sim_model_base.cpp
         sim/ngspice_helpers.cpp
         sim/ngspice.cpp
+        sim/ngspice_models.cpp
         sim/sim_panel_base.cpp
         sim/sim_plot_colors.cpp
         sim/sim_plot_frame.cpp
         sim/sim_plot_frame_base.cpp
+        sim/sim_plot_axis_horizontal_base.cpp
+        sim/sim_plot_axis_horizontal.cpp
         sim/sim_plot_panel.cpp
+        sim/sim_property.cpp
         sim/sim_workbook.cpp
+        sim/sim_library.cpp
+        sim/sim_library_spice.cpp
+        sim/sim_model.cpp
+        sim/sim_model_behavioral.cpp
+        sim/sim_model_xspice.cpp
+        sim/sim_model_ideal.cpp
+        sim/sim_model_ngspice.cpp
+        sim/sim_model_spice.cpp
+        sim/sim_model_source.cpp
+        sim/sim_model_subckt.cpp
+        sim/sim_model_tline.cpp
+        sim/sim_value.cpp
         sim/spice_simulator.cpp
         sim/spice_value.cpp
         widgets/tuner_slider.cpp
