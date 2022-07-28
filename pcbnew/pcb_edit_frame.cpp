@@ -1418,6 +1418,10 @@ void PCB_EDIT_FRAME::OnModify()
     if( !GetTitle().StartsWith( wxT( "*" ) ) )
         UpdateTitle();
 
+    Prj().GetSystemStrings()->UpdateNow();
+    GetCanvas()->GetView()->UpdateAllItems( KIGFX::REPAINT );
+    GetCanvas()->ForceRefresh();
+
     m_ZoneFillsDirty = true;
 }
 
