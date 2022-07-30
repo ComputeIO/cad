@@ -30,6 +30,18 @@
 #include <sch_io_mgr.h>
 #include <wx/filename.h>
 
+#include <connection_graph.h>
+#include <netlist_exporter_kicad.h>
+#include <netlist_exporter_spice.h>
+#include <netlist_reader/netlist_reader.h>
+#include <netlist_reader/pcb_netlist.h>
+#include <project.h>
+#include <sch_io_mgr.h>
+#include <sch_sheet.h>
+#include <schematic.h>
+#include <settings/settings_manager.h>
+#include <wildcards_and_files_ext.h>
+
 namespace KI_TEST
 {
 /**
@@ -48,21 +60,22 @@ wxFileName GetEeschemaTestDataDir();
 class SCHEMATIC_TEST_FIXTURE
 {
 public:
-    SCHEMATIC_TEST_FIXTURE() : m_schematic( nullptr ), m_manager( true )
+    SCHEMATIC_TEST_FIXTURE()
+        : m_schematic( nullptr ),
+          m_pi( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_KICAD ) ),
+          m_manager( true )
     {
-        m_pi = SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_KICAD );
     }
 
     virtual ~SCHEMATIC_TEST_FIXTURE()
     {
         m_schematic.Reset();
-        delete m_pi;
+        SCH_IO_MGR::ReleasePlugin( m_pi );
     }
 
 protected:
-    virtual void loadSchematic( const wxString& aRelativePath );
-
-    virtual wxFileName getSchematicFile( const wxString& aBaseName );
+    virtual void LoadSchematic( const wxString& aRelativePath );
+    virtual wxFileName GetSchematicPath( const wxString& aBaseName );
 
     ///> Schematic to load
     SCHEMATIC m_schematic;
@@ -74,5 +87,22 @@ protected:
 
 
 } // namespace KI_TEST
+
+
+template <typename Exporter>
+class TEST_NETLIST_EXPORTER_FIXTURE : public KI_TEST::SCHEMATIC_TEST_FIXTURE
+{
+public:
+    virtual wxString GetNetlistPath( bool aTest = false );
+    virtual unsigned GetNetlistOptions() { return 0; }
+
+    void WriteNetlist();
+
+    virtual void CompareNetlists() = 0;
+
+    void Cleanup();
+
+    void TestNetlist( const wxString& aBaseName );
+};
 
 #endif // QA_EESCHEMA_EESCHEMA_TEST_UTILS__H

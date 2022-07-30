@@ -56,7 +56,8 @@ set( QA_EESCHEMA_SRCS
 
     test_eagle_plugin.cpp
     test_lib_part.cpp
-    test_netlists.cpp
+    test_netlist_exporter_kicad.cpp
+    test_netlist_exporter_spice.cpp
     test_ee_item.cpp
     test_pin_numbers.cpp
     test_sch_pin.cpp
@@ -74,6 +75,8 @@ if( KICAD_SPICE )
     set( QA_EESCHEMA_SRCS
         ${QA_EESCHEMA_SRCS}
         # Simulation tests
+        sim/test_library_spice.cpp
+        sim/test_ngspice.cpp
         sim/test_ngspice_helpers.cpp
     )
 endif()

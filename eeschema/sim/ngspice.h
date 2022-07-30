@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 CERN
- * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021-2022 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
@@ -27,10 +27,13 @@
 #ifndef NGSPICE_H
 #define NGSPICE_H
 
-#include "spice_simulator.h"
+#include <sim/spice_simulator.h>
+#include <sim/sim_model.h>
+#include <sim/sim_value.h>
 
 #include <wx/dynlib.h>
 #include <ngspice/sharedspice.h>
+#include <enum_vector.h>
 
 // We have an issue here where NGSPICE incorrectly used bool for years
 // and defined it to be int when in C-mode.  We cannot adjust the function
@@ -47,6 +50,60 @@ class wxDynamicLibrary;
 class NGSPICE : public SPICE_SIMULATOR
 {
 public:
+    DEFINE_ENUM_CLASS_WITH_ITERATOR( MODEL_TYPE,
+        NONE,
+        //RESISTOR,
+        //CAPACITOR,
+        //INDUCTOR,
+        //LTRA,
+        //TRANLINE,
+        //URC,
+        //TRANSLINE,
+        SWITCH,
+        CSWITCH,
+        DIODE,
+        BJT,
+        VBIC,
+        HICUM2,
+        JFET,
+        JFET2,
+        MES,
+        MESA,
+        HFET1,
+        HFET2,
+        MOS1,
+        MOS2,
+        MOS3,
+        BSIM1,
+        BSIM2,
+        MOS6,
+        BSIM3,
+        MOS9,
+        B4SOI,
+        BSIM4,
+        B3SOIFD,
+        B3SOIDD,
+        B3SOIPD,
+        HISIM2,
+        HISIMHV1,
+        HISIMHV2
+    )
+
+    // May be moved to the SPICE_MODEL class later.
+    struct MODEL_INFO
+    {
+        wxString name;
+        wxString variant1;
+        wxString variant2;
+        std::vector<wxString> pinNames;
+        wxString description;
+        std::vector<SIM_MODEL::PARAM::INFO> modelParams;
+        std::vector<SIM_MODEL::PARAM::INFO> instanceParams;
+    };
+
+
+    static const MODEL_INFO& ModelInfo( MODEL_TYPE aType );
+
     NGSPICE();
     virtual ~NGSPICE();
 
