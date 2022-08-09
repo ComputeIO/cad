@@ -21,10 +21,10 @@
 #include "panel_packages_view.h"
 #include <grid_tricks.h>
 #include <html_window.h>
-#include <kicad_settings.h>
 #include <pgm_base.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
+#include <settings/kicad_settings.h>
 #include <string_utils.h>
 #include <widgets/wx_panel.h>
 #include <widgets/wx_splitter_window.h>

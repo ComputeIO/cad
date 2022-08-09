@@ -27,10 +27,9 @@
 #include "dialog_pcm.h"
 #include "grid_tricks.h"
 #include "ki_exception.h"
-#include "kicad_manager_frame.h"
-#include "kicad_settings.h"
 #include "pcm_task_manager.h"
 #include "pgm_base.h"
+#include "settings/kicad_settings.h"
 #include "settings/settings_manager.h"
 #include "thread"
 #include "widgets/wx_grid.h"
@@ -54,11 +53,10 @@ static std::vector<std::pair<PCM_PACKAGE_TYPE, wxString>> PACKAGE_TYPE_LIST = {
 };
 
 
-DIALOG_PCM::DIALOG_PCM( wxWindow* parent ) : DIALOG_PCM_BASE( parent )
+DIALOG_PCM::DIALOG_PCM( wxWindow* parent, std::shared_ptr<PLUGIN_CONTENT_MANAGER> pcm ) :
+        DIALOG_PCM_BASE( parent ), m_pcm( pcm )
 {
     m_defaultBitmap = KiBitmap( BITMAPS::icon_pcm );
-
-    m_pcm = static_cast<KICAD_MANAGER_FRAME*>( parent )->GetPcm();
 
     m_pcm->SetDialogWindow( this );
     m_pcm->StopBackgroundUpdate();
@@ -395,7 +393,8 @@ void DIALOG_PCM::setInstalledPackages()
         else
             package_data.bitmap = &m_defaultBitmap;
 
-        package_data.state = m_pcm->GetPackageState( entry.repository_id, entry.package.identifier );
+        package_data.state =
+                m_pcm->GetPackageState( entry.repository_id, entry.package.identifier );
 
         if( package_data.state == PPS_UPDATE_AVAILABLE )
             package_data.update_version = m_pcm->GetPackageUpdateVersion( entry.package );

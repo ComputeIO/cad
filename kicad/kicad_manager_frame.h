@@ -154,6 +154,7 @@ public:
     wxWindow* GetToolCanvas() const override;
 
     std::shared_ptr<PLUGIN_CONTENT_MANAGER> GetPcm() { return m_pcm; };
+
     void SetPcmButton( BITMAP_BUTTON* aButton );
 
     DECLARE_EVENT_TABLE()

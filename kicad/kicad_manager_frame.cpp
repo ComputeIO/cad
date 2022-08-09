@@ -67,7 +67,7 @@
 #endif
 
 #include "kicad_manager_frame.h"
-#include "kicad_settings.h"
+#include "settings/kicad_settings.h"
 
 
 #define SEP()   wxFileName::GetPathSeparator()
@@ -824,8 +824,26 @@ void KICAD_MANAGER_FRAME::OnIdle( wxIdleEvent& aEvent )
     // clear file states regardless if we opened windows or not due to setting
     Prj().GetLocalSettings().ClearFileState();
 
+    KICAD_SETTINGS* settings = kicadSettings();
+
+    if( settings->m_updateCheck == KICAD_SETTINGS::UPDATE_CHECK::UNINITIALIZED )
+    {
+        if( wxMessageBox( _( "Would you like to automatically check for updates on startup?" ),
+                          _( "Check for updates" ), wxICON_QUESTION | wxYES_NO, this )
+            == wxYES )
+        {
+            settings->m_updateCheck = KICAD_SETTINGS::UPDATE_CHECK::ALLOWED;
+            settings->m_PcmUpdateCheck = true;
+        }
+        else
+        {
+            settings->m_updateCheck = KICAD_SETTINGS::UPDATE_CHECK::NOT_ALLOWED;
+            settings->m_PcmUpdateCheck = false;
+        }
+    }
+
     if( KIPLATFORM::POLICY::GetPolicyState( POLICY_KEY_PCM ) != KIPLATFORM::POLICY::STATE::DISABLED
-        && kicadSettings()->m_PcmCheckForUpdates )
+        && settings->m_PcmUpdateCheck )
     {
         m_pcm->RunBackgroundUpdate();
     }
@@ -842,9 +860,9 @@ void KICAD_MANAGER_FRAME::SetPcmButton( BITMAP_BUTTON* aButton )
 
 void KICAD_MANAGER_FRAME::updatePcmButtonBadge()
 {
-    if ( m_pcmButton )
+    if( m_pcmButton )
     {
-        if( m_pcmUpdateCount > 0)
+        if( m_pcmUpdateCount > 0 )
         {
             m_pcmButton->SetShowBadge( true );
             m_pcmButton->SetBadgeText( wxString::Format( "%d", m_pcmUpdateCount ) );

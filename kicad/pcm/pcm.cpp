@@ -99,9 +99,8 @@ private:
 PLUGIN_CONTENT_MANAGER::PLUGIN_CONTENT_MANAGER(
         std::function<void( int )>            aAvailableUpdateCallback,
         std::function<void( const wxString )> aStatusCallback ) :
-        m_availableUpdateCallback( aAvailableUpdateCallback ),
-        m_statusCallback( aStatusCallback ),
-        m_dialog( nullptr )
+        m_dialog( nullptr ),
+        m_availableUpdateCallback( aAvailableUpdateCallback ), m_statusCallback( aStatusCallback )
 {
     ReadEnvVar();
 
@@ -1106,7 +1105,6 @@ void PLUGIN_CONTENT_MANAGER::RunBackgroundUpdate()
 
                 m_statusCallback( availableUpdateCount > 0 ? _( "Package updates are available" )
                                                            : _( "No package updates available" ) );
-
             } );
 }
 
