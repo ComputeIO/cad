@@ -48,6 +48,13 @@ struct ASCH_STORAGE_FILE
     explicit ASCH_STORAGE_FILE( ALTIUM_PARSER& aReader );
 };
 
+struct ASCH_ADDITIONAL_FILE
+{
+    wxString          FileName;
+    std::vector<char> Data;
+
+    explicit ASCH_ADDITIONAL_FILE( ALTIUM_PARSER& aReader );
+};
 
 enum class ALTIUM_SCH_RECORD
 {
@@ -92,10 +99,10 @@ enum class ALTIUM_SCH_RECORD
     RECORD_48           = 48,
     NOTE                = 209,
     COMPILE_MASK        = 211,
-    RECORD_215          = 215,
-    RECORD_216          = 216,
-    RECORD_217          = 217,
-    RECORD_218          = 218,
+    HARNESS_CONNECTOR   = 215,
+    HARNESS_ENTRY       = 216,
+    HARNESS_TYPE        = 217,
+    SIGNAL_HARNESS      = 218,
     RECORD_226          = 226,
 };
 
@@ -330,6 +337,15 @@ enum class ASCH_POLYLINE_LINESTYLE
 };
 
 
+enum class ASCH_SHEET_ENTRY_SIDE
+{
+    LEFT   = 0,
+    RIGHT  = 1,
+    TOP    = 2,
+    BOTTOM = 3
+};
+
+
 struct ASCH_POLYLINE
 {
     int ownerindex;
@@ -399,6 +415,86 @@ struct ASCH_LINE
 };
 
 
+struct ASCH_SIGNAL_HARNESS
+{
+    int OwnerPartID;  // always -1, can be safely ignored I think
+
+    VECTOR2I Point1;
+    VECTOR2I Point2;
+
+    std::vector<VECTOR2I> Points;
+
+    int Color;
+    int IndexInSheet;
+    int LineWidth;
+
+    explicit ASCH_SIGNAL_HARNESS( const std::map<wxString, wxString>& aProps );
+};
+
+
+struct ASCH_HARNESS_CONNECTOR
+{
+    int OwnerPartID; // always -1, can be safely ignored I think
+
+    VECTOR2I Location;
+    wxSize   Size;
+
+    int AreaColor;
+    int Color;
+    int IndexInSheet; // Keeps increasing nicely
+    int LineWidth;
+    //int locationX; // keep just in case
+    //int locationY;
+    int LocationPrimaryConnectionPosition;
+    //int xSize;     // keep just in case
+    //int ySize;
+
+    explicit ASCH_HARNESS_CONNECTOR( const std::map<wxString, wxString>& aProps );
+};
+
+
+struct ASCH_HARNESS_ENTRY
+{
+    // int ownerindex; // Completely random, mostly this entry exists, but not always, should not be used!
+    int OwnerPartID; // always -1, can be safely ignored I think
+
+    int AreaColor;
+    int Color;
+    int DistanceFromTop;
+    int IndexInSheet;
+    int TextColor;
+    int TextFontID;
+    int TextStyle;
+
+    bool OwnerIndexAdditionalList; // what is that?
+
+    wxString Name;
+    ASCH_SHEET_ENTRY_SIDE Side;
+
+    explicit ASCH_HARNESS_ENTRY( const std::map<wxString, wxString>& aProps );
+};
+
+
+struct ASCH_HARNESS_TYPE
+{
+    //int ownerindex; // use SCH_ALTIUM_PLUGIN::m_harnessEntryParent instead!
+    int OwnerPartID; // Always -1, presumably safe to remuve
+
+    int Color;
+    int IndexInSheet;
+    int FontID;
+
+    bool IsHidden;
+    bool OwnerIndexAdditionalList; // what is that?
+    
+    VECTOR2I Location;
+    
+    wxString Text;
+
+    explicit ASCH_HARNESS_TYPE( const std::map<wxString, wxString>& aProps );
+};
+
+
 struct ASCH_RECTANGLE : ASCH_SHAPE_INTERFACE
 {
     VECTOR2I bottomLeft;
@@ -421,15 +517,6 @@ struct ASCH_SHEET_SYMBOL
     int areacolor;
 
     explicit ASCH_SHEET_SYMBOL( const std::map<wxString, wxString>& aProps );
-};
-
-
-enum class ASCH_SHEET_ENTRY_SIDE
-{
-    LEFT   = 0,
-    RIGHT  = 1,
-    TOP    = 2,
-    BOTTOM = 3
 };
 
 
@@ -507,17 +594,23 @@ struct ASCH_POWER_PORT
 
 struct ASCH_PORT
 {
-    int ownerpartid;
+    int OwnerPartID;
 
-    wxString name;
-    wxString harnessType;
+    wxString Name;
+    wxString HarnessType;
 
-    VECTOR2I location;
-    int      width;
-    int      height;
+    VECTOR2I Location;
+    int      Width;
+    int      Height;
+    int      AreaColor;
+    int      Color;
+    int      TextColor;
+    int      FontID;
 
-    ASCH_PORT_IOTYPE iotype;
-    ASCH_PORT_STYLE  style;
+    ASCH_TEXT_FRAME_ALIGNMENT Alignment;
+
+    ASCH_PORT_IOTYPE IOtype;
+    ASCH_PORT_STYLE  Style;
 
     explicit ASCH_PORT( const std::map<wxString, wxString>& aProps );
 };
@@ -596,14 +689,15 @@ struct ASCH_IMAGE
 
 struct ASCH_SHEET_FONT
 {
-    wxString fontname;
+    wxString FontName;
 
-    int size;
-    int rotation;
+    int Size;
+    int Rotation;
+    int AreaColor;
 
-    bool italic;
-    bool bold;
-    bool underline;
+    bool Italic;
+    bool Bold;
+    bool Underline;
 
     explicit ASCH_SHEET_FONT( const std::map<wxString, wxString>& aProps, int aId );
 };

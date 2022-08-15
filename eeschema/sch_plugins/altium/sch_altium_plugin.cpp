@@ -48,6 +48,7 @@
 #include <sch_label.h>
 #include <sch_sheet.h>
 #include <sch_sheet_pin.h>
+#include <sch_textbox.h>
 
 #include <bezier_curves.h>
 #include <compoundfilereader.h>
@@ -296,6 +297,7 @@ void SCH_ALTIUM_PLUGIN::ParseAltiumSch( const wxString& aFileName )
     {
         ParseStorage( altiumSchFile ); // we need this before parsing the FileHeader
         ParseFileHeader( altiumSchFile );
+        ParseAdditional( altiumSchFile ); // we need to parse "Additional" becaus sheet is set up during "FileHeader" parsing
     }
     catch( CFB::CFBException& exception )
     {
@@ -337,6 +339,71 @@ void SCH_ALTIUM_PLUGIN::ParseStorage( const ALTIUM_COMPOUND_FILE& aAltiumSchFile
                                               reader.GetRemainingBytes() ),
                             RPT_SEVERITY_ERROR );
     }
+}
+
+void SCH_ALTIUM_PLUGIN::ParseAdditional( const ALTIUM_COMPOUND_FILE& aAltiumSchFile )
+{
+    const CFB::COMPOUND_FILE_ENTRY* file = aAltiumSchFile.FindStream( { "Additional" } );
+
+    if( file == nullptr )
+        return;
+
+    ALTIUM_PARSER reader( aAltiumSchFile, file );
+
+
+    if( reader.GetRemainingBytes() <= 0 )
+    {
+        THROW_IO_ERROR( "Additional section does not contain any data" );
+    }
+    else
+    {
+        std::map<wxString, wxString> properties = reader.ReadProperties();
+
+        int               recordId = ALTIUM_PARSER::ReadInt( properties, "RECORD", 0 );
+        ALTIUM_SCH_RECORD record = static_cast<ALTIUM_SCH_RECORD>( recordId );
+
+        if( record != ALTIUM_SCH_RECORD::HEADER )
+            THROW_IO_ERROR( "Header expected" );
+    }
+
+   for( int index = 0; reader.GetRemainingBytes() > 0; index++ )
+    {
+        std::map<wxString, wxString> properties = reader.ReadProperties();
+
+        int               recordId = ALTIUM_PARSER::ReadInt( properties, "RECORD", 0 );
+        ALTIUM_SCH_RECORD record = static_cast<ALTIUM_SCH_RECORD>( recordId );
+
+        // see: https://github.com/vadmium/python-altium/blob/master/format.md
+        switch( record )
+        {
+        case ALTIUM_SCH_RECORD::HARNESS_CONNECTOR:
+            ParseHarnessConnector( index, properties );
+            break;
+        case ALTIUM_SCH_RECORD::HARNESS_ENTRY:
+            ParseHarnessEntry( properties );
+            break;
+        case ALTIUM_SCH_RECORD::HARNESS_TYPE:
+            ParseHarnessType( properties ); 
+            break;
+        case ALTIUM_SCH_RECORD::SIGNAL_HARNESS:
+            ParseSignalHarness( properties );
+            break;
+        default:
+            m_reporter->Report( wxString::Format( _( "Unknown or unexpected record found inside \"Additional\" section, Record id: %d." ), recordId ),
+                                RPT_SEVERITY_ERROR );
+            break;
+        }
+    }
+
+    // Handle harness Ports
+    for( const ASCH_PORT& port : m_altiumHarnessPortsCurrentSheet )
+        ParseHarnessPort( port );
+
+    if( reader.HasParsingError() )
+        THROW_IO_ERROR( "stream was not parsed correctly!" );
+
+    if( reader.GetRemainingBytes() != 0 )
+        THROW_IO_ERROR( "stream is not fully parsed" );
 }
 
 
@@ -496,21 +563,16 @@ void SCH_ALTIUM_PLUGIN::ParseFileHeader( const ALTIUM_COMPOUND_FILE& aAltiumSchF
         case ALTIUM_SCH_RECORD::COMPILE_MASK:
             m_reporter->Report( _( "Compile mask not currently supported." ), RPT_SEVERITY_ERROR );
             break;
-        case ALTIUM_SCH_RECORD::RECORD_215:
-            break;
-        case ALTIUM_SCH_RECORD::RECORD_216:
-            break;
-        case ALTIUM_SCH_RECORD::RECORD_217:
-            break;
-        case ALTIUM_SCH_RECORD::RECORD_218:
-            break;
         case ALTIUM_SCH_RECORD::RECORD_226:
             break;
         default:
-            m_reporter->Report( wxString::Format( _( "Unknown Record id: %d." ), recordId ),
+            m_reporter->Report( wxString::Format( _( "Unknown or unexpected record found inside "
+                                                     "\"FileHeader\" section, Record id: %d." ),
+                                                  recordId ),
                                 RPT_SEVERITY_ERROR );
             break;
         }
+        SCH_ALTIUM_PLUGIN::m_harnessOwnerIndexOffset = index;
     }
 
     if( reader.HasParsingError() )
@@ -866,9 +928,9 @@ void SCH_ALTIUM_PLUGIN::ParseLabel( const std::map<wxString, wxString>& aPropert
         if( m_altiumSheet && fontId > 0 && fontId <= m_altiumSheet->fonts.size() )
         {
             const ASCH_SHEET_FONT& font = m_altiumSheet->fonts.at( fontId - 1 );
-            textItem->SetItalic( font.italic );
-            textItem->SetBold( font.bold );
-            textItem->SetTextSize( { font.size / 2, font.size / 2 } );
+            textItem->SetItalic( font.Italic );
+            textItem->SetBold( font.Bold );
+            textItem->SetTextSize( { font.Size / 2, font.Size / 2 } );
         }
 
         textItem->SetFlags(IS_NEW );
@@ -902,9 +964,9 @@ void SCH_ALTIUM_PLUGIN::ParseLabel( const std::map<wxString, wxString>& aPropert
         if( m_altiumSheet && fontId > 0 && fontId <= m_altiumSheet->fonts.size() )
         {
             const ASCH_SHEET_FONT& font = m_altiumSheet->fonts.at( fontId - 1 );
-            textItem->SetItalic( font.italic );
-            textItem->SetBold( font.bold );
-            textItem->SetTextSize( { font.size / 2, font.size / 2 } );
+            textItem->SetItalic( font.Italic );
+            textItem->SetBold( font.Bold );
+            textItem->SetTextSize( { font.Size / 2, font.Size / 2 } );
         }
     }
 }
@@ -940,9 +1002,9 @@ void SCH_ALTIUM_PLUGIN::ParseTextFrame( const std::map<wxString, wxString>& aPro
     if( m_altiumSheet && fontId > 0 && fontId <= m_altiumSheet->fonts.size() )
     {
         const ASCH_SHEET_FONT& font = m_altiumSheet->fonts.at( fontId - 1 );
-        text->SetItalic( font.italic );
-        text->SetBold( font.bold );
-        text->SetTextSize( { font.size / 2, font.size / 2 } );
+        text->SetItalic( font.Italic );
+        text->SetBold( font.Bold );
+        text->SetTextSize( { font.Size / 2, font.Size / 2 } );
     }
 
     text->SetFlags( IS_NEW );
@@ -982,9 +1044,9 @@ void SCH_ALTIUM_PLUGIN::ParseNote( const std::map<wxString, wxString>& aProperti
     if( m_altiumSheet && fontId > 0 && fontId <= m_altiumSheet->fonts.size() )
     {
         const ASCH_SHEET_FONT& font = m_altiumSheet->fonts.at( fontId - 1 );
-        text->SetItalic( font.italic );
-        text->SetBold( font.bold );
-        text->SetTextSize( { font.size / 2, font.size / 2 } );
+        text->SetItalic( font.Italic );
+        text->SetBold( font.Bold );
+        text->SetTextSize( { font.Size / 2, font.Size / 2 } );
     }
 
     text->SetFlags( IS_NEW );
@@ -1402,6 +1464,155 @@ void SCH_ALTIUM_PLUGIN::ParseLine( const std::map<wxString, wxString>& aProperti
 
         line->SetStroke( STROKE_PARAMS( elem.lineWidth, PLOT_DASH_TYPE::SOLID ) );
     }
+}
+
+
+void SCH_ALTIUM_PLUGIN::ParseSignalHarness( const std::map<wxString, wxString>& aProperties )
+{
+    ASCH_SIGNAL_HARNESS elem( aProperties );
+
+    if( elem.OwnerPartID == ALTIUM_COMPONENT_NONE )
+    {
+        SCH_SHAPE* poly = new SCH_SHAPE( SHAPE_T::POLY );
+
+        for( VECTOR2I& point : elem.Points )
+            poly->AddPoint( point + m_sheetOffset );
+
+        poly->SetStroke( STROKE_PARAMS( elem.LineWidth, PLOT_DASH_TYPE::SOLID,
+                                        GetColorFromInt( elem.Color ) ) );
+        poly->SetFlags( IS_NEW );
+
+        m_currentSheet->GetScreen()->Append( poly );
+    }
+    else
+    {
+        // No clue if this situation can ever exist
+        m_reporter->Report( _( "Signal harness, belonging to the part is not currently supported." ), RPT_SEVERITY_ERROR );
+    }
+}
+
+
+void SCH_ALTIUM_PLUGIN::ParseHarnessConnector( int aIndex, const std::map<wxString, wxString>& aProperties )
+{
+    ASCH_HARNESS_CONNECTOR elem( aProperties );
+
+    if( elem.OwnerPartID == ALTIUM_COMPONENT_NONE )
+    {
+    SCH_SHEET* sheet = new SCH_SHEET(
+            /* aParent */ m_currentSheet,
+            /* aPosition */ elem.Location + m_sheetOffset,
+            /* aSize */ elem.Size );
+    SCH_SCREEN* screen = new SCH_SCREEN( m_schematic );
+
+    // Harness ports are drawn the same colors as harness connectors, discarding properties, found in Altium's file,
+    // so keep color settings for use in harness ports
+    m_harnessConnectorBackgroundColor = GetColorFromInt( elem.AreaColor );
+    m_harnessConnectorBorderColor = GetColorFromInt( elem.Color );
+
+    sheet->SetBackgroundColor( m_harnessConnectorBackgroundColor );
+    sheet->SetBorderColor( m_harnessConnectorBorderColor );
+
+    sheet->SetScreen( screen );
+
+    sheet->SetFlags( IS_NEW );
+    m_currentSheet->GetScreen()->Append( sheet );
+
+    SCH_SHEET_PATH sheetpath;
+    m_rootSheet->LocatePathOfScreen( m_currentSheet->GetScreen(), &sheetpath );
+    sheetpath.push_back( sheet );
+
+    sheet->AddInstance( sheetpath );
+    sheet->SetPageNumber( sheetpath, "Harness #" );
+
+    m_harnessEntryParent = aIndex + m_harnessOwnerIndexOffset;
+    m_sheets.insert( { m_harnessEntryParent, sheet } );
+    }
+    else
+    {
+        // I have no clue if this situation can ever exist
+        m_reporter->Report( _( "Harness connector, belonging to the part is not currently supported." ),
+                RPT_SEVERITY_ERROR );
+    }
+}
+
+
+void SCH_ALTIUM_PLUGIN::ParseHarnessEntry( const std::map<wxString, wxString>& aProperties )
+{
+    ASCH_HARNESS_ENTRY elem( aProperties );
+
+    const auto& sheetIt = m_sheets.find( m_harnessEntryParent );
+
+    if( sheetIt == m_sheets.end() )
+    {
+        m_reporter->Report( wxString::Format( _( "Harness entry's parent (%d) not found." ),
+                                              SCH_ALTIUM_PLUGIN::m_harnessEntryParent ),
+                RPT_SEVERITY_ERROR );
+        return;
+    }
+
+    SCH_SHEET_PIN* sheetPin = new SCH_SHEET_PIN( sheetIt->second );
+    sheetIt->second->AddPin( sheetPin );
+
+    sheetPin->SetText( elem.Name );
+    sheetPin->SetShape( LABEL_FLAG_SHAPE::L_UNSPECIFIED );
+
+    VECTOR2I pos = sheetIt->second->GetPosition();
+    wxSize   size = sheetIt->second->GetSize();
+
+    switch( elem.Side )
+    {
+    default:
+    case ASCH_SHEET_ENTRY_SIDE::LEFT:
+        sheetPin->SetPosition( { pos.x, pos.y + elem.DistanceFromTop } );
+        sheetPin->SetTextSpinStyle( TEXT_SPIN_STYLE::LEFT );
+        sheetPin->SetSide( SHEET_SIDE::LEFT );
+        break;
+    case ASCH_SHEET_ENTRY_SIDE::RIGHT:
+        sheetPin->SetPosition( { pos.x + size.x, pos.y + elem.DistanceFromTop } );
+        sheetPin->SetTextSpinStyle( TEXT_SPIN_STYLE::RIGHT );
+        sheetPin->SetSide( SHEET_SIDE::RIGHT );
+        break;
+    case ASCH_SHEET_ENTRY_SIDE::TOP:
+        sheetPin->SetPosition( { pos.x + elem.DistanceFromTop, pos.y } );
+        sheetPin->SetTextSpinStyle( TEXT_SPIN_STYLE::UP );
+        sheetPin->SetSide( SHEET_SIDE::TOP );
+        break;
+    case ASCH_SHEET_ENTRY_SIDE::BOTTOM:
+        sheetPin->SetPosition( { pos.x + elem.DistanceFromTop, pos.y + size.y } );
+        sheetPin->SetTextSpinStyle( TEXT_SPIN_STYLE::BOTTOM );
+        sheetPin->SetSide( SHEET_SIDE::BOTTOM );
+        break;
+    }
+}
+
+
+void SCH_ALTIUM_PLUGIN::ParseHarnessType( const std::map<wxString, wxString>& aProperties )
+{
+    ASCH_HARNESS_TYPE elem( aProperties );
+
+    const auto& sheetIt = m_sheets.find( m_harnessEntryParent );
+
+    if( sheetIt == m_sheets.end() )
+    {
+        m_reporter->Report( wxString::Format( _( "Harness type's parent (%d) not found." ),
+                                              m_harnessEntryParent ),
+                RPT_SEVERITY_ERROR );
+        return;
+    }
+
+    SCH_FIELD& sheetNameField = sheetIt->second->GetFields()[SHEETNAME];
+
+    sheetNameField.SetPosition( elem.Location + m_sheetOffset );
+    sheetNameField.SetText( elem.Text );
+    sheetNameField.SetVisible( true ); // Always set as visible so user is aware about ( !elem.isHidden );
+    SetTextPositioning( &sheetNameField, ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT, ASCH_RECORD_ORIENTATION::RIGHTWARDS );
+    sheetNameField.SetTextColor( GetColorFromInt( elem.Color ) );
+
+    m_reporter->Report( wxString::Format( _( "Altium's Harness Connector (%s) was imported as "
+                                 "Hierarchical sheet. Please review imported schematic, as "
+                                 "KiCad does not natively support these Altium elements." ),
+                                 elem.Text ),
+                                 RPT_SEVERITY_WARNING );
 }
 
 
@@ -1856,26 +2067,90 @@ void SCH_ALTIUM_PLUGIN::ParsePowerPort( const std::map<wxString, wxString>& aPro
 }
 
 
+void SCH_ALTIUM_PLUGIN::ParseHarnessPort( const ASCH_PORT& aElem )
+{
+    SCH_TEXTBOX* textBox = new SCH_TEXTBOX();
+
+    textBox->SetText( aElem.Name );
+    textBox->SetTextColor( GetColorFromInt( aElem.TextColor ) );
+
+    int height = aElem.Height;
+    if( height <= 0 )
+        height = Mils2iu( 100 ); //  chose default 50 grid
+
+    textBox->SetStartX( ( aElem.Location + m_sheetOffset ).x );
+    textBox->SetStartY( ( aElem.Location + m_sheetOffset ).y - ( height / 2 ) );
+    textBox->SetEndX( ( aElem.Location + m_sheetOffset ).x + ( aElem.Width ) );
+    textBox->SetEndY( ( aElem.Location + m_sheetOffset ).y + ( height / 2 ) );
+
+    textBox->SetFillColor( m_harnessConnectorBackgroundColor );
+    textBox->SetFilled( true );
+
+    textBox->SetStroke( STROKE_PARAMS( 2, PLOT_DASH_TYPE::DEFAULT, m_harnessConnectorBorderColor ) );
+
+    switch( aElem.Alignment )
+    {
+    default:
+    case ASCH_TEXT_FRAME_ALIGNMENT::LEFT:
+        textBox->SetHorizJustify( GR_TEXT_H_ALIGN_LEFT );
+        break;
+    case ASCH_TEXT_FRAME_ALIGNMENT::CENTER:
+        textBox->SetHorizJustify( GR_TEXT_H_ALIGN_CENTER );
+        break;
+    case ASCH_TEXT_FRAME_ALIGNMENT::RIGHT:
+        textBox->SetHorizJustify( GR_TEXT_H_ALIGN_RIGHT );
+        break;
+    }
+
+    size_t fontId = static_cast<int>( aElem.FontID );
+
+    if( m_altiumSheet && fontId > 0 && fontId <= m_altiumSheet->fonts.size() )
+    {
+        const ASCH_SHEET_FONT& font = m_altiumSheet->fonts.at( fontId - 1 );
+        textBox->SetItalic( font.Italic );
+        textBox->SetBold( font.Bold );
+        textBox->SetTextSize( { font.Size / 2, font.Size / 2 } );
+        //textBox->SetFont(  //how to set font, we have a font mane here: ( font.fontname );
+    }
+
+    textBox->SetFlags( IS_NEW );
+
+    m_currentSheet->GetScreen()->Append( textBox );
+
+        m_reporter->Report( wxString::Format( _( "Altium's Harness port (%s) was imported as "
+                                 "Text box. Please review imported schematic, as "
+                                 "KiCad does not natively support these Altium elements." ),
+                                 aElem.Name ),
+							     RPT_SEVERITY_WARNING );
+}
+
+
 void SCH_ALTIUM_PLUGIN::ParsePort( const ASCH_PORT& aElem )
 {
-    bool    isHarness = !aElem.harnessType.IsEmpty();
-    VECTOR2I start = aElem.location + m_sheetOffset;
+    if( !aElem.HarnessType.IsEmpty() )
+    {
+        // Parse harness ports after "Additional" compound section is parsed
+        m_altiumHarnessPortsCurrentSheet.emplace_back( aElem );
+        return;
+    }
+
+    VECTOR2I start = aElem.Location + m_sheetOffset;
     VECTOR2I end = start;
 
-    switch( aElem.style )
+    switch( aElem.Style )
     {
     default:
     case ASCH_PORT_STYLE::NONE_HORIZONTAL:
     case ASCH_PORT_STYLE::LEFT:
     case ASCH_PORT_STYLE::RIGHT:
     case ASCH_PORT_STYLE::LEFT_RIGHT:
-        end.x += aElem.width;
+        end.x += aElem.Width;
         break;
     case ASCH_PORT_STYLE::NONE_VERTICAL:
     case ASCH_PORT_STYLE::TOP:
     case ASCH_PORT_STYLE::BOTTOM:
     case ASCH_PORT_STYLE::TOP_BOTTOM:
-        end.y -= aElem.width;
+        end.y -= aElem.Width;
         break;
     }
 
@@ -1895,9 +2170,9 @@ void SCH_ALTIUM_PLUGIN::ParsePort( const ASCH_PORT& aElem )
                             || endIsWireTerminal
                             || endIsBusTerminal;
 
-    if( !isHarness && !connectionFound )
+    if( !connectionFound )
     {
-        m_reporter->Report( wxString::Format( _( "Port %s has no connections." ), aElem.name ),
+        m_reporter->Report( wxString::Format( _( "Port %s has no connections." ), aElem.Name ),
                             RPT_SEVERITY_WARNING );
     }
 
@@ -1905,27 +2180,14 @@ void SCH_ALTIUM_PLUGIN::ParsePort( const ASCH_PORT& aElem )
     VECTOR2I        position = ( startIsWireTerminal || startIsBusTerminal ) ? start : end;
     SCH_LABEL_BASE* label;
 
-    if( isHarness )
-    {
-        label = new SCH_DIRECTIVE_LABEL( position );
-
-        std::vector<SCH_FIELD>& fields = label->GetFields();
-
-        fields.emplace_back( SCH_FIELD( { 0, 0 }, 0, label, wxT( "Harness" ) ) );
-        fields[0].SetText( aElem.harnessType );
-        fields[0].SetVisible( true );
-    }
     // TODO: detect correct label type depending on sheet settings, etc.
     //{
     //    label = new SCH_HIERLABEL( elem.location + m_sheetOffset, elem.name );
     //}
-    else
-    {
-
-        label = new SCH_GLOBALLABEL( position, aElem.name );
-    }
-
-    switch( aElem.iotype )
+    
+    label = new SCH_GLOBALLABEL( position, aElem.Name );
+    
+    switch( aElem.IOtype )
     {
     default:
     case ASCH_PORT_IOTYPE::UNSPECIFIED:
@@ -1942,7 +2204,7 @@ void SCH_ALTIUM_PLUGIN::ParsePort( const ASCH_PORT& aElem )
         break;
     }
 
-    switch( aElem.style )
+    switch( aElem.Style )
     {
     default:
     case ASCH_PORT_STYLE::NONE_HORIZONTAL:
@@ -1964,6 +2226,10 @@ void SCH_ALTIUM_PLUGIN::ParsePort( const ASCH_PORT& aElem )
             label->SetTextSpinStyle( TEXT_SPIN_STYLE::BOTTOM );
         break;
     }
+
+    label->AutoplaceFields( screen, false );
+    // Default "Sheet References" field should be hidden, at least for now
+    label->GetFields()[0].SetVisible( false );
 
     label->SetFlags( IS_NEW );
     m_currentSheet->GetScreen()->Append( label );
