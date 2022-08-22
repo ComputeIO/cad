@@ -2,6 +2,7 @@
 # radix <neutrino@gmx.co.uk>, 2021.
 # Dejan Smole <dejko1@hotmail.com>, 2022.
 # Vitan Košpenda <kospendavitan@gmail.com>, 2022.
+# Mitja Nemec <mitja.nemec@fe.uni-lj.si>, 2022.
 msgid ""
 msgstr ""
 "Project-Id-Version: kicad\n"
