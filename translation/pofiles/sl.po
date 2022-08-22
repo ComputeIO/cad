@@ -7,7 +7,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-08-20 20:17-0700\n"
 "PO-Revision-Date: 2022-02-01 13:57+0000\n"
-"Last-Translator: Dejan Smole <dejko1@hotmail.com>\n"
+"Last-Translator: Vitan Košpenda <kospendavitan@gmail.com>\n"
 "Language-Team: Slovenian <https://hosted.weblate.org/projects/kicad/master-"
 "source/sl/>\n"
 "Language: sl\n"
@@ -40589,9 +40589,9 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ "if necessary"
 #~ msgstr ""
 #~ "Oštevilčevanje priključkov simbolov se ne ujema vedno z zahtevanim "
-"vrstnim redom priključkov simulacije\n"
-"Preverite simbol in po potrebi z uporabo \"Nadomestno zaporedje vozlišč\" "
-"prerazporedite priključke"
+#~ "vrstnim redom priključkov simulacije\n"
+#~ "Preverite simbol in po potrebi z uporabo \"Nadomestno zaporedje vozlišč\" "
+#~ "prerazporedite priključke"
 
 #~ msgid "For a Diode, pin order is anode, cathode"
 #~ msgstr "Za diodo je vrstni red priključkov anoda, katoda"
@@ -40859,7 +40859,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 
 #, fuzzy
 #~ msgid "Delay / Electrical length"
-#~ msgstr "Zakasnitev / Električna dolžina""
+#~ msgstr "Zakasnitev / Električna dolžina"
 
 #, fuzzy
 #~ msgid "Inductance per unit length"
@@ -41190,7 +41190,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 
 #, c-format
 #~ msgid "%s pin %s not found"
-#~ msgstr "%s nožice %s ni mogoče najti"
+#~ msgstr "%s priključka %s ni mogoče najti"
 
 #, c-format
 #~ msgid "Selecting all from sheet \"%s\""
