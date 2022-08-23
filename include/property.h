@@ -49,10 +49,11 @@ class ENUM_MAP;
 ///< Common property types
 enum PROPERTY_DISPLAY
 {
-    DEFAULT,    ///< Default property for a given type
-    DISTANCE,   ///< Display value expressed in distance units (mm/inch)
-    DEGREE,     ///< Display value expressed in degrees
-    DECIDEGREE  ///< Convert decidegrees to degrees for display
+    PT_DEFAULT,    ///< Default property for a given type
+    PT_SIZE,       ///< Size expressed in distance units (mm/inch)
+    PT_COORD,      ///< Coordinate expressed in distance units (mm/inch)
+    PT_DEGREE,     ///< Angle expressed in degrees
+    PT_DECIDEGREE  ///< Angle expressed in decidegrees
 };
 
 ///< Macro to generate unique identifier for a type
@@ -66,7 +67,7 @@ class GETTER_BASE
 public:
     virtual ~GETTER_BASE() {}
 
-    virtual T operator()( Owner* aOwner ) const = 0;
+    virtual T operator()( const Owner* aOwner ) const = 0;
 };
 
 template<typename Owner, typename T, typename FuncType>
@@ -76,9 +77,10 @@ public:
     GETTER( FuncType aFunc )
         : m_func( aFunc )
     {
+        wxCHECK( m_func, /*void*/ );
     }
 
-    T operator()( Owner* aOwner ) const override
+    T operator()( const Owner* aOwner ) const override
     {
         return ( aOwner->*m_func )();
     }
@@ -103,11 +105,11 @@ public:
     SETTER( FuncType aFunc )
         : m_func( aFunc )
     {
+        wxCHECK( m_func, /*void*/ );
     }
 
     void operator()( Owner* aOwner, T aValue ) override
     {
-        wxCHECK( m_func, /*void*/ );
         ( aOwner->*m_func )( aValue );
     }
 
@@ -120,7 +122,7 @@ template<typename Owner, typename T, typename Base = Owner>
 class METHOD
 {
 public:
-    constexpr static GETTER_BASE<Owner, T>* Wrap( T (Base::*aFunc)() )
+    static GETTER_BASE<Owner, T>* Wrap( T (Base::*aFunc)() )
     {
         return new GETTER<Owner, T, T (Base::*)()>( aFunc );
     }
@@ -142,7 +144,7 @@ public:
 
     constexpr static GETTER_BASE<Owner, T>* Wrap( const T (Base::*aFunc)() const )
     {
-        return new GETTER<Owner, T, const T (Base::*)() const>( aFunc );
+        return new GETTER<Owner, T, T (Base::*)() const>( aFunc );
     }
 
     constexpr static GETTER_BASE<Owner, T>* Wrap( const T& (Base::*aFunc)() const )
@@ -175,7 +177,7 @@ private:
     ///< Used to generate unique IDs.  Must come up front so it's initialized before ctor.
 
 public:
-    PROPERTY_BASE( const wxString& aName, PROPERTY_DISPLAY aDisplay = DEFAULT ) :
+PROPERTY_BASE( const wxString& aName, PROPERTY_DISPLAY aDisplay = PT_DEFAULT ) :
         m_name( aName ),
         m_display( aDisplay ),
         m_availFunc( [](INSPECTABLE*)->bool { return true; } )
@@ -251,7 +253,7 @@ public:
 
     virtual bool IsReadOnly() const = 0;
 
-    PROPERTY_DISPLAY GetDisplay() const
+    PROPERTY_DISPLAY Display() const
     {
         return m_display;
     }
@@ -265,22 +267,23 @@ protected:
     }
 
     template<typename T>
-    T get( void* aObject )
+    T get( const void* aObject ) const
     {
         wxAny a = getter( aObject );
 
         if ( !( std::is_enum<T>::value && a.CheckType<int>() ) && !a.CheckType<T>() )
             throw std::invalid_argument( "Invalid requested type" );
 
-        return wxANY_AS(a, T);
+        return wxANY_AS( a, T );
     }
 
+private:
     virtual void setter( void* aObject, wxAny& aValue ) = 0;
-    virtual wxAny getter( void* aObject ) const = 0;
+    virtual wxAny getter( const void* aObject ) const = 0;
 
 private:
-    const wxString                    m_name;
-    const PROPERTY_DISPLAY            m_display;
+    const wxString         m_name;
+    const PROPERTY_DISPLAY m_display;
 
     std::function<bool(INSPECTABLE*)> m_availFunc;   ///< Eval to determine if prop is available
 
@@ -292,13 +295,12 @@ template<typename Owner, typename T, typename Base = Owner>
 class PROPERTY : public PROPERTY_BASE
 {
 public:
-    typedef typename std::decay<T>::type BASE_TYPE;
-    typedef void (Base::*SETTER)( T );
+    using BASE_TYPE = typename std::decay<T>::type;
 
     template<typename SetType, typename GetType>
     PROPERTY( const wxString& aName,
             void ( Base::*aSetter )( SetType ), GetType( Base::*aGetter )(),
-            PROPERTY_DISPLAY aDisplay = DEFAULT )
+            PROPERTY_DISPLAY aDisplay = PT_DEFAULT )
         : PROPERTY( aName, METHOD<Owner, T, Base>::Wrap( aSetter ),
                            METHOD<Owner, T, Base>::Wrap( aGetter ), aDisplay )
     {
@@ -307,7 +309,7 @@ public:
     template<typename SetType, typename GetType>
     PROPERTY( const wxString& aName,
             void ( Base::*aSetter )( SetType ), GetType( Base::*aGetter )() const,
-            PROPERTY_DISPLAY aDisplay = DEFAULT )
+            PROPERTY_DISPLAY aDisplay = PT_DEFAULT )
         : PROPERTY( aName, METHOD<Owner, T, Base>::Wrap( aSetter ),
                            METHOD<Owner, T, Base>::Wrap( aGetter ), aDisplay )
     {
@@ -335,7 +337,7 @@ public:
 
 protected:
     PROPERTY( const wxString& aName, SETTER_BASE<Owner, T>* s, GETTER_BASE<Owner, T>* g,
-            PROPERTY_DISPLAY aDisplay )
+              PROPERTY_DISPLAY aDisplay )
         : PROPERTY_BASE( aName, aDisplay ), m_setter( s ), m_getter( g ),
                 m_ownerHash( TYPE_HASH( Owner ) ), m_baseHash( TYPE_HASH( Base ) ),
                 m_typeHash( TYPE_HASH( BASE_TYPE ) )
@@ -356,9 +358,9 @@ protected:
         (*m_setter)( o, value );
     }
 
-    virtual wxAny getter( void* obj ) const override
+    virtual wxAny getter( const void* obj ) const override
     {
-        Owner* o = reinterpret_cast<Owner*>( obj );
+        const Owner* o = reinterpret_cast<const Owner*>( obj );
         wxAny res = (*m_getter)( o );
         return res;
     }
@@ -387,7 +389,7 @@ public:
     template<typename SetType, typename GetType>
     PROPERTY_ENUM( const wxString& aName,
             void ( Base::*aSetter )( SetType ), GetType( Base::*aGetter )(),
-            PROPERTY_DISPLAY aDisplay = PROPERTY_DISPLAY::DEFAULT )
+            PROPERTY_DISPLAY aDisplay = PT_DEFAULT )
         : PROPERTY<Owner, T, Base>( aName, METHOD<Owner, T, Base>::Wrap( aSetter ),
                                      METHOD<Owner, T, Base>::Wrap( aGetter ), aDisplay )
     {
@@ -401,7 +403,7 @@ public:
     template<typename SetType, typename GetType>
     PROPERTY_ENUM( const wxString& aName,
             void ( Base::*aSetter )( SetType ), GetType( Base::*aGetter )() const,
-            PROPERTY_DISPLAY aDisplay = PROPERTY_DISPLAY::DEFAULT )
+            PROPERTY_DISPLAY aDisplay = PT_DEFAULT )
         : PROPERTY<Owner, T, Base>( aName, METHOD<Owner, T, Base>::Wrap( aSetter ),
                                      METHOD<Owner, T, Base>::Wrap( aGetter ), aDisplay )
     {
@@ -412,7 +414,7 @@ public:
         }
     }
 
-    virtual void setter( void* obj, wxAny& v ) override
+    void setter( void* obj, wxAny& v ) override
     {
         wxCHECK( !( PROPERTY<Owner, T, Base>::IsReadOnly() ), /*void*/ );
         Owner* o = reinterpret_cast<Owner*>( obj );
@@ -433,16 +435,16 @@ public:
         }
     }
 
-    virtual wxAny getter( void* obj ) const override
+    wxAny getter( const void* obj ) const override
     {
-        Owner* o = reinterpret_cast<Owner*>( obj );
+        const Owner* o = reinterpret_cast<const Owner*>( obj );
         wxAny res = static_cast<T>( (*PROPERTY<Owner, T, Base>::m_getter)( o ) );
         return res;
     }
 
     const wxPGChoices& Choices() const override
     {
-        return m_choices;
+        return m_choices.GetCount() > 0 ? m_choices : ENUM_MAP<T>::Instance().Choices();
     }
 
     void SetChoices( const wxPGChoices& aChoices ) override
@@ -452,7 +454,7 @@ public:
 
     bool HasChoices() const override
     {
-        return m_choices.GetCount() > 0;
+        return Choices().GetCount() > 0;
     }
 
 protected:

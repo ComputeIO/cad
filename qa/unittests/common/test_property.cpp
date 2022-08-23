@@ -1,5 +1,5 @@
 /*
-* This program source code file is part of KICAD, a free EDA CAD application.
+ * This program source code file is part of KICAD, a free EDA CAD application.
  *
  * Copyright (C) 2020 CERN
  * @author Maciej Suminski <maciej.suminski@cern.ch>
@@ -127,7 +127,8 @@ static struct CLASS_A_DESC
         propMgr.AddProperty( new PROPERTY<A, wxPoint>( "point", &A::setPoint, &A::getPoint ) );
         propMgr.AddProperty( new PROPERTY<A, wxPoint>( "point2", &A::setPoint, &A::getPoint2 ) );
 
-        propMgr.AddProperty( new PROPERTY<A, wxPoint>( "point3", &A::setPoint3, &A::getPoint3 ) );
+        // TODO non-const getters are not supported
+        //propMgr.AddProperty( new PROPERTY<A, wxPoint>( "point3", &A::setPoint3, &A::getPoint3 ) );
         propMgr.AddProperty( new PROPERTY<A, wxPoint>( "point4", &A::setPoint4, &A::getPoint4 ) );
     }
 } _CLASS_A_DESC;
@@ -176,7 +177,9 @@ static struct CLASS_D_DESC
         propMgr.InheritsAfter( TYPE_HASH( D ), TYPE_HASH( C ) );
 
         auto cond = new PROPERTY<D, int>( "cond", &D::setCond, &D::getCond );
-        cond->SetAvailableFunc( [=](INSPECTABLE* aItem)->bool { return *aItem->Get<int>( "A" ) > 50; } );
+        cond->SetAvailableFunc( [=](INSPECTABLE* aItem)->bool {
+                return *aItem->Get<enum_glob>( "enumGlob" ) == enum_glob::TEST1;
+        } );
         propMgr.AddProperty( cond );
     }
 } _CLASS_D_DESC;
@@ -259,7 +262,7 @@ BOOST_AUTO_TEST_CASE( NotexistingProperties )
 {
     ptr = &d;
     BOOST_CHECK_EQUAL( ptr->Set<int>( "does not exist", 5 ), false );
-    //BOOST_CHECK_EQUAL( ptr->Get<int>( "neither" ).has_value(), false );
+    BOOST_CHECK_EQUAL( static_cast<bool>( ptr->Get<int>( "neither" ) ), false );
 }
 
 // Request data using incorrect type
@@ -298,12 +301,12 @@ BOOST_AUTO_TEST_CASE( EnumGlob )
     BOOST_CHECK_EQUAL( v.GetCount(), values.GetCount() );
     BOOST_CHECK_EQUAL( v.GetCount(), labels.GetCount() );
 
-    for (int i = 0; i < values.GetCount(); ++i )
+    for (unsigned int i = 0; i < values.GetCount(); ++i )
     {
         BOOST_CHECK_EQUAL( v.GetValue( i ), values[i] );
     }
 
-    for (int i = 0; i < labels.GetCount(); ++i )
+    for (unsigned int i = 0; i < labels.GetCount(); ++i )
     {
         BOOST_CHECK_EQUAL( v.GetLabel( i ), labels[i] );
     }
@@ -338,12 +341,12 @@ BOOST_AUTO_TEST_CASE( EnumClass )
     BOOST_CHECK_EQUAL( v.GetCount(), values.GetCount() );
     BOOST_CHECK_EQUAL( v.GetCount(), labels.GetCount() );
 
-    for (int i = 0; i < values.GetCount(); ++i )
+    for (unsigned int i = 0; i < values.GetCount(); ++i )
     {
         BOOST_CHECK_EQUAL( v.GetValue( i ), values[i] );
     }
 
-    for (int i = 0; i < labels.GetCount(); ++i )
+    for (unsigned int i = 0; i < labels.GetCount(); ++i )
     {
         BOOST_CHECK_EQUAL( v.GetLabel( i ), labels[i] );
     }
@@ -355,11 +358,11 @@ BOOST_AUTO_TEST_CASE( Availability )
     PROPERTY_BASE* propCond = propMgr.GetProperty( TYPE_HASH( D ), "cond" );
     ptr = &d;
 
-    // "cond" property is available only when "a" field is greater than 50
-    d.setA( 0 );
+    // "cond" property is available only when "a" field is greater than 50  //TODO fix desc
+    d.setGlobEnum( enum_glob::TEST3 );
     BOOST_CHECK( !propCond->Available( ptr ) );
 
-    d.setA( 100 );
+    d.setGlobEnum( enum_glob::TEST1 );
     BOOST_CHECK( propCond->Available( ptr ) );
 }
 
@@ -406,12 +409,12 @@ BOOST_AUTO_TEST_CASE( AlternativeEnum )
     BOOST_CHECK_EQUAL( v.GetCount(), values.GetCount() );
     BOOST_CHECK_EQUAL( v.GetCount(), labels.GetCount() );
 
-    for (int i = 0; i < values.GetCount(); ++i )
+    for (unsigned int i = 0; i < values.GetCount(); ++i )
     {
         BOOST_CHECK_EQUAL( v.GetValue( i ), values[i] );
     }
 
-    for (int i = 0; i < labels.GetCount(); ++i )
+    for (unsigned int i = 0; i < labels.GetCount(); ++i )
     {
         BOOST_CHECK_EQUAL( v.GetLabel( i ), labels[i] );
     }

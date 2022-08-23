@@ -38,6 +38,7 @@
 #include <dialog_find.h>
 #include <dialog_footprint_properties.h>
 #include <dialogs/dialog_exchange_footprints.h>
+#include <pcb_properties_panel.h>
 #include <dialog_board_setup.h>
 #include <invoke_pcb_dialog.h>
 #include <board.h>
@@ -81,6 +82,7 @@
 #include <tools/pad_tool.h>
 #include <microwave/microwave_tool.h>
 #include <tools/position_relative_tool.h>
+#include <tools/properties_tool.h>
 #include <tools/zone_filler_tool.h>
 #include <tools/pcb_actions.h>
 #include <router/router_tool.h>
@@ -188,6 +190,7 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_show_layer_manager_tools = true;
     m_supportsAutoSave = true;
     m_probingSchToPcb = false;
+    m_show_properties = true;
 
     // We don't know what state board was in when it was last saved, so we have to
     // assume dirty
@@ -207,7 +210,6 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                                           EDA_DRAW_PANEL_GAL::GAL_FALLBACK );
 
     SetCanvas( canvas );
-
     SetBoard( new BOARD() );
 
     wxIcon icon;
@@ -239,6 +241,9 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     ReCreateAuxiliaryToolbar();
     ReCreateVToolbar();
     ReCreateOptToolbar();
+
+    if( ADVANCED_CFG::GetCfg().m_ShowPropertiesPanel )
+        m_propertiesPanel = new PCB_PROPERTIES_PANEL( this, this );
 
     m_selectionFilterPanel = new PANEL_SELECTION_FILTER( this );
 
@@ -281,12 +286,22 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                       .Caption( _( "Selection Filter" ) ).PaneBorder( false )
                       .MinSize( 180, -1 ).BestSize( 180, -1 ) );
 
+    if( ADVANCED_CFG::GetCfg().m_ShowPropertiesPanel )
+    {
+        m_auimgr.AddPane( m_propertiesPanel, EDA_PANE().Name( "PropertiesManager" )
+                          .Left().Layer( 5 ).Caption( _( "Properties" ) )
+                          .PaneBorder( false ).MinSize( 240, -1 ).BestSize( 300, -1 ) );
+    }
+
     // Center
     m_auimgr.AddPane( GetCanvas(), EDA_PANE().Canvas().Name( "DrawFrame" )
                       .Center() );
 
     m_auimgr.GetPane( "LayersManager" ).Show( m_show_layer_manager_tools );
     m_auimgr.GetPane( "SelectionFilter" ).Show( m_show_layer_manager_tools );
+
+    bool showProperties = ADVANCED_CFG::GetCfg().m_ShowPropertiesPanel && m_show_properties;
+    m_auimgr.GetPane( "PropertiesManager" ).Show( showProperties );
 
     // The selection filter doesn't need to grow in the vertical direction when docked
     m_auimgr.GetPane( "SelectionFilter" ).dock_proportion = 0;
@@ -438,6 +453,7 @@ PCB_EDIT_FRAME::~PCB_EDIT_FRAME()
     delete m_selectionFilterPanel;
     delete m_appearancePanel;
     delete m_exportNetlistAction;
+    delete m_propertiesPanel;
 }
 
 
@@ -566,6 +582,7 @@ void PCB_EDIT_FRAME::setupTools()
     m_toolManager->RegisterTool( new CONVERT_TOOL );
     m_toolManager->RegisterTool( new GROUP_TOOL );
     m_toolManager->RegisterTool( new SCRIPTING_TOOL );
+    m_toolManager->RegisterTool( new PROPERTIES_TOOL );
     m_toolManager->InitTools();
 
     for( TOOL_BASE* tool : m_toolManager->Tools() )
@@ -685,6 +702,12 @@ void PCB_EDIT_FRAME::setupUIConditions()
                 return LayerManagerShown();
             };
 
+    auto propertiesCond =
+        [this] ( const SELECTION& )
+        {
+            return PropertiesShown();
+        };
+
     auto highContrastCond =
             [this] ( const SELECTION& )
             {
@@ -726,6 +749,7 @@ void PCB_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( PCB_ACTIONS::toggleNetHighlight,   CHECK( netHighlightCond )
                                                            .Enable( enableNetHighlightCond ) );
     mgr->SetConditions( PCB_ACTIONS::boardSetup,           ENABLE( enableBoardSetupCondition ) );
+    mgr->SetConditions( PCB_ACTIONS::showProperties,       CHECK( propertiesCond ) );
 
     auto isHighlightMode =
             [this]( const SELECTION& )
@@ -1006,7 +1030,10 @@ void PCB_EDIT_FRAME::doCloseWindow()
     // on some platforms (Windows) that generate useless redraw of items in
     // the Layer Manager
     if( m_show_layer_manager_tools )
+    {
         m_auimgr.GetPane( "LayersManager" ).Show( false );
+        m_auimgr.GetPane( "TabbedPanel" ).Show( false );
+    }
 
     // Unlink the old project if needed
     GetBoard()->ClearProject();
@@ -1100,6 +1127,7 @@ void PCB_EDIT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
     if( cfg )
     {
         m_show_layer_manager_tools = cfg->m_AuiPanels.show_layer_manager;
+        m_show_properties          = cfg->m_AuiPanels.show_properties;
     }
 }
 
@@ -1116,6 +1144,7 @@ void PCB_EDIT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
         cfg->m_AuiPanels.show_layer_manager   = m_show_layer_manager_tools;
         cfg->m_AuiPanels.right_panel_width    = m_appearancePanel->GetSize().x;
         cfg->m_AuiPanels.appearance_panel_tab = m_appearancePanel->GetTabIndex();
+        cfg->m_AuiPanels.show_properties      = m_show_properties;
     }
 }
 
@@ -1311,10 +1340,9 @@ void PCB_EDIT_FRAME::ShowChangedLanguage()
     // call my base class
     PCB_BASE_EDIT_FRAME::ShowChangedLanguage();
 
-    wxAuiPaneInfo& ap_pane_info = m_auimgr.GetPane( m_appearancePanel );
-    ap_pane_info.Caption( _( "Appearance" ) );
-    wxAuiPaneInfo& sf_pane_info = m_auimgr.GetPane( m_selectionFilterPanel );
-    sf_pane_info.Caption( _( "Selection Filter" ) );
+    m_auimgr.GetPane( m_appearancePanel ).Caption( _( "Appearance" ) );
+    m_auimgr.GetPane( m_selectionFilterPanel ).Caption( _( "Selection Filter" ) );
+    m_auimgr.GetPane( m_propertiesPanel ).Caption( _( "Properties" ) );
     m_auimgr.Update();
 
     m_appearancePanel->OnLanguageChanged();
@@ -1939,6 +1967,12 @@ wxString PCB_EDIT_FRAME::GetCurrentFileName() const
 bool PCB_EDIT_FRAME::LayerManagerShown()
 {
     return m_auimgr.GetPane( "LayersManager" ).IsShown();
+}
+
+
+bool PCB_EDIT_FRAME::PropertiesShown()
+{
+    return m_auimgr.GetPane( "PropertiesManager" ).IsShown();
 }
 
 
