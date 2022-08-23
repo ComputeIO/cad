@@ -1,13 +1,15 @@
 # Seth Hillbrand <seth@kipro-pcb.com>, 2021.
 # radix <neutrino@gmx.co.uk>, 2021.
 # Dejan Smole <dejko1@hotmail.com>, 2022.
+# Vitan Košpenda <kospendavitan@gmail.com>, 2022.
+# Mitja Nemec <mitja.nemec@fe.uni-lj.si>, 2022.
 msgid ""
 msgstr ""
 "Project-Id-Version: kicad\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-08-20 20:17-0700\n"
 "PO-Revision-Date: 2022-02-01 13:57+0000\n"
-"Last-Translator: Dejan Smole <dejko1@hotmail.com>\n"
+"Last-Translator: Vitan Košpenda <kospendavitan@gmail.com>\n"
 "Language-Team: Slovenian <https://hosted.weblate.org/projects/kicad/master-"
 "source/sl/>\n"
 "Language: sl\n"
@@ -3677,7 +3679,7 @@ msgstr ""
 #: common/dialogs/panel_setup_netclasses_base.cpp:125
 #: eeschema/sch_field.cpp:839 eeschema/sch_label.cpp:185
 msgid "Net Class"
-msgstr "Neto razred"
+msgstr "Razred vozlišča"
 
 #: common/dialogs/panel_setup_netclasses_base.cpp:43
 #: pcbnew/tools/board_inspection_tool.cpp:470
@@ -4359,7 +4361,7 @@ msgstr "Bitna slika"
 #: pcbnew/pcb_textbox.cpp:301
 #, fuzzy
 msgid "Text Box"
-msgstr "Besedilo poz X"
+msgstr "Vnosno polje"
 
 #: common/eda_item.cpp:324 common/eda_item.cpp:325 common/eda_item.cpp:326
 #: common/eda_item.cpp:327 common/eda_item.cpp:334 common/eda_item.cpp:335
@@ -4433,11 +4435,11 @@ msgstr "Oznaka mreže"
 #: eeschema/sch_label.cpp:1133
 #, fuzzy
 msgid "Directive Label"
-msgstr "Oznaka mreže"
+msgstr "Oznaka direktive"
 
 #: common/eda_item.cpp:356 eeschema/sch_label.cpp:795
 msgid "Global Label"
-msgstr "Globalna založba"
+msgstr "Globalna oznaka"
 
 #: common/eda_item.cpp:357 eeschema/sch_label.cpp:796
 msgid "Hierarchical Label"
@@ -4458,11 +4460,11 @@ msgstr "Simbol"
 #: common/eda_item.cpp:360 common/eda_item.cpp:376 eeschema/lib_pin.h:72
 #: eeschema/sch_pin.cpp:205
 msgid "Pin"
-msgstr "Nogica"
+msgstr "Priključek"
 
 #: common/eda_item.cpp:361
 msgid "Sheet Pin"
-msgstr "List Pin"
+msgstr "Hierarhični priključek"
 
 #: common/eda_item.cpp:362 eeschema/dialogs/dialog_migrate_buses.cpp:103
 #: pcbnew/tools/pcb_actions.cpp:1284
@@ -4566,7 +4568,7 @@ msgstr "Točke"
 #: pcbnew/pcb_track.cpp:1243 pcbnew/pcb_track.cpp:1260
 #: pcbnew/pcb_track.cpp:1279
 msgid "Width"
-msgstr "©irina"
+msgstr "Širina"
 
 #: common/eda_shape.cpp:609 common/eda_text.cpp:1044
 #: eeschema/sch_bitmap.cpp:208 pcbnew/dialogs/dialog_board_statistics.cpp:697
@@ -4732,7 +4734,7 @@ msgstr "Zgoraj"
 #: eeschema/fields_grid_table.cpp:696 eeschema/lib_field.cpp:507
 #: eeschema/lib_text.cpp:391 eeschema/sch_field.cpp:709
 msgid "Bottom"
-msgstr "Dno"
+msgstr "Spodnja stran"
 
 #: common/eda_text.cpp:1025
 #: pcbnew/board_stackup_manager/panel_board_stackup_base.cpp:90
@@ -4934,7 +4936,7 @@ msgstr "Težave pri zapisovanju konfiguracijske datoteke"
 #: pagelayout_editor/dialogs/properties_frame_base.cpp:154
 #, fuzzy
 msgid "Default Font"
-msgstr "Privzete enote:"
+msgstr "Privzeta pisava"
 
 #: common/font/fontconfig.cpp:118
 #, fuzzy, c-format
@@ -4952,7 +4954,7 @@ msgstr "Odtisa \"%s\" ni mogoče najti."
 #: eeschema/symbol_editor/symbol_library_manager.cpp:97
 #: eeschema/symbol_tree_model_adapter.cpp:105
 msgid "Load Error"
-msgstr "Napake pri Nalaganju"
+msgstr "Napake pri nalaganju"
 
 #: common/footprint_info.cpp:101
 msgid "Errors were encountered loading footprints:"
@@ -5001,7 +5003,7 @@ msgstr ""
 #: pcbnew/pcbnew.cpp:471
 #, fuzzy, c-format
 msgid "Cannot copy file '%s'."
-msgstr "Datoteke \"%s\" ni mogoče kopirati."
+msgstr "Datoteke '%s' ni mogoče kopirati."
 
 #: common/grid_tricks.cpp:278 common/tool/actions.cpp:153
 #: eeschema/tools/ee_actions.cpp:154 pcbnew/dialogs/panel_setup_rules.cpp:111
@@ -5076,7 +5078,7 @@ msgstr "Dodaj v izbor"
 #: common/hotkey_store.cpp:47 eeschema/tools/ee_actions.cpp:565
 #: gerbview/tools/gerbview_actions.cpp:119 pcbnew/tools/pcb_actions.cpp:751
 msgid "Highlight Net"
-msgstr "Označite Net"
+msgstr "Poudari vozlišče"
 
 #: common/hotkey_store.cpp:48
 msgid "Remove from Selection"
@@ -5275,7 +5277,7 @@ msgstr "Imena datotek listov"
 #: common/layer_id.cpp:133
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:60
 msgid "Sheet pins"
-msgstr "Zatiči za liste"
+msgstr "Hierarhični priključki"
 
 #: common/layer_id.cpp:134
 msgid "No-connect symbols"
@@ -6103,7 +6105,7 @@ msgstr "Približaj"
 #: eeschema/sim/sim_plot_frame_base.cpp:91
 #: pcbnew/dialogs/panel_setup_rules.cpp:123
 msgid "Zoom Out"
-msgstr "Oddalji"
+msgstr "Pomanjšaj"
 
 #: common/tool/actions.cpp:336
 msgid "Zoom to Selection"
@@ -6682,7 +6684,7 @@ msgstr "Pogled na sredino ploskve do tega položaja"
 
 #: common/widgets/mathplot.cpp:1666 eeschema/sim/sim_plot_frame_base.cpp:95
 msgid "Fit on Screen"
-msgstr "Prilega na zaslon"
+msgstr "Raztegni čez zaslon"
 
 #: common/widgets/mathplot.cpp:1666
 msgid "Set plot view to show all items"
@@ -6717,7 +6719,7 @@ msgstr "Filter:"
 #: pcb_calculator/calculator_panels/panel_transline_base.cpp:442
 #: pcb_calculator/calculator_panels/panel_via_size_base.cpp:360
 msgid "Reset to Defaults"
-msgstr "Ponastavi na pri_vzeto"
+msgstr "Ponastavi na privzete nastavitve"
 
 #: common/widgets/paged_dialog.cpp:315
 #, fuzzy, c-format
@@ -7229,7 +7231,7 @@ msgstr "Datoteka projekta: \"%s\""
 #: gerbview/tools/gerbview_inspection_tool.cpp:185
 #: kicad/project_tree_pane.cpp:790
 msgid "No text editor selected in KiCad.  Please choose one."
-msgstr "V KiCadu ni izbran noben urejevalnik besedil. Prosim izberite enega."
+msgstr "V KiCad-u ni izbranega urejevalnika besedil. Prosim izberite enega."
 
 #: cvpcb/dialogs/dialog_config_equfiles.cpp:244
 msgid "Footprint Association File"
@@ -7567,16 +7569,16 @@ msgstr "Posodobljeno %s s %s na %s"
 #: eeschema/annotate.cpp:358
 #, fuzzy, c-format
 msgid "Annotated %s (unit %s) as %s."
-msgstr "Pripombe %s (enota %s) kot %s"
+msgstr "Številčeno %s (enota %s) kot %s"
 
 #: eeschema/annotate.cpp:365
 #, fuzzy, c-format
 msgid "Annotated %s as %s."
-msgstr "Pripombe %s kot %s"
+msgstr "Številčeno %s kot %s"
 
 #: eeschema/annotate.cpp:382
 msgid "Annotation complete."
-msgstr "Pripis je končan."
+msgstr "Številčenje končano."
 
 #: eeschema/bom_plugins.cpp:46
 #, c-format
@@ -7585,36 +7587,36 @@ msgid ""
 "%s\n"
 "not found. Script not available."
 msgstr ""
-"Datoteka skripta:\n"
+"Skriptna datoteka:\n"
 "%s\n"
-"ni najdeno. Skripta ni na voljo."
+"ni najdena. Skripta ni na voljo."
 
 #: eeschema/component_references_lister.cpp:688
 #, c-format
 msgid "Item not annotated: %s%s (unit %d)\n"
-msgstr "Postavka ni označena: %s %s (enota %d)\n"
+msgstr "Element ni številčen: %s %s (enota %d)\n"
 
 #: eeschema/component_references_lister.cpp:695
 #, c-format
 msgid "Item not annotated: %s%s\n"
-msgstr "Postavka ni označena: %s %s\n"
+msgstr "Element ni številčen: %s %s\n"
 
 #: eeschema/component_references_lister.cpp:713
 #, fuzzy, c-format
 msgid "Error: symbol %s%s%s (unit %d) exceeds units defined (%d)\n"
-msgstr "Napaka: enota simbol %s %s %d in simbol ima definirane samo %d enot\n"
+msgstr "Napaka: simbol %s%s%s (enota %d) presega število definiranih enot (%d)\n"
 
 #: eeschema/component_references_lister.cpp:752
 #: eeschema/component_references_lister.cpp:780
 #, fuzzy, c-format
 msgid "Duplicate items %s%s%s\n"
-msgstr "Več elementov %s %s\n"
+msgstr "Podvojeni elementi %s %s\n"
 
 #: eeschema/component_references_lister.cpp:759
 #: eeschema/component_references_lister.cpp:787
 #, fuzzy, c-format
 msgid "Duplicate items %s%s\n"
-msgstr "Več elementov %s %s\n"
+msgstr "Podvojeni elementi %s %s\n"
 
 #: eeschema/component_references_lister.cpp:799
 #, c-format
@@ -7626,33 +7628,33 @@ msgstr "Različne vrednosti za %s %d %s (%s) in %s %d %s (%s)"
 msgid ""
 "Both %s and %s are attached to the same items; %s will be used in the netlist"
 msgstr ""
-"Tako %s kot %s sta pritrjena na iste predmete; %s bo uporabljen na netlistu"
+"Tako %s kot %s sta pritrjena na iste predmete; %s bo uporabljen na seznamu vozlišč"
 
 #: eeschema/connection_graph.cpp:2697
 #, c-format
 msgid ""
 "Net %s is graphically connected to bus %s but is not a member of that bus"
-msgstr "Net %s je grafično povezan z vodilom %s, vendar ni član tega vodila"
+msgstr "Vozlišče %s je grafično povezano z vodilom %s, vendar ni član tega vodila"
 
 #: eeschema/connection_graph.cpp:3150
 #, c-format
 msgid "Sheet pin %s has no matching hierarchical label inside the sheet"
-msgstr "Zatič lista %s znotraj lista nima ustrezne hierarhične nalepke"
+msgstr "Za hierarhični priključek %s manjka oznaka hierarhičnega vozlišča"
 
 #: eeschema/connection_graph.cpp:3167
 #, fuzzy, c-format
 msgid "Hierarchical label %s has no matching sheet pin in the parent sheet"
-msgstr "Opozorila splošna oznaka %s ni povezana z oznako strani"
+msgstr "Hierarhično vozlišče %s nima ujemajočega hierarhični priključek v nadrejenem listu"
 
 #: eeschema/cross-probing.cpp:260
 #, c-format
 msgid "%s pin %s found"
-msgstr "Najden %s zatič %s"
+msgstr "%s priključek %s najden"
 
 #: eeschema/cross-probing.cpp:262
 #, c-format
 msgid "%s found but pin %s not found"
-msgstr "%s najdeno, vendar pin %s ni najden"
+msgstr "%s najdeno, vendar priključek %s ni najden"
 
 #: eeschema/cross-probing.cpp:266
 #, c-format
@@ -7666,15 +7668,15 @@ msgstr "%s ni mogoče najti"
 
 #: eeschema/cross-probing.cpp:324
 msgid "Selected net:"
-msgstr "Izbrana mreža:"
+msgstr "Izbrano vozlišče:"
 
 #: eeschema/dialogs/dialog_annotate.cpp:89
 msgid "Annotation Messages:"
-msgstr "Obvestila:"
+msgstr "Obvestila številčenja:"
 
 #: eeschema/dialogs/dialog_annotate.cpp:92
 msgid "Annotate"
-msgstr "Označi"
+msgstr "Številči"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:40
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:25
@@ -7702,7 +7704,7 @@ msgstr "Izbira"
 #: eeschema/dialogs/dialog_annotate_base.cpp:51
 #, fuzzy
 msgid "Recurse into subsheets"
-msgstr "Dosežen konec lista."
+msgstr "Številči tudi podstrani"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:58
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:35
@@ -7713,21 +7715,21 @@ msgstr "Vrstni red"
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:40
 #, fuzzy
 msgid "Sort symbols by &X position"
-msgstr "Razvrsti komponente po & X položaju"
+msgstr "Razvrsti simbole po &X položaju"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:79
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:56
 #, fuzzy
 msgid "Sort symbols by &Y position"
-msgstr "Razvrsti komponente po & Y položaju"
+msgstr "Razvrsti simbole po &Y položaju"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:92
 msgid "Keep existing annotations"
-msgstr "Obdrži obstoječe pripise"
+msgstr "Obdrži obstoječe številčenje"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:92
 msgid "Reset existing annotations"
-msgstr "Ponastavi obstoječe pripise"
+msgstr "Ponastavi obstoječe številčenje"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:99
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:77
@@ -7737,25 +7739,25 @@ msgstr "Oštevilčevanje"
 #: eeschema/dialogs/dialog_annotate_base.cpp:106
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:84
 msgid "Use first free number after:"
-msgstr "Uporabite prvo brezplačno številko po:"
+msgstr "Prav prosta številka po:"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:112
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:90
 msgid "First free after sheet number X 100"
-msgstr "Prvič brezplačno po številki lista X 100"
+msgstr "Prva prosta številka po: številka lista X 100"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:115
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:93
 msgid "First free after sheet number X 1000"
-msgstr "Prvič brezplačno po številki lista X 1000"
+msgstr "Prva prosta številka po: številka lista X 1000"
 
 #: eeschema/dialogs/dialog_annotate_base.cpp:138
 msgid "Clear Annotation"
-msgstr "Počisti pripis"
+msgstr "Ponastavi številčenje"
 
 #: eeschema/dialogs/dialog_annotate_base.h:85
 msgid "Annotate Schematic"
-msgstr "Označi shemo"
+msgstr "Številči shemo"
 
 #: eeschema/dialogs/dialog_assign_netclass.cpp:87
 msgid "<b>Currently matching nets:</b>"
@@ -7763,17 +7765,17 @@ msgstr ""
 
 #: eeschema/dialogs/dialog_bom.cpp:134
 msgid "Generate"
-msgstr "Ustvari"
+msgstr "Generiraj"
 
 #: eeschema/dialogs/dialog_bom.cpp:216
 #, fuzzy
 msgid "(file missing)"
-msgstr "Manjka.\n"
+msgstr "(datoteka manjka)"
 
 #: eeschema/dialogs/dialog_bom.cpp:293
 #, fuzzy, c-format
 msgid "The selected BOM generator script %s could not be found."
-msgstr "Sheme za to ploščo ni mogoče najti."
+msgstr "Izbrane scirpte BOM generatorja %s ni bilo mogoče najti."
 
 #: eeschema/dialogs/dialog_bom.cpp:298
 #, c-format
@@ -7784,11 +7786,16 @@ msgid ""
 "\t%s\n"
 "\t%s"
 msgstr ""
+"\n"
+"\n"
+"Iskano:\n"
+"\t%s\n"
+"\t%s"
 
 #: eeschema/dialogs/dialog_bom.cpp:344
 #, fuzzy
 msgid "Generating BOM requires a fully annotated schematic."
-msgstr "Izvoz netlista zahteva popolnoma označeno shemo."
+msgstr "Generiranje kosovnice zahteva popolnoma številčeno shemo."
 
 #: eeschema/dialogs/dialog_bom.cpp:381 eeschema/dialogs/dialog_bom_base.cpp:43
 msgid "Generator nickname:"
@@ -7801,7 +7808,7 @@ msgstr "Dodaj generator"
 #: eeschema/dialogs/dialog_bom.cpp:390
 #, fuzzy, c-format
 msgid "Nickname '%s' already in use."
-msgstr "Vzdevek \"%s\" je že v uporabi."
+msgstr "Vzdevek '%s' je že v uporabi."
 
 #: eeschema/dialogs/dialog_bom.cpp:419 eeschema/dialogs/dialog_netlist.cpp:709
 #, fuzzy
@@ -7814,23 +7821,23 @@ msgstr "Imena datoteke generatorja ni mogoče najti."
 
 #: eeschema/dialogs/dialog_bom.cpp:459
 msgid "Bill of Material Generation Help"
-msgstr "Pomoč za generiranje gradiva"
+msgstr "Pomoč za izdelavo popisa materiala"
 
 #: eeschema/dialogs/dialog_bom_base.cpp:25
 msgid "BOM generator scripts:"
-msgstr "Skripti BOM generatorja:"
+msgstr "Skripte BOM generatorja:"
 
 #: eeschema/dialogs/dialog_bom_base.cpp:69
 msgid "Add a new BOM generator and its command line to the list"
-msgstr "Na seznam dodajte nov generator BOM in njegovo ukazno vrstico"
+msgstr "Na seznam dodajte nov generator kosovnice in njegovo ukazno vrstico"
 
 #: eeschema/dialogs/dialog_bom_base.cpp:74
 msgid "Edit the script file in the text editor"
-msgstr "Datoteko skripta uredite v urejevalniku besedil"
+msgstr "Skriptno datoteko uredi v urejevalniku besedil"
 
 #: eeschema/dialogs/dialog_bom_base.cpp:82
 msgid "Remove the current generator script from list"
-msgstr "Odstranite trenutni skript generatorja s seznama"
+msgstr "Odstrani trenutno skripto generatorja s seznama"
 
 #: eeschema/dialogs/dialog_bom_base.cpp:92
 msgid "Command line running the generator:"
@@ -7853,11 +7860,11 @@ msgstr ""
 #: eeschema/dialogs/dialog_bom_base.cpp:116
 #, fuzzy
 msgid "Reset the list of BOM generator scripts to the default settings"
-msgstr "Za uporabo privzetih vrednosti nastavite na 0"
+msgstr "Ponastavite seznam skript BOM generatorja na privzete nastavitve"
 
 #: eeschema/dialogs/dialog_bom_base.h:81
 msgid "Bill of Material"
-msgstr "Predmet gradiva"
+msgstr "Popis materiala"
 
 #: eeschema/dialogs/dialog_bom_help_md.h:2
 msgid ""
@@ -8048,26 +8055,26 @@ msgstr ""
 "# 1 - Celotna dokumentacija\n"
 "\n"
 "Dokumentacija Eescheme (* eeschema.html *) opisuje ta vmesni seznam omrežij "
-"in daje primere (poglavje *** ustvarjanje prilagojenih omrežnih seznamov in "
-"datotek bom ***).\n"
+"in poda primere (poglavje *** ustvarjanje prilagojenih omrežnih seznamov in "
+"datotek bom (Bill of Material) ***).\n"
 "\n"
-"# 2 - Vmesna datoteka s seznamom Netlist\n"
+"# 2 - Vmesna datoteka s seznamom vozlišč\n"
 "\n"
 "Datoteke BOM (in datoteke z omrežjem) je mogoče ustvariti iz * datoteke "
 "vmesnega seznama omrežij *, ki jo je ustvaril Eeschema.\n"
 "\n"
 "Ta datoteka uporablja sintakso XML in se imenuje vmesni seznam omrežij. "
 "Vmesni seznam omrežij vključuje veliko podatkov o vaši plošči, zato ga je "
-"mogoče uporabiti s naknadno obdelavo za izdelavo specifikacije ali drugih "
+"mogoče uporabiti s naknadno obdelavo za izdelavo BOM ali drugih "
 "poročil.\n"
 "\n"
-"Glede na izhod (BOM ali netlist) bodo v naknadni obdelavi uporabljeni "
-"različni podnabori celotne datoteke Intermediate Netlist.\n"
+"Glede na izhod (BOM ali seznam vozlišč) bodo v naknadni obdelavi uporabljeni "
+"različni podnabori celotne datoteke vmesni seznam vozlišč.\n"
 "\n"
 "# 3 - Pretvorba v novo obliko\n"
 "\n"
-"Z uporabo filtra za naknadno obdelavo datoteke Intermediate netlist lahko "
-"ustvarite tuje datoteke netlist in datoteke BOM. Ker je ta pretvorba "
+"Z uporabo filtra za naknadno obdelavo datoteke vmesnega seznama vozlišč lahko "
+"ustvarite tuje datoteke seznama vozlišč in datoteke BOM. Ker je ta pretvorba "
 "pretvorba besedila v besedilo, je mogoče ta filter za naknadno obdelavo "
 "zapisati z uporabo * Python *, * XSLT * ali katerega koli drugega orodja, ki "
 "lahko XML sprejme kot vhod.\n"
@@ -8238,7 +8245,7 @@ msgstr "Definicije vodila"
 
 #: eeschema/dialogs/dialog_bus_manager.cpp:55
 msgid "Bus Aliases"
-msgstr "Avtobusni vzdevki"
+msgstr "Vzdevki vodil"
 
 #: eeschema/dialogs/dialog_bus_manager.cpp:65
 msgid "Alias Name"
@@ -8251,7 +8258,7 @@ msgstr "Preimenuj"
 
 #: eeschema/dialogs/dialog_bus_manager.cpp:89
 msgid "Alias Members"
-msgstr "Člani Alias"
+msgstr "Člani vodila"
 
 #: eeschema/dialogs/dialog_bus_manager.cpp:99
 msgid "Member Name"
@@ -8259,15 +8266,15 @@ msgstr "Ime člana"
 
 #: eeschema/dialogs/dialog_bus_manager.cpp:180
 msgid "Bus Alias Name"
-msgstr "Ime vzdevka avtobusa"
+msgstr "Ime vodila"
 
 #: eeschema/dialogs/dialog_bus_manager.cpp:181
 msgid "Net or Bus Name"
-msgstr "Ime omrežja ali vodila"
+msgstr "Ime vozlišča ali vodila"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:66
 msgid "Change all symbols in schematic"
-msgstr "Spremenite vse simbole v shemo"
+msgstr "Spremenite vse simbole v shemi"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:67
 msgid "Change Symbols"
@@ -8276,7 +8283,7 @@ msgstr "Spremeni simbole"
 #: eeschema/dialogs/dialog_change_symbols.cpp:76
 #, fuzzy
 msgid "Change selected symbol(s)"
-msgstr "Spremeni izbrani simbol"
+msgstr "Spremeni izbran(e) simbol(e)"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:93
 msgid "Change symbols matching reference designator:"
@@ -8284,7 +8291,7 @@ msgstr "Spremeni simbole, ki se ujemajo z referenčnim označevalnikom:"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:94
 msgid "Change symbols matching value:"
-msgstr "Spremeni simbole, ki se ujemajo z vrednostjo:"
+msgstr "Spremeni simbole, ki ustrezajo vrednosti:"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:95
 msgid "Change symbols matching library identifier:"
@@ -8296,24 +8303,24 @@ msgstr "Posodobi polja"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:133
 msgid "Remove fields if not in new symbol"
-msgstr "Odstranite polja, če niso v novem simbolu"
+msgstr "Odstrani polja, če niso v novem simbolu"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:134
 msgid "Reset fields if empty in new symbol"
-msgstr "Ponastavite polja, če so v novem simbolu prazna"
+msgstr "Ponastavi polja, če so v novem simbolu prazna"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:135
 #, fuzzy
 msgid "Update field text"
-msgstr "Posodobi polja"
+msgstr "Posodobi besedilo polja"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:136
 msgid "Update field visibilities"
-msgstr "Posodobitev vidnosti polja"
+msgstr "Posodobi vidnost polja"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:137
 msgid "Update field sizes and styles"
-msgstr "Posodobite velikosti in sloge polj"
+msgstr "Posodobi velikosti in sloge polj"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:138
 msgid "Update field positions"
@@ -8322,7 +8329,7 @@ msgstr "Posodobi položaje polj"
 #: eeschema/dialogs/dialog_change_symbols.cpp:139
 #, fuzzy
 msgid "Update symbol attributes"
-msgstr "Posodobi / ponastavi atribute izdelave"
+msgstr "Posodobi atribute simbolov"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:154
 #: pcbnew/dialogs/dialog_exchange_footprints.cpp:158
@@ -8336,7 +8343,7 @@ msgstr "Zamenjaj"
 #: kicad/pcm/dialogs/panel_packages_view.cpp:692
 #: pcbnew/dialogs/dialog_exchange_footprints.cpp:158
 msgid "Update"
-msgstr "Posodobitev"
+msgstr "Posodobi"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:532
 #, c-format
@@ -8351,12 +8358,12 @@ msgstr "Posodobi simbole %s s '%s' na '%s'"
 #: eeschema/dialogs/dialog_change_symbols.cpp:549
 #, c-format
 msgid "Change symbol %s from '%s' to '%s'"
-msgstr "Spremenite simbol %s iz '%s' v '%s'"
+msgstr "Spremeni simbol %s iz '%s' v '%s'"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:556
 #, c-format
 msgid "Change symbols %s from '%s' to '%s'"
-msgstr "Spremenite simbole %s iz '%s' v '%s'"
+msgstr "Spremeni simbole %s iz '%s' v '%s'"
 
 #: eeschema/dialogs/dialog_change_symbols.cpp:567
 msgid "*** symbol not found ***"
@@ -8368,12 +8375,12 @@ msgstr "*** nov simbol ima premalo enot ***"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:27
 msgid "Update all symbols in schematic"
-msgstr "Posodobite vse simbole v shemi"
+msgstr "Posodobi vse simbole v shemi"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:30
 #, fuzzy
 msgid "Update selected symbol(s)"
-msgstr "Posodobi izbrani simbol"
+msgstr "Posodobi izbran(e) simbol(e)"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:33
 msgid "Update symbols matching reference designator:"
@@ -8394,7 +8401,7 @@ msgstr "Nov identifikator knjižnice:"
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:94
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:36
 msgid "Update/reset Fields"
-msgstr "Posodobi / ponastavi polja"
+msgstr "Posodobi/ponastavi polja"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:108
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:50
@@ -8409,43 +8416,43 @@ msgstr "Možnosti posodobitve"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:119
 msgid "Remove fields if not in library symbol"
-msgstr "Odstranite polja, če niso v knjižničnem simbolu"
+msgstr "Odstranite polja, če niso v simbolu iz knjižnice"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:120
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:62
 #: pcbnew/dialogs/dialog_exchange_footprints_base.cpp:97
 msgid "Removes fields that do not occur in the original library symbols"
-msgstr "Odstrani polja, ki se ne pojavljajo v izvirnih simbolih knjižnice"
+msgstr "Odstrani polja, ki se ne pojavljajo v izvirnih simbolih iz knjižnice"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:124
 msgid "Reset fields if empty in library symbol"
-msgstr "Ponastavite polja, če so v simbolu knjižnice prazna"
+msgstr "Ponastavite polja, če so v simbolu iz knjižnice prazna"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:130
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:72
 #, fuzzy
 msgid "Update/reset field text"
-msgstr "Posodobi / ponastavi polja"
+msgstr "Posodobi/ponastavi besedilo polja"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:133
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:75
 msgid "Update/reset field visibilities"
-msgstr "Posodobitev / ponastavitev vidnosti polja"
+msgstr "Posodobi/ponastavi vidnosti polja"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:136
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:78
 msgid "Update/reset field sizes and styles"
-msgstr "Posodobi / ponastavi velikosti in sloge polj"
+msgstr "Posodobi/ponastavi velikosti in sloge polj"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:139
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:81
 msgid "Update/reset field positions"
-msgstr "Posodobi / ponastavi položaje polj"
+msgstr "Posodobi/ponastavi položaje polj"
 
 #: eeschema/dialogs/dialog_change_symbols_base.cpp:145
 #, fuzzy
 msgid "Update/reset symbol attributes"
-msgstr "Posodobi / ponastavi atribute izdelave"
+msgstr "Posodobi/ponastavi atribute simbolov"
 
 #: eeschema/dialogs/dialog_change_symbols_base.h:100
 msgid "Update Symbols from Library"
@@ -8466,11 +8473,11 @@ msgstr "Simbol naj bo izbran za nadaljnje klike."
 
 #: eeschema/dialogs/dialog_choose_symbol.cpp:161
 msgid "Place all units"
-msgstr "Postavite vse enote"
+msgstr "Postavi vse enote"
 
 #: eeschema/dialogs/dialog_choose_symbol.cpp:163
 msgid "Sequentially place all units of the symbol."
-msgstr "Zaporedno postavite vse enote simbola."
+msgstr "Zaporedno postavi vse enote simbola."
 
 #: eeschema/dialogs/dialog_choose_symbol.cpp:413
 #: eeschema/dialogs/dialog_choose_symbol.cpp:472
@@ -8492,12 +8499,12 @@ msgstr "Naveden je neveljaven odtis"
 #: eeschema/dialogs/dialog_choose_symbol.cpp:533
 #: eeschema/tools/symbol_editor_control.cpp:273
 msgid "No symbol selected"
-msgstr "Izbran ni noben simbol"
+msgstr "Ni izbranega simbola"
 
 #: eeschema/dialogs/dialog_edit_symbols_libid.cpp:545
 #, fuzzy, c-format
 msgid "Symbol library identifier %s is not valid."
-msgstr "Identifikator knjižnice simbolov \"%s\" ni veljaven."
+msgstr "Identifikator knjižnice simbolov %s ni veljaven."
 
 #: eeschema/dialogs/dialog_edit_symbols_libid.cpp:642
 #, c-format
@@ -8537,19 +8544,19 @@ msgstr ""
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.cpp:37
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:99
 msgid "Symbols"
-msgstr "Znaki"
+msgstr "Simboli"
 
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.cpp:38
 msgid "Current Library Reference"
-msgstr "Trenutna knjižnična referenca"
+msgstr "Reference trenutne knjižnice"
 
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.cpp:39
 msgid "New Library Reference"
-msgstr "Nova referenca za knjižnico"
+msgstr "Referenca nove knjižnice"
 
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.cpp:58
 msgid "Map Orphans"
-msgstr "Zemljevid Sirote"
+msgstr "Poišči simbole za sirote"
 
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.cpp:59
 #, fuzzy
@@ -8558,20 +8565,22 @@ msgid ""
 "try to find a candidate having the same name in one of loaded symbol "
 "libraries."
 msgstr ""
-"Če so nekatere komponente osirotele (povezanega simbola ni nikjer),\n"
+"Če so nekateri simboli osiroteli (povezanega simbola ni nikjer),\n"
 "poskusite poiskati kandidata z istim imenom v eni od naloženih knjižnic "
 "simbolov."
 
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.cpp:63
 #, fuzzy
 msgid "Update symbol fields from new library"
-msgstr "Posodobi simbole iz knjižnice"
+msgstr "Posodobi polje simbolov iz nove knjižnice"
 
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.cpp:64
 msgid ""
 "Replace current symbols fields by fields from the new library.\n"
 "Warning: fields \"Value\" and \"Footprints\" will be therefore replaced."
 msgstr ""
+"Zamenjaj trenutno polje simbolov s poljem iz nove knjižnice. \n"
+"Opozorilo: polje \"Vrednost\" in \"Odtis\" bosta zato zamenjana "
 
 #: eeschema/dialogs/dialog_edit_symbols_libid_base.h:57
 msgid "Symbol Library References"
@@ -8579,15 +8588,15 @@ msgstr "Reference knjižnice simbolov"
 
 #: eeschema/dialogs/dialog_erc.cpp:100
 msgid "Run ERC"
-msgstr "Zaženite ERC"
+msgstr "Zaženi ERC"
 
 #: eeschema/dialogs/dialog_erc.cpp:152
 msgid "Show Annotation dialog"
-msgstr "Pokaži pogovorno okno Annotation"
+msgstr "Pokaži pogovorno okno številčenja"
 
 #: eeschema/dialogs/dialog_erc.cpp:165
 msgid "Schematic is not fully annotated. ERC results will be incomplete."
-msgstr ""
+msgstr "Shema ni v celoti številčena. ERC bo nepopoln."
 
 #: eeschema/dialogs/dialog_erc.cpp:300
 msgid "Delete exclusions too?"
@@ -8610,7 +8619,7 @@ msgstr "Napake, opozorila in izključitve"
 #: eeschema/dialogs/dialog_erc.cpp:418
 #, c-format
 msgid "%d symbol(s) require annotation.<br><br>"
-msgstr ""
+msgstr "%d simbol(i) mora(jo) biti številčen(i)"
 
 #: eeschema/dialogs/dialog_erc.cpp:422
 msgid "-------- ERC cancelled by user.<br><br>"
@@ -8639,11 +8648,11 @@ msgstr "Preverjanje odtisov ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:496
 msgid "Checking pins..."
-msgstr "Preverjanje zatičev ..."
+msgstr "Preverjanje priključkov ... ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:513
 msgid "Checking labels..."
-msgstr "Preverjanje nalepk ..."
+msgstr "Preverjanje oznak..."
 
 #: eeschema/dialogs/dialog_erc.cpp:519
 msgid "Checking for unresolved variables..."
@@ -8652,16 +8661,16 @@ msgstr "Preverjanje nerešenih spremenljivk ..."
 #: eeschema/dialogs/dialog_erc.cpp:525
 #, fuzzy
 msgid "Checking no connect pins for connections..."
-msgstr "Preverjanje povezav brez zatičev"
+msgstr "Preverjanje povezav za nepriključene priključke ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:531
 msgid "Checking for library symbol issues..."
-msgstr "Preverjanje težav s simboli knjižnice ..."
+msgstr "Preverjanje težav s simboli iz knjižnice ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:537
 #, fuzzy
 msgid "Checking for off grid pins and wires..."
-msgstr "Preverjanje odtisov ..."
+msgstr "Preverjanje ali so povezave ali priključki na mreži ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:619 pcbnew/dialogs/dialog_drc.cpp:564
 msgid "errors"
@@ -8677,7 +8686,7 @@ msgstr "primerno"
 
 #: eeschema/dialogs/dialog_erc.cpp:626 pcbnew/dialogs/dialog_drc.cpp:571
 msgid "Remove exclusion for this violation"
-msgstr "Odstranite izključitev za to kršitev"
+msgstr "Odstrani izjemo za to kršitev"
 
 #: eeschema/dialogs/dialog_erc.cpp:627 pcbnew/dialogs/dialog_drc.cpp:572
 #, c-format
@@ -8691,29 +8700,28 @@ msgstr "Izključite to kršitev"
 #: eeschema/dialogs/dialog_erc.cpp:632 pcbnew/dialogs/dialog_drc.cpp:584
 #, c-format
 msgid "It will be excluded from the %s list"
-msgstr "Izključen bo s seznama %s"
+msgstr "Izključeno bo s seznama %s"
 
 #: eeschema/dialogs/dialog_erc.cpp:644 pcbnew/dialogs/dialog_drc.cpp:617
 #, c-format
 msgid "Change severity to Error for all '%s' violations"
-msgstr "Spremeni resnost v Napaka za vse kršitve »%s«"
+msgstr "Spremeni nivo napake za vse kršitve '%s'"
 
 #: eeschema/dialogs/dialog_erc.cpp:646 eeschema/dialogs/dialog_erc.cpp:652
 #: pcbnew/dialogs/dialog_drc.cpp:619 pcbnew/dialogs/dialog_drc.cpp:626
 #, fuzzy
 msgid "Violation severities can also be edited in the Board Setup... dialog"
-msgstr ""
-"Resnosti kršitev lahko urejate tudi v pogovornem oknu Nastavitev plošče ..."
+msgstr "Resnosti kršitev lahko urejate tudi v pogovornem oknu Nastavitev plošče ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:650 pcbnew/dialogs/dialog_drc.cpp:624
 #, c-format
 msgid "Change severity to Warning for all '%s' violations"
-msgstr "Spremenite resnost v Opozorilo za vse kršitve „%s“"
+msgstr "Spremeni nivo opozoril za vse kršitve '%s'"
 
 #: eeschema/dialogs/dialog_erc.cpp:655 pcbnew/dialogs/dialog_drc.cpp:630
 #, c-format
 msgid "Ignore all '%s' violations"
-msgstr "Prezri vse kršitve „%s“"
+msgstr "Prezri vse kršitve '%s'"
 
 #: eeschema/dialogs/dialog_erc.cpp:656 pcbnew/dialogs/dialog_drc.cpp:632
 msgid "Violations will not be checked or reported"
@@ -8721,11 +8729,11 @@ msgstr "Kršitve ne bodo preverjene ali prijavljene"
 
 #: eeschema/dialogs/dialog_erc.cpp:663
 msgid "Edit pin-to-pin conflict map..."
-msgstr "Uredi zemljevid konflikta pin-to-pin ..."
+msgstr "Uredi prireditveno tabelo možnih napak med priključki ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:667 pcbnew/dialogs/dialog_drc.cpp:637
 msgid "Edit violation severities..."
-msgstr "Uredi resnost kršitve ..."
+msgstr "Uredi resnosti kršitev ..."
 
 #: eeschema/dialogs/dialog_erc.cpp:668 eeschema/dialogs/dialog_erc.cpp:861
 #, fuzzy
@@ -8735,7 +8743,7 @@ msgstr "Odprite pogovorno okno Nastavitev sheme ..."
 #: eeschema/dialogs/dialog_erc.cpp:760
 #: eeschema/dialogs/dialog_schematic_setup.cpp:76
 msgid "Pin Conflicts Map"
-msgstr "Zemljevid konfliktov pripenjanja"
+msgstr "Prireditvena tabela možnih napak med priključki"
 
 #: eeschema/dialogs/dialog_erc.cpp:764 eeschema/dialogs/dialog_erc.cpp:866
 #: eeschema/dialogs/dialog_schematic_setup.cpp:75
@@ -8747,7 +8755,7 @@ msgstr "Resnost kršitve"
 #: eeschema/dialogs/dialog_erc.cpp:861 pcbnew/dialogs/dialog_drc.cpp:813
 #, fuzzy
 msgid "Edit ignored violations..."
-msgstr "Možnosti črte"
+msgstr "Uredi ignorirane kršitve..."
 
 #: eeschema/dialogs/dialog_erc.cpp:941 pcbnew/dialogs/dialog_gendrill.cpp:485
 #, fuzzy, c-format
@@ -8785,7 +8793,7 @@ msgstr "Izvajajo se testi ..."
 #: eeschema/dialogs/dialog_erc_base.cpp:78
 #: pcbnew/dialogs/dialog_drc_base.cpp:99
 msgid "Click on items to highlight them on the board."
-msgstr "Kliknite elemente, da jih označite na plošči."
+msgstr "Kliknite elemente, da jih poudarite na plošči."
 
 #: eeschema/dialogs/dialog_erc_base.cpp:87
 #: pcbnew/dialogs/dialog_drc_base.cpp:107
@@ -8797,13 +8805,13 @@ msgstr "Kršitve (%d)"
 #: pcbnew/dialogs/dialog_drc_base.cpp:143
 #, fuzzy, c-format
 msgid "Ignored Tests (%s)"
-msgstr "Nepovezani predmeti (%d)"
+msgstr "Ignorirani testi (%d)"
 
 #: eeschema/dialogs/dialog_erc_base.cpp:139
 #: pcbnew/dialogs/dialog_drc_base.cpp:183
 #: pcbnew/dialogs/dialog_footprint_checker_base.cpp:55
 msgid "Exclusions"
-msgstr "Izvzetje"
+msgstr "Izključitve"
 
 #: eeschema/dialogs/dialog_erc_base.cpp:165
 #: pcbnew/dialogs/dialog_drc_base.cpp:206
@@ -8813,12 +8821,12 @@ msgstr "Briši oznako"
 
 #: eeschema/dialogs/dialog_erc_base.h:100 eeschema/tools/ee_actions.cpp:45
 msgid "Electrical Rules Checker"
-msgstr "Preverjevalnik električnih pravil"
+msgstr "Preveri električna pravila (ERC)"
 
 #: eeschema/dialogs/dialog_field_properties.cpp:186
 #, fuzzy
 msgid "Power symbol value field text cannot be changed."
-msgstr "(Besedila polja vrednosti simbola napajanja ni mogoče spremeniti.)"
+msgstr "Vrednosti za napajalne simbole ni mogoče spremeniti."
 
 #: eeschema/dialogs/dialog_field_properties.cpp:351
 msgid "Illegal reference designator value!"
@@ -8831,7 +8839,7 @@ msgstr "Vrednost ne sme biti prazna."
 #: eeschema/dialogs/dialog_field_properties.cpp:482
 #, fuzzy
 msgid "Sheet filename can only be modified in Sheet Properties dialog."
-msgstr "Prikaže pogovorno okno z lastnostmi elementov"
+msgstr "Ime lista se lahko spremeni le v pogovornem oknu Lasnosti lista."
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:32
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:32
@@ -8861,7 +8869,7 @@ msgstr "(%s)"
 #: pcbnew/dialogs/dialog_text_properties_base.cpp:111
 #: pcbnew/dialogs/dialog_textbox_properties_base.cpp:83
 msgid "Font:"
-msgstr ""
+msgstr "Pisava:"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:102
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:173
@@ -8878,13 +8886,13 @@ msgstr ""
 #: pcbnew/dialogs/dialog_textbox_properties_base.cpp:87
 #, fuzzy
 msgid "KiCad Font"
-msgstr "Zaprite KiCad"
+msgstr "KiCad pisava"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:117
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:86
 #, fuzzy
 msgid "Horizontal text"
-msgstr "Vodoravno levo"
+msgstr "Vodoravno"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:122
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:91
@@ -8899,7 +8907,7 @@ msgstr "Navpično"
 #: eeschema/sch_label.cpp:821 eeschema/sch_text.cpp:493
 #, fuzzy
 msgid "Align left"
-msgstr "Poravnajte v levo"
+msgstr "Poravnaj levo"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:152
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:121
@@ -8907,7 +8915,7 @@ msgstr "Poravnajte v levo"
 #: eeschema/dialogs/dialog_text_properties_base.cpp:111
 #, fuzzy
 msgid "Align horizontal center"
-msgstr "Poravnajte v vodoravno središče"
+msgstr "Poravnaj v vodoravno središče"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:157
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:126
@@ -8916,7 +8924,7 @@ msgstr "Poravnajte v vodoravno središče"
 #: eeschema/sch_label.cpp:819 eeschema/sch_text.cpp:491
 #, fuzzy
 msgid "Align right"
-msgstr "Poravnajte v desno"
+msgstr "Poravnaj desno"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:167
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:136
@@ -8925,7 +8933,7 @@ msgstr "Poravnajte v desno"
 #: eeschema/sch_label.cpp:822 eeschema/sch_text.cpp:494
 #, fuzzy
 msgid "Align top"
-msgstr "Poravnajte na vrh"
+msgstr "Poravnaj na vrh"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:172
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:141
@@ -8933,7 +8941,7 @@ msgstr "Poravnajte na vrh"
 #: eeschema/dialogs/dialog_text_properties_base.cpp:126
 #, fuzzy
 msgid "Align vertical center"
-msgstr "Poravnajte z navpičnim središčem"
+msgstr "Poravnaj z navpičnim središčem"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:177
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:146
@@ -8953,7 +8961,7 @@ msgstr "Poravnajte na dno"
 #: eeschema/dialogs/dialog_text_properties_base.cpp:154
 #, fuzzy
 msgid "Text size:"
-msgstr "Velikost napisov"
+msgstr "Velikost pisave:"
 
 #: eeschema/dialogs/dialog_field_properties_base.cpp:203
 #: eeschema/dialogs/dialog_junction_props_base.cpp:38
@@ -9005,15 +9013,15 @@ msgstr "Lastnosti besedilnih elementov"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:33
 msgid "Other symbol fields"
-msgstr "Druga polja s simboli"
+msgstr "Druga polja simbolov"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:39
 msgid "Wires && wire labels"
-msgstr "Žice && žične nalepke"
+msgstr "Žice && žične oznake"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:42
 msgid "Buses && bus labels"
-msgstr "Avtobusi && nalepke za avtobuse"
+msgstr "Vodila && oznake vodil"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:54
 msgid "Sheet titles"
@@ -9021,11 +9029,11 @@ msgstr "Naslovi listov"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:57
 msgid "Other sheet fields"
-msgstr "Druga polja lista"
+msgstr "Druga polja listov"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:63
 msgid "Sheet borders && backgrounds"
-msgstr "Meje listov & & ozadja"
+msgstr "Meje listov && ozadja"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:76
 #: pcbnew/dialogs/dialog_global_edit_text_and_graphics_base.cpp:53
@@ -9035,7 +9043,7 @@ msgstr "Filtri"
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:84
 #, fuzzy
 msgid "Filter other symbol fields by name:"
-msgstr "Filtriraj polja po imenu:"
+msgstr "Filtriraj druga polja simbolov po imenu:"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:96
 #: pcbnew/dialogs/dialog_global_edit_text_and_graphics_base.cpp:73
@@ -9056,28 +9064,28 @@ msgstr "Simboli brez moči"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:113
 msgid "Power symbols"
-msgstr "Simboli moči"
+msgstr "Napajalni simboli"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:125
 #: pcbnew/dialogs/dialog_global_edit_tracks_and_vias_base.cpp:51
 msgid "Filter items by net:"
-msgstr "Filtriraj elemente po neto:"
+msgstr "Filtriraj elemente po vozliščih:"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:137
 #: pcbnew/dialogs/dialog_global_edit_text_and_graphics_base.cpp:85
 #: pcbnew/dialogs/dialog_global_edit_tracks_and_vias_base.cpp:77
 #, fuzzy
 msgid "Only include selected items"
-msgstr "Izbriše izbrane elemente"
+msgstr "Vključi le izbrane elemente"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:156
 msgid "Set To"
-msgstr "Nastavljena"
+msgstr "Nastavi na"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:185
 #, fuzzy
 msgid "Text color:"
-msgstr "Neto barve:"
+msgstr "Barva besedila:"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:220
 #: eeschema/pin_type.cpp:129
@@ -9094,7 +9102,7 @@ msgstr "Dol"
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:282
 #: include/base_units.h:49
 msgid "-- leave unchanged --"
-msgstr "- pustite nespremenjeno -"
+msgstr "- pusti nespremenjeno -"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:256
 #, fuzzy
@@ -9134,18 +9142,18 @@ msgstr "Slog črte:"
 #: eeschema/dialogs/dialog_text_properties_base.cpp:246
 #, fuzzy
 msgid "Fill color:"
-msgstr "Barva črte:"
+msgstr "Napolni z barvo:"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:366
 #: eeschema/dialogs/dialog_wire_bus_properties_base.cpp:71
 #, fuzzy
 msgid "Junction size:"
-msgstr "Velikost pike križišča:"
+msgstr "Velikost spoja:"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.cpp:380
 #, fuzzy
 msgid "Junction color:"
-msgstr "Barve izbora"
+msgstr "Barva spoja:"
 
 #: eeschema/dialogs/dialog_global_edit_text_and_graphics_base.h:120
 #: pcbnew/dialogs/dialog_global_edit_text_and_graphics_base.h:102
@@ -9192,8 +9200,7 @@ msgstr ""
 #: eeschema/dialogs/dialog_global_sym_lib_table_config.cpp:115
 #, c-format
 msgid "Cannot copy global symbol library table file '%s' to '%s'."
-msgstr ""
-"Datoteke tabele globalne knjižnice simbolov '%s' ni mogoče kopirati v '%s'."
+msgstr "Datoteke globalne tabele knjižnice simbolov '%s' ni mogoče kopirati v '%s'."
 
 #: eeschema/dialogs/dialog_global_sym_lib_table_config.cpp:132
 #, fuzzy, c-format
@@ -9202,7 +9209,7 @@ msgid ""
 "\n"
 "%s"
 msgstr ""
-"Napaka pri shranjevanju tabele globalne knjižnice simbolov:\n"
+"Napaka pri nalaganju globalne tabele knjižnice simbolov:\n"
 "%s"
 
 #: eeschema/dialogs/dialog_junction_props_base.cpp:27
@@ -9215,55 +9222,55 @@ msgstr "Premer:"
 #: eeschema/dialogs/dialog_junction_props_base.cpp:61
 #, fuzzy
 msgid "Set diameter to 0 to use schematic's junction dot size."
-msgstr "Preklopite na urejevalnik shem"
+msgstr "Nastavite premer na 0, če želite uporabiti velikost spojne točke sheme."
 
 #: eeschema/dialogs/dialog_junction_props_base.cpp:65
 #: eeschema/dialogs/dialog_line_properties_base.cpp:81
 #: eeschema/dialogs/dialog_wire_bus_properties_base.cpp:94
 #, fuzzy
 msgid "Clear color to use Schematic Editor colors."
-msgstr "Ponastavite vse barve v tej temi na privzete vrednosti KiCad"
+msgstr "Ponastavite vse barve, če želite uporabiti barve urejevalnika shem."
 
 #: eeschema/dialogs/dialog_junction_props_base.h:59
 msgid "Junction Properties"
-msgstr "Lastnosti križišča"
+msgstr "Lastnosti spoja"
 
 #: eeschema/dialogs/dialog_label_properties.cpp:97
 #, fuzzy
 msgid "Pin length:"
-msgstr "& Dolžina zatiča:"
+msgstr "Dolžina priključka:"
 
 #: eeschema/dialogs/dialog_label_properties.cpp:102
 msgid "Global Label Properties"
-msgstr "Global Label Properties"
+msgstr "Lastnostni globalne oznake"
 
 #: eeschema/dialogs/dialog_label_properties.cpp:103
 msgid "Hierarchical Label Properties"
-msgstr "Hierarhične lastnosti nalepke"
+msgstr "Lastnosti hierarhična oznaka"
 
 #: eeschema/dialogs/dialog_label_properties.cpp:104
 #: eeschema/dialogs/dialog_label_properties_base.h:115
 msgid "Label Properties"
-msgstr "Lastnosti etikete"
+msgstr "Lastnosti oznak"
 
 #: eeschema/dialogs/dialog_label_properties.cpp:105
 #, fuzzy
 msgid "Directive Label Properties"
-msgstr "Hierarhične lastnosti nalepke"
+msgstr "Lastnosti oznake direktive"
 
 #: eeschema/dialogs/dialog_label_properties.cpp:106
 msgid "Hierarchical Sheet Pin Properties"
-msgstr "Hierarhične lastnosti zatiča lista"
+msgstr "Lastnosti hierarhičnega priključka"
 
 #: eeschema/dialogs/dialog_label_properties.cpp:439
 #, fuzzy
 msgid "Label can not be empty."
-msgstr "Ime omrežja ne sme biti prazno."
+msgstr "Oznaka ne sme biti prazna."
 
 #: eeschema/dialogs/dialog_label_properties.cpp:626
 #, fuzzy
 msgid "The first field is mandatory."
-msgstr "Prva %d polja so obvezna."
+msgstr "Prvo polje je obvezno."
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:30
 #: eeschema/dialogs/dialog_label_properties_base.cpp:39
@@ -9272,7 +9279,7 @@ msgstr "Oznaka:"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:32
 msgid "Enter the text to be used within the schematic"
-msgstr "V shemo vnesite besedilo, ki bo uporabljeno"
+msgstr "Vnesite besedilo, ki bo uporabljeno znotraj sheme"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:49
 #: eeschema/dialogs/dialog_lib_textbox_properties_base.cpp:138
@@ -9289,7 +9296,7 @@ msgstr "Pomoč pri sintaksi"
 #: pcbnew/dialogs/panel_setup_rules_base.cpp:34
 #, fuzzy
 msgid "Show syntax help window"
-msgstr "Prikaži okno konzole"
+msgstr "Prikaži okno pomoči pri sintaksi"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:58
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:30
@@ -9388,7 +9395,7 @@ msgstr "Y položaj"
 #: pcbnew/pcb_dimension.cpp:337 pcbnew/pcb_text.cpp:144
 #: pcbnew/pcb_textbox.cpp:310
 msgid "Font"
-msgstr ""
+msgstr "Pisava"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:117
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:89
@@ -9404,7 +9411,7 @@ msgstr "Dodaj polje"
 #: eeschema/dialogs/panel_sym_lib_table_base.cpp:115
 #: pcbnew/dialogs/panel_fp_lib_table_base.cpp:111
 msgid "Move up"
-msgstr "Pomakni se navzgor"
+msgstr "Pomakni navzgor"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:127
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:99
@@ -9441,13 +9448,13 @@ msgstr "Izhod"
 #: eeschema/pin_type.cpp:54 eeschema/pin_type.cpp:246
 #: eeschema/sch_label.cpp:146
 msgid "Bidirectional"
-msgstr "Dvosmerna"
+msgstr "Dvosmerno"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:159
 #: eeschema/dialogs/dialog_sheet_pin_properties_base.cpp:64
 #: eeschema/pin_type.cpp:55 eeschema/pin_type.cpp:247
 msgid "Tri-state"
-msgstr "Tri-država"
+msgstr "Tri stanja"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:162
 #: eeschema/dialogs/dialog_sheet_pin_properties_base.cpp:67
@@ -9459,11 +9466,11 @@ msgstr "Pasivno"
 #: eeschema/dialogs/dialog_label_properties_base.cpp:165
 #, fuzzy
 msgid "Dot"
-msgstr "Pike"
+msgstr "Pika"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:171
 msgid "Diamond"
-msgstr ""
+msgstr "Diamant"
 
 #: eeschema/dialogs/dialog_label_properties_base.cpp:181
 #: eeschema/dialogs/dialog_schematic_setup.cpp:71
@@ -9480,7 +9487,7 @@ msgstr "Samodejno"
 #: eeschema/dialogs/dialog_lib_edit_pin_table.cpp:42
 #: eeschema/dialogs/dialog_lib_edit_pin_table.cpp:43
 msgid "ALL"
-msgstr ""
+msgstr "VSE"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table.cpp:44
 msgid "Standard"
@@ -9489,14 +9496,14 @@ msgstr "Standard"
 #: eeschema/dialogs/dialog_lib_edit_pin_table.cpp:45
 #, fuzzy
 msgid "Alternate"
-msgstr "Nadomestno ime pin"
+msgstr "Nadomestno ime priključka"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table.cpp:113
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:87
 #: pagelayout_editor/dialogs/dialog_design_inspector_base.cpp:38
 #: pcbnew/dialogs/dialog_board_statistics_base.cpp:231
 msgid "Count"
-msgstr "Štetje"
+msgstr "Število"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table.cpp:114
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:88
@@ -9537,7 +9544,7 @@ msgstr "Ime Velikost besedila"
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:100
 #, fuzzy
 msgid "De Morgan"
-msgstr "DeMorgan Standard"
+msgstr "De Morgan"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table.cpp:777
 #: eeschema/dialogs/dialog_lib_shape_properties.cpp:70
@@ -9553,7 +9560,7 @@ msgstr "Shrani spremembe?"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:25
 msgid "Pin numbers:"
-msgstr "Številke pinov:"
+msgstr "Številke priključkov:"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:29
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:40
@@ -9595,30 +9602,30 @@ msgstr "0"
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:36
 #, fuzzy
 msgid "Pin count:"
-msgstr "Število pinov"
+msgstr "Število priključkov:"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:47
 #, fuzzy
 msgid "Duplicate pins:"
-msgstr "Podvojitve"
+msgstr "Podvojeni priključki:"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:136
 msgid "Group by name"
-msgstr "Skupina po imenu"
+msgstr "Razvrsti po imenu"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:139
 #, fuzzy
 msgid "Group Selected"
-msgstr "Izbran ni noben avtobus"
+msgstr "Razvrsti izbrane"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.cpp:150
 #, fuzzy
 msgid "Filter by unit:"
-msgstr "Filtriraj po številu pinov"
+msgstr "Filtriraj po enoti"
 
 #: eeschema/dialogs/dialog_lib_edit_pin_table_base.h:81
 msgid "Pin Table"
-msgstr "Pin Table"
+msgstr "Tabela priključkov"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:33
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:127
@@ -9632,11 +9639,11 @@ msgid ""
 "symbol value when loaded in the schematic."
 msgstr ""
 "To je ime simbola v knjižnici,\n"
-"in tudi privzeto vrednost komponente, ko je naložen v shemo."
+"in tudi privzeta vrednost simbola, ko je naložen v shemo."
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:42
 msgid "Derive from existing symbol:"
-msgstr "Izvedi iz obstoječega simbola:"
+msgstr "Izpelji iz obstoječega simbola:"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:46
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:84
@@ -9648,7 +9655,7 @@ msgstr "Izvedi iz obstoječega simbola:"
 #: pcbnew/dialogs/dialog_graphic_item_properties_base.cpp:176
 #: pcbnew/dialogs/dialog_textbox_properties_base.cpp:207
 msgid "Combo!"
-msgstr "Combo!"
+msgstr "Kombinacija!"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:47
 msgid ""
@@ -9660,7 +9667,7 @@ msgstr ""
 "Izberite simbol v trenutni knjižnici kot nadrejeni simbol.\n"
 "\n"
 "To je bilo prej znano kot vzdevek. Ne izberite\n"
-"obstoječi simbol za ustvarjanje novega korenskega simbola."
+"obstoječega simbola za ustvarjanje novega korenskega simbola."
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:51
 msgid "Default reference designator:"
@@ -9678,7 +9685,7 @@ msgstr "Število enot na paket:"
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:203
 #, fuzzy
 msgid "All units are interchangeable"
-msgstr "Vse enote niso zamenljive"
+msgstr "Vse enote so zamenljive"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:72
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:204
@@ -9687,23 +9694,22 @@ msgid ""
 "Check this option when all symbol units are identical except\n"
 "for pin numbers."
 msgstr ""
-"Označite to možnost, če želite, da se simboli z več enotami razlikujejo\n"
-"elementi. Počistite to možnost, če so vse enote simbolov enake, razen\n"
-"za pin številke."
+"Označite to možnost, če so vse enote simbolov enake, razen\n"
+"za števike priključkov."
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:76
 #, fuzzy
 msgid "Create symbol with alternate body style (De Morgan)"
-msgstr "Ustvari simbol z nadomestnim slogom telesa (DeMorgan)"
+msgstr "Ustvari simbol z alternativnim slogom telesa (De Morgan)"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:79
 msgid "Create symbol as power symbol"
-msgstr "Ustvari simbol kot simbol moči"
+msgstr "Ustvari kot napajalni simbol"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:82
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:182
 msgid "Exclude from schematic bill of materials"
-msgstr "Izključite iz shematičnega predloga materiala"
+msgstr "Izključi iz kosovnice (BOM)"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:85
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:185
@@ -9713,19 +9719,19 @@ msgstr "Izključi iz sveta"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:103
 msgid "Pin name position offset:"
-msgstr "Odmik položaja imena zatiča:"
+msgstr "Odmik položaja imena priključka:"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:120
 msgid "Show pin number text"
-msgstr "Pokaži besedilo številke PIN"
+msgstr "Pokaži besedilo številke priključka"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:124
 msgid "Show pin name text"
-msgstr "Pokaži besedilo imena pin"
+msgstr "Pokaži besedilo imena priključka"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.cpp:128
 msgid "Pin name inside"
-msgstr "Pripni ime znotraj"
+msgstr "Ime priključka v notrajnosti"
 
 #: eeschema/dialogs/dialog_lib_new_symbol_base.h:74
 msgid "New Symbol"
@@ -9738,7 +9744,7 @@ msgstr "Nov simbol"
 #: pcbnew/dialogs/dialog_textbox_properties_base.cpp:150
 #, fuzzy
 msgid "Border"
-msgstr "Vrstni red"
+msgstr "Obroba"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:80
 #: eeschema/dialogs/dialog_lib_textbox_properties_base.cpp:226
@@ -9752,15 +9758,15 @@ msgstr "Slog:"
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:89
 #, fuzzy
 msgid "Set border width to 0 to use schematic's default symbol line width."
-msgstr "Preklopite na urejevalnik shem"
+msgstr "Nastavite širino obrobe na 0, če želite uporabiti privzeto širino obrobe sheme"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:103
 msgid "Fill Style"
-msgstr "Izpolnite slog"
+msgstr "Slog polnjena"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:110
 msgid "Do not fill"
-msgstr "Ne polnite"
+msgstr "Ne polni"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:113
 msgid "Fill with body outline color"
@@ -9773,24 +9779,24 @@ msgstr "Izpolnite z barvo ozadja telesa"
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:119
 #, fuzzy
 msgid "Fill with:"
-msgstr "Vrsta polnila:"
+msgstr "Zapolni z:"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:140
 #: eeschema/dialogs/dialog_lib_text_properties_base.cpp:195
 #, fuzzy
 msgid "Private to Symbol Editor"
-msgstr "Urejajte z urejevalnikom simbolov"
+msgstr "Zasebno za urejevalnik simbolov"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:143
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:153
 msgid "Common to all &units in symbol"
-msgstr "Skupno vsem & enotam v simbolu"
+msgstr "Skupno vsem &enotam v simbolu"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.cpp:149
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:156
 #, fuzzy
 msgid "Common to all body &styles (De Morgan)"
-msgstr "Skupno vsem telesom in slogom (DeMorgan)"
+msgstr "Skupno vsem slogom telesa (De Morgan)"
 
 #: eeschema/dialogs/dialog_lib_shape_properties_base.h:88
 msgid "Drawing Properties"
@@ -9809,7 +9815,7 @@ msgstr "Polja morajo imeti ime."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties.cpp:274
 msgid "Aliased symbol must have a parent selected"
-msgstr "Vzdejani simbol mora imeti izbranega starša"
+msgstr "Izpeljani simbol mora imeti nadrejeni simbol"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties.cpp:286
 msgid "Delete extra units from symbol?"
@@ -9818,13 +9824,13 @@ msgstr "Želite izbrisati dodatne enote iz simbola?"
 #: eeschema/dialogs/dialog_lib_symbol_properties.cpp:292
 #, fuzzy
 msgid "Delete alternate body style (De Morgan) from symbol?"
-msgstr "Ali želite iz simbola izbrisati nadomestni slog telesa (DeMorgan)?"
+msgstr "Ali želite iz simbola izbrisati nadomestni slog telesa (De Morgan)?"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties.cpp:319
 #: eeschema/tools/symbol_editor_control.cpp:326
 #, fuzzy, c-format
 msgid "Symbol name '%s' already in use in library '%s'."
-msgstr "Simbol '%s' že obstaja v knjižnici '%s'"
+msgstr "Ime simbola '%s' je že v uporabi v knjižnici '%s'"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties.cpp:441
 #, c-format
@@ -9840,7 +9846,7 @@ msgstr "Prva %d polja so obvezna."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties.cpp:659
 msgid "Add Footprint Filter"
-msgstr "Dodajte odtisni filter"
+msgstr "Dodaj filter odtisa"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties.cpp:702
 msgid "Edit Footprint Filter"
@@ -9858,11 +9864,11 @@ msgstr "Ključne besede:"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:149
 msgid "Derive from symbol:"
-msgstr "Izvedi iz simbola:"
+msgstr "Izpelji iz simbola:"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:153
 msgid "<None>"
-msgstr "<Nie>"
+msgstr "<Nič>"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:154
 msgid ""
@@ -9875,25 +9881,25 @@ msgid ""
 "root symbols."
 msgstr ""
 "Izberite simbol, iz katerega želite izpeljati ta simbol ali izberite\n"
-"<Ne> za korenski simbol.\n"
+"<Nič> za korenski simbol.\n"
 "\n"
 "Izpeljani simboli so bili prej imenovani vzdevki.\n"
-"To ne drži več in vsi simboli so\n"
+"To ne drži več in vsi simboli ali\n"
 "izhajajo iz drugih simbolov ali pa so samostojni kot\n"
 "korenski simboli."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:172
 #, fuzzy
 msgid "Has alternate body style (De Morgan)"
-msgstr "Ima nadomestni slog telesa (DeMorgan)"
+msgstr "Ima nadomestni slog telesa (De Morgan)"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:173
 msgid "Check this option if the symbol has an alternate body style (De Morgan)"
-msgstr "Označite to možnost, če ima simbol drug slog telesa (De Morgan)"
+msgstr "Označite to možnost, če ima simbol nadomestni slog telesa (De Morgan)"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:177
 msgid "Define as power symbol"
-msgstr "Določite kot simbol moči"
+msgstr "Definiraj kot napajalni simbol"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:178
 msgid ""
@@ -9902,11 +9908,11 @@ msgid ""
 "from editing in Eeschema.  The symbol will not be included in\n"
 "the BOM and cannot be assigned a footprint."
 msgstr ""
-"Če nastavite to možnost, se zadevni simbol prikaže v\n"
-"pogovorno okno \"dodaj napajalna vrata\". Besedilo vrednosti bo zaklenilo, "
-"da ga zaščiti\n"
-"od urejanja v Eeschemi. Simbol ne bo vključen v\n"
-"BOM in jim ni mogoče dodeliti odtisa."
+"Če izberete to možnost, se ta simbol prikaže v\n"
+"pogovornem oknu. Besedilo vrednosti bo zaklenjeno,\n"
+"da ga zaščiti pred\n"
+"urejanjem v shemi. Simbol ne bo vključen v\n"
+"kosovnico in mu ni mogoče dodeliti odtisa."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:191
 msgid "Number of Units:"
@@ -9918,38 +9924,38 @@ msgstr "Vnesite število enot za simbol, ki vsebuje več kot eno enoto"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:218
 msgid "Pin Text Options"
-msgstr "Možnosti pripenjanja besedila"
+msgstr "Možnosti besedila priključka"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:220
 msgid "Show pin number"
-msgstr "Pokaži številko PIN"
+msgstr "Pokaži številko priključka"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:222
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:187
 msgid "Show or hide pin numbers"
-msgstr "Prikažite ali skrijete številke PIN"
+msgstr "Prikaži ali skrij številke priključkov"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:226
 msgid "Show pin name"
-msgstr "Pokaži ime zatiča"
+msgstr "Pokaži ime priključka"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:228
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:193
 msgid "Show or hide pin names"
-msgstr "Prikažite ali skrijete imena pinov"
+msgstr "Prikaži ali skrij imena priključkov"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:235
 msgid "Place pin names inside"
-msgstr "Vstavite imena pinov"
+msgstr "Vstavite imena priključkov v notrajnost"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:237
 msgid ""
 "Check this option to have pin names inside the body and pin number outside.\n"
 "If not checked pins names and pins numbers are outside."
 msgstr ""
-"Označite to možnost, če želite, da so imena ohišja znotraj telesa, številka "
-"zatiča pa zunaj.\n"
-"Če ni potrjeno, so imena in številke nožic zunaj."
+"Označite to možnost, če želite, da so imena priključkov znotraj telesa, številka "
+"priključka pa zunaj.\n"
+"Če ne označite, bodo imena in številke priključkov na zunanji strani telesa."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:244
 msgid "Position offset:"
@@ -9957,7 +9963,7 @@ msgstr "Odmik položaja:"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:246
 msgid "Margin between the pin name position and the symbol body."
-msgstr ""
+msgstr "Rob med položajem imena priključka in telesom simbola."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:253
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:119
@@ -9978,7 +9984,7 @@ msgstr "enote"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:284
 msgid "Footprint filters:"
-msgstr "Odtisni filtri:"
+msgstr "Filtri odtisa:"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:286
 msgid ""
@@ -9987,12 +9993,12 @@ msgid ""
 "starting by sm."
 msgstr ""
 "Seznam imen odtisov, ki jih je mogoče uporabiti za ta simbol.\n"
-"Imena odtisov lahko z nadomestnimi znaki, kot je sm *, dovolijo vsa imena "
+"Za imena odtisov lahko uporabite nadomestne znake, kot je sm*, da omogočite vsa imena"
 "odtisov, ki se začnejo s sm."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:297
 msgid "Add footprint filter"
-msgstr "Dodaj odtisni filter"
+msgstr "Dodaj filter odtisa"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:302
 msgid "Edit footprint filter"
@@ -10000,19 +10006,19 @@ msgstr "Uredi filter odtisa"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:310
 msgid "Delete footprint filter"
-msgstr "Izbriši odtisni filter"
+msgstr "Izbriši filter odtisa"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:324
 msgid "Footprint Filters"
-msgstr "Filtri za odtis"
+msgstr "Filtri odtisov"
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.cpp:337
 msgid "Edit Spice Model..."
-msgstr "Uredi model začimb ..."
+msgstr "Uredi simulacijski model ..."
 
 #: eeschema/dialogs/dialog_lib_symbol_properties_base.h:115
 msgid "Library Symbol Properties"
-msgstr "Lastnosti simbola knjižnice"
+msgstr "Lastnosti simbola iz knjižnice"
 
 #: eeschema/dialogs/dialog_lib_text_properties.cpp:216
 #: eeschema/dialogs/dialog_text_properties.cpp:378
@@ -10024,29 +10030,29 @@ msgstr "Ime omrežja ne sme biti prazno."
 #: eeschema/dialogs/dialog_text_properties_base.cpp:240
 #, fuzzy
 msgid "Background fill"
-msgstr "Polnjenje ozadja:"
+msgstr "Polnilo ozadja:"
 
 #: eeschema/dialogs/dialog_lib_textbox_properties_base.cpp:264
 #, fuzzy
 msgid "Private to symbol editor"
-msgstr "Urejajte z urejevalnikom simbolov"
+msgstr "Zasebno za urejevalnik simbolov"
 
 #: eeschema/dialogs/dialog_lib_textbox_properties_base.h:104
 #: eeschema/dialogs/dialog_text_properties.cpp:58
 #: pcbnew/dialogs/dialog_textbox_properties_base.h:103
 #, fuzzy
 msgid "Text Box Properties"
-msgstr "Lastnosti besedila"
+msgstr "Lastnosti besedilnega polja"
 
 #: eeschema/dialogs/dialog_line_properties_base.cpp:77
 #, fuzzy
 msgid "Set width to 0 to use schematic's default line width."
-msgstr "Preklopite na urejevalnik shem"
+msgstr "Nastavite širino na 0, če želite uporabiti privzeto širino črte sheme."
 
 #: eeschema/dialogs/dialog_line_properties_base.h:68
 #, fuzzy
 msgid "Line Properties"
-msgstr "Lastnosti pinov"
+msgstr "Lastnosti črte"
 
 #: eeschema/dialogs/dialog_migrate_buses.cpp:104
 msgid "Conflicting Labels"
@@ -10054,7 +10060,7 @@ msgstr "Nasprotujoče si oznake"
 
 #: eeschema/dialogs/dialog_migrate_buses.cpp:105
 msgid "New Label"
-msgstr "Nova založba"
+msgstr "Nova oznaka"
 
 #: eeschema/dialogs/dialog_migrate_buses.cpp:106
 #: kicad/pcm/dialogs/panel_packages_view_base.cpp:94
@@ -10074,7 +10080,7 @@ msgid ""
 "This schematic has one or more buses with more than one label.\n"
 "This was allowed in previous KiCad versions but is no longer permitted."
 msgstr ""
-"Ta shema ima enega ali več avtobusov z več kot eno oznako.\n"
+"Ta shema ima enega ali več vodil z več kot eno oznako.\n"
 "To je bilo dovoljeno v prejšnjih različicah KiCad, vendar ni več dovoljeno."
 
 #: eeschema/dialogs/dialog_migrate_buses_base.cpp:23
@@ -10082,7 +10088,7 @@ msgid ""
 "Please select a new name for each of the buses below.\n"
 "A name has been suggested for you based on the labels attached to the bus."
 msgstr ""
-"Prosimo, izberite novo ime za vsakega od spodnjih avtobusov.\n"
+"Prosimo, izberite novo ime za vsakega od spodnjih vodil.\n"
 "Predlagano vam je ime na podlagi nalepk, pritrjenih na vodilo."
 
 #: eeschema/dialogs/dialog_migrate_buses_base.cpp:32
@@ -10095,17 +10101,17 @@ msgstr "Sprejmi ime"
 
 #: eeschema/dialogs/dialog_migrate_buses_base.h:53
 msgid "Migrate Buses"
-msgstr "Selite avtobuse"
+msgstr "Selite vodila"
 
 #: eeschema/dialogs/dialog_netlist.cpp:270
 #: eeschema/dialogs/dialog_netlist_base.h:69
 msgid "Export Netlist"
-msgstr "Izvoz Netlist"
+msgstr "Izvoz seznam vozlišč"
 
 #: eeschema/dialogs/dialog_netlist.cpp:316
 #, fuzzy
 msgid "Simulator requires a fully annotated schematic."
-msgstr "Izvoz netlista zahteva popolnoma označeno shemo."
+msgstr "Simulator zahteva popolnoma številčeno shemo."
 
 #: eeschema/dialogs/dialog_netlist.cpp:342
 #, fuzzy
@@ -10135,21 +10141,21 @@ msgid ""
 "Usually <path to spice binary> %I\n"
 "%I will be replaced by the actual spice netlist name"
 msgstr ""
-"Vnesite ukazno vrstico, da zaženete začimbe\n"
-"Običajno <pot do binarnega začimbe>% I\n"
-"% Nadomestilo me bo dejansko ime seznama začimb"
+"Vnesite ukazno vrstico, da zaženete simulacijo\n"
+"Običajno <pot do binarnega začimbe> %I\n"
+"%Nadomestilo me bo dejansko ime seznama vozlišč"
 
 #: eeschema/dialogs/dialog_netlist.cpp:370
 msgid "Create Netlist and Run Simulator Command"
-msgstr "Ustvarite Netlist in zaženite ukaz Simulator"
+msgstr "Ustvarite seznam vozlišč in zaženite ukaz simulatorja"
 
 #: eeschema/dialogs/dialog_netlist.cpp:421
 msgid "Netlist command:"
-msgstr "Ukaz Netlist:"
+msgstr "Ukaz seznama vozlišč:"
 
 #: eeschema/dialogs/dialog_netlist.cpp:461
 msgid "Save Netlist File"
-msgstr "Shrani datoteko Netlist"
+msgstr "Shrani datoteko seznama vozlišč"
 
 #: eeschema/dialogs/dialog_netlist.cpp:496
 #, c-format
@@ -10160,7 +10166,7 @@ msgstr "%s Izvozi"
 #: eeschema/netlist_exporters/netlist_generator.cpp:54
 #, fuzzy
 msgid "Exporting netlist requires a fully annotated schematic."
-msgstr "Izvoz netlista zahteva popolnoma označeno shemo."
+msgstr "Izvoz seznama vozlišč zahteva popolnoma številčeno shemo."
 
 #: eeschema/dialogs/dialog_netlist.cpp:652
 msgid "This plugin already exists."
@@ -10169,12 +10175,12 @@ msgstr "Ta vtičnik že obstaja."
 #: eeschema/dialogs/dialog_netlist.cpp:685
 #, fuzzy
 msgid "You must provide a netlist generator command string"
-msgstr "Napaka. Navesti morate ukazni niz"
+msgstr "Navesti morate ukazni niz seznama vozlišč"
 
 #: eeschema/dialogs/dialog_netlist.cpp:691
 #, fuzzy
 msgid "You must provide a netlist generator title"
-msgstr "Napaka. Navesti morate naslov"
+msgstr "Navesti morate naslov generatorja seznama vozlišč"
 
 #: eeschema/dialogs/dialog_netlist_base.cpp:39
 msgid "Add Generator..."
@@ -10203,32 +10209,34 @@ msgstr "Brskaj po generatorjih ..."
 
 #: eeschema/dialogs/dialog_netlist_base.h:107
 msgid "Script Generator Properties"
-msgstr "Lastnosti generatorja skriptov"
+msgstr "Lastnosti generatorja skript"
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:52
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:212
 msgid "Alternate Pin Name"
-msgstr "Nadomestno ime pin"
+msgstr "Nadomestno ime priključka"
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:193
 #: eeschema/dialogs/dialog_symbol_properties.cpp:354
 msgid "Alternate pin assignments are not available for De Morgan symbols."
-msgstr ""
+msgstr "Nadomestne dodelitve priključkov niso na voljo za De Morganove simbole."
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:270
 #, fuzzy
 msgid "Exit sync pins mode"
-msgstr "Uredi segment"
+msgstr "Izhod iz načina za sinhronizacijo priključkov"
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:285
 msgid ""
 "Synchronized pins mode is enabled.\n"
 "Similar pins will be edited regardless of this option."
 msgstr ""
+"Način sinhroniziranih priključkov je omogočen.\n"
+"Podobni priključki bodo urejeni ne glede na to možnost."
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:290
 msgid "If checked, this pin will exist in all units."
-msgstr ""
+msgstr "Če je označeno, bo ta priključek obstajal v vseh enotah."
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:294
 msgid "This symbol only has one unit. This control has no effect."
@@ -10236,7 +10244,7 @@ msgstr "Ta simbol ima samo eno enoto. Ta nastavitev nima učinka."
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:315
 msgid "Alternate pin definitions must have a name."
-msgstr "Nadomestne definicije pinov morajo imeti ime."
+msgstr "Nadomestne definicije priključkov morajo imeti ime."
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:335
 #, c-format
@@ -10245,46 +10253,46 @@ msgid ""
 "difficult to connect to in the schematic.\n"
 "Do you want to continue?"
 msgstr ""
-"Ta zatič ni na mreži %d mils, zaradi česar bo\n"
+"Ta priključek ni na mreži %d mils, zaradi česar ga bo\n"
 "težko povezati v shemo.\n"
 "Ali želite nadaljevati?"
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:430
 #, fuzzy
 msgid "Synchronized Pins Mode."
-msgstr "Način za sinhronizirano urejanje nožic"
+msgstr "Način sinhroniziranih priključkov."
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:432
 msgid "Synchronized Pins Mode.  New pin will be added to all units."
-msgstr ""
+msgstr "Način sinhroniziranih priključkov. Nov priključek bo dodan vsem enotam."
 
 #: eeschema/dialogs/dialog_pin_properties.cpp:434
 msgid "Synchronized Pins Mode.  Matching pins in other units will be updated."
-msgstr ""
+msgstr "Način sinhroniziranih priključkov. Ujemajoči se priključki v drugih enotah bodo posodobljeni."
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:43
 msgid "Pin &name:"
-msgstr "Pripni in ime:"
+msgstr "Ime priključka:"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:50
 msgid "Pin num&ber:"
-msgstr "PIN številka:"
+msgstr "Številka priključka:"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:52
 msgid "Pin number: 1 to 4 ASCII letters and/or digits"
-msgstr "Številka zatiča: 1 do 4 črke in / ali številke ASCII"
+msgstr "Številka priključka: 1 do 4 črke in/ali številke ASCII"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:59
 msgid "&X position:"
-msgstr "& X položaj:"
+msgstr "&X položaj:"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:68
 msgid "&Y position:"
-msgstr "& Y položaj:"
+msgstr "&Y položaj:"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:75
 msgid "&Pin length:"
-msgstr "& Dolžina zatiča:"
+msgstr "&Dolžina priključka:"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:82
 msgid "N&ame text size:"
@@ -10308,7 +10316,7 @@ msgstr "Grafični slog:"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:162
 msgid "&Visible"
-msgstr "& Vidno"
+msgstr "&Vidno"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:169
 #: pcbnew/dialogs/dialog_dimension_properties_base.cpp:192
@@ -10317,11 +10325,11 @@ msgstr "Predogled:"
 
 #: eeschema/dialogs/dialog_pin_properties_base.cpp:187
 msgid "Alternate pin definitions"
-msgstr "Nadomestne definicije pinov"
+msgstr "Nadomestne definicije priključkov"
 
 #: eeschema/dialogs/dialog_pin_properties_base.h:104
 msgid "Pin Properties"
-msgstr "Lastnosti pinov"
+msgstr "Lastnosti priključkov"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:110
 msgid "Plot All Pages"
@@ -10329,7 +10337,7 @@ msgstr "Izriši vse strani"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:111
 msgid "Plot Current Page"
-msgstr "Izris trenutne strani"
+msgstr "Izriši trenuto stran"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:212
 #: pcbnew/dialogs/dialog_export_svg.cpp:204
@@ -10337,7 +10345,7 @@ msgstr "Izris trenutne strani"
 #: pcbnew/exporters/gen_footprints_placefile.cpp:221
 #: pcbnew/exporters/gen_footprints_placefile.cpp:582
 msgid "Select Output Directory"
-msgstr "Izberite Output Directory"
+msgstr "Izberite izhodno mapo"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:229
 #: pcbnew/dialogs/dialog_gendrill.cpp:309 pcbnew/dialogs/dialog_plot.cpp:517
@@ -10347,7 +10355,7 @@ msgid ""
 "'%s'?"
 msgstr ""
 "Ali želite uporabiti pot glede na\n"
-"\"%s\""
+"'%s'?"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:231
 #: pcbnew/dialogs/dialog_export_svg.cpp:211
@@ -10357,7 +10365,7 @@ msgstr ""
 #: pcbnew/exporters/gen_footprints_placefile.cpp:229
 #: pcbnew/exporters/gen_footprints_placefile.cpp:239
 msgid "Plot Output Directory"
-msgstr "Plot Output Directory"
+msgstr "Izriši izhodno mapo"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:274
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:59
@@ -10428,7 +10436,7 @@ msgstr "Shema"
 #: eeschema/dialogs/dialog_plot_schematic.cpp:435
 #, c-format
 msgid "Failed to write plot files to folder '%s'."
-msgstr "Datotek z izrisi ni bilo mogoče zapisati v mapo \"%s\"."
+msgstr "Datotek z izrisi ni bilo mogoče zapisati v mapo '%s'."
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:509
 #: eeschema/dialogs/dialog_plot_schematic.cpp:683
@@ -10437,7 +10445,7 @@ msgstr "Datotek z izrisi ni bilo mogoče zapisati v mapo \"%s\"."
 #: pcbnew/dialogs/dialog_plot.cpp:1082
 #, fuzzy, c-format
 msgid "Plotted to '%s'."
-msgstr "Nalaganja \"%s\" ni uspelo"
+msgstr "Izrisano v '%s'."
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:529
 #: eeschema/dialogs/dialog_plot_schematic.cpp:699
@@ -10450,17 +10458,17 @@ msgstr "Nalaganja \"%s\" ni uspelo"
 #: pcbnew/exporters/gendrill_gerber_writer.cpp:124
 #, fuzzy
 msgid "Done."
-msgstr "Urejeno"
+msgstr "Končano."
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:875
 #, fuzzy, c-format
 msgid "Plotted to '%s'.\n"
-msgstr "Nalaganja \"%s\" ni uspelo"
+msgstr "Izrisano v '%s'.\n"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:1186
 #, fuzzy
 msgid "Done"
-msgstr "Urejeno"
+msgstr "Končano"
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:1261
 #, c-format
@@ -10471,27 +10479,27 @@ msgstr ""
 #: eeschema/dialogs/dialog_plot_schematic.cpp:1328
 #, fuzzy, c-format
 msgid "Cannot normalize path '%s%s'."
-msgstr "Datoteke '%s' ni mogoče odpreti"
+msgstr "Poti ni mogoče normalizirati '%s%s'."
 
 #: eeschema/dialogs/dialog_plot_schematic.cpp:1315
 #, fuzzy
 msgid "No project or path defined for the current schematic."
-msgstr "Ustvari račun za trenutno shemo"
+msgstr "Za trenutno shemo ni definiranega projekta ali poti."
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:24
 #: pcbnew/dialogs/dialog_export_svg_base.cpp:24
 #: pcbnew/dialogs/dialog_gen_footprint_position_file_base.cpp:26
 #: pcbnew/dialogs/dialog_plot_base.cpp:36
 msgid "Output directory:"
-msgstr "Izhodni imenik:"
+msgstr "Izhodna mapa:"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:29
 msgid ""
 "Target directory for plot files. Can be absolute or relative to the "
 "schematic main file location."
 msgstr ""
-"Ciljni imenik za datoteke ploskve. Lahko je absolutna ali relativna glede na "
-"glavno shematsko lokacijo datoteke."
+"Mapa datotek(e) za izris. Lahko je absolutno ali relativno "
+"zapisana glede na lokacijo projekta."
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:41
 #: pcbnew/dialogs/dialog_plot_base.cpp:27
@@ -10528,12 +10536,12 @@ msgstr "Velikost strani:"
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:65
 #, fuzzy
 msgid "Plot drawing sheet"
-msgstr "Končajte risalni list"
+msgstr "Izriši obrobe in glavo sheme"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:67
 #, fuzzy
 msgid "Plot the drawing sheet border and title block"
-msgstr "Natisni obrobo in naslovni blok"
+msgstr "Izriši obrobe in glavo sheme"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:76
 msgid "Black and White"
@@ -10541,11 +10549,11 @@ msgstr "Črno in belo"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:82
 msgid "Plot background color"
-msgstr "Barva ozadja ploskve"
+msgstr "Izriši barvo ozadja"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:83
 msgid "Plot the background color if the output format supports it"
-msgstr "Izrišite barvo ozadja, če jo podpira izhodna oblika"
+msgstr "Izriši barvo ozadja, če jo podpira izhodna oblika"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:87
 msgid "Color theme:"
@@ -10553,13 +10561,13 @@ msgstr "Barvna tema:"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:94
 msgid "Select the color theme to use for plotting"
-msgstr "Izberite barvno temo, ki jo želite uporabiti za risanje"
+msgstr "Izberite barvno temo, ki jo želite uporabiti za izrisovanje"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:98
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:107
 #: pcbnew/import_gfx/dialog_import_gfx_base.cpp:186
 msgid "Default line width:"
-msgstr "Privzeta širina vrstice:"
+msgstr "Privzeta širina črte:"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:103
 msgid ""
@@ -10577,7 +10585,7 @@ msgstr "Možnosti HPGL"
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:126
 #, fuzzy
 msgid "Position and units:"
-msgstr "Položaj X:"
+msgstr "Položaj in enote:"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:130
 msgid "Bottom left, plotter units"
@@ -10585,15 +10593,15 @@ msgstr "Spodaj levo, enote risalnika"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:130
 msgid "Centered, plotter units"
-msgstr ""
+msgstr "Centrirano, enote risalnika"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:130
 msgid "Page fit, user units"
-msgstr ""
+msgstr "Prileganje strani, enote uporabnika"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:130
 msgid "Content fit, user units"
-msgstr ""
+msgstr "Prileganje vsebine, enote uporabnika"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.cpp:136
 msgid "Pen width:"
@@ -10601,7 +10609,7 @@ msgstr "Širina peresa:"
 
 #: eeschema/dialogs/dialog_plot_schematic_base.h:85
 msgid "Plot Schematic Options"
-msgstr "Možnosti sheme ploskve"
+msgstr "Možnosti izrisa sheme"
 
 #: eeschema/dialogs/dialog_print_using_printer.cpp:330
 msgid "Print Schematic"
@@ -10622,7 +10630,7 @@ msgstr "Natisni list in sklic ter naslovni blok"
 
 #: eeschema/dialogs/dialog_print_using_printer_base.cpp:24
 msgid "Print (or not) the Frame references."
-msgstr "Natisnite (ali ne) referenc Frame."
+msgstr "Natisnite (ali ne) referenčni okvir."
 
 #: eeschema/dialogs/dialog_print_using_printer_base.cpp:28
 msgid "Print in &black and white only"
@@ -10664,7 +10672,7 @@ msgstr "Ime simbola"
 
 #: eeschema/dialogs/dialog_rescue_each.cpp:126
 msgid "Action Taken"
-msgstr "Izvedena akcija"
+msgstr "Ukrep izveden"
 
 #: eeschema/dialogs/dialog_rescue_each.cpp:130
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:1023
@@ -10687,7 +10695,7 @@ msgid ""
 "and the tool can be activated manually from the \"Tools\" menu."
 msgstr ""
 "Nehaj prikazovati to orodje?\n"
-"Spremembe ne bodo izvedene.\n"
+"Sprememb ne bo.\n"
 "\n"
 "To nastavitev lahko spremenite v pogovornem oknu \"Knjižnice simbolov\",\n"
 "orodje pa lahko aktivirate ročno v meniju \"Orodja\"."
@@ -10702,7 +10710,7 @@ msgstr "Simboli za posodobitev:"
 
 #: eeschema/dialogs/dialog_rescue_each_base.cpp:37
 msgid "Instances of this symbol:"
-msgstr "Primeri tega simbola:"
+msgstr "Primerki tega simbola:"
 
 #: eeschema/dialogs/dialog_rescue_each_base.cpp:55
 msgid "Cached Symbol:"
@@ -10710,16 +10718,16 @@ msgstr "Predpomnjeni simbol:"
 
 #: eeschema/dialogs/dialog_rescue_each_base.cpp:76
 msgid "Library Symbol:"
-msgstr "Simbol knjižnice:"
+msgstr "Simbol iz knjižnice:"
 
 #: eeschema/dialogs/dialog_rescue_each_base.cpp:100
 msgid "Never Show Again"
-msgstr "Nikoli več ne pokaži"
+msgstr "Ne pokaži več"
 
 #: eeschema/dialogs/dialog_rescue_each_base.h:67
 #: eeschema/project_rescue.cpp:585 eeschema/project_rescue.cpp:600
 msgid "Project Rescue Helper"
-msgstr "Projektni pomočnik za reševanje"
+msgstr "Pomočnik pri reševanju projekta"
 
 #: eeschema/dialogs/dialog_sch_import_settings.cpp:43
 #: eeschema/dialogs/dialog_sch_import_settings_base.h:61
@@ -10737,7 +10745,7 @@ msgstr "Uvozi nastavitve iz"
 #: pcbnew/dialogs/dialog_import_settings.cpp:125
 #, fuzzy
 msgid "File not found."
-msgstr "Ne najdem datoteke"
+msgstr "Datoteka ni najdena"
 
 #: eeschema/dialogs/dialog_sch_import_settings_base.cpp:22
 #: pcbnew/dialogs/dialog_import_settings_base.cpp:22
@@ -10752,8 +10760,8 @@ msgid ""
 "Target directory for plot files. Can be absolute or relative to the board "
 "file location."
 msgstr ""
-"Ciljni imenik za datoteke ploskve. Lahko je absolutna ali relativna glede na "
-"lokacijo datoteke plošče."
+"Mapa datotek(e) za izris. Lahko je absolutno ali relativno zapisana glede "
+"na lokacijo datoteke plošče. "
 
 #: eeschema/dialogs/dialog_sch_import_settings_base.cpp:44
 #: pcbnew/dialogs/dialog_import_settings_base.cpp:45
@@ -10770,7 +10778,7 @@ msgstr "Predloge imen polj"
 
 #: eeschema/dialogs/dialog_sch_import_settings_base.cpp:54
 msgid "Pin conflict map"
-msgstr "Zemljevid konfliktov pinov"
+msgstr "Prireditvena tabela možnih napak med priključki"
 
 #: eeschema/dialogs/dialog_sch_import_settings_base.cpp:57
 #: pcbnew/dialogs/dialog_import_settings_base.cpp:70
@@ -10780,7 +10788,7 @@ msgstr "Resnost kršitve"
 #: eeschema/dialogs/dialog_sch_import_settings_base.cpp:60
 #: pcbnew/dialogs/dialog_import_settings_base.cpp:67
 msgid "Net classes"
-msgstr "Netovi razredi"
+msgstr "Razredi povezav"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:31
 msgid "&Search for:"
@@ -10801,7 +10809,7 @@ msgstr "Smer:"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:61
 msgid "F&orward"
-msgstr "F & orward"
+msgstr "Naprej"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:66
 msgid "&Backward"
@@ -10809,7 +10817,7 @@ msgstr "& Nazaj"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:82
 msgid "&Match case"
-msgstr "Upoštevaj velikost"
+msgstr "Razlikuje velike in male črke"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:85
 #: pcbnew/dialogs/dialog_find_base.cpp:46
@@ -10823,11 +10831,11 @@ msgstr "Nadomestni znaki"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:92
 msgid "Search pin &names and numbers"
-msgstr "Išči pin in imena in številke"
+msgstr "Išči imena in številke priključkov"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:95
 msgid "Search hidden fields"
-msgstr "Poiščite skrita polja"
+msgstr "Poišči skrita polja"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:98
 msgid "Search the current &sheet only"
@@ -10839,7 +10847,7 @@ msgstr "Zamenjajte ujemanja v označevalcih referenc"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:115
 msgid "&Find"
-msgstr "&Najti"
+msgstr "&Najdi"
 
 #: eeschema/dialogs/dialog_schematic_find_base.cpp:120
 msgid "&Replace"
@@ -10851,7 +10859,7 @@ msgstr "Zamenjaj &vse"
 
 #: eeschema/dialogs/dialog_schematic_setup.cpp:40
 msgid "Schematic Setup"
-msgstr "Shematska nastavitev"
+msgstr "Nastavitev sheme"
 
 #: eeschema/dialogs/dialog_schematic_setup.cpp:41
 msgid "Import Settings from Another Project..."
@@ -10874,7 +10882,7 @@ msgstr "Projekt"
 #: pcbnew/widgets/appearance_controls.cpp:2235
 #: pcbnew/widgets/appearance_controls_base.cpp:118
 msgid "Net Classes"
-msgstr "Neto razredi"
+msgstr "Razredi povezav"
 
 #: eeschema/dialogs/dialog_schematic_setup.cpp:80
 #: pcbnew/dialogs/dialog_board_setup.cpp:106
@@ -10884,7 +10892,7 @@ msgstr "Spremenljivke besedila"
 #: eeschema/dialogs/dialog_schematic_setup.cpp:89
 #, fuzzy
 msgid "Project is missing or read-only. Settings will not be editable."
-msgstr "Projekt manjka ali je samo za branje. Spremembe ne bodo shranjene."
+msgstr "Projekt manjka ali je samo za branje. Spremembe ne bo mogoče urejati."
 
 #: eeschema/dialogs/dialog_schematic_setup.cpp:126
 #, fuzzy, c-format
@@ -10900,24 +10908,24 @@ msgstr ""
 #: eeschema/dialogs/dialog_text_properties.cpp:72
 #, fuzzy
 msgid "Note: individual item colors overridden in Preferences."
-msgstr "Opomba: barve elementov so v trenutni barvni temi preglasjene."
+msgstr "Opomba: barve elementov so povožene v nastavitvah."
 
 #: eeschema/dialogs/dialog_shape_properties_base.cpp:88
 #: pcbnew/dialogs/dialog_graphic_item_properties_base.cpp:158
 #: pcbnew/dialogs/dialog_pad_properties_base.cpp:1291
 #: pcbnew/dialogs/dialog_pad_properties_base.cpp:1526
 msgid "Filled shape"
-msgstr "Izpolnjena oblika"
+msgstr "Napolni z barvo"
 
 #: eeschema/dialogs/dialog_shape_properties_base.cpp:122
 #, fuzzy
 msgid "Set border width to 0 to use schematic's default line width."
-msgstr "Preklopite na urejevalnik shem"
+msgstr "Nastavite širino obrobe na 0, če želite uporabiti privzeto širino črte sheme."
 
 #: eeschema/dialogs/dialog_shape_properties_base.cpp:126
 #, fuzzy
 msgid "Clear colors to use Schematic Editor colors."
-msgstr "Ponastavite vse barve v tej temi na privzete vrednosti KiCad"
+msgstr "Počistite barve za uporabo barv urejevalnika shem."
 
 #: eeschema/dialogs/dialog_shape_properties_base.h:79
 #, fuzzy, c-format
@@ -10926,7 +10934,7 @@ msgstr "Lastnosti"
 
 #: eeschema/dialogs/dialog_sheet_pin_properties_base.h:86
 msgid "Sheet Pin Properties"
-msgstr "Lastnosti zatiča lista"
+msgstr "Lastnosti hierarhičnega priključka"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:255
 msgid "A sheet must have a valid file name."
@@ -10939,12 +10947,12 @@ msgstr "Datoteka lista mora imeti pripono '.kicad_sch'."
 #: eeschema/dialogs/dialog_sheet_properties.cpp:299
 #, fuzzy
 msgid "Use relative path for sheet file?"
-msgstr "Ali želite uporabiti relativno pot?"
+msgstr "Ali želite uporabiti relativno pot za datoteko lista?"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:300
 #, fuzzy
 msgid "Sheet File Path"
-msgstr "Datoteka s listi"
+msgstr "Pot datoteke lista"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:303
 msgid ""
@@ -10952,24 +10960,27 @@ msgid ""
 "portability across systems and platforms.  Using absolute paths can result "
 "in portability issues."
 msgstr ""
+"Uporaba relativnih hierarhičnih poti imen datotek listov izboljša "
+"prenosljivost sheme med sistemi in platformami. Uporaba absolutnih poti lahko povzroči "
+"težave s prenosljivostjo."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:307
 #, fuzzy
 msgid "Use Relative Path"
-msgstr "Ali želite uporabiti relativno pot?"
+msgstr "Uporabi relativno pot"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:308
 #, fuzzy
 msgid "Use Absolute Path"
-msgstr "Absolutno"
+msgstr "Uporabi absolutno pot"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:339
 msgid "Untitled Sheet"
-msgstr "Brez naslova List"
+msgstr "List brez naslova"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:365
 msgid "Note: item colors are overridden in the current color theme."
-msgstr "Opomba: barve elementov so v trenutni barvni temi preglasjene."
+msgstr "Opomba: barve elementov so povožene v nastavitvah."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:367
 #, c-format
@@ -10978,16 +10989,16 @@ msgid ""
 "in Preferences > Eeschema > Colors."
 msgstr ""
 "Če si želite ogledati barve posameznih elementov, počistite polje [%s]\n"
-"v Preferences> Eeschema> Barve."
+"v Preferences > Eeschema > Barve."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:426
 #, fuzzy, c-format
 msgid "The file '%s' does not appear to be a valid schematic file."
-msgstr "Zdi se, da datoteka \"%s\" ni veljavna shematska datoteka."
+msgstr "Zdi se, da datoteka '%s' ni veljavna datoteka s shemo."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:428
 msgid "Invalid Schematic File"
-msgstr "Neveljavna shematska datoteka"
+msgstr "Neveljavna datoteka s shemo"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:452
 #, c-format
@@ -10997,42 +11008,46 @@ msgid ""
 "against parent sheet schematic file path:\n"
 "'%s'."
 msgstr ""
+"Ni mogoče normalizirati nove poti datoteke s shemo lista:\n"
+"'%s'\n"
+"glede na pot datoteke s shemo nadrejenega lista:\n"
+"'%s'."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:494
 #: kicad/tools/kicad_manager_control.cpp:567
 #, fuzzy, c-format
 msgid "'%s' already exists."
-msgstr "\"%s\" že obstaja."
+msgstr "'%s' že obstaja."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:497
 #, fuzzy, c-format
 msgid "Link '%s' to this file?"
-msgstr "Povezati \"%s\" na to datoteko?"
+msgstr "Povezava '%s' do te datoteke?"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:537
 #, fuzzy, c-format
 msgid "Change '%s' link from '%s' to '%s'?"
-msgstr "Spremenite vrednost %s iz '%s' v '%s'."
+msgstr "Spremeni povezavo %s iz '%s' v '%s'."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:542
 #: eeschema/dialogs/dialog_sheet_properties.cpp:559
 msgid "This action cannot be undone."
-msgstr "Te operacije ne morete preklicati."
+msgstr "Ta operacija ne more biti razveljavljena."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:554
 #, fuzzy, c-format
 msgid "Create new file '%s' with contents of '%s'?"
-msgstr "Želite ustvariti novo datoteko \"%s\" z vsebino \"%s\"?"
+msgstr "Želite ustvariti novo datoteko '%s' z vsebino '%s'?"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:592
 #, fuzzy, c-format
 msgid "Error occurred saving schematic file '%s'."
-msgstr "Pri shranjevanju shematske datoteke »%s« je prišlo do napake."
+msgstr "Pri shranjevanju datoteke s shemo '%s' je prišlo do napake."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:596
 #, fuzzy, c-format
 msgid "Failed to save schematic '%s'"
-msgstr "Sheme \"%s\" ni bilo mogoče shraniti"
+msgstr "Sheme '%s' ni bilo mogoče shraniti"
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:688
 msgid "A sheet must have a name."
@@ -11040,7 +11055,7 @@ msgstr "List mora imeti ime."
 
 #: eeschema/dialogs/dialog_sheet_properties.cpp:696
 msgid "A sheet must have a file specified."
-msgstr "Na listu mora biti navedena datoteka."
+msgstr "List mora imeti navedeno datoteko."
 
 #: eeschema/dialogs/dialog_sheet_properties_base.cpp:127
 #: eeschema/lib_field.cpp:489 eeschema/lib_pin.cpp:1089
@@ -11077,7 +11092,7 @@ msgstr "Hierarhična pot:"
 
 #: eeschema/dialogs/dialog_sheet_properties_base.cpp:199
 msgid "path"
-msgstr ""
+msgstr "pot"
 
 #: eeschema/dialogs/dialog_sheet_properties_base.h:84
 msgid "Sheet Properties"
@@ -11181,12 +11196,12 @@ msgstr "Onemogoči simbol za simulacijo"
 
 #: eeschema/dialogs/dialog_sim_model_base.h:106
 msgid "Spice Model Editor"
-msgstr "Urejevalnik modelov začimb"
+msgstr "Urejevalnik simulacijskih modelov"
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:114
 #, fuzzy
 msgid "You need to select DC source"
-msgstr "Izbrati morate vir enosmernega toka (pometanje 1)"
+msgstr "Izbrati morate vir enosmernega toka"
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:218
 msgid "Source 1 and Source 2 must be different"
@@ -11194,23 +11209,25 @@ msgstr "Vir 1 in Vir 2 se morata razlikovati"
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:280
 msgid "No valid simulation is configured."
-msgstr ""
+msgstr "Ni konfigurirane veljavne simulacije"
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:283
 msgid ""
 "A valid simulation can be configured by selecting a simulation tab, setting "
 "the simulation parameters and clicking the OK button with the tab selected."
 msgstr ""
+"Veljavno simulacijo lahko konfigurirate tako, da izberete zavihek simulacije, "
+"nastavite parametre simulacije in kliknete gumb V redu z zavihkom izbranim."
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:287
 #, fuzzy
 msgid "Exit Without Valid Simulation"
-msgstr "Edit Cotation"
+msgstr "Izhod brez veljavne simulacije"
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:288
 #, fuzzy
 msgid "Configure Valid Simulation"
-msgstr "Zapri simulacijo"
+msgstr "Konfigurirajte veljavno simulacijo"
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:591
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:146
@@ -11225,7 +11242,7 @@ msgstr "Volti"
 #: eeschema/dialogs/dialog_sim_settings.cpp:592
 #, fuzzy
 msgid "Amperes"
-msgstr "skakalec"
+msgstr "Amperi"
 
 #: eeschema/dialogs/dialog_sim_settings.cpp:593
 #: pcb_calculator/calculator_panels/panel_attenuators_base.cpp:66
@@ -11271,7 +11288,7 @@ msgstr "Hertz"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:64
 msgid "Stop frequency:"
-msgstr "Stop frekvence:"
+msgstr "Končna frekvenca:"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:85
 msgid "AC"
@@ -11280,7 +11297,7 @@ msgstr "AC"
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:98
 #, fuzzy
 msgid "Source 2"
-msgstr "Vir"
+msgstr "Vir 2"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:103
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:109
@@ -11296,47 +11313,47 @@ msgstr "V"
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:109
 #, fuzzy
 msgid "I"
-msgstr "PI"
+msgstr "I"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:103
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:109
 #, fuzzy
 msgid "R"
-msgstr "R1"
+msgstr "R"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:103
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:109
 msgid "TEMP"
-msgstr ""
+msgstr "TEMP"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:115
 #, fuzzy
 msgid "Source:"
-msgstr "Vir"
+msgstr "Vir:"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:119
 #, fuzzy
 msgid "Sweep type:"
-msgstr "Vrsta oblike:"
+msgstr "Tip prehoda:"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:123
 #, fuzzy
 msgid "Source 1"
-msgstr "Vir"
+msgstr "Vir 1"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:139
 #, fuzzy
 msgid "Starting value:"
-msgstr "Začetna napetost:"
+msgstr "Začetna vrednost:"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:159
 #, fuzzy
 msgid "Final value:"
-msgstr "Začetna vrednost:"
+msgstr "Končna vrednost:"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:179
 msgid "Increment step:"
-msgstr "Korak prirastka:"
+msgstr "Korak:"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:199
 #, fuzzy
@@ -11378,7 +11395,7 @@ msgstr "Začetna frekvenca [Hz]"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:294
 msgid "Stop frequency [Hz]"
-msgstr "Zaustavitvena frekvenca [Hz]"
+msgstr "Končna frekvenca [Hz]"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:311
 #: eeschema/sim/spice_simulator.cpp:70
@@ -11396,7 +11413,7 @@ msgstr "Operacijska točka"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:334
 msgid "Pole-Zero"
-msgstr "Pole-Zero"
+msgstr "Poli-ničle"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:338
 #: eeschema/sim/spice_simulator.cpp:76
@@ -11415,7 +11432,7 @@ msgstr "Časovni korak:"
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:376
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:390
 msgid "seconds"
-msgstr "sek"
+msgstr "sekund"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:369
 msgid "Final time:"
@@ -11436,7 +11453,7 @@ msgstr "Prehodno"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:413
 msgid "Spice directives:"
-msgstr "Direktive o začimbah:"
+msgstr "Smernice simulacije:"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:422
 msgid "Load directives from schematic"
@@ -11457,12 +11474,12 @@ msgstr "Dodajte celotno pot za .include knjižnične direktive"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:446
 msgid "Compatibility mode:"
-msgstr ""
+msgstr "Združljivostni način"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:450
 #, fuzzy
 msgid "User configuration"
-msgstr "Konfiguracija luči"
+msgstr "Uporabniška konfiguracija"
 
 #: eeschema/dialogs/dialog_sim_settings_base.cpp:450
 msgid "Spice"
@@ -11491,12 +11508,12 @@ msgstr "Nastavitve simulacije"
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:89
 #: eeschema/fields_grid_table.cpp:802
 msgid "Select Footprint..."
-msgstr "Izberite Footprint ..."
+msgstr "Izberite odtis..."
 
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:90
 #: eeschema/fields_grid_table.cpp:803
 msgid "Browse for footprint"
-msgstr "Poiščite odtis"
+msgstr "Poišči odtis"
 
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:95
 #: eeschema/fields_grid_table.cpp:808 eeschema/tools/ee_actions.cpp:61
@@ -11544,12 +11561,12 @@ msgstr "Polje mora imeti ime."
 #: eeschema/dialogs/dialog_symbol_properties.cpp:829
 #, fuzzy, c-format
 msgid "Field name '%s' already in use."
-msgstr "Ime polja \"%s\" je že v uporabi."
+msgstr "Ime polja '%s' je že v uporabi."
 
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:1097
 #, fuzzy
 msgid "User Fields"
-msgstr "Polja"
+msgstr "Uporabniška polja"
 
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:1106
 #, fuzzy
@@ -11559,48 +11576,48 @@ msgstr "Izbriši polje"
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:1107
 #, fuzzy
 msgid "Select field:"
-msgstr "Polja listov"
+msgstr "Izberite polja:"
 
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:1342
 #, fuzzy
 msgid "Unsaved data"
-msgstr "[Neshranjeno]"
+msgstr "Neshranjeni podatki"
 
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:1343
 msgid "Changes are unsaved. Export unsaved data?"
-msgstr ""
+msgstr "Spremembe niso shranjene. Ali želite izvoziti neshranjene podatke?"
 
 #: eeschema/dialogs/dialog_symbol_fields_table.cpp:1353
 #, fuzzy
 msgid "Save as CSV"
-msgstr "Shrani kot sliko"
+msgstr "Shrani kot CSV"
 
 #: eeschema/dialogs/dialog_symbol_fields_table_base.cpp:34
 msgid "Add Field..."
-msgstr "Dodaj polje ..."
+msgstr "Dodaj polje..."
 
 #: eeschema/dialogs/dialog_symbol_fields_table_base.cpp:37
 #, fuzzy
 msgid "Remove Field..."
-msgstr "Preimenuj datoteko ..."
+msgstr "Preimenuj datoteko..."
 
 #: eeschema/dialogs/dialog_symbol_fields_table_base.cpp:65
 msgid "Group symbols"
-msgstr "Skupinski simboli"
+msgstr "Združi simbole"
 
 #: eeschema/dialogs/dialog_symbol_fields_table_base.cpp:67
 msgid "Group symbols together based on common properties"
-msgstr "Združite simbole na podlagi skupnih lastnosti"
+msgstr "Združi simbole na podlagi skupnih lastnosti"
 
 #: eeschema/dialogs/dialog_symbol_fields_table_base.cpp:125
 #, fuzzy
 msgid "Export as CSV..."
-msgstr "Izvozi simbol kot SVG ..."
+msgstr "Izvozi kot CSV..."
 
 #: eeschema/dialogs/dialog_symbol_fields_table_base.h:87
 #, fuzzy
 msgid "Symbol Fields Table"
-msgstr "Polja s simboli"
+msgstr "Tabela polj simbolov"
 
 #: eeschema/dialogs/dialog_symbol_properties.cpp:160
 msgid "Base Name"
@@ -11618,7 +11635,7 @@ msgstr "Enota:"
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:141
 #, fuzzy
 msgid "Alternate symbol (De Morgan)"
-msgstr "Nadomestni simbol (DeMorgan)"
+msgstr "Nadomestni simbol (De Morgan)"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:142
 msgid ""
@@ -11626,11 +11643,11 @@ msgid ""
 "For gates, this is the \"De Morgan\" conversion"
 msgstr ""
 "Uporabite nadomestno obliko tega simbola.\n"
-"Za vrata je to pretvorba \"De Morgan\""
+"Za vrata je to \"De Morganova\" pretvorba"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:146
 msgid "Default for all sheet instances"
-msgstr ""
+msgstr "Privzeto za vse primerke listov"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:147
 msgid ""
@@ -11638,6 +11655,8 @@ msgid ""
 "footprint fields the default for all sheet instances\n"
 "of this symbol"
 msgstr ""
+"Označite, če želite, da sta vrednost in odtis\n"
+"privzeta za vse primerke tega simbola na listu"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:151
 #: pcb_calculator/calculator_panels/panel_transline_base.cpp:345
@@ -11671,11 +11690,11 @@ msgstr "Zrcali:"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:165
 msgid "Not mirrored"
-msgstr "Ni zrcalno"
+msgstr "Ni zrcaljeno"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:165
 msgid "Around X axis"
-msgstr "Okoli osi X"
+msgstr "Okoli X osi"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:165
 msgid "Around Y axis"
@@ -11687,11 +11706,11 @@ msgstr "Pripni besedilo"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:185
 msgid "Show pin numbers"
-msgstr "Pokaži številke pinov"
+msgstr "Pokaži številke priključkov"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:191
 msgid "Show pin names"
-msgstr "Pokaži imena pinov"
+msgstr "Pokaži imena priključkov"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:201
 msgid "Attributes"
@@ -11699,15 +11718,15 @@ msgstr "Atributi"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:203
 msgid "Exclude from bill of materials"
-msgstr "Izključi iz gradiva"
+msgstr "Izključi iz kosovnice (BOM)"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:204
 msgid ""
 "This is useful for adding symbols for board footprints such as fiducials\n"
 "and logos that you do not want to appear in the bill of materials export"
 msgstr ""
-"To je koristno za dodajanje simbolov za odtise plošč, kot so fiduciali\n"
-"in logotipi, ki jih ne želite, da se pojavijo v izvozu materiala"
+"To je koristno za dodajanje simbolov za odtise plošč, kot so pooblastila\n"
+"in logotipi, ki jih ne želite, da se pojavijo v izvozu kosovnice (BOM)"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:209
 msgid ""
@@ -11715,40 +11734,39 @@ msgid ""
 "materials but\n"
 "not required to layout the board such as mechanical fasteners and enclosures"
 msgstr ""
-"To je koristno za dodajanje simbolov, ki se izvozijo samo v predmete, "
-"vendar\n"
-"ni potrebna za postavitev plošče, kot so mehanski pritrdilni elementi in "
-"ohišja"
+"To je uporabno za dodajanje simbolov, ki se samo izvozijo v kosovnico, "
+"niso pa potrebni\n"
+"za postavitev plošče, kot so mehanski pritrdilni elementi in ohišja"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:222
 msgid "Update Symbol from Library..."
-msgstr "Posodobi simbol iz knjižnice ..."
+msgstr "Posodobi simbol iz knjižnice..."
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:225
 #: eeschema/tools/ee_actions.cpp:458
 msgid "Change Symbol..."
-msgstr "Spremeni simbol ..."
+msgstr "Spremeni simbol..."
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:228
 msgid "Edit Symbol..."
-msgstr "Uredi simbol ..."
+msgstr "Uredi simbol..."
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:234
 #: eeschema/tools/ee_actions.cpp:589
 msgid "Edit Library Symbol..."
-msgstr "Uredi simbol knjižnice ..."
+msgstr "Uredi simbol iz knjižnice..."
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:272
 msgid "Pin Number"
-msgstr "PIN številka"
+msgstr "Številka priključka"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:273
 msgid "Base Pin Name"
-msgstr "Ime osnovnega zatiča"
+msgstr "Ime osnovnega priključka"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:300
 msgid "Alternate Pin Assignments"
-msgstr "Nadomestne dodelitve pinov"
+msgstr "Nadomestne dodelitve priključkov"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:310
 #: pcbnew/dialogs/dialog_footprint_properties_base.cpp:383
@@ -11757,7 +11775,7 @@ msgstr "Povezava do knjižnice:"
 
 #: eeschema/dialogs/dialog_symbol_properties_base.cpp:325
 msgid "Spice Model..."
-msgstr "Model začimb ..."
+msgstr "Simulacijski model ..."
 
 #: eeschema/dialogs/dialog_symbol_properties_base.h:106
 msgid "Symbol Properties"
@@ -11769,7 +11787,7 @@ msgid ""
 "Remapping is not possible because you have insufficient privileges to the "
 "project folder '%s'."
 msgstr ""
-"Predelava ni mogoča, ker nimate pravic za pisanje v mapo projekta \"%s\"."
+"Ponovna preslikava ni mogoča, ker nimate zadostnih pravic do mape projekta '%s'."
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:68
 msgid ""
@@ -11783,7 +11801,7 @@ msgid ""
 "symbols."
 msgstr ""
 "Ta shema trenutno uporablja metodo iskanja seznama knjižnic simbolov "
-"projekta za nalaganje simbolov knjižnice. KiCad bo poskušal preslikati "
+"projekta za nalaganje simbolov iz knjižnice. KiCad bo poskušal preslikati "
 "obstoječe simbole in uporabiti novo tabelo knjižnice simbolov. S preslikavo "
 "se bodo nekatere projektne datoteke spremenile, sheme pa morda niso "
 "združljive s starejšimi različicami KiCada. Vse spremenjene datoteke bodo "
@@ -11795,8 +11813,7 @@ msgstr ""
 #, fuzzy, c-format
 msgid "Adding library '%s', file '%s' to project symbol library table."
 msgstr ""
-"Dodajanje knjižnice \"%s\", datoteke \"%s\" v tabelo knjižnice simbolov "
-"projekta."
+"Dodajanje knjižnice '%s', datoteke '%s' v tabelo knjižnice simbolov projekta."
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:217
 #: eeschema/dialogs/panel_sym_lib_table.cpp:758
@@ -11815,17 +11832,17 @@ msgstr ""
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:239
 msgid "Created project symbol library table.\n"
-msgstr "Izdelana tabela knjižnice simbolov projekta.\n"
+msgstr "Ustvarjena tabela knjižnice simbolov projekta.\n"
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:261
 #, fuzzy, c-format
 msgid "No symbol %s found in symbol library table."
-msgstr "V tabeli knjižnice simbolov ni najden simbol \"%s\"."
+msgstr "Simbol %s ni bil najden v tabeli knjižnice simbolov."
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:267
 #, fuzzy, c-format
 msgid "Symbol %s mapped to symbol library '%s'."
-msgstr "Simbol \"%s\" preslikan v knjižnico simbolov \"%s\"."
+msgstr "Simbol %s preslikan v knjižnico simbolov '%s'."
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:276
 msgid "Symbol library table mapping complete!"
@@ -11834,7 +11851,7 @@ msgstr "Preslikava tabele knjižnice simbolov je končana!"
 #: eeschema/dialogs/dialog_symbol_remap.cpp:346
 #, fuzzy, c-format
 msgid "Cannot create project remap back up folder '%s'."
-msgstr "Ne morem ustvariti mape za varnostno kopiranje projekta \"%s\"."
+msgstr "Ne morem ustvariti mape za varnostno kopiranje preslikave projekta '%s'."
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:349
 #: eeschema/dialogs/dialog_symbol_remap.cpp:497
@@ -11844,7 +11861,7 @@ msgstr "Napaka varnostnega kopiranja"
 #: eeschema/dialogs/dialog_symbol_remap.cpp:351
 #: eeschema/dialogs/dialog_symbol_remap.cpp:501
 msgid "Continue with Rescue"
-msgstr "Nadaljujte z reševanjem"
+msgstr "Nadaljuj z reševanjem"
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:352
 #: eeschema/dialogs/dialog_symbol_remap.cpp:502
@@ -11859,7 +11876,7 @@ msgstr "Prekini reševanje"
 #: eeschema/dialogs/dialog_symbol_remap.cpp:482
 #, fuzzy, c-format
 msgid "Backing up file '%s' to '%s'."
-msgstr "Varnostno kopiranje datoteke \"%s\" v datoteko \"%s\"."
+msgstr "Varnostno kopiranje datoteke '%s' v datoteko '%s'."
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:377
 #: eeschema/dialogs/dialog_symbol_remap.cpp:419
@@ -11874,7 +11891,7 @@ msgstr "Datoteke »%s« ni bilo mogoče varnostno kopirati.\n"
 #: eeschema/dialogs/dialog_symbol_remap.cpp:411
 #, fuzzy, c-format
 msgid "Failed to create backup folder '%s'.\n"
-msgstr "Mape za varnostno kopijo \"%s\" ni uspelo ustvariti\n"
+msgstr "Mape za varnostno kopijo '%s' ni uspelo ustvariti\n"
 
 #: eeschema/dialogs/dialog_symbol_remap.cpp:496
 msgid "Some of the project files could not be backed up."
@@ -11883,7 +11900,7 @@ msgstr "Nekaterih projektnih datotek ni bilo mogoče varnostno kopirati."
 #: eeschema/dialogs/dialog_symbol_remap_base.cpp:30
 #: eeschema/dialogs/dialog_symbol_remap_base.h:54
 msgid "Remap Symbols"
-msgstr "Remap Simboli"
+msgstr "Preslikaj simbole"
 
 #: eeschema/dialogs/dialog_text_properties_base.h:104
 #: pcbnew/dialogs/dialog_text_properties.cpp:104
@@ -11945,7 +11962,7 @@ msgstr ""
 
 #: eeschema/dialogs/dialog_update_from_pcb_base.cpp:69
 msgid "Net names"
-msgstr "Imena omrežij"
+msgstr "Imena vozlišč"
 
 #: eeschema/dialogs/dialog_update_from_pcb_base.h:55
 msgid "Update Schematic from PCB"
@@ -11954,51 +11971,51 @@ msgstr "Posodobite shemo s PCB-ja"
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:21
 #, fuzzy
 msgid "Parent symbol:"
-msgstr "Napajalni simbol"
+msgstr "Nadrejeni simbol"
 
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:61
 #, fuzzy
 msgid "Remove fields if not in parent symbol"
-msgstr "Odstranite polja, če niso v novem simbolu"
+msgstr "Odstranite polja, če niso v nadrejenem simbolu"
 
 #: eeschema/dialogs/dialog_update_symbol_fields_base.cpp:66
 #, fuzzy
 msgid "Reset fields if empty in parent symbol"
-msgstr "Ponastavite polja, če so v novem simbolu prazna"
+msgstr "Ponastavite polja, če so v nadrejenem simbolu prazna"
 
 #: eeschema/dialogs/dialog_update_symbol_fields_base.h:68
 #, fuzzy
 msgid "Update Symbol Fields"
-msgstr "Polja s simboli"
+msgstr "Posodobi polja simbolov"
 
 #: eeschema/dialogs/dialog_wire_bus_properties_base.cpp:30
 #, fuzzy
 msgid "Wire/bus width:"
-msgstr "Širina črte"
+msgstr "Širina črte povezave/vodila:"
 
 #: eeschema/dialogs/dialog_wire_bus_properties_base.cpp:90
 #, fuzzy
 msgid "Set width to 0 to use netclass's wire/bus widths."
-msgstr "Preklopite na urejevalnik shem"
+msgstr "Nastavite širino na 0, če želite uporabiti širine povezav/vodil razreda vozlišča."
 
 #: eeschema/dialogs/dialog_wire_bus_properties_base.h:71
 #, fuzzy
 msgid "Wire & Bus Properties"
-msgstr "Lastnosti odseka vrstic"
+msgstr "Lastnosti povezav & vodil"
 
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:21
 #, fuzzy
 msgid "Symbol Annotation"
-msgstr "Oznaka enote simbola:"
+msgstr "Številčenje simbola:"
 
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:23
 #, fuzzy
 msgid "Automatically annotate symbols"
-msgstr "& Avtomatsko postavi polja s simboli"
+msgstr "Avtomatično številči simbole"
 
 #: eeschema/dialogs/panel_eeschema_annotation_options_base.cpp:27
 msgid "Recursively annotate subsheets"
-msgstr ""
+msgstr "Rekurzivno številči podstrani"
 
 #: eeschema/dialogs/panel_eeschema_color_settings.cpp:142
 msgid ""
@@ -12036,7 +12053,7 @@ msgstr "Privzeta oblika"
 
 #: eeschema/dialogs/panel_eeschema_display_options_base.cpp:46
 msgid "S&how hidden pins"
-msgstr "S & kako skrite nožice"
+msgstr "Prikaži skrite priključke"
 
 #: eeschema/dialogs/panel_eeschema_display_options_base.cpp:49
 msgid "Show hidden fields"
@@ -12121,11 +12138,11 @@ msgstr "Povečajte tako, da se prilegajo elementi, ki se prečkajo"
 #: eeschema/dialogs/panel_eeschema_display_options_base.cpp:128
 #: pcbnew/dialogs/panel_display_options_base.cpp:92
 msgid "Highlight cross-probed nets"
-msgstr "Označite mreže z navzkrižno sondo"
+msgstr "Označite mreže z navzkrižno sondo vozlišči"
 
 #: eeschema/dialogs/panel_eeschema_display_options_base.cpp:130
 msgid "Highlight nets when they are highlighted in the PCB editor"
-msgstr "Označite mreže, ko so označene v urejevalniku PCB"
+msgstr "Poudari vozlišča, ko so poudarjena v urejevalniku PCB"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:23
 #, fuzzy
@@ -12157,15 +12174,15 @@ msgstr "Če tega polja ne potrdite, bo povlečenje miške izvedlo premikanje (M)
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:38
 msgid "Automatically start wires on unconnected pins"
-msgstr "Samodejno zaženite žice na nepovezanih nožicah"
+msgstr "Samodejno začni povezavo na nepovezanih priključkih"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:39
 msgid ""
 "When enabled, you can start wiring by clicking on unconnected pins even when "
 "the wire tool is not active"
 msgstr ""
-"Ko je omogočeno, lahko ožičenje začnete s klikom na nepovezane nožice, tudi "
-"če žično orodje ni aktivno"
+"Ko je omogočeno, lahko povezovanje začnete s klikom na nepovezane priključke, tudi "
+"če povezovalno orodje ni aktivno"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:43
 #: pcbnew/dialogs/panel_edit_options_base.cpp:75
@@ -12193,7 +12210,7 @@ msgstr "Ozadje lista:"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:84
 msgid "Clicking on a pin selects the symbol"
-msgstr "S klikom na zatič izberete simbol"
+msgstr "S klikom na priključek izberete simbol"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:85
 msgid ""
@@ -12202,8 +12219,8 @@ msgid ""
 "If disabled, clicking on a pin select only the pin."
 msgstr ""
 "V urejevalniku shem:\n"
-"Če je omogočeno, s klikom na žebljiček izberite nadrejeni simbol.\n"
-"Če je onemogočeno, s klikom na zatič izberite samo zatič."
+"Če je omogočeno, s klikom na priključek izberite nadrejeni simbol.\n"
+"Če je onemogočeno, s klikom na priključek izberite samo priključek."
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:95
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:143
@@ -12275,11 +12292,11 @@ msgstr "Shift + Cmd"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:207
 msgid "Symbol Field Automatic Placement"
-msgstr "Samodejna umestitev polja s simboli"
+msgstr "Samodejna umestitev polja simbolov"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:209
 msgid "A&utomatically place symbol fields"
-msgstr "& Avtomatsko postavi polja s simboli"
+msgstr "& Avtomatsko postavi polja simbolov"
 
 #: eeschema/dialogs/panel_eeschema_editing_options_base.cpp:212
 msgid "A&llow field autoplace to change justification"
@@ -12319,11 +12336,11 @@ msgstr "Pokaži predogled odtisa v programu Symbol Chooser"
 #: gerbview/dialogs/panel_gerbview_display_options_base.cpp:28
 #: pcbnew/dialogs/panel_display_options_base.cpp:35
 msgid "Annotations"
-msgstr "Pripisi"
+msgstr "Številčenja"
 
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:30
 msgid "Symbol unit notation:"
-msgstr "Oznaka enote simbola:"
+msgstr "Zapis enote simbola:"
 
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:34
 msgid ".A"
@@ -12378,7 +12395,7 @@ msgstr ""
 
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:118
 msgid "Pin symbol size:"
-msgstr "Velikost simbola pripnite:"
+msgstr "Velikost simbola priključka:"
 
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:136
 #: eeschema/erc_item.cpp:41
@@ -12387,7 +12404,7 @@ msgstr "Povezave"
 
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:141
 msgid "Junction dot size:"
-msgstr "Velikost pike križišča:"
+msgstr "Velikost spojne točke:"
 
 #: eeschema/dialogs/panel_setup_formatting_base.cpp:145
 msgid "Smallest"
@@ -12508,22 +12525,24 @@ msgid ""
 "Set to 0 to allow symbols to inherit their line widths from\n"
 "their parent Schematic"
 msgstr ""
+"Nastavite na 0, da dovolite simbolom podedovati svojo širino črte\n"
+"iz njihove nadrejene sheme."
 
 #: eeschema/dialogs/panel_sym_editing_options_base.cpp:55
 msgid "D&efault pin length:"
-msgstr "D & privzeta dolžina zatiča:"
+msgstr "Privzeta dolžina priključka:"
 
 #: eeschema/dialogs/panel_sym_editing_options_base.cpp:66
 msgid "De&fault pin number size:"
-msgstr "Velikost številke pin-a za odpravljanje napak:"
+msgstr "Privzeta velikost številke priključka:"
 
 #: eeschema/dialogs/panel_sym_editing_options_base.cpp:77
 msgid "Def&ault pin name size:"
-msgstr "Velikost imena def & ault pin:"
+msgstr "Privzeta velikost imena priključka:"
 
 #: eeschema/dialogs/panel_sym_editing_options_base.cpp:91
 msgid "Show pin &electrical type"
-msgstr "Pokažite tip pin in elektriko"
+msgstr "Pokažite eletrkični tip priključka"
 
 #: eeschema/dialogs/panel_sym_editing_options_base.cpp:106
 msgid "&Pitch of repeated pins:"
@@ -12600,9 +12619,7 @@ msgstr "Več knjižnic ne more deliti istega vzdevka ('%s')."
 #: eeschema/dialogs/panel_sym_lib_table.cpp:453 eeschema/symbol_library.cpp:527
 #, fuzzy, c-format
 msgid "Symbol library '%s' failed to load."
-msgstr ""
-"Knjižnice simbolov \"%s\" ni bilo mogoče naložiti.\n"
-" %s"
+msgstr "Knjižnice simbolov '%s' ni bilo mogoče naložiti."
 
 #: eeschema/dialogs/panel_sym_lib_table.cpp:456
 msgid "Error Loading Library"
@@ -12677,7 +12694,7 @@ msgstr "Selitev knjižnic ..."
 #: eeschema/libarch.cpp:159
 #, c-format
 msgid "Failed to save symbol library file '%s'."
-msgstr "Datoteke knjižnice simbolov \"%s\" ni bilo mogoče shraniti."
+msgstr "Datoteke knjižnice simbolov '%s' ni bilo mogoče shraniti."
 
 #: eeschema/dialogs/panel_sym_lib_table.cpp:1031
 msgid ""
@@ -12685,7 +12702,7 @@ msgid ""
 "Changes must be saved or discarded before the symbol library table can be "
 "modified."
 msgstr ""
-"Spremenjene so bile ene ali več knjižnic simbolov.\n"
+"Prišlo je do sprememb pri eni ali več knjižnic simbolov.\n"
 "Pred spreminjanjem tabele knjižnice simbolov je treba spremembe shraniti ali "
 "zavreči."
 
@@ -12797,9 +12814,9 @@ msgid ""
 "An error occurred attempting to load the global symbol library table.\n"
 "Please edit this global symbol library table in Preferences menu."
 msgstr ""
-"Pri poskusu nalaganja tabele globalne knjižnice simbolov je prišlo do "
+"Pri poskusu nalaganja globalne tabele knjižnice simbolov je prišlo do "
 "napake.\n"
-"Uredite to globalno tabelo knjižnice simbolov v meniju Preferences."
+"Uredite to globalno tabelo knjižnice simbolov v meniju Nastavitve."
 
 #: eeschema/eeschema_config.cpp:73 pcbnew/pcbnew_config.cpp:55
 #, fuzzy
@@ -12809,19 +12826,19 @@ msgstr "Napaka pri nalaganju urejevalnika"
 #: eeschema/eeschema_config.cpp:247 eeschema/sheet.cpp:286
 #, fuzzy, c-format
 msgid "Error loading the symbol library table '%s'."
-msgstr "Pri nalaganju tabele knjižnice simbolov \"%s\" je prišlo do napake."
+msgstr "Pri nalaganju tabele knjižnice simbolov '%s' je prišlo do napake."
 
 #: eeschema/erc.cpp:62 eeschema/erc.cpp:79
 msgid "Input Pin"
-msgstr "Vhodni zatič"
+msgstr "Vhodni priključek"
 
 #: eeschema/erc.cpp:63 eeschema/erc.cpp:80
 msgid "Output Pin"
-msgstr "Izhodni zatič"
+msgstr "Izhodni priključek"
 
 #: eeschema/erc.cpp:64 eeschema/erc.cpp:81
 msgid "Bidirectional Pin"
-msgstr "Dvosmerni zatič"
+msgstr "Dvosmerni priključek"
 
 #: eeschema/erc.cpp:65 eeschema/erc.cpp:82
 msgid "Tri-State Pin"
@@ -12829,24 +12846,24 @@ msgstr "Tridržavni pin"
 
 #: eeschema/erc.cpp:66 eeschema/erc.cpp:83
 msgid "Passive Pin"
-msgstr "Pasivni pin"
+msgstr "Pasivni priključek"
 
 #: eeschema/erc.cpp:67 eeschema/erc.cpp:84
 #, fuzzy
 msgid "Free Pin"
-msgstr "Ustvari knjižinico"
+msgstr "Prosti priključek"
 
 #: eeschema/erc.cpp:68 eeschema/erc.cpp:85
 msgid "Unspecified Pin"
-msgstr "Neopredeljeni pin"
+msgstr "Nedoločeni priključek"
 
 #: eeschema/erc.cpp:69 eeschema/erc.cpp:86
 msgid "Power Input Pin"
-msgstr "Vhod za napajanje"
+msgstr "Napajalni vhodni priključek"
 
 #: eeschema/erc.cpp:70 eeschema/erc.cpp:87
 msgid "Power Output Pin"
-msgstr "Izhodni pin"
+msgstr "Napajalni izhodni priključek"
 
 #: eeschema/erc.cpp:71 eeschema/erc.cpp:88
 msgid "Open Collector"
@@ -12877,17 +12894,17 @@ msgstr "Različni odtisi, dodeljeni %s in %s"
 
 #: eeschema/erc.cpp:432
 msgid "Pins with \"no connection\" type are connected"
-msgstr "Priključeni so nožice s tipom \"brez povezave\""
+msgstr "Priključeni so priključki. ki imajo tip \"brez povezave\""
 
 #: eeschema/erc.cpp:557
 #, c-format
 msgid "Pins of type %s and %s are connected"
-msgstr "Povezani so zatiči tipa %s in %s"
+msgstr "Povezani so priključki tipa %s in %s"
 
 #: eeschema/erc.cpp:627
 #, c-format
 msgid "Pin %s is connected to both %s and %s"
-msgstr "Zatič %s je povezan z %s in %s"
+msgstr "Priključek %s je povezan z %s in %s"
 
 #: eeschema/erc.cpp:729 pcbnew/drc/drc_test_provider_library_parity.cpp:498
 #, c-format
@@ -12914,31 +12931,31 @@ msgstr "Podvojena imena listov znotraj danega lista"
 
 #: eeschema/erc_item.cpp:50
 msgid "Symbol pin or wire end off grid"
-msgstr ""
+msgstr "Simbol priključka ali povezava končata zunaj mreže"
 
 #: eeschema/erc_item.cpp:54
 msgid "Pin not connected"
-msgstr "Pin ni povezan"
+msgstr "Priključek ni povezan"
 
 #: eeschema/erc_item.cpp:58
 msgid "Input pin not driven by any Output pins"
-msgstr "Vhodnega zatiča ne poganja noben izhodni zatič"
+msgstr "Vhodni priključek ne poganja noben izhodni priključek"
 
 #: eeschema/erc_item.cpp:62
 msgid "Input Power pin not driven by any Output Power pins"
-msgstr "Zatič vhodnega napajanja ne poganja noben zatič izhodne moči"
+msgstr "Vhodni napajalni priključek ne poganja noben izhodni napajalni priključek"
 
 #: eeschema/erc_item.cpp:66 eeschema/erc_item.cpp:70
 msgid "Conflict problem between pins"
-msgstr "Problem konflikta med zatiči"
+msgstr "Problem konflikta med priključki"
 
 #: eeschema/erc_item.cpp:74
 msgid "Mismatch between hierarchical labels and sheet pins"
-msgstr "Neujemanje med hierarhičnimi nalepkami in zatiči listov"
+msgstr "Neujemanje med hierarhičnimi vozlišči in hierarhičnimi priključki"
 
 #: eeschema/erc_item.cpp:78
 msgid "A pin with a \"no connection\" flag is connected"
-msgstr "Priključen je zatič z zastavico \"brez povezave\""
+msgstr "Priključen je priključek z zastavico \"brez povezave\""
 
 #: eeschema/erc_item.cpp:82
 msgid "Unconnected \"no connection\" flag"
@@ -12962,7 +12979,7 @@ msgstr "Različni odtis, dodeljen v drugi enoti simbola"
 
 #: eeschema/erc_item.cpp:102
 msgid "Different net assigned to a shared pin in another unit of the symbol"
-msgstr "Različna mreža, dodeljena skupnemu zatiču v drugi enoti simbola"
+msgstr "Različno vozlišče dodeljeno skupnemu priključku v drugi enoti simbola"
 
 #: eeschema/erc_item.cpp:106
 msgid "Conflict between bus alias definitions across schematic sheets"
@@ -12970,7 +12987,7 @@ msgstr "Konflikt med definicijami vzdevkov vodila na shematskih listih"
 
 #: eeschema/erc_item.cpp:110
 msgid "More than one name given to this bus or net"
-msgstr "Tem avtobusu ali mreži je dano več kot eno ime"
+msgstr "To vodilo ali vozlišče ima več kot eno ime"
 
 #: eeschema/erc_item.cpp:114
 #, fuzzy
@@ -12979,7 +12996,7 @@ msgstr "Naloge odtisa"
 
 #: eeschema/erc_item.cpp:118
 msgid "Net is graphically connected to a bus but not a bus member"
-msgstr "Net je grafično povezan z vodilom, ne pa tudi z članom vodila"
+msgstr "Vozlišče je grafično povezan z vodilom, ne pa tudi s članom vodila"
 
 #: eeschema/erc_item.cpp:122
 msgid "Label attached to bus item does not describe a bus"
@@ -12991,7 +13008,7 @@ msgstr "Avtobusi so grafično povezani, vendar nimajo nobenega člana vodila"
 
 #: eeschema/erc_item.cpp:130
 msgid "Invalid connection between bus and net items"
-msgstr "Neveljavna povezava med vodilom in neto postavkami"
+msgstr "Neveljavna povezava med vodilom in elementi vozlišča"
 
 #: eeschema/erc_item.cpp:134 pcbnew/drc/drc_item.cpp:193
 msgid "Unresolved text variable"
@@ -13003,22 +13020,22 @@ msgstr "Žice niso povezane z ničemer"
 
 #: eeschema/erc_item.cpp:142
 msgid "Library symbol issue"
-msgstr "Izdaja knjižničnih simbolov"
+msgstr "Težava s simboli iz knjižnice"
 
 #: eeschema/erc_item.cpp:146
 #, fuzzy
 msgid "Symbol is not annotated"
-msgstr "Oznaka enote simbola:"
+msgstr "Simbol ni številčen"
 
 #: eeschema/erc_item.cpp:150
 #, fuzzy
 msgid "Symbol has more units than are defined"
-msgstr "Spremembe simbola odtisa niso shranjene"
+msgstr "Simbol ima več enot kot jih je definiranih"
 
 #: eeschema/erc_item.cpp:154
 #, fuzzy
 msgid "Units of same symbol have different values"
-msgstr "Ne spreminjajte blazinic, ki imajo različne plasti"
+msgstr "Enote istega simbola imajo različne vrednosti"
 
 #: eeschema/erc_item.cpp:158
 #, fuzzy
@@ -13032,7 +13049,7 @@ msgstr "Potreben je vstop v avtobus"
 #: eeschema/fields_grid_table.cpp:221 eeschema/files-io.cpp:796
 #: eeschema/tools/sch_editor_control.cpp:105
 msgid "Schematic Files"
-msgstr "Shematske datoteke"
+msgstr "Datoteke s shemo"
 
 #: eeschema/fields_grid_table.cpp:252 eeschema/fields_grid_table.cpp:590
 #: eeschema/fields_grid_table.cpp:717
@@ -13049,12 +13066,12 @@ msgstr "Navpično"
 #: eeschema/files-io.cpp:101 eeschema/files-io.cpp:1176
 #, fuzzy, c-format
 msgid "Schematic '%s' is already open."
-msgstr "Shematska datoteka \"%s\" je že odprta."
+msgstr "Shematska datoteka '%s' je že odprta."
 
 #: eeschema/files-io.cpp:123
 #, fuzzy, c-format
 msgid "Schematic '%s' does not exist.  Do you wish to create it?"
-msgstr "Shema \"%s\" ne obstaja. Ali ga želite ustvariti?"
+msgstr "Shema '%s' ne obstaja. Ali ga želite ustvariti?"
 
 #: eeschema/files-io.cpp:141
 #, fuzzy
@@ -13068,7 +13085,7 @@ msgstr "Natisni shemo"
 
 #: eeschema/files-io.cpp:202
 msgid "Schematic file changes are unsaved"
-msgstr "Spremembe shematskih datotek niso shranjene"
+msgstr "Spremembe datotek s shemo niso shranjene"
 
 #: eeschema/files-io.cpp:239
 #, fuzzy
@@ -13095,7 +13112,7 @@ msgstr "Pri nalaganju shematske datoteke »%s« je prišlo do napake."
 #: eeschema/files-io.cpp:281 eeschema/files-io.cpp:1254 eeschema/sheet.cpp:165
 #, fuzzy, c-format
 msgid "Failed to load '%s'."
-msgstr "Nalaganja \"%s\" ni uspelo"
+msgstr "Nalaganja '%s' ni uspelo"
 
 #: eeschema/files-io.cpp:294
 msgid ""
@@ -13109,8 +13126,7 @@ msgstr ""
 
 #: eeschema/files-io.cpp:358
 msgid "Illegal entry found in project file symbol library list."
-msgstr ""
-"Na seznamu knjižnice simbolov projektne datoteke najdemo nezakonit vnos."
+msgstr "Na seznamu knjižnice simbolov projektne datoteke najden nezakonit vnos."
 
 #: eeschema/files-io.cpp:359
 msgid "Project Load Warning"
@@ -13137,7 +13153,8 @@ msgstr "Tega okna ne kaži več"
 #: eeschema/files-io.cpp:395
 #, fuzzy, c-format
 msgid "The project symbol library cache file '%s' was not found."
-msgstr "Datoteke knjižnice simbolov \"%s\" ni bilo mogoče shraniti."
+msgstr "Datoteke predpomnilnika knjižnice simbolov projekta '%s' "
+"ni bilo mogoče najti."
 
 #: eeschema/files-io.cpp:397
 msgid ""
@@ -13147,6 +13164,11 @@ msgid ""
 "missing symbols, either manual recovery of the schematic or recovery of the "
 "symbol cache library file and reloading the schematic is required."
 msgstr ""
+"To lahko pod določenimi pogoji povzroči pokvarjeno shemo.  Če shema "
+"ob odpiranju nima manjkajočih simbolov, jo shranite pred kakeršnimi "
+"koli spremembami, da preprečite izgubo podatkov.  Če simboli manjkanjo, "
+"je potrebna ročna obnovitev sheme ali obnovitev datoteke knjižnice "
+"predpomnilnika simbolov in ponovno nalaganje sheme. "
 
 #: eeschema/files-io.cpp:408
 #, fuzzy
@@ -13170,7 +13192,7 @@ msgstr ""
 #: eeschema/files-io.cpp:504
 #, fuzzy
 msgid "Schematic is read only."
-msgstr "Shematska datoteka \"%s\" je že odprta."
+msgstr "Shema je samo za branje."
 
 #: eeschema/files-io.cpp:529
 #, fuzzy
@@ -13207,7 +13229,7 @@ msgid ""
 "Error saving schematic file '%s'.\n"
 "%s"
 msgstr ""
-"Napaka pri shranjevanju shematske datoteke \"%s\".\n"
+"Napaka pri shranjevanju datoteke s shemo '%s'.\n"
 "%s"
 
 #: eeschema/files-io.cpp:698 pcbnew/files.cpp:1069
@@ -13221,19 +13243,19 @@ msgid ""
 "Error saving schematic file '%s'.\n"
 "Failed to rename temporary file '%s'."
 msgstr ""
-"Napaka pri shranjevanju shematske datoteke \"%s\".\n"
-"Začasne datoteke ni bilo mogoče preimenovati %s"
+"Napaka pri shranjevanju datoteke s shemo '%s'.\n"
+"Začasne datoteke ni bilo mogoče preimenovati '%s'."
 
 #: eeschema/files-io.cpp:721 pcbnew/files.cpp:1087
 #, fuzzy, c-format
 msgid "Failed to rename temporary file '%s'."
-msgstr "Ustvarjanje začasne datoteke »%s« ni uspelo"
+msgstr "Ustvarjanje začasne datoteke '%s' ni uspelo"
 
 #: eeschema/files-io.cpp:744 pagelayout_editor/files.cpp:185
 #: pcbnew/files.cpp:1120
 #, fuzzy, c-format
 msgid "File '%s' saved."
-msgstr "Datoteka \"%s\" je shranjena."
+msgstr "Datoteka '%s' je shranjena."
 
 #: eeschema/files-io.cpp:749
 msgid "File write operation failed."
@@ -13248,7 +13270,7 @@ msgid ""
 "\n"
 "Make sure you have write permissions and try again."
 msgstr ""
-"Imenika \"%s\" ni bilo mogoče ustvariti.\n"
+"Mape '%s' ni bilo mogoče ustvariti.\n"
 "\n"
 "Prepričajte se, da imate dovoljenja za pisanje, in poskusite znova."
 
@@ -13300,9 +13322,8 @@ msgid ""
 "made?"
 msgstr ""
 "No, to je potencialno neprijetno!\n"
-"Zdi se, da ste datoteko nazadnje urejali\n"
-"\"%s\"\n"
-"ni bil pravilno shranjen. Ali želite obnoviti zadnje shranjene spremembe, ki "
+"Zdi se, da se datoteka, ki ste jo nazadnje urejali\n"
+"ni bil pravilno shranila. Ali želite obnoviti zadnje shranjene spremembe, ki "
 "ste jih naredili?"
 
 #: eeschema/files-io.cpp:1381
@@ -13337,7 +13358,7 @@ msgid ""
 "could not be deleted."
 msgstr ""
 "Glavne datoteke za samodejno shranjevanje\n"
-"\"%s\"\n"
+"'%s'\n"
 "ni bilo mogoče izbrisati."
 
 #: eeschema/files-io.cpp:1478
@@ -13442,12 +13463,12 @@ msgstr "Poz Y"
 #: eeschema/lib_pin.cpp:1271
 #, c-format
 msgid "Pin %s [%s, %s, %s]"
-msgstr "Zatič %s [%s, %s, %s]"
+msgstr "Priključek %s [%s, %s, %s]"
 
 #: eeschema/lib_pin.cpp:1279
 #, c-format
 msgid "Pin %s [%s, %s]"
-msgstr "Zatič %s [%s, %s]"
+msgstr "Priključek %s [%s, %s]"
 
 #: eeschema/lib_shape.cpp:439 eeschema/sch_shape.cpp:383
 #, c-format
@@ -13499,7 +13520,7 @@ msgstr "Višina besedila"
 #: eeschema/libarch.cpp:101
 #, fuzzy, c-format
 msgid "Failed to add symbol %s to library file '%s'."
-msgstr "V datoteko knjižnice \"%s\" ni bilo mogoče dodati simbola \"%s\"."
+msgstr "V datoteko knjižnice %s ni bilo mogoče dodati simbola '%s'."
 
 #: eeschema/libarch.cpp:110
 msgid "Unexpected exception occurred."
@@ -13570,7 +13591,7 @@ msgstr "Izvozi risbo v odložišče"
 #: eeschema/menubar.cpp:123 pcbnew/menubar_pcb_editor.cpp:115
 #: pcbnew/pcb_edit_frame.cpp:201
 msgid "Netlist..."
-msgstr "Netlist ..."
+msgstr "Seznam vozlišč..."
 
 #: eeschema/menubar.cpp:191
 #: eeschema/symbol_editor/menubar_symbol_editor.cpp:123
@@ -13648,7 +13669,7 @@ msgstr "Nedavno uporabljeno"
 #: eeschema/picksymbol.cpp:191
 #, c-format
 msgid "Choose Power Symbol (%d items loaded)"
-msgstr "Izberite simbol napajanja (%d naloženih elementov)"
+msgstr "Izberite napajalni simbol (%d naloženih elementov)"
 
 #: eeschema/picksymbol.cpp:193 eeschema/symbol_viewer_frame.cpp:1000
 #, c-format
@@ -13658,9 +13679,7 @@ msgstr "Izberite simbol (%d naloženih elementov)"
 #: eeschema/picksymbol.cpp:285
 #, fuzzy, c-format
 msgid "No alternate body style found for symbol '%s' in library '%s'."
-msgstr ""
-"Za knjižnico \"%s\" ni bilo mogoče najti nadomestnega sloga telesa za simbol "
-"\"%s\"."
+msgstr "Za simbol '%s' v knjižnici '%s' ni bilo mogoče najti drugega sloga telesa."
 
 #: eeschema/pin_numbers.cpp:124 pcbnew/zones.h:65
 msgid "none"
@@ -13748,7 +13767,7 @@ msgstr "Reševalni simbol %s najdemo le v knjižnici predpomnilnika do %s."
 #: eeschema/project_rescue.cpp:308 eeschema/project_rescue.cpp:490
 #, c-format
 msgid "Rescue modified symbol %s to %s"
-msgstr "Reševalni spremenjeni simbol %s do %s"
+msgstr "Reši spremenjeni simbol %s v %s"
 
 #: eeschema/project_rescue.cpp:584
 msgid "This project has nothing to rescue."
@@ -13756,13 +13775,13 @@ msgstr "Ta projekt ne more rešiti ničesar."
 
 #: eeschema/project_rescue.cpp:599
 msgid "No symbols were rescued."
-msgstr "Nobenega simbola niso rešili."
+msgstr "Noben simbol ni bil rešen."
 
 #: eeschema/project_rescue.cpp:707
 #: eeschema/symbol_editor/symbol_editor_import_export.cpp:192
 #, fuzzy, c-format
 msgid "Failed to create symbol library file '%s'."
-msgstr "Datoteke knjižnice simbolov \"%s\" ni uspelo ustvariti"
+msgstr "Datoteke knjižnice simbolov '%s' ni bilo mogoče ustvariti"
 
 #: eeschema/project_rescue.cpp:848
 #, c-format
@@ -13787,7 +13806,7 @@ msgid ""
 "Error saving global symbol library table:\n"
 "%s"
 msgstr ""
-"Napaka pri shranjevanju tabele globalne knjižnice simbolov:\n"
+"Napaka pri shranjevanju globalne tabele knjižnice simbolov:\n"
 "%s"
 
 #: eeschema/sch_base_frame.cpp:241
@@ -13824,7 +13843,7 @@ msgstr "Vrsta vstopa v avtobus"
 #: pcbnew/zone.cpp:533
 #, fuzzy
 msgid "Resolved Netclass"
-msgstr "Dodeljeni Netclass"
+msgstr "Dodeljen razred vozlišča"
 
 #: eeschema/sch_connection.cpp:409
 msgid "Connection Name"
@@ -13848,7 +13867,7 @@ msgstr "Shematska parnost"
 
 #: eeschema/sch_edit_frame.cpp:264
 msgid "New schematic file is unsaved"
-msgstr "Nova shematska datoteka ni shranjena"
+msgstr "Nova datoteka s shemo ni shranjena"
 
 #: eeschema/sch_edit_frame.cpp:777 eeschema/sim/sim_plot_frame.cpp:1646
 #: eeschema/symbol_editor/symbol_edit_frame.cpp:525
@@ -13879,7 +13898,7 @@ msgstr "Nova shema"
 #: eeschema/sch_edit_frame.cpp:1115
 #, fuzzy, c-format
 msgid "Schematic file '%s' already exists."
-msgstr "Shematska datoteka \"%s\" že obstaja."
+msgstr "Datoteka s shemo '%s' že obstaja."
 
 #: eeschema/sch_edit_frame.cpp:1136
 msgid "Open Schematic"
@@ -13888,7 +13907,7 @@ msgstr "Odprite shemo"
 #: eeschema/sch_edit_frame.cpp:1205
 #, fuzzy
 msgid "Assigning footprints requires a fully annotated schematic."
-msgstr "Izvoz netlista zahteva popolnoma označeno shemo."
+msgstr "Dodelitev odtisa zahteva popolnoma številčeno shemo."
 
 #: eeschema/sch_edit_frame.cpp:1230
 msgid "Could not open CvPcb"
@@ -13913,7 +13932,7 @@ msgstr "Shema shranjena"
 #: eeschema/sch_edit_frame.cpp:1642
 #, c-format
 msgid "Highlighted net: %s"
-msgstr "Označena mreža: %s"
+msgstr "Poudarjeno vozlišče: %s"
 
 #: eeschema/sch_field.cpp:752
 msgid "<root sheet>"
@@ -13951,7 +13970,7 @@ msgstr "Neznana vrednost SCH_FILE_T: %d"
 
 #: eeschema/sch_label.cpp:147
 msgid "Tri-State"
-msgstr "Tri-država"
+msgstr "Tri stanja"
 
 #: eeschema/sch_label.cpp:793
 msgid "Label"
@@ -13959,7 +13978,7 @@ msgstr "Oznaka"
 
 #: eeschema/sch_label.cpp:797
 msgid "Hierarchical Sheet Pin"
-msgstr "Hierarhični zatič lista"
+msgstr "Hierarhični priključek"
 
 #: eeschema/sch_label.cpp:826 eeschema/sch_text.cpp:498
 #, fuzzy
@@ -13988,7 +14007,7 @@ msgstr "Hierarhična oznaka '%s'"
 
 #: eeschema/sch_label.cpp:1563 pcbnew/dialogs/panel_setup_rules.cpp:657
 msgid "Syntax Help"
-msgstr "Pomoč za sintakso"
+msgstr "Pomoč pri sintaksi"
 
 #: eeschema/sch_line.cpp:701
 #, c-format
@@ -14045,7 +14064,7 @@ msgstr "Vrsta vrstice"
 
 #: eeschema/sch_line.cpp:866
 msgid "from netclass"
-msgstr "iz netclass"
+msgstr "iz razreda vozlišč"
 
 #: eeschema/sch_marker.cpp:190
 #, fuzzy
@@ -14063,12 +14082,12 @@ msgstr "Brez povezave"
 #: eeschema/sch_plugin.cpp:138
 msgid "Enable <b>debug</b> logging for Symbol*() functions in this SCH_PLUGIN."
 msgstr ""
-"Omogočite beleženje <b> odpravljanja napak </b> za funkcije Symbol * () v "
+"Omogočite beleženje <b>odpravljanja napak</b> za funkcije Symbol*() v "
 "tem SCH_PLUGIN."
 
 #: eeschema/sch_plugin.cpp:142
 msgid "Regular expression <b>symbol name</b> filter."
-msgstr "Filter regularnega izraza <b> ime simbola </b>."
+msgstr "Filter regularnega izraza <b>ime simbola</b>."
 
 #: eeschema/sch_plugin.cpp:146 pcbnew/plugin.cpp:157
 msgid ""
@@ -14089,7 +14108,7 @@ msgstr "Geslo za <b> prijavo </b> do nekega posebnega knjižničnega strežnika.
 #: eeschema/sch_plugin.cpp:163
 msgid ""
 "Enter the python symbol which implements the SCH_PLUGIN::Symbol*() functions."
-msgstr "Vnesite simbol python, ki izvaja funkcije SCH_PLUGIN :: Symbol * ()."
+msgstr "Vnesite simbol python, ki izvaja funkcije SCH_PLUGIN::Symbol*()."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:339
 #, c-format
@@ -14118,26 +14137,26 @@ msgstr ""
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:693
 #, fuzzy, c-format
 msgid "Pin's owner (%d) not found."
-msgstr "Datoteke '%s' ni mogoče najti."
+msgstr "Lastnika priključka (%d) ni bilo mogoče najti."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:738
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:2049
 #, fuzzy
 msgid "Pin has unexpected orientation."
-msgstr "Usmerjenost besedila"
+msgstr "Priključek ima nepričakovano orientacijo."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:777
 #, fuzzy
 msgid "Pin has unexpected electrical type."
-msgstr "Pokažite tip pin in elektriko"
+msgstr "Priključek ima nepričakovan električni tip."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:782
 msgid "Pin has unexpected outer edge type."
-msgstr ""
+msgstr "Priključek ima nepričakovano vrsto zunanjega roba."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:785
 msgid "Pin has unexpected inner edge type."
-msgstr ""
+msgstr "Priključek ima nepričakovano vrsto notranjega roba."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:948
 #, fuzzy, c-format
@@ -14224,7 +14243,7 @@ msgstr ""
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:1981
 #, c-format
 msgid "Power symbol creates a global label with name '%s'"
-msgstr "Simbol napajanja ustvari globalno nalepko z imenom \"%s\""
+msgstr "Napajalni simbol ustvari globalna oznaka vozlišča z imenom '%s'"
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:2107
 #, c-format
@@ -14241,7 +14260,7 @@ msgstr "Povezave blazinic:"
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:2345
 #, fuzzy, c-format
 msgid "Embedded file %s not found in storage."
-msgstr "Datoteke za obnovitev \"%s\" ni mogoče najti."
+msgstr "Datoteke za obnovitev %s ni mogoče najti."
 
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:2362
 #: eeschema/sch_plugins/altium/sch_altium_plugin.cpp:2381
@@ -14376,7 +14395,7 @@ msgid ""
 "Symbol ID '%s' references library symbol '%s' which could not be found in "
 "the library. Did you export all items of the design?"
 msgstr ""
-"ID simbola '%s' se sklicuje na simbol knjižnice '%s', ki ga v knjižnici ni "
+"ID simbola '%s' se sklicuje na simbol iz knjižnice '%s', ki ga v knjižnici ni "
 "bilo mogoče najti. Ste izvozili vse predmete?"
 
 #: eeschema/sch_plugins/cadstar/cadstar_sch_archive_loader.cpp:571
@@ -14386,7 +14405,7 @@ msgid ""
 "pins. The expected number of pins is 1 but %d were found."
 msgstr ""
 "ID simbola '%s' je referenčni signal ali globalni signal, vendar ima preveč "
-"nožic. Pričakovano število zatičev je 1, vendar so bili najdeni %d."
+"priključkov. Pričakovano število priključkov je 1, vendar je bilo najdenih %d."
 
 #: eeschema/sch_plugins/cadstar/cadstar_sch_archive_loader.cpp:703
 #, fuzzy, c-format
@@ -14394,8 +14413,8 @@ msgid ""
 "Symbol ID '%s' is of an unknown type. It is neither a symbol or a net "
 "power / symbol. The symbol was not loaded."
 msgstr ""
-"ID simbola '%s' je neznane vrste. Niti je sestavni del niti neto moč / "
-"simbol. Simbol ni bil naložen."
+"ID simbola '%s' je neznanega tipa. Ni simbol ali vozlišče"
+"Simbol ni bil naložen."
 
 #: eeschema/sch_plugins/cadstar/cadstar_sch_archive_loader.cpp:719
 #, fuzzy, c-format
@@ -14405,8 +14424,8 @@ msgid ""
 "revert to the original 1:1 scale."
 msgstr ""
 "Simbol '%s' je v prvotni shemi CADSTAR pomanjšan, vendar to v KiCadu ni "
-"podprto. Simbol je bil naložen v merilu 1: 1 in morda bo treba ročno "
-"pritrditi."
+"podprto. Ko se simbol znova naloži iz knjižnice, "
+"se povrne v prvotno merilo 1:1."
 
 #: eeschema/sch_plugins/cadstar/cadstar_sch_archive_loader.cpp:1193
 #, c-format
@@ -14430,9 +14449,9 @@ msgid ""
 "design but KiCad only supports rotation angles multiples of 90 degrees. The "
 "connecting wires will need manual fixing."
 msgstr ""
-"Simbol \"%s\" se vrti s kotom %.1f stopinj v originalni zasnovi CADSTAR, ki "
-"pa KiCad podpira samo kote vrtenja več kotov 90 stopinj. Povezovalne žice "
-"bodo potrebovale ročno pritrjevanje."
+"Simbol '%s' se vrti s kotom %.1f stopinj v originalni zasnovi CADSTAR, "
+"vendar KiCad podpira samo kote vrtenja, ki so večkratniki 90 stopinj. "
+"Povezovalne žice bodo potrebovale ročno pritrjevanje."
 
 #: eeschema/sch_plugins/cadstar/cadstar_sch_archive_loader.cpp:1770
 #, c-format
@@ -14440,8 +14459,8 @@ msgid ""
 "Symbol '%s' references sheet ID '%s' which does not exist in the design. The "
 "symbol was not loaded."
 msgstr ""
-"Simbol '%s' referenčni ID lista '%s', ki ne obstaja v načrtu. Simbol ni bil "
-"naložen."
+"Simbol '%s' se sklicuje na ID lista '%s', ki ne obstaja v načrtu. "
+"Simbol ni bil naložen."
 
 #: eeschema/sch_plugins/cadstar/cadstar_sch_archive_loader.cpp:1907
 #, c-format
@@ -14449,8 +14468,8 @@ msgid ""
 "Net %s references unknown net element %s. The net was not properly loaded "
 "and may require manual fixing."
 msgstr ""
-"Net %s se sklicuje na neznani neto element %s. Mreža ni bila pravilno "
-"naložena in bo morda zahtevala ročno pritrditev."
+"Vozlišče %s se sklicuje na neznani element vozlišča %s. Vozlišče ni bilo pravilno "
+"naloženo, morda bo potrebno ročno popravilo vozlišča."
 
 #: eeschema/sch_plugins/cadstar/cadstar_sch_archive_loader.cpp:2217
 #, c-format
@@ -14476,7 +14495,7 @@ msgstr ""
 #: pcbnew/plugins/eagle/eagle_plugin.cpp:3179
 #, fuzzy, c-format
 msgid "Unable to read file '%s'."
-msgstr "Datoteke \"%s\" ni mogoče prebrati"
+msgstr "Datoteke '%s' ni mogoče prebrati"
 
 #: eeschema/sch_plugins/eagle/sch_eagle_plugin.cpp:1293
 #, fuzzy, c-format
@@ -14484,7 +14503,7 @@ msgid ""
 "Error parsing Eagle file. Could not find '%s' instance but it is referenced "
 "in the schematic."
 msgstr ""
-"Napaka pri razčlenjevanju datoteke Eagle. Primerka \"%s\" ni bilo mogoče "
+"Napaka pri razčlenjevanju datoteke Eagle. Primerka '%s' ni bilo mogoče "
 "najti, vendar je nanj naveden v shemi."
 
 #: eeschema/sch_plugins/eagle/sch_eagle_plugin.cpp:1324
@@ -14496,7 +14515,7 @@ msgstr "V uvoženi knjižnici ni bilo mogoče najti %s"
 #: eeschema/sch_plugins/legacy/sch_legacy_lib_plugin_cache.cpp:70
 #, fuzzy, c-format
 msgid "Library file '%s' not found."
-msgstr "Datoteke knjižnice \"%s\" ni mogoče najti."
+msgstr "Datoteke knjižnice '%s' ni mogoče najti."
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_lib_plugin_cache.cpp:501
 #: eeschema/sch_plugins/legacy/sch_legacy_lib_plugin_cache.cpp:1801
@@ -14523,21 +14542,18 @@ msgstr "Neveljaven identifikator knjižnice simbolov"
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:260
 #, fuzzy
 msgid "Invalid parent symbol name"
-msgstr "Neveljavno ime signala"
+msgstr "Neveljavno ime nadrejenega simbola"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:269
 #, fuzzy, c-format
 msgid "No parent for extended symbol %s"
 msgstr ""
 "Noben nadrejeni za razširjeni simbol %s v\n"
-"datoteka: \"%s\"\n"
-"vrstica: %d\n"
-"odmik: %d"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:284
 #, fuzzy
 msgid "Invalid symbol unit name"
-msgstr "Neveljavno ime signala"
+msgstr "Neveljavno ime enote simbola"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:292
 #, fuzzy, c-format
@@ -14547,30 +14563,22 @@ msgstr "Neveljavna predpona enote"
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:302
 #, fuzzy, c-format
 msgid "Invalid symbol unit name suffix %s"
-msgstr ""
-"Neveljavna pripona imena enote simbola %s v\n"
-"datoteka: \"%s\"\n"
-"vrstica: %d\n"
-"odmik: %d"
+msgstr "Neveljavna pripona imena enote simbola %s"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:308
 #, fuzzy, c-format
 msgid "Invalid symbol unit number %s"
-msgstr "Neveljaven identifikator knjižnice simbolov"
+msgstr "Neveljavna številka enote simbola %s"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:316
 #, fuzzy, c-format
 msgid "Invalid symbol convert number %s"
-msgstr ""
-"Neveljavna številka pretvorbe simbola %s v\n"
-"datoteka: \"%s\"\n"
-"vrstica: %d\n"
-"odmik: %d"
+msgstr "Neveljavno število pretvorbe simbola %s"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:707
 #, fuzzy
 msgid "Invalid pin names definition"
-msgstr "Opredelitev oboda plošče"
+msgstr "Neveljavna definicija imen priključkov"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:728
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1859
@@ -14588,33 +14596,33 @@ msgstr "Vnesite ime odtisa:"
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1875
 #, fuzzy
 msgid "Invalid property value"
-msgstr "Neveljaven niz vrednosti Spice"
+msgstr "Neveljavna vrednost lastnosti"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1313
 #, fuzzy
 msgid "Invalid pin name"
-msgstr "Neveljavno ime signala"
+msgstr "Neveljavno ime priključka"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1351
 #, fuzzy
 msgid "Invalid pin number"
-msgstr "Neveljavno ime signala"
+msgstr "Neveljavna številka priključka"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1388
 #, fuzzy
 msgid "Invalid alternate pin name"
-msgstr "Nadomestno ime pin"
+msgstr "Neveljavno nadomestno ime priključka"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1563
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1623
 #, fuzzy
 msgid "Invalid text string"
-msgstr "Neveljaven niz vrednosti Spice"
+msgstr "Neveljaven besedilni niz"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1707
 #, fuzzy
 msgid "Invalid page type"
-msgstr "Neveljavno ime signala"
+msgstr "Neveljaven tip strani"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1834
 msgid "Invalid title block comment number"
@@ -14623,34 +14631,34 @@ msgstr ""
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1931
 #, fuzzy
 msgid "Invalid sheet pin name"
-msgstr "Neveljavno ime signala"
+msgstr "Neveljavno ime hierarhičnega priključka"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:1939
 #, fuzzy
 msgid "Empty sheet pin name"
-msgstr "Import PinSheet"
+msgstr "Prazno ime hierarhičnega priključka"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:2440
 #, fuzzy
 msgid "Invalid symbol library name"
-msgstr "Neveljaven identifikator knjižnice simbolov"
+msgstr "Neveljvno ime knjižnice simbolov"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_parser.cpp:2471
 #, fuzzy
 msgid "Invalid symbol library ID"
-msgstr "Neveljaven identifikator knjižnice simbolov"
+msgstr "Neveljaven ID knjižnice simbolov"
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_plugin.cpp:1348
 #: eeschema/sch_plugins/legacy/sch_legacy_plugin.cpp:2098
 #, fuzzy, c-format
 msgid "Symbol library '%s' already exists."
-msgstr "Knjižnica %s že obstaja."
+msgstr "Knjižnica simbolov '%s' že obstaja."
 
 #: eeschema/sch_plugins/kicad/sch_sexpr_plugin.cpp:1374
 #: eeschema/sch_plugins/legacy/sch_legacy_plugin.cpp:2124
 #, fuzzy, c-format
 msgid "Symbol library '%s' cannot be deleted."
-msgstr "knjižnice \"%s\" ni mogoče izbrisati"
+msgstr "Knjižnice simbolov '%s' ni mogoče izbrisati"
 
 #: eeschema/sch_plugins/legacy/sch_legacy_lib_plugin_cache.cpp:84
 #, fuzzy
@@ -14660,9 +14668,7 @@ msgstr "Nepričakovan konec datoteke"
 #: eeschema/sch_plugins/legacy/sch_legacy_lib_plugin_cache.cpp:170
 #, fuzzy, c-format
 msgid "Insufficient permissions to read library '%s'."
-msgstr ""
-"Za shranjevanje datoteke potrebujete nezadostna dovoljenja\n"
-"%s"
+msgstr "Nezadostna dovoljenja za branje knjižnice '%s'."
 
 #: eeschema/sch_plugins/legacy/sch_legacy_lib_plugin_cache.cpp:179
 msgid "symbol document library file is empty"
@@ -14685,7 +14691,7 @@ msgstr "nepričakovan konec vrstice"
 #: eeschema/sch_plugins/legacy/sch_legacy_plugin.cpp:362
 #, fuzzy, c-format
 msgid "'%s' does not appear to be an Eeschema file."
-msgstr "Videti je, da \"%s\" ni datoteka Eeschema"
+msgstr "Videti je, da '%s' ni datoteka Eeschema"
 
 #: eeschema/sch_plugins/legacy/sch_legacy_plugin.cpp:392
 msgid "Missing 'EELAYER END'"
@@ -14708,7 +14714,7 @@ msgstr "pričakovano 'ležeče' ali '~'"
 #: eeschema/sch_plugins/legacy/sch_legacy_plugin.cpp:1274
 #, fuzzy
 msgid "symbol field text attributes must be 3 characters wide"
-msgstr "Atributi besedila polja komponente morajo biti široki 3 znake"
+msgstr "atributi besedila polja simbolov morajo biti 3 znake široki"
 
 #: eeschema/sch_plugins/legacy/sch_legacy_plugin_helpers.cpp:222
 msgid "expected unquoted string"
@@ -14717,8 +14723,7 @@ msgstr "pričakovani nekvotirani niz"
 #: eeschema/sch_screen.cpp:876 eeschema/sch_screen.cpp:968
 #, c-format
 msgid "Setting schematic symbol '%s %s' library identifier to '%s'."
-msgstr ""
-"Nastavitev shematskega simbola '%s %s' identifikator knjižnice na '%s'."
+msgstr "Nastavitev identifikatorja knjižnice shematskega simbola '%s %s' na '%s'."
 
 #: eeschema/sch_screen.cpp:892
 #, fuzzy, c-format
@@ -14726,7 +14731,7 @@ msgid ""
 "Schematic symbol reference '%s' library identifier is not valid. Unable to "
 "link library symbol."
 msgstr ""
-"Oznaka knjižnice shematskega simbola '%s' ni veljavna. Simbola knjižnice ni "
+"Oznaka knjižnice shematskega simbola '%s' ni veljavna. Simbola iz knjižnice ni "
 "mogoče povezati."
 
 #: eeschema/sch_screen.cpp:908
@@ -14736,23 +14741,23 @@ msgid ""
 "Unable to link library symbol."
 msgstr ""
 "Knjižnice simbolov '%s' ni mogoče najti in ni na voljo nadomestne knjižnice "
-"predpomnilnika. Simbola knjižnice ni mogoče povezati."
+"predpomnilnika. Simbola iz knjižnice ni mogoče povezati."
 
 #: eeschema/sch_screen.cpp:927
 #, c-format
 msgid "I/O error %s resolving library symbol %s"
-msgstr "V / I napaka %s razreševanje simbola knjižnice %s"
+msgstr "I/O napaka %s razreševanje simbola iz knjižnice %s"
 
 #: eeschema/sch_screen.cpp:947
 #, c-format
 msgid "Falling back to cache to set symbol '%s:%s' link '%s'."
 msgstr ""
-"Vrnitev v predpomnilnik za nastavitev simbola \"%s: %s\" povezava \"%s\"."
+"Vrnitev v predpomnilnik za nastavitev simbola '%s:%s' povezava '%s'."
 
 #: eeschema/sch_screen.cpp:979
 #, c-format
 msgid "No library symbol found for schematic symbol '%s %s'."
-msgstr "Za shematski simbol '%s %s' ni mogoče najti knjižničnega simbola."
+msgstr "Za shematski simbol '%s %s' ni mogoče najti simbola iz knjižnice."
 
 #: eeschema/sch_sheet.cpp:757
 msgid "Sheet Name"
@@ -14778,7 +14783,7 @@ msgstr "(Izbrisan element)"
 #: eeschema/sch_sheet_pin.cpp:330
 #, c-format
 msgid "Hierarchical Sheet Pin %s"
-msgstr "Hierarhični list %s"
+msgstr "Hierarhični priključek %s"
 
 #: eeschema/sch_symbol.cpp:1468
 msgid "Power symbol"
@@ -15041,7 +15046,7 @@ msgstr ""
 "        <th> Definicija vodila </th>\n"
 "        <th> & nbsp; & nbsp; & nbsp; & nbsp; & nbsp; & nbsp; & nbsp; & nbsp; "
 "& nbsp; & nbsp; & nbsp; & nbsp; & nbsp; </th>\n"
-"        <th> Nastale mreže </th>\n"
+"        <th> Nastala vozlišča </th>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td> & nbsp; <br> <samp> predpona [m..n ]</samp> </td>\n"
@@ -15192,7 +15197,7 @@ msgid ""
 "the sheet '%s' or one of its subsheets as a parent somewhere in the "
 "schematic hierarchy."
 msgstr ""
-"Sprememb lista ni mogoče izvesti, ker ima ciljni list list \"%s\" ali enega "
+"Sprememb lista ni mogoče izvesti, ker ima ciljni list list '%s' ali enega "
 "od svojih podlistkov kot nadrejenega nekje v shematski hierarhiji."
 
 #: eeschema/sheet.cpp:84
@@ -15202,7 +15207,7 @@ msgid ""
 "symbol library table.  The project this schematic belongs to must first be "
 "remapped before it can be imported into the current project."
 msgstr ""
-"Shema \"%s\" ni imela svojih povezav do knjižnice simbolov, ki so bile "
+"Shema '%s' ni imela svojih povezav do knjižnice simbolov, ki so bile "
 "prerazporejene v tabelo knjižnice simbolov. Projekt, ki mu pripada ta shema, "
 "je treba najprej preslikati, preden ga lahko uvozite v trenutni projekt."
 
@@ -15294,7 +15299,7 @@ msgid ""
 "\n"
 "Do you wish to continue?"
 msgstr ""
-"Ime datoteke \"%s\" lahko povzroči težave z obstoječim imenom datoteke\n"
+"Ime datoteke '%s' lahko povzroči težave z obstoječim imenom datoteke\n"
 "že opredeljeno v shemi za sisteme, ki podpirajo primer\n"
 "neobčutljiva imena datotek. To bo povzročilo težave, če to kopirate\n"
 "projekt za operacijski sistem, ki podpira datoteko, ki ne razlikuje med "
@@ -15361,7 +15366,7 @@ msgstr "Ne morem ustvariti datoteke <%s>"
 msgid ""
 "This simulation provide no plots. Please refer to console window for results"
 msgstr ""
-"Ta simulacija ne daje nobenih ploskev. Za rezultate glejte okno konzole"
+"Ta simulacija ne daje nobenih izrisov. Za rezultate glejte okno konzole"
 
 #: eeschema/sim/sim_plot_frame.cpp:170
 msgid "Run/Stop Simulation"
@@ -15377,7 +15382,7 @@ msgstr "Dodaj Signal"
 
 #: eeschema/sim/sim_plot_frame.cpp:173
 msgid "Add signals to plot"
-msgstr "Dodajte signale za risanje"
+msgstr "Dodajte signale za izris"
 
 #: eeschema/sim/sim_plot_frame.cpp:174
 msgid "Probe"
@@ -15407,11 +15412,11 @@ msgstr "Nastavitve simulacije"
 
 #: eeschema/sim/sim_plot_frame.cpp:360 eeschema/sim/sim_plot_frame_base.h:126
 msgid "Spice Simulator"
-msgstr "Spice Simulator"
+msgstr "Spice simulator"
 
 #: eeschema/sim/sim_plot_frame.cpp:476 eeschema/sim/sim_plot_frame.cpp:1480
 msgid "There were errors during netlist export, aborted."
-msgstr "Pri izvozu netlist je prišlo do napak, ki so bile prekinjene."
+msgstr "Pri izvozu seznama vozlišč je prišlo do napak, ki so bile prekinjene."
 
 #: eeschema/sim/sim_plot_frame.cpp:493 eeschema/sim/sim_plot_frame.cpp:1853
 #, fuzzy
@@ -15421,7 +15426,7 @@ msgstr "Cvpcb že teče, Nadaljujem ?"
 #: eeschema/sim/sim_plot_frame.cpp:520
 #, c-format
 msgid "Plot%u - "
-msgstr "Parcela %u - "
+msgstr "Izris%u - "
 
 #: eeschema/sim/sim_plot_frame.cpp:650
 msgid "Error: simulation type not defined!\n"
@@ -15429,7 +15434,7 @@ msgstr "Napaka: vrsta simulacije ni definirana!\n"
 
 #: eeschema/sim/sim_plot_frame.cpp:656
 msgid "Error: simulation type doesn't support plotting!\n"
-msgstr "Napaka: vrsta simulacije ne podpira risanja!\n"
+msgstr "Napaka: vrsta simulacije ne podpira izrisovanja!\n"
 
 #: eeschema/sim/sim_plot_frame.cpp:834 eeschema/sim/sim_plot_frame.cpp:1688
 msgid "Signal"
@@ -15450,15 +15455,15 @@ msgstr "Shrani simulacijski delovni zvezek"
 
 #: eeschema/sim/sim_plot_frame.cpp:1206
 msgid "Save Plot as Image"
-msgstr "Shrani parcelo kot sliko"
+msgstr "Shrani izris kot sliko"
 
 #: eeschema/sim/sim_plot_frame.cpp:1223
 msgid "Save Plot Data"
-msgstr "Shrani podatke o parceli"
+msgstr "Shrani podatke izrisa"
 
 #: eeschema/sim/sim_plot_frame.cpp:1528
 msgid "You need to run plot-providing simulation first."
-msgstr "Najprej morate zagnati simulacijo, ki zagotavlja ploskve."
+msgstr "Najprej morate zagnati simulacijo, ki zagotavlja izris."
 
 #: eeschema/sim/sim_plot_frame.cpp:1784
 msgid ""
@@ -15478,7 +15483,7 @@ msgstr "Skrij signal"
 
 #: eeschema/sim/sim_plot_frame.cpp:1873
 msgid "Erase the signal from plot screen"
-msgstr "Izbrišite signal z zaslona"
+msgstr "Izbrišite signal z zaslona izrisa"
 
 #: eeschema/sim/sim_plot_frame.cpp:1879
 msgid "Hide Cursor"
@@ -15490,7 +15495,7 @@ msgstr "Pokaži kazalec"
 
 #: eeschema/sim/sim_plot_frame_base.cpp:19
 msgid "New Plot"
-msgstr "Nova parcela"
+msgstr "Nov izris"
 
 #: eeschema/sim/sim_plot_frame_base.cpp:39
 msgid "Save as Image"
@@ -15519,12 +15524,11 @@ msgstr "Prilagodi vrednost komponente"
 
 #: eeschema/sim/sim_plot_frame_base.cpp:75
 msgid "Show SPICE Netlist..."
-msgstr "Pokaži seznam začimb SPICE ..."
+msgstr "Pokaži seznam vozlišč simulacije ..."
 
 #: eeschema/sim/sim_plot_frame_base.cpp:75
 msgid "Shows current simulation's netlist. Useful for debugging SPICE errors."
-msgstr ""
-"Prikaže seznam trenutnih simulacij. Uporabno za odpravljanje napak SPICE."
+msgstr "Prikaže seznam vozlišč trenutnih simulacij. Uporabno za odpravljanje napak simulacije."
 
 #: eeschema/sim/sim_plot_frame_base.cpp:80
 msgid "Settings..."
@@ -15626,7 +15630,7 @@ msgstr "DC Sweep"
 
 #: eeschema/sim/spice_simulator.cpp:73
 msgid "Pole-zero"
-msgstr "Pol-nič"
+msgstr "Poli-ničle"
 
 #: eeschema/sim/spice_simulator.cpp:79
 msgid "Transfer function"
@@ -15638,11 +15642,11 @@ msgstr "NEZNANO!"
 
 #: eeschema/sim/spice_value.cpp:42
 msgid "Spice value cannot be empty"
-msgstr "Vrednost začimbe ne sme biti prazna"
+msgstr "Vrednost simulacije ne sme biti prazna"
 
 #: eeschema/sim/spice_value.cpp:47
 msgid "Invalid Spice value string"
-msgstr "Neveljaven niz vrednosti Spice"
+msgstr "Neveljaven niz vrednosti simulacije"
 
 #: eeschema/sim/spice_value.cpp:80
 msgid "Invalid unit prefix"
@@ -15655,12 +15659,12 @@ msgstr "Prosimo, izpolnite obvezna polja"
 #: eeschema/sim/spice_value.cpp:277
 #, fuzzy, c-format
 msgid "'%s' is not a valid Spice value."
-msgstr "\"%s\" ni veljavna vrednost začimbe"
+msgstr "'%s' ni veljavna vrednost simulacije"
 
 #: eeschema/symbol_async_loader.cpp:108
 #, fuzzy, c-format
 msgid "Loading library %s..."
-msgstr "Nalaganje knjižnice \"%s\""
+msgstr "Nalaganje knjižnice %s"
 
 #: eeschema/symbol_async_loader.cpp:122
 #, fuzzy, c-format
@@ -15686,8 +15690,8 @@ msgid ""
 "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b> conflicts with "
 "pin %s%s at location <b>(%.3f, %.3f)</b> of converted."
 msgstr ""
-"<b> Podvojen zatič %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> je v "
-"sporu z zatičem %s \"%s\" na lokaciji <b> ( %.3f, %.3f) </b> pretvorjenih"
+"<b>Podvojeni priključek %s</b> %s na lokaciji <b>(%.3f, %.3f)</b> je v "
+"sporu s priključkom %s%s na lokaciji <b>( %.3f, %.3f)</b> pretvorjenih"
 
 #: eeschema/symbol_checker.cpp:128
 #, fuzzy, c-format
@@ -15695,9 +15699,9 @@ msgid ""
 "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b> conflicts with "
 "pin %s%s at location <b>(%.3f, %.3f)</b> in units %s and %s of converted."
 msgstr ""
-"<b> Podvojen zatič %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> je v "
-"sporu z zatičem %s \"%s\" na lokaciji <b> ( %.3f, %.3f) </b> v enotah %c in "
-"%c pretvorjenih"
+"<b>Podvojeni priključek %s /b> %s na lokaciji <b>(%.3f, %.3f)</b> je v "
+"sporu s priključkom %s%s na lokaciji <b>( %.3f, %.3f)</b> v  pretvorjenih "
+"enotah %s in %s"
 
 #: eeschema/symbol_checker.cpp:147
 #, fuzzy, c-format
@@ -15705,8 +15709,8 @@ msgid ""
 "<b>Duplicate pin %s</b> %s at location <b>(%s, %s)</b> conflicts with pin %s"
 "%s at location <b>(%s, %s)</b>."
 msgstr ""
-"<b> Podvojen zatič %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> je v "
-"sporu z zatičem %s \"%s\" na lokaciji <b> ( %.3f, %.3f) </b>"
+"<b>Podvojeni priključek %s</b> %s na lokaciji <b>(%s, %s)</b> je v "
+"sporu s priključkom %s %s na lokaciji <b>(%s, %s)</b>."
 
 #: eeschema/symbol_checker.cpp:160
 #, fuzzy, c-format
@@ -15714,9 +15718,8 @@ msgid ""
 "<b>Duplicate pin %s</b> %s at location <b>(%s, %s)</b> conflicts with pin %s"
 "%s at location <b>(%s, %s)</b> in units %s and %s."
 msgstr ""
-"<b> Podvojen zatič %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> je v "
-"sporu z zatičem %s \"%s\" na lokaciji <b> ( %.3f, %.3f) </b> v enotah %c in "
-"%c"
+"<b>Podvojeni priključek %s </b> %s na lokaciji <b>(%s, %s)</b> je v "
+"sporu s priključkom %s %s na lokaciji <b>(%s, %s)</b> v enotah %s in %s."
 
 #: eeschema/symbol_checker.cpp:188
 msgid "<b>A Power Symbol should have only one unit</b><br><br>"
@@ -15728,26 +15731,30 @@ msgstr ""
 
 #: eeschema/symbol_checker.cpp:200
 msgid "<b>A Power Symbol should have only one pin</b><br><br>"
-msgstr ""
+msgstr "<b>Napajalni simbol mora imeti samo en priključek</b><br><br>"
 
 #: eeschema/symbol_checker.cpp:209
 msgid ""
 "<b>Suspicious Power Symbol</b><br>Only a input or output power pin has "
 "meaning<br><br>"
 msgstr ""
+"<b>Sumljiv napajalni simbol</b><br>Samo vhodni ali izhodni napajalni priključek "
+"ima pomen<br><br>"
 
 #: eeschema/symbol_checker.cpp:216
 msgid ""
 "<b>Suspicious Power Symbol</b><br>Only invisible input power pins are "
 "automatically connected<br><br>"
 msgstr ""
+"<b>Sumljiv napajalni simbol</b><br>Samo nevidni vhodni napajalni priključki "
+"so samodejno povezani<br><br>"
 
 #: eeschema/symbol_checker.cpp:241
 #, fuzzy, c-format
 msgid ""
 "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b> of converted."
 msgstr ""
-"<b> Izklopljen mrežni zatič %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> "
+"Informacije: <b>Skriti napajalni priključek %s</b> %s na lokaciji <b>(%s, %s)</b> "
 "pretvorjenega. <br>"
 
 #: eeschema/symbol_checker.cpp:250
@@ -15756,34 +15763,32 @@ msgid ""
 "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b> in unit %c "
 "of converted."
 msgstr ""
-"<b> Izklopljen zatič mreže %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> "
-"v simbolu %c pretvorjenega. <br>"
+"Informacije: <b>Skriti napajalni priključek %s</b> %s na lokaciji <b>(%s, %s)</b> "
+"v simbolu %c pretvorjenega."
 
 #: eeschema/symbol_checker.cpp:263
 #, fuzzy, c-format
 msgid "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>."
-msgstr ""
-"<b> Izklopljen zatič mreže %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b>. "
-"<br>"
+msgstr "Informacije: <b>Skriti napajalni priključek %s</b> %s na lokaciji <b>(%s, %s)</b>."
 
 #: eeschema/symbol_checker.cpp:271
 #, fuzzy, c-format
 msgid ""
 "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b> in unit %c."
 msgstr ""
-"<b> Izklopljen zatič mreže %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> "
-"v simbolu %c. <br>"
+"Informacije: <b>Skriti napajalni priključek %s</b> %s na lokaciji <b>(%s, %s)</b> v enoti %c"
 
 #: eeschema/symbol_checker.cpp:282
 msgid ""
 "(Hidden power pins will drive their pin names on to any connected nets.)"
 msgstr ""
+"(Skriti napajalni priključki bodo svoja imena prenesli na katerakoli povezana vozlišča.)"
 
 #: eeschema/symbol_checker.cpp:295
 #, fuzzy, c-format
 msgid "<b>Off grid pin %s</b> %s at location <b>(%s, %s)</b> of converted."
 msgstr ""
-"<b> Izklopljen mrežni zatič %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> "
+"<b> Izklopljen mrežni zatič %s </b> %s na lokaciji <b> (%.3f, %.3f) </b> "
 "pretvorjenega. <br>"
 
 #: eeschema/symbol_checker.cpp:304
@@ -15792,21 +15797,21 @@ msgid ""
 "<b>Off grid pin %s</b> %s at location <b>(%.3s, %.3s)</b> in unit %c of "
 "converted."
 msgstr ""
-"<b> Izklopljen zatič mreže %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> "
+"<b> Izklopljen zatič mreže %s </b> %s na lokaciji <b> (%.3f, %.3f) </b> "
 "v simbolu %c pretvorjenega. <br>"
 
 #: eeschema/symbol_checker.cpp:317
 #, fuzzy, c-format
 msgid "<b>Off grid pin %s</b> %s at location <b>(%s, %s)</b>."
 msgstr ""
-"<b> Izklopljen zatič mreže %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b>. "
+"<b> Izklopljen zatič mreže %s </b> %s na lokaciji <b> (%.3f, %.3f) </b>. "
 "<br>"
 
 #: eeschema/symbol_checker.cpp:325
 #, fuzzy, c-format
 msgid "<b>Off grid pin %s</b> %s at location <b>(%s, %s)</b> in unit %c."
 msgstr ""
-"<b> Izklopljen zatič mreže %s </b> \"%s\" na lokaciji <b> (%.3f, %.3f) </b> "
+"<b> Izklopljen zatič mreže %s </b> %s na lokaciji <b> (%.3f, %.3f) </b> "
 "v simbolu %c. <br>"
 
 #: eeschema/symbol_editor/lib_logger.cpp:64
@@ -15920,7 +15925,7 @@ msgstr "Datoteke knjižnice ni bilo mogoče odpreti."
 #: eeschema/symbol_editor/symbol_edit_frame.cpp:958
 #, fuzzy, c-format
 msgid "Loading library '%s'..."
-msgstr "Nalaganje knjižnice \"%s\""
+msgstr "Nalaganje knjižnice '%s'"
 
 #: eeschema/symbol_editor/symbol_edit_frame.cpp:1049
 #: pcbnew/footprint_libraries_utils.cpp:512
@@ -16111,7 +16116,7 @@ msgid ""
 "The symbol '%s' has been modified.\n"
 "Do you want to remove it from the library?"
 msgstr ""
-"Simbol \"%s\" je bil spremenjen.\n"
+"Simbol '%s' je bil spremenjen.\n"
 "Ali ga želite odstraniti iz knjižnice?"
 
 #: eeschema/symbol_editor/symbol_editor.cpp:801
@@ -16122,7 +16127,7 @@ msgid ""
 "\n"
 "Do you wish to delete this symbol and all of its derivatives?"
 msgstr ""
-"Simbol \"%s\" se uporablja za izpeljavo drugih simbolov.\n"
+"Simbol %s se uporablja za izpeljavo drugih simbolov.\n"
 "Če izbrišete ta simbol, se iz njega izbrišejo vsi simboli.\n"
 "\n"
 "Ali želite izbrisati ta simbol in vse njegove izpeljanke?"
@@ -16145,7 +16150,7 @@ msgstr "Želite povrniti »%s« na zadnjo shranjeno različico?"
 #: eeschema/symbol_editor/symbol_editor.cpp:1031
 #, fuzzy, c-format
 msgid "Symbol %s not found in library '%s'."
-msgstr "Imena simbola \"%s\" ni mogoče najti v knjižnici \"%s\""
+msgstr "Simbola %s ni mogoče najti v knjižnici '%s'."
 
 #: eeschema/symbol_editor/symbol_editor.cpp:1059
 msgid "No library specified."
@@ -16154,12 +16159,12 @@ msgstr "Knjižnica ni navedena."
 #: eeschema/symbol_editor/symbol_editor.cpp:1078
 #, fuzzy, c-format
 msgid "Save Library '%s' As..."
-msgstr "Shrani knjižnico \"%s\" kot ..."
+msgstr "Shrani knjižnico '%s' kot ..."
 
 #: eeschema/symbol_editor/symbol_editor.cpp:1127
 #, fuzzy, c-format
 msgid "Failed to save changes to symbol library file '%s'."
-msgstr "Ni bilo mogoče shraniti sprememb v datoteko knjižnice simbolov \"%s\""
+msgstr "Ni bilo mogoče shraniti sprememb v datoteko knjižnice simbolov '%s'"
 
 #: eeschema/symbol_editor/symbol_editor.cpp:1129
 #, fuzzy
@@ -16169,7 +16174,7 @@ msgstr "Napaka pri shranjevanju knjižnice"
 #: eeschema/symbol_editor/symbol_editor.cpp:1171
 #, fuzzy, c-format
 msgid "Symbol library file '%s' saved."
-msgstr "Datoteka knjižnice simbolov \"%s\" je shranjena"
+msgstr "Datoteka knjižnice simbolov '%s' je shranjena"
 
 #: eeschema/symbol_editor/symbol_editor.cpp:1271
 msgid "Undefined!"
@@ -16202,12 +16207,12 @@ msgstr "Uvozi simbol"
 #: eeschema/symbol_editor/symbol_editor_import_export.cpp:79
 #, fuzzy, c-format
 msgid "Cannot import symbol library '%s'."
-msgstr "Knjižnice simbolov \"%s\" ni mogoče uvoziti."
+msgstr "Knjižnice simbolov '%s' ni mogoče uvoziti."
 
 #: eeschema/symbol_editor/symbol_editor_import_export.cpp:86
 #, fuzzy, c-format
 msgid "Symbol library file '%s' is empty."
-msgstr "Datoteka knjižnice simbolov \"%s\" je prazna."
+msgstr "Datoteka knjižnice simbolov '%s' je prazna."
 
 #: eeschema/symbol_editor/symbol_editor_import_export.cpp:98
 #: eeschema/symbol_editor/symbol_editor_import_export.cpp:159
@@ -16239,12 +16244,12 @@ msgstr ""
 #: eeschema/symbol_editor/symbol_editor_import_export.cpp:194
 #, fuzzy, c-format
 msgid "Error creating symbol library '%s'."
-msgstr "Napaka pri ustvarjanju knjižnice simbolov \"%s\""
+msgstr "Napaka pri ustvarjanju knjižnice simbolov '%s'."
 
 #: eeschema/symbol_editor/symbol_editor_import_export.cpp:201
 #, fuzzy, c-format
 msgid "Symbol %s saved to library '%s'."
-msgstr "Simbol \"%s\" shranjen v knjižnici \"%s\""
+msgstr "Simbol %s shranjen v knjižnici '%s'"
 
 #: eeschema/symbol_editor/symbol_library_manager.cpp:99
 #: eeschema/symbol_tree_model_adapter.cpp:107
@@ -16266,7 +16271,7 @@ msgstr "Simbol ni najden."
 #: eeschema/symbol_editor/symbol_library_manager.cpp:448
 #, fuzzy, c-format
 msgid "Error loading symbol %s from library '%s'. (%s)"
-msgstr "Napaka pri nalaganju simbola \"%s\" iz knjižnice \"%s\". (%s)"
+msgstr "Napaka pri nalaganju simbola %s iz knjižnice '%s'. (%s)"
 
 #: eeschema/symbol_editor/symbol_library_manager.cpp:634
 #, fuzzy, c-format
@@ -16276,7 +16281,7 @@ msgstr "Napaka pri nalaganju simbola '%s' iz knjižnice '%s'."
 #: eeschema/symbol_editor/symbol_library_manager.cpp:787
 #, fuzzy, c-format
 msgid "Cannot enumerate library '%s'."
-msgstr "Knjižnice \"%s\" (%s) ni mogoče našteti"
+msgstr "Knjižnice '%s' (%s) ni mogoče našteti"
 
 #: eeschema/symbol_editor/symbol_library_manager.cpp:977
 #: eeschema/symbol_editor/symbol_library_manager.cpp:1078
@@ -16369,7 +16374,7 @@ msgstr "Spremenite vidnost"
 #: eeschema/tools/assign_footprints.cpp:240
 #, fuzzy, c-format
 msgid "Failed to open symbol-footprint link file '%s'."
-msgstr "Datoteke povezave \"%s\" ni bilo mogoče odpreti"
+msgstr "Datoteke povezave '%s' ni bilo mogoče odpreti"
 
 #: eeschema/tools/backannotate.cpp:73
 msgid "Select at least one property to back annotate."
@@ -16380,9 +16385,9 @@ msgid ""
 "Cannot fetch PCB netlist because eeschema is opened in stand-alone mode.\n"
 "You must launch the KiCad project manager and create a project."
 msgstr ""
-"Seznama PCB ni mogoče pridobiti, ker se eeschema odpre v samostojnem "
+"Seznama vozlišč PCB ni mogoče pridobiti, ker se eeschema odpre v samostojnem "
 "načinu.\n"
-"Zagnati morate vodjo projekta KiCad in ustvariti projekt."
+"Zagnati morate vodjo projekta KiCada in ustvariti projekt."
 
 #: eeschema/tools/backannotate.cpp:164
 #, c-format
@@ -16411,7 +16416,7 @@ msgstr ""
 #: eeschema/tools/backannotate.cpp:303
 #, fuzzy
 msgid "Re-linking footprints requires a fully annotated schematic."
-msgstr "Izvoz netlista zahteva popolnoma označeno shemo."
+msgstr "Ponovno povezovanje odtisov zahteva popolnoma številčeno shemo"
 
 #: eeschema/tools/backannotate.cpp:306
 msgid "Footprint re-linking cancelled by user."
@@ -16435,23 +16440,22 @@ msgstr "Spremenite vrednost %s iz '%s' v '%s'."
 #: eeschema/tools/backannotate.cpp:389
 #, c-format
 msgid "Cannot find %s pin '%s'."
-msgstr "Ne najdem %s nožice '%s'."
+msgstr "Ne najdem %s priključka '%s'."
 
 #: eeschema/tools/backannotate.cpp:532
 #, c-format
 msgid "Change %s pin %s net label from '%s' to '%s'."
-msgstr "Spremenite %s pin %s net label z '%s' na '%s'."
+msgstr "Spremeni %s priključek %s oznako vozlišča z '%s' na '%s'."
 
 #: eeschema/tools/backannotate.cpp:557
 #, fuzzy, c-format
 msgid "Net %s cannot be changed to %s because it is driven by a power pin."
-msgstr ""
-"Omrežja %s ni mogoče spremeniti v '%s', ker ga poganja napajalni zatič."
+msgstr "Vozlišča %s ni mogoče spremeniti v '%s', ker ga poganja napajalni priključek."
 
 #: eeschema/tools/backannotate.cpp:566
 #, c-format
 msgid "Add label '%s' to %s pin %s net."
-msgstr "Oznako '%s' dodajte na %s pin %s net."
+msgstr "Oznako '%s' dodajte na %s priključek %s vozlišča."
 
 #: eeschema/tools/ee_actions.cpp:45
 msgid "Perform electrical rules check"
@@ -16495,7 +16499,7 @@ msgstr "Odstranite vogal"
 
 #: eeschema/tools/ee_actions.cpp:87
 msgid "Select Node"
-msgstr "Izberi Gradnik"
+msgstr "Izberi vozlišče"
 
 #: eeschema/tools/ee_actions.cpp:87
 msgid "Select a connection item under the cursor"
@@ -16601,7 +16605,7 @@ msgstr "Pokaži vrste električnih priključkov"
 
 #: eeschema/tools/ee_actions.cpp:189
 msgid "Annotate pins with their electrical types"
-msgstr "Označite zatiče z njihovimi električnimi vrstami"
+msgstr "Številči priključke z njihovimi električnimi tipi"
 
 #: eeschema/tools/ee_actions.cpp:194
 msgid "Show Symbol Tree"
@@ -16641,17 +16645,17 @@ msgid ""
 "Enabled by default for multiunit parts with interchangeable units."
 msgstr ""
 "Način za sinhronizirano urejanje nožic\n"
-"Ko je omogočeno, se vse spremembe (razen številk pinov) širijo na druge "
+"Ko je omogočeno, se vse spremembe (razen številke priključkov) širijo na druge "
 "enote.\n"
-"Omogočeno privzeto za večenotne dele z zamenljivimi enotami."
+"Privzeto omogočeno za večenotne dele z zamenljivimi enotami."
 
 #: eeschema/tools/ee_actions.cpp:226
 msgid "Add Pin"
-msgstr "Dodaj nogico"
+msgstr "Dodaj priključek"
 
 #: eeschema/tools/ee_actions.cpp:226
 msgid "Add a pin"
-msgstr "Dodajte zatič"
+msgstr "Dodajte priključek"
 
 #: eeschema/tools/ee_actions.cpp:231 eeschema/tools/ee_actions.cpp:346
 #: pagelayout_editor/tools/pl_actions.cpp:54 pcbnew/tools/pcb_actions.cpp:128
@@ -16700,7 +16704,7 @@ msgstr "Dolžina potisnega zatiča"
 
 #: eeschema/tools/ee_actions.cpp:258
 msgid "Copy pin length to other pins in symbol"
-msgstr "Kopirajte dolžino zatiča na druge zatiče v simbolu"
+msgstr "Kopirajte dolžino priključka na druge priključke v simbolu"
 
 #: eeschema/tools/ee_actions.cpp:263
 msgid "Push Pin Name Size"
@@ -16708,7 +16712,7 @@ msgstr "Velikost imena potisnega zatiča"
 
 #: eeschema/tools/ee_actions.cpp:263
 msgid "Copy pin name size to other pins in symbol"
-msgstr "Kopirajte velikost imena zatiča na druge zatiče v simbolu"
+msgstr "Kopirajte velikost imena priključka na druge priključke v simbolu"
 
 #: eeschema/tools/ee_actions.cpp:268
 msgid "Push Pin Number Size"
@@ -16748,7 +16752,7 @@ msgstr "Dodaj spoj"
 
 #: eeschema/tools/ee_actions.cpp:295
 msgid "Add a junction"
-msgstr "Dodajte križišče"
+msgstr "Dodajte spoj"
 
 #: eeschema/tools/ee_actions.cpp:301
 msgid "Add Wire to Bus Entry"
@@ -16764,7 +16768,7 @@ msgstr "Dodaj oznako"
 
 #: eeschema/tools/ee_actions.cpp:307
 msgid "Add a net label"
-msgstr "Dodajte oznako mreže"
+msgstr "Dodajte oznako vozlišča"
 
 #: eeschema/tools/ee_actions.cpp:312
 #, fuzzy
@@ -16774,7 +16778,7 @@ msgstr "Neto razred"
 #: eeschema/tools/ee_actions.cpp:312
 #, fuzzy
 msgid "Add a net class directive label"
-msgstr "Dodajte oznako mreže"
+msgstr "Dodajte oznako skupine vozlišč"
 
 #: eeschema/tools/ee_actions.cpp:318
 msgid "Add Hierarchical Label"
@@ -16794,11 +16798,11 @@ msgstr "Dodajte hierarhični list"
 
 #: eeschema/tools/ee_actions.cpp:329 eeschema/tools/ee_actions.cpp:334
 msgid "Import Sheet Pin"
-msgstr "Uvozi zatič lista"
+msgstr "Uvozi hierarhični priključek"
 
 #: eeschema/tools/ee_actions.cpp:329 eeschema/tools/ee_actions.cpp:334
 msgid "Import a hierarchical sheet pin"
-msgstr "Uvozite hierarhični zatič lista"
+msgstr "Uvozite hierarhični priključek"
 
 #: eeschema/tools/ee_actions.cpp:340
 msgid "Add Global Label"
@@ -16970,41 +16974,41 @@ msgstr "Posodobi simbol, da vključi vse spremembe iz knjižnice"
 
 #: eeschema/tools/ee_actions.cpp:470
 msgid "Assign Netclass..."
-msgstr "Dodeli Netclass ..."
+msgstr "Dodeli razred vozlišča ..."
 
 #: eeschema/tools/ee_actions.cpp:470
 msgid "Assign a netclass to the net of the selected wire"
-msgstr "Mreži izbrane žice dodelite mrežni razred"
+msgstr "Vozlišču izbrane žice dodelite razred vozlišča"
 
 #: eeschema/tools/ee_actions.cpp:475
 #, fuzzy
 msgid "De Morgan Conversion"
-msgstr "Pretvorba DeMorgan"
+msgstr "Pretvorba De Morgan"
 
 #: eeschema/tools/ee_actions.cpp:475
 #, fuzzy
 msgid "Switch between De Morgan representations"
-msgstr "Preklop med predstavitvami DeMorgan"
+msgstr "Preklop med predstavitvami De Morgan"
 
 #: eeschema/tools/ee_actions.cpp:480
 #, fuzzy
 msgid "De Morgan Standard"
-msgstr "DeMorgan Standard"
+msgstr "De Morganov Standard"
 
 #: eeschema/tools/ee_actions.cpp:480
 #, fuzzy
 msgid "Switch to standard De Morgan representation"
-msgstr "Preklopite na standardno predstavitev DeMorgan"
+msgstr "Preklopite na standardno predstavitev De Morgan"
 
 #: eeschema/tools/ee_actions.cpp:485
 #, fuzzy
 msgid "De Morgan Alternate"
-msgstr "DeMorgan Alternate"
+msgstr "De Morgan Alternate"
 
 #: eeschema/tools/ee_actions.cpp:485
 #, fuzzy
 msgid "Switch to alternate De Morgan representation"
-msgstr "Preklopite na nadomestno predstavitev DeMorgan"
+msgstr "Preklopite na nadomestno predstavitev De Morgan"
 
 #: eeschema/tools/ee_actions.cpp:490
 msgid "Change to Label"
@@ -17060,11 +17064,11 @@ msgstr "Spremenite obstoječi element v besedilni komentar"
 
 #: eeschema/tools/ee_actions.cpp:520
 msgid "Cleanup Sheet Pins"
-msgstr "Zatiči za čiščenje listov"
+msgstr "Počisti hierarhične priključke"
 
 #: eeschema/tools/ee_actions.cpp:520
 msgid "Delete unreferenced sheet pins"
-msgstr "Izbrišite nepremične zatiče lista"
+msgstr "Izbrišite nereferencirane hierarhične priključke"
 
 #: eeschema/tools/ee_actions.cpp:524 pcbnew/tools/pcb_actions.cpp:470
 msgid "Edit Text & Graphics Properties..."
@@ -17084,11 +17088,11 @@ msgstr "Prikaže pogovorno okno z lastnostmi simbolov"
 
 #: eeschema/tools/ee_actions.cpp:535
 msgid "Pin Table..."
-msgstr "Pripni tabelo ..."
+msgstr "Tabel priključkov ..."
 
 #: eeschema/tools/ee_actions.cpp:535
 msgid "Displays pin table for bulk editing of pins"
-msgstr "Prikaže tabelo pinov za množično urejanje nožic"
+msgstr "Prikaže tabelo priključkov za množično urejanje priključkov"
 
 #: eeschema/tools/ee_actions.cpp:540
 msgid "Break Wire"
@@ -17116,24 +17120,24 @@ msgstr "Izberite vrednost, ki jo želite nastaviti"
 
 #: eeschema/tools/ee_actions.cpp:565 pcbnew/tools/pcb_actions.cpp:751
 msgid "Highlight net under cursor"
-msgstr "Označite mrežo pod kazalcem"
+msgstr "Poudari vozlišče pod kazalcem"
 
 #: eeschema/tools/ee_actions.cpp:570 pcbnew/tools/pcb_actions.cpp:761
 msgid "Clear Net Highlighting"
-msgstr "Jasno poudarjanje omrežja"
+msgstr "Ponastavi poudarke vozlišč"
 
 #: eeschema/tools/ee_actions.cpp:570 pcbnew/tools/pcb_actions.cpp:761
 #, fuzzy
 msgid "Clear any existing net highlighting"
-msgstr "Jasno poudarjanje omrežja"
+msgstr "Ponastavi obstoječe poudarke vozlišč"
 
 #: eeschema/tools/ee_actions.cpp:577
 msgid "Highlight Nets"
-msgstr "Označite Mreže"
+msgstr "Poudari vozlišča"
 
 #: eeschema/tools/ee_actions.cpp:577
 msgid "Highlight wires and pins of a net"
-msgstr "Označite žice in nožice mreže"
+msgstr "Poudarite povezave in priključke vozlišča"
 
 #: eeschema/tools/ee_actions.cpp:583
 msgid "Edit with Symbol Editor"
@@ -17147,7 +17151,7 @@ msgstr "Odpre izbrani odtis v urejevalniku odtisa"
 #: eeschema/tools/ee_actions.cpp:589
 #, fuzzy
 msgid "Open the library symbol in the Symbol Editor"
-msgstr "Odprite urejevalnik simbolov, da ga uredite"
+msgstr "Odprite simbol iz knjižnice v urejevalniku simbolov"
 
 #: eeschema/tools/ee_actions.cpp:594
 msgid "Edit Symbol Fields..."
@@ -17163,7 +17167,7 @@ msgstr "Uredi povezave do knjižnice simbolov ..."
 
 #: eeschema/tools/ee_actions.cpp:599
 msgid "Edit links between schematic and library symbols"
-msgstr "Uredite povezave med shematskimi in knjižničnimi simboli"
+msgstr "Uredite povezave med shematskimi simboli in simboli iz knjižnice"
 
 #: eeschema/tools/ee_actions.cpp:604
 msgid "Assign Footprints..."
@@ -17184,7 +17188,7 @@ msgstr ""
 
 #: eeschema/tools/ee_actions.cpp:615
 msgid "Annotate Schematic..."
-msgstr "Označi shemo ..."
+msgstr "Številči shemo ..."
 
 #: eeschema/tools/ee_actions.cpp:615
 msgid "Fill in schematic symbol reference designators"
@@ -17192,13 +17196,12 @@ msgstr "Izpolnite shematski označevalnik referenc"
 
 #: eeschema/tools/ee_actions.cpp:620
 msgid "Schematic Setup..."
-msgstr "Shematska nastavitev ..."
+msgstr "Nastavitev sheme ..."
 
 #: eeschema/tools/ee_actions.cpp:621
 msgid "Edit schematic setup including annotation styles and electrical rules"
 msgstr ""
-"Uredite shematsko nastavitev, vključno s slogi pripisov in električnimi "
-"pravili"
+"Uredite nastavitev sheme, vključno s slogi številčenja in električnimi pravili"
 
 #: eeschema/tools/ee_actions.cpp:626
 #, fuzzy
@@ -17219,14 +17222,14 @@ msgstr "V projektu poiščite stare simbole in jih preimenujte / rešite"
 
 #: eeschema/tools/ee_actions.cpp:637
 msgid "Remap Legacy Library Symbols..."
-msgstr "Preoblikuj stare knjižnične simbole ..."
+msgstr "Preoblikuj stare simbole iz knjižnice ..."
 
 #: eeschema/tools/ee_actions.cpp:638
 msgid ""
 "Remap library symbol references in legacy schematics to the symbol library "
 "table"
 msgstr ""
-"Predelajte sklice na simbole knjižnice v starejših shemah na tabelo "
+"Predelajte sklice na simbole iz knjižnice v starejših shemah na tabelo "
 "knjižnice simbolov"
 
 #: eeschema/tools/ee_actions.cpp:643
@@ -17255,19 +17258,19 @@ msgstr "Odprite PCB v urejevalniku plošč"
 
 #: eeschema/tools/ee_actions.cpp:658
 msgid "Export Netlist..."
-msgstr "Izvozi seznam omrežij ..."
+msgstr "Izvozi seznam vozlišč ..."
 
 #: eeschema/tools/ee_actions.cpp:658
 msgid "Export file containing netlist in one of several formats"
-msgstr "Izvozi datoteko, ki vsebuje netlist v enem od več formatov"
+msgstr "Izvozi datoteko, ki vsebuje seznam vozlišč v enem od več formatov"
 
 #: eeschema/tools/ee_actions.cpp:663
 msgid "Generate BOM..."
-msgstr "Ustvari specifikacijo ..."
+msgstr "Generiraj kosovnico ..."
 
 #: eeschema/tools/ee_actions.cpp:663
 msgid "Generate a bill of materials for the current schematic"
-msgstr "Ustvari račun za trenutno shemo"
+msgstr "Generiraj kosovnico (BOM) za trenutno shemo"
 
 #: eeschema/tools/ee_actions.cpp:668
 #, fuzzy
@@ -17281,11 +17284,11 @@ msgstr "Označite ustrezne elemente v urejevalniku plošč"
 
 #: eeschema/tools/ee_actions.cpp:674
 msgid "Show Hidden Pins"
-msgstr "Pokaži skrite nožice"
+msgstr "Pokaži skrite priključke"
 
 #: eeschema/tools/ee_actions.cpp:674
 msgid "Toggle display of hidden pins"
-msgstr "Preklopi prikaz skritih nožic"
+msgstr "Preklopi prikaz skritih priključkov"
 
 #: eeschema/tools/ee_actions.cpp:679
 msgid "Show Hidden Fields"
@@ -17303,7 +17306,7 @@ msgstr "Opozorila DRK"
 #: eeschema/tools/ee_actions.cpp:683
 #, fuzzy
 msgid "Show markers for electrical rules checker warnings"
-msgstr "Izvedite preverjanje električnih pravil"
+msgstr "Pokaži oznake opozoril pri preverjanju električnih pravil"
 
 #: eeschema/tools/ee_actions.cpp:687
 #, fuzzy
@@ -17313,7 +17316,7 @@ msgstr "Lastnosti nogice"
 #: eeschema/tools/ee_actions.cpp:687
 #, fuzzy
 msgid "Show markers for electrical rules checker errors"
-msgstr "Izvedite preverjanje električnih pravil"
+msgstr "Pokaži oznake napak pri preverjanju električnih pravil"
 
 #: eeschema/tools/ee_actions.cpp:691
 #, fuzzy
@@ -17323,7 +17326,7 @@ msgstr "Izključitve DR Kongo"
 #: eeschema/tools/ee_actions.cpp:692
 #, fuzzy
 msgid "Show markers for excluded electrical rules checker violations"
-msgstr "Izvedite preverjanje električnih pravil"
+msgstr "Pokaži oznake za izključene kršitve pri preverjanju električnih pravil"
 
 #: eeschema/tools/ee_actions.cpp:696 eeschema/tools/ee_actions.cpp:701
 #: eeschema/tools/ee_actions.cpp:706 eeschema/tools/ee_actions.cpp:711
@@ -17354,11 +17357,11 @@ msgstr "Preklopite na Next Grid"
 #: eeschema/tools/ee_actions.cpp:716
 #, fuzzy
 msgid "Annotate Automatically"
-msgstr "Prilagodite samodejno"
+msgstr "Samodejno številči"
 
 #: eeschema/tools/ee_actions.cpp:716
 msgid "Toggle automatic annotation of new parts symbols"
-msgstr ""
+msgstr "Preklopi samodejno številčenje simbolov novih delov"
 
 #: eeschema/tools/ee_actions.cpp:721
 #, fuzzy
@@ -17461,7 +17464,7 @@ msgstr "Pomaknite se na stran"
 
 #: eeschema/tools/ee_actions.cpp:793
 msgid "Add Junctions to Selection where needed"
-msgstr "Po potrebi dodajte križišča v izbor"
+msgstr "Po potrebi dodajte spoje v izbor"
 
 #: eeschema/tools/ee_actions.cpp:806
 msgid "Add Wire"
@@ -17477,7 +17480,7 @@ msgstr "Dodaj vodilo"
 
 #: eeschema/tools/ee_actions.cpp:813
 msgid "Add a bus"
-msgstr "Dodajte avtobus"
+msgstr "Dodajte vodilo"
 
 #: eeschema/tools/ee_actions.cpp:819
 #: eeschema/tools/sch_line_wire_bus_tool.cpp:76
@@ -17511,7 +17514,7 @@ msgstr "Preklopi držo trenutno usmerjene proge."
 
 #: eeschema/tools/ee_actions.cpp:844
 msgid "Finish Wire or Bus"
-msgstr "Dokončajte žico ali vodilo"
+msgstr "Dokončajte povezavo ali vodilo"
 
 #: eeschema/tools/ee_actions.cpp:844
 msgid "Complete drawing at current segment"
@@ -17527,11 +17530,11 @@ msgstr "Komplet žice s trenutnim segmentom"
 
 #: eeschema/tools/ee_actions.cpp:854
 msgid "Finish Bus"
-msgstr "Končni avtobus"
+msgstr "Končaj vodilo"
 
 #: eeschema/tools/ee_actions.cpp:854
 msgid "Complete bus with current segment"
-msgstr "Popolno vodilo s trenutnim segmentom"
+msgstr "Dokončaj vodilo s trenutnim segmentom"
 
 #: eeschema/tools/ee_actions.cpp:859
 msgid "Finish Lines"
@@ -17619,7 +17622,7 @@ msgstr "Najdenih ni bilo novih hierarhičnih oznak."
 
 #: eeschema/tools/sch_drawing_tools.cpp:809
 msgid "Junction location contains no joinable wires and/or pins."
-msgstr ""
+msgstr "Lokacija spoja ne vsebuje povezav in/ali priključkov, ki bi jih bilo mogoče spojiti."
 
 #: eeschema/tools/sch_drawing_tools.cpp:1230
 #: eeschema/tools/symbol_editor_drawing_tools.cpp:177
@@ -17680,7 +17683,7 @@ msgstr "Izprazni"
 
 #: eeschema/tools/sch_edit_tool.cpp:2108
 msgid "Do you wish to delete the unreferenced pins from this sheet?"
-msgstr "Ali želite s tega lista izbrisati nereferencirane zatiče?"
+msgstr "Ali želite s tega lista izbrisati nereferencirane priključke?"
 
 #: eeschema/tools/sch_edit_tool.cpp:2168
 #, c-format
@@ -17715,12 +17718,12 @@ msgstr "Napaka: na trenutnem listu najdete podvojena imena podlistkov."
 
 #: eeschema/tools/sch_editor_control.cpp:1121
 msgid "Net must be labeled to assign a netclass."
-msgstr "Net mora biti označen, če želite dodeliti razred omrežja."
+msgstr "Vozlišče mora biti označen, če mu želite dodeliti razred vozlišča."
 
 #: eeschema/tools/sch_editor_control.cpp:1127
 #, fuzzy
 msgid "Bus has no members to assign netclass to."
-msgstr "Net mora biti označen, če želite dodeliti razred omrežja."
+msgstr "Vodilo nima članov, katerim bi lahko dodelili razred vozlišča."
 
 #: eeschema/tools/sch_editor_control.cpp:1739
 #, fuzzy, c-format
@@ -17729,7 +17732,7 @@ msgid ""
 "was dropped because the destination already has the sheet or one of its "
 "subsheets as a parent."
 msgstr ""
-"Prilepljen list \"%s\"\n"
+"Prilepljen list '%s'\n"
 "je bil izpuščen, ker ima cilj že list ali enega od svojih podlistkov kot "
 "nadrejenega."
 
@@ -17754,11 +17757,11 @@ msgstr "Najdenih ni bilo nobenih napak."
 
 #: eeschema/tools/sch_line_wire_bus_tool.cpp:114
 msgid "No bus selected"
-msgstr "Izbran ni noben avtobus"
+msgstr "Ni izbranega vodila"
 
 #: eeschema/tools/sch_line_wire_bus_tool.cpp:123
 msgid "Bus has no members"
-msgstr "Bus nima članov"
+msgstr "Vodilo nima članov"
 
 #: eeschema/tools/sch_line_wire_bus_tool.cpp:721
 msgid "Press <ESC> to cancel drawing."
@@ -17782,7 +17785,7 @@ msgstr "Izbran ni noben simbol"
 #: pcbnew/tools/footprint_editor_control.cpp:400
 #, fuzzy
 msgid "New name:"
-msgstr "Neto ime:"
+msgstr "Novo ime:"
 
 #: eeschema/tools/symbol_editor_control.cpp:312
 #, fuzzy
@@ -17806,7 +17809,7 @@ msgstr "Ime slikovne datoteke"
 #: eeschema/tools/symbol_editor_control.cpp:537
 #, fuzzy, c-format
 msgid "Can't save file '%s'."
-msgstr "Datoteke \"%s\" ni mogoče shraniti."
+msgstr "Datoteke '%s' ni mogoče shraniti."
 
 #: eeschema/tools/symbol_editor_control.cpp:564
 #, fuzzy
@@ -17820,17 +17823,17 @@ msgstr "Simbol ni izpeljan iz drugega simbola."
 #: eeschema/tools/symbol_editor_pin_tool.cpp:236
 #, c-format
 msgid "This position is already occupied by another pin, in unit %d."
-msgstr "Ta položaj je že zaseden v drugi enoti %d."
+msgstr "Ta položaj je že zaseden z drugim priključkom, enote %d."
 
 #: eeschema/tools/symbol_editor_pin_tool.cpp:240
 msgid "Place Pin Anyway"
-msgstr "Vseeno postavi pin"
+msgstr "Vseeno postavi priključek"
 
 #: eeschema/widgets/filedlg_hook_save_project.h:32
 #: eeschema/widgets/legacyfiledlg_save_project.h:34
 #, fuzzy
 msgid "Create a new project for this schematic"
-msgstr "Ustvari nov projekt za to tablo"
+msgstr "Ustvari nov projekt za to shemo"
 
 #: eeschema/widgets/legacyfiledlg_save_project.h:36
 #, fuzzy
@@ -17839,7 +17842,7 @@ msgid ""
 "and ERC exclusions"
 msgstr ""
 "Ustvarjanje projekta bo omogočilo funkcije, kot so pravila oblikovanja, "
-"omrežni razredi in prednastavitve slojev"
+"razred vozlišč in prednastavitve slojev"
 
 #: eeschema/widgets/symbol_filedlg_save_as.h:33
 #: eeschema/widgets/symbol_legacyfiledlg_save_as.h:37
@@ -19449,7 +19452,7 @@ msgstr "Odprite imenik projekta v raziskovalcu datotek"
 #: kicad/pcm/dialogs/dialog_manage_repositories.cpp:52
 #, fuzzy
 msgid "Add Default Repository"
-msgstr "Dodajte vhod na avtobus"
+msgstr "Dodaj privzeti repozitorij"
 
 #: kicad/pcm/dialogs/dialog_manage_repositories.cpp:92
 msgid "Please enter fully qualified repository url"
@@ -19458,7 +19461,7 @@ msgstr ""
 #: kicad/pcm/dialogs/dialog_manage_repositories.cpp:93
 #, fuzzy
 msgid "Add repository"
-msgstr "Dodajte vhod na avtobus"
+msgstr "Dodaj repozitorij"
 
 #: kicad/pcm/dialogs/dialog_manage_repositories_base.cpp:57
 #: pcbnew/dialogs/panel_fp_lib_table_base.cpp:107
@@ -21952,7 +21955,7 @@ msgstr "Glede na dvig temperature"
 
 #: pcb_calculator/calculator_panels/panel_via_size_base.cpp:288
 msgid "Capacitance:"
-msgstr "Kapaciteta:"
+msgstr "Kapacitivnost:"
 
 #: pcb_calculator/calculator_panels/panel_via_size_base.cpp:296
 msgid "pF"
@@ -23213,7 +23216,7 @@ msgstr "BOM ni mogoče izvoziti: na tiskani plošči ni nobenih sledi."
 
 #: pcbnew/build_BOM_from_board.cpp:89
 msgid "Save Bill of Materials"
-msgstr "Shrani predloge za gradivo"
+msgstr "Shrani kosovnico (BOM)"
 
 #: pcbnew/build_BOM_from_board.cpp:109
 msgid "Designator"
@@ -38388,7 +38391,7 @@ msgstr "BOM ..."
 
 #: pcbnew/tools/pcb_actions.cpp:643
 msgid "Create bill of materials from board"
-msgstr "Ustvarite račun materiala iz plošče"
+msgstr "Ustvari kosovnico (BOM) iz plošče"
 
 #: pcbnew/tools/pcb_actions.cpp:650
 msgid "Switch Track Width to Next"
@@ -39011,7 +39014,7 @@ msgid ""
 "Selects a connection or expands an existing selection to junctions, pads, or "
 "entire connections"
 msgstr ""
-"Izbere povezavo ali razširi obstoječo izbiro na križišča, blazinice ali "
+"Izbere povezavo ali razširi obstoječo izbiro na spoje, blazinice ali "
 "celotne povezave"
 
 #: pcbnew/tools/pcb_actions.cpp:1274
@@ -40576,74 +40579,73 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "JFET"
 
 #~ msgid "Subcircuit"
-#~ msgstr "Podsklop"
+#~ msgstr "Podvezje"
 
 #, fuzzy
 #~ msgid "Code Model"
-#~ msgstr "Premakni vse module"
+#~ msgstr "Model kode"
 
 #~ msgid ""
 #~ "Symbol pin numbering don't always match the required SPICE pin order\n"
 #~ "Check the symbol and use \"Alternate node sequence\" to reorder the pins, "
 #~ "if necessary"
 #~ msgstr ""
-#~ "Oštevilčenje zatičev simbolov se ne ujema vedno z zahtevanim vrstnim "
-#~ "redom zatičev SPICE\n"
-#~ "Preverite simbol in po potrebi z \"Nadomestno zaporedje vozlišč\" "
-#~ "prerazporedite nožice"
+#~ "Oštevilčevanje priključkov simbolov se ne ujema vedno z zahtevanim "
+#~ "vrstnim redom priključkov simulacije\n"
+#~ "Preverite simbol in po potrebi z uporabo \"Nadomestno zaporedje vozlišč\" "
+#~ "prerazporedite priključke"
 
 #~ msgid "For a Diode, pin order is anode, cathode"
-#~ msgstr "Za diodo je vrstni red pinov anoda, katoda"
+#~ msgstr "Za diodo je vrstni red priključkov anoda, katoda"
 
 #~ msgid ""
 #~ "For a BJT, pin order is collector, base, emitter, substrate (optional)"
 #~ msgstr ""
-#~ "Za BJT je vrstni red zatičev zbiralnik, osnova, oddajnik, podlaga "
-#~ "(neobvezno)"
+#~ "Za BJT je vrstni red priključkov zbiralnik, osnova, oddajnik, podlaga (neobvezno)"
 
 #, fuzzy
 #~ msgid "For a MOSFET, pin order is drain, gate, source"
-#~ msgstr "Za MOSFET vrstni red pin je odtok, mreža, vir"
+#~ msgstr "Za MOSFET je vrstni red priključkov ponor, vrata, vir"
 
 #, fuzzy
 #~ msgid "For a JFET, pin order is drain, gate, source"
-#~ msgstr "Za JFET je vrstni red pinov odtok, mreža, vir"
+#~ msgstr "Za JFET je vrstni red priključkov ponor, vrata, vir"
 
 #, fuzzy
 #~ msgid "Invalid Impedance value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost impedance"
 
 #, fuzzy
 #~ msgid "Invalid delay value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost zakasnitve"
 
 #, fuzzy
 #~ msgid "Invalid frequency value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost frekvence"
 
 #, fuzzy
 #~ msgid "Invalid length in wavelength value"
-#~ msgstr "Nadomestno ime pin"
+#~ msgstr "Neveljavna dolžina v vrednosti valovne dolžine"
 
 #, fuzzy
 #~ msgid "Invalid resistance value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost upornosti"
 
 #, fuzzy
 #~ msgid "Invalid capacitance value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost kapacitivnosti"
 
 #, fuzzy
 #~ msgid "Invalid inductance value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost induktivnosti"
 
 #, fuzzy
 #~ msgid "Invalid conductance value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost prevodnosti"
 
 #, fuzzy
 #~ msgid "Invalid length value"
-#~ msgstr "Neveljaven niz vrednosti Spice"
+#~ msgstr "Neveljavna vrednost dolžine"
 
 #~ msgid "Select library"
 #~ msgstr "Izberite knjižnico"
@@ -40658,7 +40660,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "Standardni odklon:"
 
 #~ msgid "Mean:"
-#~ msgstr "Pomeni:"
+#~ msgstr "Srednja vrednost:"
 
 #~ msgid "Lambda:"
 #~ msgstr "Lambda:"
@@ -40673,24 +40675,24 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "Kondenzator"
 
 #~ msgid "Inductor"
-#~ msgstr "Induktor"
+#~ msgstr "Induktivnost"
 
 #~ msgid "Passive type"
 #~ msgstr "Pasivni tip"
 
 #~ msgid "Spice value in simulation"
-#~ msgstr "Vrednost začimb v simulaciji"
+#~ msgstr "Spice vrednost v simulaciji"
 
 #, fuzzy
 #~ msgid ""
 #~ "In Spice values, the decimal separator is the point.\n"
 #~ "Values can use Spice unit symbols."
 #~ msgstr ""
-#~ "V vrednostih začimb je decimalno ločilo točka.\n"
-#~ "Vrednosti lahko uporabljajo simbole enote Spice."
+#~ "V simulacijah je decimalno ločilo pika.\n"
+#~ "Vrednosti lahko uporabljajo simulacijske enote."
 
 #~ msgid "Spice unit symbols in values (case insensitive):"
-#~ msgstr "Simboli začimbnih enot v vrednostih (ne glede na velikost črke):"
+#~ msgstr "Simulacijski enote v vrednostih (ne glede na velikost črke):"
 
 #~ msgid "Select file..."
 #~ msgstr "Izberite datoteko ..."
@@ -40699,7 +40701,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "Opomba:"
 
 #~ msgid "note"
-#~ msgstr "Opomba"
+#~ msgstr "opomba"
 
 #~ msgid "DC/AC Analysis"
 #~ msgstr "Analiza DC / AC"
@@ -40726,7 +40728,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "Začetna vrednost:"
 
 #~ msgid "Pulsed value:"
-#~ msgstr "Impulzna vrednost:"
+#~ msgstr "Pulzna vrednost:"
 
 #~ msgid "Delay time:"
 #~ msgstr "Čas zakasnitve:"
@@ -40741,16 +40743,16 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "Širina impulza:"
 
 #~ msgid "Pulse"
-#~ msgstr "Utrip"
+#~ msgstr "Pulz"
 
 #~ msgid "DC offset:"
-#~ msgstr "Odmik enosmernega toka:"
+#~ msgstr "Enosmerna komponenta:"
 
 #~ msgid "Amplitude:"
 #~ msgstr "Amplituda:"
 
 #~ msgid "Delay:"
-#~ msgstr "Zamuda:"
+#~ msgstr "Časovni zamik:"
 
 #~ msgid "Damping factor:"
 #~ msgstr "Faktor dušenja:"
@@ -40759,7 +40761,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "1 / sekunde"
 
 #~ msgid "Sinusoidal"
-#~ msgstr "Sinusoidno"
+#~ msgstr "Sinusno"
 
 #~ msgid "Rise delay time:"
 #~ msgstr "Čas zakasnitve dviga:"
@@ -40777,22 +40779,22 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "Eksponentno"
 
 #~ msgid "Piece-wise linear"
-#~ msgstr "Kosasto linearno"
+#~ msgstr "Odsekoma linearno"
 
 #~ msgid "Time:"
 #~ msgstr "Čas:"
 
 #~ msgid "second"
-#~ msgstr "drugič"
+#~ msgstr "sekunda"
 
 #~ msgid "Piece-wise Linear"
-#~ msgstr "Komadno linearno"
+#~ msgstr "Odsekoma linearno"
 
 #~ msgid "Carrier frequency:"
 #~ msgstr "Nosilna frekvenca:"
 
 #~ msgid "Modulation index:"
-#~ msgstr "Indeks modulacije:"
+#~ msgstr "Moudlacijski indeks:"
 
 #~ msgid "Signal frequency:"
 #~ msgstr "Frekvenca signala:"
@@ -40819,7 +40821,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "AM"
 
 #~ msgid "Transient noise"
-#~ msgstr "Prehodni hrup"
+#~ msgstr "Prehodni šum"
 
 #~ msgid "Uniform"
 #~ msgstr "Enakomeren"
@@ -40834,7 +40836,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgstr "Trajanje posamezne vrednosti:"
 
 #~ msgid "Time delay:"
-#~ msgstr "Časovna zamuda:"
+#~ msgstr "Časovna zakasnitev:"
 
 #~ msgid "Random"
 #~ msgstr "Naključno"
@@ -40847,43 +40849,43 @@ msgstr "Datoteke tiskanih vezij KiCad"
 
 #, fuzzy
 #~ msgid "Line model"
-#~ msgstr "Barva črte:"
+#~ msgstr "Linijski model:"
 
 #, fuzzy
 #~ msgid "Length in wavelength"
-#~ msgstr "Dolžina v paketu"
+#~ msgstr "Dolžina v valovni dolžini"
 
 #, fuzzy
 #~ msgid "Use time delay"
-#~ msgstr "Časovna zamuda:"
+#~ msgstr "Uporabite časovni zamik"
 
 #, fuzzy
 #~ msgid "Delay / Electrical length"
-#~ msgstr "Električna dolžina"
+#~ msgstr "Zakasnitev / Električna dolžina"
 
 #, fuzzy
 #~ msgid "Inductance per unit length"
-#~ msgstr "Dolžina vodnika:"
+#~ msgstr "Induktivnost na enoto dolžine"
 
 #, fuzzy
 #~ msgid "Conductance per unit length"
-#~ msgstr "Dolžina vodnika:"
+#~ msgstr "Prevodnost na enoto dolžine"
 
 #, fuzzy
 #~ msgid "siemens / unit"
-#~ msgstr "Briši enote"
+#~ msgstr "siemens / enota"
 
 #, fuzzy
 #~ msgid "Extra parameters"
-#~ msgstr "Slabi parametri"
+#~ msgstr "Dodatni parametri"
 
 #, fuzzy
 #~ msgid "Lossy"
-#~ msgstr "Izguba Tg"
+#~ msgstr "Z upoštevanjem izgub"
 
 #, fuzzy
 #~ msgid "Transmission Line"
-#~ msgstr "Vrsta daljnovoda"
+#~ msgstr "Prenosni vod"
 
 #~ msgid "Alternate node sequence:"
 #~ msgstr "Nadomestno zaporedje vozlišč:"
@@ -41190,7 +41192,7 @@ msgstr "Datoteke tiskanih vezij KiCad"
 
 #, c-format
 #~ msgid "%s pin %s not found"
-#~ msgstr "%s nožice %s ni mogoče najti"
+#~ msgstr "%s priključka %s ni mogoče najti"
 
 #, c-format
 #~ msgid "Selecting all from sheet \"%s\""
@@ -41737,9 +41739,9 @@ msgstr "Datoteke tiskanih vezij KiCad"
 #~ msgid "Field name \"%s\" already in use."
 #~ msgstr "Ime polja \"%s\" je že v uporabi."
 
-#~ msgid "Add new pins for alternate body style (DeMorgan) to symbol?"
+#~ msgid "Add new pins for alternate body style (De Morgan) to symbol?"
 #~ msgstr ""
-#~ "Želite simbolu dodati nove zatiče za nadomestni slog telesa (DeMorgan)?"
+#~ "Želite simbolu dodati nove zatiče za nadomestni slog telesa (De Morgan)?"
 
 #~ msgid "PI"
 #~ msgstr "PI"
