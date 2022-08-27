@@ -70,7 +70,7 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent, SCH_ITE
 
         if( m_frame->GetColorSettings()->GetOverrideSchItemColors() )
             m_infoBar->ShowMessage( _( "Note: individual item colors overridden in Preferences." ) );
-        }
+    }
     else
     {
         m_spin1->Show( false );
@@ -157,6 +157,11 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
         return false;
 
     SCHEMATIC& schematic = m_frame->Schematic();
+
+    m_hyperlinkCb->SetValue( m_currentText->HasHyperlink() );
+    m_hyperlinkDestinationLabel->Enable( m_currentText->HasHyperlink() );
+    m_hyperlinkCtrl->Enable( m_currentText->HasHyperlink() );
+    m_hyperlinkCtrl->SetValue( m_currentText->GetHyperlink() );
 
     // show text variable cross-references in a human-readable format
     m_textCtrl->SetValue( schematic.ConvertKIIDsToRefs( m_currentText->GetText() ) );
@@ -257,6 +262,25 @@ void DIALOG_TEXT_PROPERTIES::onFillChecked( wxCommandEvent& event )
 
     m_fillColorLabel->Enable( fill );
     m_fillColorSwatch->Enable( fill );
+}
+
+
+void DIALOG_TEXT_PROPERTIES::onHyperlinkChecked( wxCommandEvent& aEvent )
+{
+    if( aEvent.IsChecked() )
+    {
+        m_hyperlinkCtrl->Enable( true );
+        m_hyperlinkDestinationLabel->Enable( true );
+        m_hyperlinkCtrl->SetFocus();
+    }
+    else
+    {
+        m_hyperlinkCtrl->Enable( false );
+        m_hyperlinkDestinationLabel->Enable( false );
+        m_hyperlinkCtrl->SetValue( wxEmptyString );
+    }
+
+    aEvent.Skip();
 }
 
 
@@ -377,6 +401,18 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
         // Other text items do not have defined extents, and so will disappear if empty
         DisplayError( this, _( "Text can not be empty." ) );
         return false;
+    }
+
+    if( !m_currentText->ValidateHyperlink( m_hyperlinkCtrl->GetValue() ) )
+    {
+        DisplayError( this, _( "Invalid hyperlink destination. Please enter either a valid URL "
+                               "(e.g. file:// or http(s)://) or \"goto:<page sequence>\" to create "
+                               "a hyperlink to a page in this schematic." ) );
+        return false;
+    }
+    else
+    {
+        m_currentText->SetHyperlink( m_hyperlinkCtrl->GetValue() );
     }
 
     if( m_currentText->GetTextWidth() != m_textSize.GetValue() )

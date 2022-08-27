@@ -524,7 +524,7 @@ void SCH_SEXPR_PARSER::parseFill( FILL_PARAMS& aFill )
 
 void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSyntax )
 {
-    wxCHECK_RET( aText && CurTok() == T_effects,
+    wxCHECK_RET( aText && CurTok() == T_effects || CurTok() == T_href,
                  "Cannot parse " + GetTokenString( CurTok() ) + " as an EDA_TEXT." );
 
     // In version 20210606 the notation for overbars was changed from `~...~` to `~{...}`.
@@ -628,12 +628,31 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSynta
 
             break;
 
+        case T_href:
+        {
+            NeedSYMBOL();
+            wxString hyperlink = FromUTF8();
+
+            if( !aText->ValidateHyperlink( hyperlink ) )
+            {
+                THROW_PARSE_ERROR( wxString::Format( _( "Invalid hyperlink url '%s'" ), hyperlink ),
+                                   CurSource(), CurLine(), CurLineNumber(), CurOffset() );
+            }
+            else
+            {
+                aText->SetHyperlink( hyperlink );
+            }
+
+            NeedRIGHT();
+        }
+        break;
+
         case T_hide:
             aText->SetVisible( false );
             break;
 
         default:
-            Expecting( "font, justify, or hide" );
+            Expecting( "font, justify, hide or href" );
         }
     }
 }

@@ -240,11 +240,11 @@ class PDF_PLOTTER : public PSLIKE_PLOTTER
 {
 public:
     PDF_PLOTTER() :
-            pageTreeHandle( 0 ),
-            fontResDictHandle( 0 ),
-            pageStreamHandle( 0 ),
-            streamLengthHandle( 0 ),
-            workFile( nullptr )
+            m_pageTreeHandle( 0 ),
+            m_fontResDictHandle( 0 ),
+            m_pageStreamHandle( 0 ),
+            m_streamLengthHandle( 0 ),
+            m_workFile( nullptr )
     {
     }
 
@@ -352,6 +352,8 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
+    virtual void HyperlinkBox( const BOX2I& aBox, const wxString& aDestinationURL ) override;
+
     /**
      * PDF images are handles as inline, not XObject streams...
      */
@@ -406,14 +408,20 @@ protected:
      */
     void closePdfStream();
 
-    int pageTreeHandle;      /// Handle to the root of the page tree object
-    int fontResDictHandle;   /// Font resource dictionary
-    std::vector<int> pageHandles;/// Handles to the page objects
-    int pageStreamHandle;    /// Handle of the page content object
-    int streamLengthHandle;      /// Handle to the deferred stream length
-    wxString workFilename;
-    FILE* workFile;              /// Temporary file to construct the stream before zipping
-    std::vector<long> xrefTable; /// The PDF xref offset table
+    int m_pageTreeHandle;           ///< Handle to the root of the page tree object
+    int m_fontResDictHandle;        ///< Font resource dictionary
+    std::vector<int> m_pageHandles; ///< Handles to the page objects
+    int m_pageStreamHandle;         ///< Handle of the page content object
+    int m_streamLengthHandle;       ///< Handle to the deferred stream length
+    wxString m_workFilename;
+    FILE* m_workFile;               ///< Temporary file to construct the stream before zipping
+    std::vector<long> m_xrefTable;  ///< The PDF xref offset table
+
+    ///< List of loaded hyperlinks in current page
+    std::vector<std::pair<BOX2I, wxString>> m_hyperlinksInPage;
+
+    ///< Handles for all the hyperlink objects that will be deferred
+    std::map<int, std::pair<BOX2D, wxString>> m_hyperlinkHandles;
 };
 
 

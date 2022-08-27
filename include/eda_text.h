@@ -322,6 +322,41 @@ public:
 
     int Compare( const EDA_TEXT* aOther ) const;
 
+    virtual bool HasHyperlink() const           { return !m_hyperlink.IsEmpty(); }
+    wxString     GetHyperlink() const           { return m_hyperlink; }
+    void         SetHyperlink( wxString aLink ) { m_hyperlink = aLink; }
+    void         RemoveHyperlink()              { m_hyperlink = wxEmptyString; }
+
+    /**
+     * Check if aURL is a valid hyperlink.
+     *
+     * @param aURL String to validate
+     * @return true if aURL is a valid hyperlink
+     */
+    static bool ValidateHyperlink( const wxString& aURL );
+
+    /**
+     * Check if aURL is a valid "goto" hyperlink.
+     *
+     * @param aURL String to validate
+     * @param aDestinationIdx optional. pointer to populate with the page index destination
+     * @return true if aURL is a valid hyperlink
+     */
+    static bool IsGotoPageHyperlink( const wxString& aURL, int* aDestination = nullptr );
+
+    /**
+     * Generate a hyperlink string that goes to the page number specified
+     * @param aDestination Virtual page number to go to. Note that the root sheet is 1.
+     * @return A hyperlink String that goes to the page number specified
+     */
+    static wxString GotoPageHyperlinkString( const int& aDestination );
+
+protected:
+    /**
+     * A hyperlink to a URL or file in the system. If empty, this text object is not a hyperlink
+     */
+    wxString m_hyperlink;
+
 private:
     void cacheShownText();
 
