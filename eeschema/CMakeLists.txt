@@ -19,14 +19,6 @@ endif()
 # Add ngspice to eeschema
 set( INC_AFTER ${INC_AFTER} ${NGSPICE_INCLUDE_DIR} )
 
-# Find out the exact libngspice file name
-get_filename_component( NGSPICE_DLL_ABSPATH "${NGSPICE_DLL}" ABSOLUTE )
-get_filename_component( NGSPICE_DLL_FILE "${NGSPICE_DLL_ABSPATH}" NAME )
-
-set_property( SOURCE sim/ngspice.cpp
-    APPEND PROPERTY COMPILE_DEFINITIONS
-    NGSPICE_DLL_FILE="${NGSPICE_DLL_FILE}"
-    )
 
 include_directories( BEFORE ${INC_BEFORE} )
 include_directories(
