@@ -60,8 +60,10 @@ NETCLASS::NETCLASS( const wxString& aName ) :
     SetTrackWidth( DEFAULT_TRACK_WIDTH );
     SetViaDiameter( DEFAULT_VIA_DIAMETER );
     SetuViaDiameter( DEFAULT_UVIA_DIAMETER );
-    SetDiffPairWidth( DEFAULT_DIFF_PAIR_WIDTH );
-    SetDiffPairGap( DEFAULT_DIFF_PAIR_GAP );
+    SetDiffPairWidthOuter( DEFAULT_DIFF_PAIR_WIDTH );
+    SetDiffPairGapOuter( DEFAULT_DIFF_PAIR_GAP );
+    SetDiffPairWidthInner( DEFAULT_DIFF_PAIR_WIDTH );
+    SetDiffPairGapInner( DEFAULT_DIFF_PAIR_GAP );
     SetDiffPairViaGap( DEFAULT_DIFF_PAIR_VIAGAP );
 
     SetWireWidth( DEFAULT_WIRE_WIDTH );

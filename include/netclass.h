@@ -92,13 +92,21 @@ public:
     int     GetuViaDrill() const                { return m_uViaDrill.value_or( -1 ); }
     void    SetuViaDrill( int aSize )           { m_uViaDrill = aSize; }
 
-    bool    HasDiffPairWidth() const            { return (bool) m_diffPairWidth; }
-    int     GetDiffPairWidth() const            { return m_diffPairWidth.value_or( -1 ); }
-    void    SetDiffPairWidth( int aSize )       { m_diffPairWidth= aSize; }
+    bool    HasDiffPairWidthOuter() const       { return (bool) m_diffPairWidthOuter; }
+    int     GetDiffPairWidthOuter() const       { return m_diffPairWidthOuter.value_or( -1 ); }
+    void    SetDiffPairWidthOuter( int aSize )  { m_diffPairWidthOuter = aSize; }
 
-    bool    HasDiffPairGap() const              { return (bool) m_diffPairGap; }
-    int     GetDiffPairGap() const              { return m_diffPairGap.value_or( -1 ); }
-    void    SetDiffPairGap( int aSize )         { m_diffPairGap = aSize; }
+    bool    HasDiffPairGapOuter() const         { return (bool) m_diffPairGapOuter; }
+    int     GetDiffPairGapOuter() const         { return m_diffPairGapOuter.value_or( -1 ); }
+    void    SetDiffPairGapOuter( int aSize )    { m_diffPairGapOuter = aSize; }
+
+    bool    HasDiffPairWidthInner() const       { return (bool) m_diffPairWidthInner; }
+    int     GetDiffPairWidthInner() const       { return m_diffPairWidthInner.value_or( -1 ); }
+    void    SetDiffPairWidthInner( int aSize )  { m_diffPairWidthInner = aSize; }
+
+    bool    HasDiffPairGapInner() const         { return (bool) m_diffPairGapInner; }
+    int     GetDiffPairGapInner() const         { return m_diffPairGapInner.value_or( -1 ); }
+    void    SetDiffPairGapInner( int aSize )    { m_diffPairGapInner = aSize; }
 
     bool    HasDiffPairViaGap() const           { return (bool) m_diffPairViaGap; }
     int     GetDiffPairViaGap() const           { return m_diffPairViaGap.value_or( -1 ); }
@@ -134,8 +142,10 @@ protected:
     std::optional<int>    m_uViaDia;              ///< microvia diameter
     std::optional<int>    m_uViaDrill;            ///< microvia drill hole diameter
 
-    std::optional<int>    m_diffPairWidth;
-    std::optional<int>    m_diffPairGap;
+    std::optional<int>    m_diffPairWidthOuter;
+    std::optional<int>    m_diffPairGapOuter;
+    std::optional<int>    m_diffPairWidthInner;
+    std::optional<int>    m_diffPairGapInner;
     std::optional<int>    m_diffPairViaGap;
 
     int         m_wireWidth;

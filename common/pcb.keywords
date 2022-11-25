@@ -84,6 +84,10 @@ dielectric_constraints
 dimension
 diff_pair_width
 diff_pair_gap
+diff_pair_width_inner
+diff_pair_gap_inner
+diff_pair_width_outer
+diff_pair_gap_outer
 dimension_precision
 dimension_units
 drawings

@@ -213,9 +213,9 @@
                                                     <property name="close_button">1</property>
                                                     <property name="col_label_horiz_alignment">wxALIGN_CENTER</property>
                                                     <property name="col_label_size">24</property>
-                                                    <property name="col_label_values">&quot;Net Class&quot; &quot;Clearance&quot; &quot;Track Width&quot; &quot;Via Size&quot; &quot;Via Hole&quot; &quot;uVia Size&quot; &quot;uVia Hole&quot; &quot;DP Width&quot; &quot;DP Gap&quot; &quot;Wire Thickness&quot; &quot;Bus Thickness&quot; &quot;Color&quot; &quot;Line Style&quot;</property>
+                                                    <property name="col_label_values">&quot;Net Class&quot; &quot;Clearance&quot; &quot;Track Width&quot; &quot;Via Size&quot; &quot;Via Hole&quot; &quot;uVia Size&quot; &quot;uVia Hole&quot; &quot;DP Width outer&quot; &quot;DP Gap outer&quot; &quot;DP Width inner&quot; &quot;DP Gap inner&quot; &quot;Wire Thickness&quot; &quot;Bus Thickness&quot; &quot;Color&quot; &quot;Line Style&quot;</property>
                                                     <property name="col_label_vert_alignment">wxALIGN_CENTER</property>
-                                                    <property name="cols">13</property>
+                                                    <property name="cols">15</property>
                                                     <property name="column_sizes"></property>
                                                     <property name="context_help"></property>
                                                     <property name="context_menu">1</property>

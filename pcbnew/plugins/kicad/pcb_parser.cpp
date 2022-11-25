@@ -2407,11 +2407,35 @@ void PCB_PARSER::parseNETCLASS()
             break;
 
         case T_diff_pair_width:
-            nc->SetDiffPairWidth( parseBoardUnits( T_diff_pair_width ) );
+            {
+                auto diff_pair_width = parseBoardUnits( T_diff_pair_width );
+                nc->SetDiffPairWidthOuter( diff_pair_width );
+                nc->SetDiffPairWidthInner( diff_pair_width );
+            }
             break;
 
         case T_diff_pair_gap:
-            nc->SetDiffPairGap( parseBoardUnits( T_diff_pair_gap ) );
+            {
+                auto diff_pair_gap = parseBoardUnits( T_diff_pair_gap );
+                nc->SetDiffPairGapOuter( diff_pair_gap );
+                nc->SetDiffPairGapInner( diff_pair_gap );
+            }
+            break;
+
+        case T_diff_pair_width_inner:
+            nc->SetDiffPairWidthInner( parseBoardUnits( T_diff_pair_width_inner ) );
+            break;
+
+        case T_diff_pair_gap_inner:
+            nc->SetDiffPairGapInner( parseBoardUnits( T_diff_pair_gap_inner ) );
+            break;
+
+        case T_diff_pair_width_outer:
+            nc->SetDiffPairWidthOuter( parseBoardUnits( T_diff_pair_width_outer ) );
+            break;
+
+        case T_diff_pair_gap_outer:
+            nc->SetDiffPairGapOuter( parseBoardUnits( T_diff_pair_gap_outer ) );
             break;
 
         case T_add_net:
