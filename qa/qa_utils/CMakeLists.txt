@@ -30,7 +30,7 @@ set( QA_UTIL_COMMON_SRC
     geometry/seg_construction.cpp
 
     wx_utils/unit_test_utils.cpp
-    wx_utils/wx_assert.cpp
+    wx_utils/wx_util.cpp
 )
 
 # A generic library of useful functions for various testing purposes

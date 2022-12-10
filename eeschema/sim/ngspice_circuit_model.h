@@ -111,7 +111,7 @@ public:
     /**
      * Return simulation command directives placed in schematic sheets (if any).
      */
-    wxString GetSheetSimCommand();
+    virtual wxString GetSheetSimCommand();
 
     /**
      * Return the sim command present as a sheet directive when the sim command override was last

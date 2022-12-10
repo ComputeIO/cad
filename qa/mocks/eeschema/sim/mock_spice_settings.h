@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2019 KiCad Developers, see AUTHORS.TXT for contributors.
+ * Copyright (C) 2019-2020 KiCad Developers, see CHANGELOG.TXT for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,32 +21,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <qa_utils/wx_utils/wx_assert.h>
+#pragma once
+#include <qa_utils/wx_utils/unit_test_utils.h>
+#include <spice_settings.h>
+#include <settings/json_settings.h>
 
-#include <sstream>
 
-namespace KI_TEST
+MOCK_BASE_CLASS( MOCK_NGSPICE_SIMULATOR_SETTINGS, NGSPICE_SIMULATOR_SETTINGS )
 {
-WX_ASSERT_ERROR::WX_ASSERT_ERROR( const wxString& aFile, int aLine, const wxString& aFunc,
-        const wxString& aCond, const wxString& aMsg )
-        : m_file( aFile ), m_line( aLine ), m_func( aFunc ), m_cond( aCond ), m_msg( aMsg )
-{
-    std::ostringstream ss;
+    MOCK_NGSPICE_SIMULATOR_SETTINGS() :
+        NGSPICE_SIMULATOR_SETTINGS( nullptr, "fakePath" ) {};
+    virtual ~MOCK_NGSPICE_SIMULATOR_SETTINGS() {};
 
-    ss << "WX assertion in " << m_file << ":" << m_line << "\n"
-       << "in function " << m_func << "\n"
-       << "failed condition: " << m_cond;
-
-    if( m_msg.size() )
-        ss << "\n"
-           << "with message: " << m_msg;
-
-    m_format_msg = ss.str();
-}
-
-const char* WX_ASSERT_ERROR::what() const noexcept
-{
-    return m_format_msg.c_str();
-}
-
-} // namespace KI_TEST
+    MOCK_METHOD( GetFixPassiveVals, 0, bool() );
+    MOCK_METHOD( GetFixIncludePaths, 0, bool() );
+};

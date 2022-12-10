@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2018 KiCad Developers, see AUTHORS.TXT for contributors.
+ * Copyright (C) 2019-2020 KiCad Developers, see CHANGELOG.TXT for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,26 +21,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-/**
- * Main file for the libcommon tests to be compiled
- */
-#include <boost/test/unit_test.hpp>
+#pragma once
+#include <qa_utils/wx_utils/unit_test_utils.h>
+#include <sch_sheet_path.h>
 
-#include <wx/image.h>
-#include <wx/init.h>
-
-
-bool init_unit_test()
+MOCK_BASE_CLASS( MOCK_SCH_SHEET_PATH, SCH_SHEET_PATH )
 {
-    boost::unit_test::framework::master_test_suite().p_name.value = "Common library module tests";
-
-    return true;
-}
-
-
-int main( int argc, char* argv[] )
-{
-    int ret = boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
-
-    return ret;
-}
+    MOCK_SCH_SHEET_PATH() {};
+    virtual ~MOCK_SCH_SHEET_PATH() {};
+};

@@ -35,9 +35,10 @@
 
 #include "uuid_test_utils.h"
 
-#include <qa_utils/wx_utils/wx_assert.h>
+#include <qa_utils/wx_utils/wx_util.h>
+using namespace KI_TEST;
 
-class TEST_SCH_SHEET_FIXTURE
+class TEST_SCH_SHEET_FIXTURE : public WX_FIXTURE_BASE<TEST_WXAPP_BASE>
 {
 public:
     TEST_SCH_SHEET_FIXTURE() :

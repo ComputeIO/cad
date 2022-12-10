@@ -22,14 +22,15 @@
  */
 
 #include <qa_utils/wx_utils/unit_test_utils.h>
-#include <qa_utils/wx_utils/wx_assert.h>
+#include <qa_utils/wx_utils/wx_util.h>
+using namespace KI_TEST;
 
 // Code under test
 #include <sch_pin.h>
 #include <sch_symbol.h>
 
 
-class TEST_SCH_PIN_FIXTURE
+class TEST_SCH_PIN_FIXTURE : public WX_FIXTURE_BASE<TEST_WXAPP_BASE>
 {
 public:
     TEST_SCH_PIN_FIXTURE()
