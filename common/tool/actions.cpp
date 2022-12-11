@@ -181,6 +181,12 @@ TOOL_ACTION ACTIONS::duplicate( "common.Interactive.duplicate",
         _( "Duplicate" ), _( "Duplicates the selected item(s)" ),
         BITMAPS::duplicate );
 
+TOOL_ACTION ACTIONS::rubberStamp( "common.Interactive.rubberStamp",
+         AS_GLOBAL,
+         MD_CTRL + MD_SHIFT + 'D', LEGACY_HK_NAME( "" ),
+         _( "Rubber Stamp" ), _( "Duplicates the selected item(s) multiple times" ),
+        BITMAPS::duplicate );
+
 TOOL_ACTION ACTIONS::doDelete( "common.Interactive.delete",
         AS_GLOBAL,
 #if defined( __WXMAC__ )

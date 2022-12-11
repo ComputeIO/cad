@@ -190,6 +190,15 @@ bool SCH_EDIT_TOOL::Init()
                 return true;
             };
 
+    auto rubberStampCondition =
+            []( const SELECTION& aSel )
+    {
+        if( SCH_LINE_WIRE_BUS_TOOL::IsDrawingLineWireOrBus( aSel ) )
+            return false;
+
+        return true;
+    };
+
     auto orientCondition =
             []( const SELECTION& aSel )
             {
@@ -398,6 +407,7 @@ bool SCH_EDIT_TOOL::Init()
         moveMenu.AddItem( ACTIONS::copy,               E_C::IdleSelection );
         moveMenu.AddItem( ACTIONS::doDelete,           E_C::NotEmpty );
         moveMenu.AddItem( ACTIONS::duplicate,          duplicateCondition );
+        moveMenu.AddItem( ACTIONS::rubberStamp,        rubberStampCondition );
     }
 
     //
@@ -499,6 +509,7 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( ACTIONS::pasteSpecial,        E_C::Idle, 300 );
     selToolMenu.AddItem( ACTIONS::doDelete,            E_C::NotEmpty, 300 );
     selToolMenu.AddItem( ACTIONS::duplicate,           duplicateCondition, 300 );
+    selToolMenu.AddItem( ACTIONS::rubberStamp,         rubberStampCondition, 300 );
 
     selToolMenu.AddSeparator( 400 );
     selToolMenu.AddItem( ACTIONS::selectAll,           hasElements, 400 );

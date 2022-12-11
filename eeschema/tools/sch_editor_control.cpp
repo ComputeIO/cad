@@ -1619,6 +1619,57 @@ int SCH_EDITOR_CONTROL::Duplicate( const TOOL_EVENT& aEvent )
     return 0;
 }
 
+int SCH_EDITOR_CONTROL::RubberStamp( const TOOL_EVENT& aEvent )
+{
+    if( m_inRubberStamp )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inRubberStamp );
+
+    m_frame->PushTool( aEvent );
+
+    Activate();
+
+    // Must be done after Activate() so that it gets set into the correct context
+    getViewControls()->ShowCursor( true );
+
+    // Main loop: keep receiving events
+    while( TOOL_EVENT* evt = Wait() )
+    {
+        if( evt->IsCancelInteractive() )
+        {
+            m_frame->GetInfoBar()->Dismiss();
+            m_frame->PopTool( aEvent );
+            break;
+        }
+        else if( evt->IsActivate()  )
+        {
+            if( evt->IsMoveTool() )
+            {
+                // leave ourselves on the stack so we come back after the move
+                break;
+            }
+            else
+            {
+                m_frame->PopTool( aEvent );
+                break;
+            }
+        }
+        else if( evt->IsAction( &ACTIONS::refreshPreview ) || evt->IsMotion() )
+        {
+            m_toolMgr->RunAction( ACTIONS::duplicate, true );
+            break;
+        }
+        else if( evt->IsClick( BUT_RIGHT ) )
+        {
+            // Warp after context menu only if dragging...
+            m_toolMgr->VetoContextMenuMouseWarp();
+            m_menu.ShowContextMenu( m_selectionTool->GetSelection() );
+        }
+    }
+
+    return 0;
+}
 
 int SCH_EDITOR_CONTROL::Cut( const TOOL_EVENT& aEvent )
 {
@@ -1777,7 +1828,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     std::string        content;
     VECTOR2I           eventPos;
 
-    if( aEvent.IsAction( &ACTIONS::duplicate ) )
+    if( aEvent.IsAction( &ACTIONS::duplicate ) || aEvent.IsAction( &ACTIONS::rubberStamp ) )
         content = m_localClipboard;
     else
         content = m_toolMgr->GetClipboardUTF8();
@@ -1785,7 +1836,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     if( content.empty() )
         return 0;
 
-    if( aEvent.IsAction( &ACTIONS::duplicate ) )
+    if( aEvent.IsAction( &ACTIONS::duplicate ) || aEvent.IsAction( &ACTIONS::rubberStamp ) )
         eventPos = getViewControls()->GetCursorPosition( false );
 
     STRING_LINE_READER reader( content, "Clipboard" );
@@ -2151,7 +2202,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 
     if( !selection.Empty() )
     {
-        if( aEvent.IsAction( &ACTIONS::duplicate ) )
+        if( aEvent.IsAction( &ACTIONS::duplicate ) || aEvent.IsAction( &ACTIONS::rubberStamp ) )
         {
             int closest_dist = INT_MAX;
 
@@ -2630,6 +2681,7 @@ void SCH_EDITOR_CONTROL::setTransitions()
     Go( &SCH_EDITOR_CONTROL::Paste,                 ACTIONS::paste.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::Paste,                 ACTIONS::pasteSpecial.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::Duplicate,             ACTIONS::duplicate.MakeEvent() );
+    Go( &SCH_EDITOR_CONTROL::RubberStamp,           ACTIONS::rubberStamp.MakeEvent() );
 
     Go( &SCH_EDITOR_CONTROL::EditWithSymbolEditor,  EE_ACTIONS::editWithLibEdit.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::EditWithSymbolEditor,  EE_ACTIONS::editLibSymbolWithLibEdit.MakeEvent() );

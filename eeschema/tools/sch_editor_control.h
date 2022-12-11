@@ -119,6 +119,7 @@ public:
     int Copy( const TOOL_EVENT& aEvent );
     int Paste( const TOOL_EVENT& aEvent );
     int Duplicate( const TOOL_EVENT& aEvent );
+    int RubberStamp( const TOOL_EVENT& aEvent );
 
     int EditWithSymbolEditor( const TOOL_EVENT& aEvent );
     int ShowCvpcb( const TOOL_EVENT& aEvent );
@@ -240,8 +241,13 @@ private:
     // A map of KIID_PATH --> sheet instances for the clipboard contents.
     std::map<KIID_PATH, SCH_SHEET_INSTANCE> m_clipboardSheetInstances;
 
+
+    ///< Re-entrancy guards
+    bool                       m_inRubberStamp;
+
     // A timer during which a subsequent FindNext will result in a wrap-around
     wxTimer m_wrapAroundTimer;
+
 };
 
 
