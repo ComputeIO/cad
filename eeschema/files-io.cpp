@@ -674,6 +674,10 @@ bool SCH_EDIT_FRAME::saveSchematicFile( SCH_SHEET* aSheet, const wxString& aSave
 
     wxCHECK( screen, false );
 
+    if( screen->IsContentModified() )
+        Prj().GetSystemStrings()->UpdateOnSave();
+    Prj().GetSystemStrings()->UpdateNow();
+
     // Construct the name of the file to be saved
     schematicFileName = Prj().AbsolutePath( aSavePath );
     oldFileName = schematicFileName;
@@ -1104,6 +1108,8 @@ bool SCH_EDIT_FRAME::SaveProject( bool aSaveAs )
 
     if( m_infoBar->GetMessageType() == WX_INFOBAR::MESSAGE_TYPE::OUTDATED_SAVE )
         m_infoBar->Dismiss();
+
+    SyncView();
 
     return success;
 }

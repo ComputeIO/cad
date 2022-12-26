@@ -1018,6 +1018,12 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     // Write through symlinks, don't replace them
     WX_FILENAME::ResolvePossibleSymlinks( pcbFileName );
 
+    if( GetScreen()->IsContentModified() )
+    {
+        Prj().GetSystemStrings()->UpdateOnSave();
+        Prj().GetSystemStrings()->UpdateNow();
+    }
+
     if( !IsWritable( pcbFileName ) )
     {
         wxString msg = wxString::Format( _( "Insufficient permissions to write file '%s'." ),
@@ -1128,6 +1134,8 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
 
     if( autoSaveFileName.FileExists() )
         wxRemoveFile( autoSaveFileName.GetFullPath() );
+
+    GetCanvas()->GetView()->UpdateAllItems( KIGFX::REPAINT );
 
     lowerTxt.Printf( _( "File '%s' saved." ), pcbFileName.GetFullPath() );
 
@@ -1295,4 +1303,3 @@ bool PCB_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 
     return false;
 }
-

@@ -376,6 +376,7 @@ set( COMMON_SRCS
     stroke_params.cpp
     systemdirsappend.cpp
     template_fieldnames.cpp
+    system_strings.cpp
     textentry_tricks.cpp
     title_block.cpp
     trace_helpers.cpp
