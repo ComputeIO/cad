@@ -519,13 +519,13 @@ public:
      * @return the current diff pair track width, according to the selected options
      * ( using the default netclass value or a preset/custom value )
      */
-    int GetCurrentDiffPairWidth() const;
+    int GetCurrentDiffPairWidth( PCB_LAYER_ID aLayer ) const;
 
     /**
      * @return the current diff pair gap, according to the selected options
      * ( using the default netclass value or a preset/custom value )
      */
-    int GetCurrentDiffPairGap() const;
+    int GetCurrentDiffPairGap( PCB_LAYER_ID aLayer ) const;
 
     /**
      * @return the current diff pair via gap, according to the selected options

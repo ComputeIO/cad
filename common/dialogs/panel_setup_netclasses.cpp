@@ -53,8 +53,10 @@ enum {
     GRID_VIADRILL,
     GRID_uVIASIZE,
     GRID_uVIADRILL,
-    GRID_DIFF_PAIR_WIDTH,
-    GRID_DIFF_PAIR_GAP,
+    GRID_DIFF_PAIR_WIDTH_OUTER,
+    GRID_DIFF_PAIR_GAP_OUTER,
+    GRID_DIFF_PAIR_WIDTH_INNER,
+    GRID_DIFF_PAIR_GAP_INNER,
 
     GRID_FIRST_EESCHEMA,
     GRID_WIREWIDTH = GRID_FIRST_EESCHEMA,
@@ -177,8 +179,10 @@ PANEL_SETUP_NETCLASSES::PANEL_SETUP_NETCLASSES( PAGED_DIALOG* aParent, EDA_DRAW_
                                        GRID_VIADRILL,
                                        GRID_uVIASIZE,
                                        GRID_uVIADRILL,
-                                       GRID_DIFF_PAIR_WIDTH,
-                                       GRID_DIFF_PAIR_GAP } );
+                                       GRID_DIFF_PAIR_WIDTH_OUTER,
+                                       GRID_DIFF_PAIR_GAP_OUTER,
+                                       GRID_DIFF_PAIR_WIDTH_INNER,
+                                       GRID_DIFF_PAIR_GAP_INNER } );
 
 
     // Be sure the column labels are readable
@@ -291,8 +295,10 @@ bool PANEL_SETUP_NETCLASSES::TransferDataToWindow()
                 m_netclassGrid->SetUnitValue( aRow, GRID_VIADRILL, nc->GetViaDrill() );
                 m_netclassGrid->SetUnitValue( aRow, GRID_uVIASIZE, nc->GetuViaDiameter() );
                 m_netclassGrid->SetUnitValue( aRow, GRID_uVIADRILL, nc->GetuViaDrill() );
-                m_netclassGrid->SetUnitValue( aRow, GRID_DIFF_PAIR_WIDTH, nc->GetDiffPairWidth() );
-                m_netclassGrid->SetUnitValue( aRow, GRID_DIFF_PAIR_GAP, nc->GetDiffPairGap() );
+                m_netclassGrid->SetUnitValue( aRow, GRID_DIFF_PAIR_WIDTH_OUTER, nc->GetDiffPairWidthOuter() );
+                m_netclassGrid->SetUnitValue( aRow, GRID_DIFF_PAIR_GAP_OUTER, nc->GetDiffPairGapOuter() );
+                m_netclassGrid->SetUnitValue( aRow, GRID_DIFF_PAIR_WIDTH_INNER, nc->GetDiffPairWidthInner() );
+                m_netclassGrid->SetUnitValue( aRow, GRID_DIFF_PAIR_GAP_INNER, nc->GetDiffPairGapInner() );
             };
 
     m_netclassGrid->ClearRows();
@@ -378,8 +384,10 @@ bool PANEL_SETUP_NETCLASSES::TransferDataFromWindow()
                 nc->SetViaDrill( m_netclassGrid->GetUnitValue( aRow, GRID_VIADRILL ) );
                 nc->SetuViaDiameter( m_netclassGrid->GetUnitValue( aRow, GRID_uVIASIZE ) );
                 nc->SetuViaDrill( m_netclassGrid->GetUnitValue( aRow, GRID_uVIADRILL ) );
-                nc->SetDiffPairWidth( m_netclassGrid->GetUnitValue( aRow, GRID_DIFF_PAIR_WIDTH ) );
-                nc->SetDiffPairGap( m_netclassGrid->GetUnitValue( aRow, GRID_DIFF_PAIR_GAP ) );
+                nc->SetDiffPairWidthOuter( m_netclassGrid->GetUnitValue( aRow, GRID_DIFF_PAIR_WIDTH_OUTER ) );
+                nc->SetDiffPairGapOuter( m_netclassGrid->GetUnitValue( aRow, GRID_DIFF_PAIR_GAP_OUTER ) );
+                nc->SetDiffPairWidthInner( m_netclassGrid->GetUnitValue( aRow, GRID_DIFF_PAIR_WIDTH_INNER ) );
+                nc->SetDiffPairGapInner( m_netclassGrid->GetUnitValue( aRow, GRID_DIFF_PAIR_GAP_INNER ) );
             };
 
     m_netSettings->m_NetClasses.clear();
@@ -493,18 +501,20 @@ void PANEL_SETUP_NETCLASSES::OnNetclassGridMouseEvent( wxMouseEvent& aEvent )
 
         switch( col )
         {
-        case GRID_CLEARANCE:        tip = _( "Minimum copper clearance" );      break;
-        case GRID_TRACKSIZE:        tip = _( "Minimum track width" );           break;
-        case GRID_VIASIZE:          tip = _( "Via pad diameter" );              break;
-        case GRID_VIADRILL:         tip = _( "Via plated hole diameter" );      break;
-        case GRID_uVIASIZE:         tip = _( "Microvia pad diameter" );         break;
-        case GRID_uVIADRILL:        tip = _( "Microvia plated hole diameter" ); break;
-        case GRID_DIFF_PAIR_WIDTH:  tip = _( "Differential pair track width" ); break;
-        case GRID_DIFF_PAIR_GAP:    tip = _( "Differential pair gap" );         break;
-        case GRID_WIREWIDTH:        tip = _( "Schematic wire thickness" );      break;
-        case GRID_BUSWIDTH:         tip = _( "Bus wire thickness" );            break;
-        case GRID_SCHEMATIC_COLOR:  tip = _( "Schematic wire color" );          break;
-        case GRID_LINESTYLE:        tip = _( "Schematic wire line style" );     break;
+        case GRID_CLEARANCE:                tip = _( "Minimum copper clearance" );                      break;
+        case GRID_TRACKSIZE:                tip = _( "Minimum track width" );                           break;
+        case GRID_VIASIZE:                  tip = _( "Via pad diameter" );                              break;
+        case GRID_VIADRILL:                 tip = _( "Via plated hole diameter" );                      break;
+        case GRID_uVIASIZE:                 tip = _( "Microvia pad diameter" );                         break;
+        case GRID_uVIADRILL:                tip = _( "Microvia plated hole diameter" );                 break;
+        case GRID_DIFF_PAIR_WIDTH_OUTER:    tip = _( "Differential pair track width (outer layer)" );   break;
+        case GRID_DIFF_PAIR_GAP_OUTER:      tip = _( "Differential pair gap (outer layer)" );           break;
+        case GRID_DIFF_PAIR_WIDTH_INNER:    tip = _( "Differential pair track width (inner layer)" );   break;
+        case GRID_DIFF_PAIR_GAP_INNER:      tip = _( "Differential pair gap (inner layer)" );           break;
+        case GRID_WIREWIDTH:                tip = _( "Schematic wire thickness" );                      break;
+        case GRID_BUSWIDTH:                 tip = _( "Bus wire thickness" );                            break;
+        case GRID_SCHEMATIC_COLOR:          tip = _( "Schematic wire color" );                          break;
+        case GRID_LINESTYLE:                tip = _( "Schematic wire line style" );                     break;
         }
 
         m_netclassGrid->GetGridColLabelWindow()->UnsetToolTip();

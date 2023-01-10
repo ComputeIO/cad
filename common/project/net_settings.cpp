@@ -98,11 +98,17 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                 if( nc->HasuViaDrill() )
                     saveInPcbUnits( nc_json, "microvia_drill", nc->GetuViaDrill()  );
 
-                if( nc->HasDiffPairWidth() )
-                    saveInPcbUnits( nc_json, "diff_pair_width", nc->GetDiffPairWidth() );
+                if( nc->HasDiffPairWidthOuter() )
+                    saveInPcbUnits( nc_json, "diff_pair_width_outer", nc->GetDiffPairWidthOuter() );
 
-                if( nc->HasDiffPairGap() )
-                    saveInPcbUnits( nc_json, "diff_pair_gap", nc->GetDiffPairGap() );
+                if( nc->HasDiffPairGapOuter() )
+                    saveInPcbUnits( nc_json, "diff_pair_gap_outer", nc->GetDiffPairGapOuter() );
+
+                if( nc->HasDiffPairWidthInner() )
+                    saveInPcbUnits( nc_json, "diff_pair_width_inner", nc->GetDiffPairWidthInner() );
+
+                if( nc->HasDiffPairGapInner() )
+                    saveInPcbUnits( nc_json, "diff_pair_gap_inner", nc->GetDiffPairGapInner() );
 
                 if( nc->HasDiffPairViaGap() )
                     saveInPcbUnits( nc_json, "diff_pair_via_gap", nc->GetDiffPairViaGap() );
@@ -136,10 +142,28 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                     nc->SetuViaDrill( *value );
 
                 if( auto value = getInPcbUnits( entry, "diff_pair_width" ) )
-                    nc->SetDiffPairWidth( *value );
+                {
+                    nc->SetDiffPairWidthOuter( *value );
+                    nc->SetDiffPairWidthInner( *value );
+                }
 
                 if( auto value = getInPcbUnits( entry, "diff_pair_gap" ) )
-                    nc->SetDiffPairGap( *value );
+                {
+                    nc->SetDiffPairGapOuter( *value );
+                    nc->SetDiffPairGapInner( *value );
+                }
+
+                if( auto value = getInPcbUnits( entry, "diff_pair_width_outer" ) )
+                    nc->SetDiffPairWidthOuter( *value );
+
+                if( auto value = getInPcbUnits( entry, "diff_pair_gap_outer" ) )
+                    nc->SetDiffPairGapOuter( *value );
+
+                if( auto value = getInPcbUnits( entry, "diff_pair_width_inner" ) )
+                    nc->SetDiffPairWidthInner( *value );
+
+                if( auto value = getInPcbUnits( entry, "diff_pair_gap_inner" ) )
+                    nc->SetDiffPairGapInner( *value );
 
                 if( auto value = getInPcbUnits( entry, "diff_pair_via_gap" ) )
                     nc->SetDiffPairViaGap( *value );

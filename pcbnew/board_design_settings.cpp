@@ -1124,7 +1124,7 @@ void BOARD_DESIGN_SETTINGS::SetDiffPairIndex( unsigned aIndex )
 }
 
 
-int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairWidth() const
+int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairWidth( PCB_LAYER_ID aLayer ) const
 {
     if( m_useCustomDiffPair )
     {
@@ -1132,8 +1132,13 @@ int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairWidth() const
     }
     else if( m_diffPairIndex == 0 )
     {
-        if( m_NetSettings->m_DefaultNetClass->HasDiffPairWidth() )
-            return m_NetSettings->m_DefaultNetClass->GetDiffPairWidth();
+        if( LSET::ExternalCuMask().Contains( aLayer ))
+            if( m_NetSettings->m_DefaultNetClass->HasDiffPairWidthOuter() )
+                return m_NetSettings->m_DefaultNetClass->GetDiffPairWidthOuter();
+            else
+                return m_NetSettings->m_DefaultNetClass->GetTrackWidth();
+        else if( m_NetSettings->m_DefaultNetClass->HasDiffPairWidthInner() )
+            return m_NetSettings->m_DefaultNetClass->GetDiffPairWidthInner();
         else
             return m_NetSettings->m_DefaultNetClass->GetTrackWidth();
     }
@@ -1144,7 +1149,7 @@ int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairWidth() const
 }
 
 
-int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairGap() const
+int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairGap( PCB_LAYER_ID aLayer ) const
 {
     if( m_useCustomDiffPair )
     {
@@ -1152,8 +1157,13 @@ int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairGap() const
     }
     else if( m_diffPairIndex == 0 )
     {
-        if( m_NetSettings->m_DefaultNetClass->HasDiffPairGap() )
-            return m_NetSettings->m_DefaultNetClass->GetDiffPairGap();
+        if( LSET::ExternalCuMask().Contains( aLayer ))
+            if( m_NetSettings->m_DefaultNetClass->HasDiffPairGapOuter() )
+                return m_NetSettings->m_DefaultNetClass->GetDiffPairGapOuter();
+            else
+                return m_NetSettings->m_DefaultNetClass->GetClearance();
+        else if( m_NetSettings->m_DefaultNetClass->HasDiffPairGapInner() )
+            return m_NetSettings->m_DefaultNetClass->GetDiffPairGapInner();
         else
             return m_NetSettings->m_DefaultNetClass->GetClearance();
     }
@@ -1175,7 +1185,8 @@ int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairViaGap() const
         if( m_NetSettings->m_DefaultNetClass->HasDiffPairViaGap() )
             return m_NetSettings->m_DefaultNetClass->GetDiffPairViaGap();
         else
-            return GetCurrentDiffPairGap();
+            /// @todo do we need per-layer settings here? probably not.
+            return GetCurrentDiffPairGap( F_Cu );
     }
     else
     {

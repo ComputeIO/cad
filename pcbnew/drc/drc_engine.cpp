@@ -261,11 +261,12 @@ void DRC_ENGINE::loadImplicitRules()
                     }
                 }
 
-                if( nc->GetDiffPairWidth() )
+                if( auto width = nc->GetDiffPairWidthOuter() )
                 {
                     std::shared_ptr<DRC_RULE> netclassRule = std::make_shared<DRC_RULE>();
-                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
+                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair, outer layer)" ),
                                                              ncName );
+                    netclassRule->m_LayerCondition = LSET::ExternalCuMask();
                     netclassRule->m_Implicit = true;
 
                     expr = wxString::Format( wxT( "A.NetClass == '%s' && A.inDiffPair('*')" ),
@@ -275,15 +276,16 @@ void DRC_ENGINE::loadImplicitRules()
 
                     DRC_CONSTRAINT constraint( TRACK_WIDTH_CONSTRAINT );
                     constraint.Value().SetMin( bds.m_TrackMinWidth );
-                    constraint.Value().SetOpt( nc->GetDiffPairWidth() );
+                    constraint.Value().SetOpt( width );
                     netclassRule->AddConstraint( constraint );
                 }
 
-                if( nc->GetDiffPairGap() )
+                if( auto gap = nc->GetDiffPairGapOuter() )
                 {
                     std::shared_ptr<DRC_RULE> netclassRule = std::make_shared<DRC_RULE>();
-                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
+                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair, outer layer)" ),
                                                              ncName );
+                    netclassRule->m_LayerCondition = LSET::ExternalCuMask();
                     netclassRule->m_Implicit = true;
 
                     expr = wxString::Format( wxT( "A.NetClass == '%s'" ), ncName );
@@ -292,15 +294,16 @@ void DRC_ENGINE::loadImplicitRules()
 
                     DRC_CONSTRAINT constraint( DIFF_PAIR_GAP_CONSTRAINT );
                     constraint.Value().SetMin( bds.m_MinClearance );
-                    constraint.Value().SetOpt( nc->GetDiffPairGap() );
+                    constraint.Value().SetOpt( gap );
                     netclassRule->AddConstraint( constraint );
 
                     // A narrower diffpair gap overrides the netclass min clearance
-                    if( nc->GetDiffPairGap() < nc->GetClearance() )
+                    if( gap < nc->GetClearance() )
                     {
                         netclassRule = std::make_shared<DRC_RULE>();
-                        netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
+                        netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair, outer layer)" ),
                                                                  ncName );
+                        netclassRule->m_LayerCondition = LSET::ExternalCuMask();
                         netclassRule->m_Implicit = true;
 
                         expr = wxString::Format( wxT( "A.NetClass == '%s' && AB.isCoupledDiffPair()" ),
@@ -309,7 +312,64 @@ void DRC_ENGINE::loadImplicitRules()
                         netclassItemSpecificRules.push_back( netclassRule );
 
                         DRC_CONSTRAINT min_clearanceConstraint( CLEARANCE_CONSTRAINT );
-                        min_clearanceConstraint.Value().SetMin( nc->GetDiffPairGap() );
+                        min_clearanceConstraint.Value().SetMin( gap );
+                        netclassRule->AddConstraint( min_clearanceConstraint );
+                    }
+                }
+
+                /// @todo this is a copy of the code above
+                if( auto width = nc->GetDiffPairWidthInner() )
+                {
+                    std::shared_ptr<DRC_RULE> netclassRule = std::make_shared<DRC_RULE>();
+                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair, inner layer)" ),
+                                                             ncName );
+                    netclassRule->m_LayerCondition = LSET::InternalCuMask();
+                    netclassRule->m_Implicit = true;
+
+                    expr = wxString::Format( wxT( "A.NetClass == '%s' && A.inDiffPair('*')" ),
+                                             ncName );
+                    netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
+                    netclassItemSpecificRules.push_back( netclassRule );
+
+                    DRC_CONSTRAINT constraint( TRACK_WIDTH_CONSTRAINT );
+                    constraint.Value().SetMin( bds.m_TrackMinWidth );
+                    constraint.Value().SetOpt( width );
+                    netclassRule->AddConstraint( constraint );
+                }
+
+                if( auto gap = nc->GetDiffPairGapInner() )
+                {
+                    std::shared_ptr<DRC_RULE> netclassRule = std::make_shared<DRC_RULE>();
+                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair, inner layer)" ),
+                                                             ncName );
+                    netclassRule->m_LayerCondition = LSET::InternalCuMask();
+                    netclassRule->m_Implicit = true;
+
+                    expr = wxString::Format( wxT( "A.NetClass == '%s'" ), ncName );
+                    netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
+                    netclassItemSpecificRules.push_back( netclassRule );
+
+                    DRC_CONSTRAINT constraint( DIFF_PAIR_GAP_CONSTRAINT );
+                    constraint.Value().SetMin( bds.m_MinClearance );
+                    constraint.Value().SetOpt( gap );
+                    netclassRule->AddConstraint( constraint );
+
+                    // A narrower diffpair gap overrides the netclass min clearance
+                    if( gap < nc->GetClearance() )
+                    {
+                        netclassRule = std::make_shared<DRC_RULE>();
+                        netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair, inner layer)" ),
+                                                                 ncName );
+                        netclassRule->m_LayerCondition = LSET::InternalCuMask();
+                        netclassRule->m_Implicit = true;
+
+                        expr = wxString::Format( wxT( "A.NetClass == '%s' && AB.isCoupledDiffPair()" ),
+                                                 ncName );
+                        netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
+                        netclassItemSpecificRules.push_back( netclassRule );
+
+                        DRC_CONSTRAINT min_clearanceConstraint( CLEARANCE_CONSTRAINT );
+                        min_clearanceConstraint.Value().SetMin( gap );
                         netclassRule->AddConstraint( min_clearanceConstraint );
                     }
                 }

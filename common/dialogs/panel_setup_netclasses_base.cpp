@@ -31,7 +31,7 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	m_netclassGrid = new WX_GRID( m_netclassesPane, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_DEFAULT|wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL );
 
 	// Grid
-	m_netclassGrid->CreateGrid( 3, 13 );
+	m_netclassGrid->CreateGrid( 3, 15 );
 	m_netclassGrid->EnableEditing( true );
 	m_netclassGrid->EnableGridLines( true );
 	m_netclassGrid->EnableDragGridSize( false );
@@ -47,12 +47,14 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	m_netclassGrid->SetColLabelValue( 4, _("Via Hole") );
 	m_netclassGrid->SetColLabelValue( 5, _("uVia Size") );
 	m_netclassGrid->SetColLabelValue( 6, _("uVia Hole") );
-	m_netclassGrid->SetColLabelValue( 7, _("DP Width") );
-	m_netclassGrid->SetColLabelValue( 8, _("DP Gap") );
-	m_netclassGrid->SetColLabelValue( 9, _("Wire Thickness") );
-	m_netclassGrid->SetColLabelValue( 10, _("Bus Thickness") );
-	m_netclassGrid->SetColLabelValue( 11, _("Color") );
-	m_netclassGrid->SetColLabelValue( 12, _("Line Style") );
+	m_netclassGrid->SetColLabelValue( 7, _("DP Width outer") );
+	m_netclassGrid->SetColLabelValue( 8, _("DP Gap outer") );
+	m_netclassGrid->SetColLabelValue( 9, _("DP Width inner") );
+	m_netclassGrid->SetColLabelValue( 10, _("DP Gap inner") );
+	m_netclassGrid->SetColLabelValue( 11, _("Wire Thickness") );
+	m_netclassGrid->SetColLabelValue( 12, _("Bus Thickness") );
+	m_netclassGrid->SetColLabelValue( 13, _("Color") );
+	m_netclassGrid->SetColLabelValue( 14, _("Line Style") );
 	m_netclassGrid->SetColLabelSize( 24 );
 	m_netclassGrid->SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
 

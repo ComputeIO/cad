@@ -700,8 +700,8 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
     }
     else
     {
-        diffPairWidth  = bds.GetCurrentDiffPairWidth();
-        diffPairGap    = bds.GetCurrentDiffPairGap();
+        diffPairWidth  = bds.GetCurrentDiffPairWidth( PCB_LAYER_ID( m_startLayer ) );
+        diffPairGap    = bds.GetCurrentDiffPairGap( PCB_LAYER_ID( m_startLayer ) );
         diffPairViaGap = bds.GetCurrentDiffPairViaGap();
 
         aSizes.SetDiffPairWidthSource( _( "user choice" ) );
