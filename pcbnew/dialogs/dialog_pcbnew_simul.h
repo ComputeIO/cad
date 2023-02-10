@@ -35,7 +35,7 @@ public:
     ~DIALOG_PCBNEW_SIMUL();
 
 protected:
-    void OnAuxiliaryAction( wxCommandEvent& event ) override;
+    void onAuxiliaryAction( wxCommandEvent& event ) override;
 
     PCB_EDIT_FRAME* m_frame;
 

@@ -61,7 +61,7 @@ void SPARSELIZARD_MESHER::Get3DShapes( std::vector<shape>& aShapes, bool substra
     for( int regionId = 1; regionId < m_next_region_id; regionId++ )
     {
         SHAPE_POLY_SET aHolePolygons;
-        SetPolysetOfHolewallOfNetRegion( aHolePolygons, regionId, IU_PER_MM / 100 );
+        SetPolysetOfHolewallOfNetRegion( aHolePolygons, regionId, pcbIUScale.IU_PER_MM / 100 );
 
         Triangulate( holeShapes[regionId], aHolePolygons, regionId, 0 );
     }
@@ -75,8 +75,8 @@ void SPARSELIZARD_MESHER::Get3DShapes( std::vector<shape>& aShapes, bool substra
         }
 
         int    thickness = item->GetThickness( 0 );
-        double thickness_mm = thickness / IU_PER_MM;
-        double currentHeight_mm = currentHeight / IU_PER_MM;
+        double thickness_mm = thickness / pcbIUScale.IU_PER_MM;
+        double currentHeight_mm = currentHeight / pcbIUScale.IU_PER_MM;
 
         for( auto& elem : holeShapes )
         {
@@ -196,9 +196,9 @@ void SPARSELIZARD_MESHER::Triangulate( std::vector<shape>& aShapes, SHAPE_POLY_S
             VECTOR2<int> a, b, c;
             triangulated->GetTriangle( t, a, b, c );
 
-            std::vector<double> coords = { a.x / IU_PER_MM, a.y / IU_PER_MM, zOffset,
-                                           b.x / IU_PER_MM, b.y / IU_PER_MM, zOffset,
-                                           c.x / IU_PER_MM, c.y / IU_PER_MM, zOffset };
+            std::vector<double> coords = { a.x / pcbIUScale.IU_PER_MM, a.y / pcbIUScale.IU_PER_MM, zOffset,
+                                           b.x / pcbIUScale.IU_PER_MM, b.y / pcbIUScale.IU_PER_MM, zOffset,
+                                           c.x / pcbIUScale.IU_PER_MM, c.y / pcbIUScale.IU_PER_MM, zOffset };
 
             shape triangle( "triangle", aRegionId, coords, { 2, 2, 2 } );
             aShapes.push_back( triangle );
@@ -227,7 +227,7 @@ void SPARSELIZARD_MESHER::SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int a
         if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != netcode )
             continue;
 
-        track->TransformShapeWithClearanceToPolygon( aPolyset, aLayer, 0, maxError, ERROR_INSIDE );
+        track->TransformShapeToPolygon( aPolyset, aLayer, 0, maxError, ERROR_INSIDE );
     }
 
     // convert pads and other copper items in footprints
@@ -454,7 +454,7 @@ void SPARSELIZARD_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aC
     default: break;
     }
 
-    // Our standard TransformShapeWithClearanceToPolygon() routines can't handle differing
+    // Our standard TransformShapeToPolygon() routines can't handle differing
     // x:y clearance values (which get generated when a relative paste margin is used with
     // an oblong pad).  So we apply this huge hack and fake a larger pad to run the transform
     // on.
@@ -465,12 +465,12 @@ void SPARSELIZARD_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aC
     {
         PAD dummy( *pad );
         dummy.SetSize( pad->GetSize() + clearance + clearance );
-        dummy.TransformShapeWithClearanceToPolygon( aCornerBuffer, aLayer, 0, aMaxError,
+        dummy.TransformShapeToPolygon( aCornerBuffer, aLayer, 0, aMaxError,
                                                     aErrorLoc );
     }
     else
     {
-        pad->TransformShapeWithClearanceToPolygon( aCornerBuffer, aLayer, clearance.x, aMaxError,
+        pad->TransformShapeToPolygon( aCornerBuffer, aLayer, clearance.x, aMaxError,
                                                    aErrorLoc );
     }
 }

@@ -5,7 +5,7 @@
 // PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
-#include "wx_html_report_box.h"
+#include "widgets/wx_html_report_box.h"
 
 #include "panel_pcbnew_simul_DC_power_base.h"
 

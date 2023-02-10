@@ -29,7 +29,7 @@
 #include <pcb_edit_frame.h>
 #include <widgets/paged_dialog.h>
 #include <wx/treebook.h>
-#include "wx_html_report_box.h"
+#include "widgets/wx_html_report_box.h"
 
 #ifdef KICAD_SPARSELIZARD // we are in a different compilation unit. Thus, this hack
 #include "fem/common/fem_descriptor.h"
@@ -283,8 +283,8 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
     m_3Dviewer->Open( "potential.pos" );
     m_3Dviewer->Initialize();
     // Force the picture to render
-    wxPaintEvent evt;
-    m_3Dviewer->render( evt );
+    // wxPaintEvent evt;
+    // m_3Dviewer->render( evt );
     m_3Dviewer->Finalize();
 
     m_SimulReportHTML->Flush();

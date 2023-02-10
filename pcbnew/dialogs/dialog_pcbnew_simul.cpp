@@ -86,6 +86,6 @@ void DIALOG_PCBNEW_SIMUL::OnPageChange( wxBookCtrlEvent& event )
 
 
 // Run Import Settings... action
-void DIALOG_PCBNEW_SIMUL::OnAuxiliaryAction( wxCommandEvent& event )
+void DIALOG_PCBNEW_SIMUL::onAuxiliaryAction( wxCommandEvent& event )
 {
 }

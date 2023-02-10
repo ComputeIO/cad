@@ -145,8 +145,8 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     m_3Dviewer->Open( "Efield.pos" );
     m_3Dviewer->Initialize();
     // Force the picture to render
-    wxPaintEvent evt;
-    m_3Dviewer->render( evt );
+    //wxPaintEvent evt;
+    //m_3Dviewer->render( evt );
     m_3Dviewer->Finalize();
 #endif
 }

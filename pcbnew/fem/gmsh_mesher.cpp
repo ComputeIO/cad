@@ -36,7 +36,7 @@
 
 double TransformPoint( double aCoordinate )
 {
-    return aCoordinate / IU_PER_MM;
+    return aCoordinate / pcbIUScale.IU_PER_MM;
 }
 
 
@@ -98,8 +98,8 @@ void GMSH_MESHER::Load25DMesh()
             continue;
         }
 
-        double currentHeight_mm = currentHeight / IU_PER_MM;
-        double lastHeight_mm = lastHeight / IU_PER_MM;
+        double currentHeight_mm = currentHeight / pcbIUScale.IU_PER_MM;
+        double lastHeight_mm = lastHeight / pcbIUScale.IU_PER_MM;
         double holeHeight_mm = currentHeight_mm - lastHeight_mm;
 
         // We only model copper for now
@@ -296,19 +296,16 @@ void GMSH_MESHER::Load3DMesh()
     // Air Regions
     if( m_air_region != -1 )
     {
-        EDA_RECT boundingBox = m_board->GetBoardEdgesBoundingBox();
+        BOX2I boundingBox = m_board->GetBoardEdgesBoundingBox();
         // TODO: Error in 'element' object: can not define a negative or 0 curvature order
         // TODO: define size externally?
-        if( boundingBox.IsValid() )
-        {
-            VECTOR2I boundingBoxSize =
-                    boundingBox.GetSize()
-                    + VECTOR2I( 1.6 * 20 * IU_PER_MM,
-                                1.6 * 20 * IU_PER_MM ); // 20 times the board thickness on each side
-            int    boundingBoxHeight = std::min( boundingBoxSize.x, boundingBoxSize.y );
-            GenerateAir3D( boundingBox.Centre(), boundingBoxSize, boundingBoxHeight, fragments,
-                           regions );
-        }
+        VECTOR2I boundingBoxSize =
+                boundingBox.GetSize()
+                + VECTOR2I( 1.6 * 20 * pcbIUScale.IU_PER_MM,
+                            1.6 * 20 * pcbIUScale.IU_PER_MM ); // 20 times the board thickness on each side
+        int    boundingBoxHeight = std::min( boundingBoxSize.x, boundingBoxSize.y );
+        GenerateAir3D( boundingBox.Centre(), boundingBoxSize, boundingBoxHeight, fragments,
+                        regions );
     }
 
     std::cerr << "fragment:" << std::endl;
@@ -440,8 +437,8 @@ void GMSH_MESHER::GeneratePad3D( int aRegionId, const PAD* aPad,
     {
         if( aPad->IsOnLayer( layers.first ) )
         {
-            double start_mm = layers.second.first / IU_PER_MM;
-            double end_mm = layers.second.second / IU_PER_MM;
+            double start_mm = layers.second.first / pcbIUScale.IU_PER_MM;
+            double end_mm = layers.second.second / pcbIUScale.IU_PER_MM;
             for( const auto& idx : PlaneSurfacesToVolumes(
                          PadTo2DPlaneSurfaces( layers.first, start_mm, aPad, aMaxError ),
                          end_mm - start_mm ) )
@@ -474,8 +471,8 @@ void GMSH_MESHER::GenerateNet3D( int aRegionId, int aNetcode,
 {
     for( const auto& layers : aStackup.m_layers )
     {
-        double start_mm = layers.second.first / IU_PER_MM;
-        double end_mm = layers.second.second / IU_PER_MM;
+        double start_mm = layers.second.first / pcbIUScale.IU_PER_MM;
+        double end_mm = layers.second.second / pcbIUScale.IU_PER_MM;
 
         // TODO: error?
         std::pair<std::vector<int>, std::vector<int>> netSurfaces =
@@ -565,8 +562,8 @@ void GMSH_MESHER::GenerateDrill3D( int aRegionId, const GMSH_MESHER_STACKUP& aSt
     // TODO: oval holes
     double radius = aDrillSize / 2;
 
-    double start_mm = aStackup.m_layers.at( aLayerStart ).first / IU_PER_MM;
-    double end_mm = aStackup.m_layers.at( aLayerEnd ).second / IU_PER_MM;
+    double start_mm = aStackup.m_layers.at( aLayerStart ).first / pcbIUScale.IU_PER_MM;
+    double end_mm = aStackup.m_layers.at( aLayerEnd ).second / pcbIUScale.IU_PER_MM;
 
     SHAPE_POLY_SET copperPolyset;
     TransformCircleToPolygon( copperPolyset, aPosition, radius, aMaxError, ERROR_INSIDE );
@@ -599,8 +596,8 @@ void GMSH_MESHER::GenerateDielectric3D( int aRegionId, const SHAPE_POLY_SET& aPo
                                         std::vector<std::pair<int, int>>& aFragments,
                                         GMSH_MESHER_REGIONS&              aRegions )
 {
-    double start_mm = aStackup.m_dielectric.at( aLayerId ) / IU_PER_MM;
-    double end_mm = aStackup.m_dielectric.at( aLayerId + 1 ) / IU_PER_MM;
+    double start_mm = aStackup.m_dielectric.at( aLayerId ) / pcbIUScale.IU_PER_MM;
+    double end_mm = aStackup.m_dielectric.at( aLayerId + 1 ) / pcbIUScale.IU_PER_MM;
 
     std::pair<std::vector<int>, std::vector<int>> dielectricSurfaces =
             ShapePolySetToPlaneSurfaces( aPolyset, start_mm );
@@ -621,11 +618,11 @@ void GMSH_MESHER::GenerateAir3D( const VECTOR2I aCenter, const VECTOR2I aSize, c
                                  std::vector<std::pair<int, int>>& aFragments,
                                  GMSH_MESHER_REGIONS&              aRegions )
 {
-    double width_mm = aSize.x / IU_PER_MM;
-    double length_mm = aSize.y / IU_PER_MM;
-    double height_mm = aHeight / IU_PER_MM;
-    double x_mm = aCenter.x / IU_PER_MM - width_mm / 2;
-    double y_mm = aCenter.y / IU_PER_MM - length_mm / 2;
+    double width_mm = aSize.x / pcbIUScale.IU_PER_MM;
+    double length_mm = aSize.y / pcbIUScale.IU_PER_MM;
+    double height_mm = aHeight / pcbIUScale.IU_PER_MM;
+    double x_mm = aCenter.x / pcbIUScale.IU_PER_MM - width_mm / 2;
+    double y_mm = aCenter.y / pcbIUScale.IU_PER_MM - length_mm / 2;
 
     int idx =
             gmsh::model::occ::addBox( x_mm, y_mm, -height_mm / 2, width_mm, length_mm, height_mm );
@@ -1091,7 +1088,7 @@ GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const i
         if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != aNetcode )
             continue;
 
-        track->TransformShapeWithClearanceToPolygon( polyset, aLayer, 0, aMaxError, ERROR_INSIDE );
+        track->TransformShapeToPolygon( polyset, aLayer, 0, aMaxError, ERROR_INSIDE );
     }
 
     // convert pads and other copper items in footprints
@@ -1182,7 +1179,7 @@ void GMSH_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     default: break;
     }
 
-    // Our standard TransformShapeWithClearanceToPolygon() routines can't handle differing
+    // Our standard TransformShapeToPolygon() routines can't handle differing
     // x:y clearance values (which get generated when a relative paste margin is used with
     // an oblong pad).  So we apply this huge hack and fake a larger pad to run the transform
     // on.
@@ -1193,12 +1190,12 @@ void GMSH_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
     {
         PAD dummy( *pad );
         dummy.SetSize( pad->GetSize() + static_cast<wxSize>( clearance + clearance ) );
-        dummy.TransformShapeWithClearanceToPolygon( aCornerBuffer, aLayer, 0, aMaxError,
+        dummy.TransformShapeToPolygon( aCornerBuffer, aLayer, 0, aMaxError,
                                                     aErrorLoc );
     }
     else
     {
-        pad->TransformShapeWithClearanceToPolygon( aCornerBuffer, aLayer, clearance.x, aMaxError,
+        pad->TransformShapeToPolygon( aCornerBuffer, aLayer, clearance.x, aMaxError,
                                                    aErrorLoc );
     }
 }
