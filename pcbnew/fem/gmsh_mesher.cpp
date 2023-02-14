@@ -353,6 +353,7 @@ void GMSH_MESHER::Load3DMesh()
     //gmsh::model::mesh::setOrder(2);
     std::cerr << "finish mesh (stored in 'kicad_pcb_3d.msh')" << std::endl;
 
+    gmsh::option::setNumber( "Mesh.MshFileVersion", 2.2 );
     gmsh::write( "kicad_pcb_3d.msh" );
 }
 
