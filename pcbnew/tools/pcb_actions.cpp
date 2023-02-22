@@ -1161,6 +1161,11 @@ TOOL_ACTION PCB_ACTIONS::boardStatistics( "pcbnew.InspectionTool.ShowBoardStatis
         AS_GLOBAL, 0, "",
         _( "Show Board Statistics" ), _( "Shows board statistics" ) );
 
+#ifdef KICAD_SPARSELIZARD
+TOOL_ACTION PCB_ACTIONS::boardSimulation( "pcbnew.InspectionTool.Simulation", AS_GLOBAL, 0, "",
+                                          _( "Simulation..." ), _( "Simulation..." ) );
+#endif
+
 TOOL_ACTION PCB_ACTIONS::inspectClearance( "pcbnew.InspectionTool.InspectClearance",
         AS_GLOBAL, 0, "",
         _( "Clearance Resolution..." ),

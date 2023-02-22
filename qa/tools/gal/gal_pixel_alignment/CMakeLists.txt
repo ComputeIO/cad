@@ -72,6 +72,7 @@ target_link_libraries( test_gal_pixel_alignment
     gal
     common
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}

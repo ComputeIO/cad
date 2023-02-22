@@ -397,6 +397,12 @@ void PCB_SELECTION_TOOL::GuessSelectionCandidates( GENERAL_COLLECTOR& aCollector
 }
 
 
+/*void PCB_SELECTION_TOOL::FilterCollectorForGroups( GENERAL_COLLECTOR& aCollector ) const
+{
+
+}*/
+
+
 int PCB_SELECTION_TOOL::updateSelection( const TOOL_EVENT& aEvent )
 {
     return 0;

@@ -1,0 +1,111 @@
+\documentclass[10pt]{article}         %% What type of document you're writing.
+
+%%%%% Preamble
+
+%% Packages to use
+
+\usepackage{amsmath,amsfonts,amssymb}   %% AMS mathematics macros
+
+%% Title Information.
+
+\title{Basic \LaTeX{} Template}
+\author{}
+%% \date{2 July 2004}           %% By default, LaTeX uses the current date
+
+%%%%% The Document
+
+\begin{document}
+%
+\section{ Derivations from Maxwell Equations }
+\[ \mathrm{B}  = \nabla \times \mathrm{A}\]
+\[ \mathrm{E}  = - \nabla \cdot \mathrm{v}  - \frac{\partial  \mathrm{A}  }{ \partial t }\]
+\subsection{Gauss' Law}
+\[ \nabla \cdot \mathrm{E} = \frac{\rho}{\epsilon} \]
+\[ \nabla \cdot \left( - \nabla \cdot \mathrm{v}  - \frac{\partial  \mathrm{A}  }{ \partial t } \right) = \frac{\rho}{\epsilon} \]
+The divergence is a linear operator :
+\[ - \nabla ^2  \cdot \mathrm{v} - \nabla \cdot \frac{\partial  \mathrm{A}  }{ \partial t }  = \frac{\rho}{\epsilon} \]
+
+We now multiply both terms by a test function $\mathrm{X}$, and integrate it over a domain $\Omega$:
+
+\[ -\int_{\Omega} \epsilon \cdot \left( \nabla ^2 \cdot \mathrm{v} \right) \cdot \mathrm{X} \cdot \mathrm{d}\Omega - \int_{\Omega} \epsilon \nabla \cdot \frac{\partial  \mathrm{A}  }{ \partial t } \cdot \mathrm{X} \cdot  \mathrm{d}\Omega  = \int_{\Omega} \rho \cdot \mathrm{X} \cdot \mathrm{d} \Omega  \]
+\[ -\int_{\Omega} \epsilon \cdot \nabla  \mathrm{v}  \cdot \nabla \mathrm{X} \cdot \mathrm{d}\Omega  - \int_{\Omega} \epsilon  \nabla \cdot \frac{\partial  \mathrm{A}  }{ \partial t } \cdot \mathrm{X} \cdot  \mathrm{d}\Omega = \int_{\Omega} \rho \cdot \mathrm{X} \cdot \mathrm{d} \Omega  \]
+
+
+\subsubsection{ In a conductor }
+In a conductor, a common approximation is the current density being proportional to the electric field, $ J = \sigma \cdot E $. $\sigma$ being the conductivity of the conductor.
+
+The law equivalent to Gauss' law in conductors becomes :
+
+\[ \nabla \cdot \mathrm{J} = 0 \]
+\[ \nabla \cdot \mathrm{ \sigma E } = 0 \]
+\[  \sigma \nabla \cdot \left( - \nabla \cdot \mathrm{v}  - \frac{\partial  \mathrm{A}  }{ \partial t } \right)  = 0 \]
+
+Thus,
+
+\[ -\int_{\Omega} \sigma \cdot \nabla  \mathrm{v}  \cdot \nabla \mathrm{X} \cdot \mathrm{d}\Omega  - \int_{\Omega} \sigma  \nabla \cdot \frac{\partial  \mathrm{A}  }{ \partial t } \cdot \mathrm{X} \cdot  \mathrm{d}\Omega = 0  \]
+\subsubsection{ In a conductor -DC }
+
+\[ -\int_{\Omega} \sigma \cdot \nabla  \mathrm{v}  \cdot \nabla \mathrm{X} \cdot \mathrm{d}\Omega = 0  \]
+\subsubsection{ In a dielectric  }
+There is no net charge in a dielectric. ( That is, in a PCB )
+\[ -\int_{\Omega} \epsilon \cdot \nabla  \mathrm{v}  \cdot \nabla \mathrm{X} \cdot \mathrm{d}\Omega  - \int_{\Omega} \epsilon  \nabla \cdot \frac{\partial  \mathrm{A}  }{ \partial t } \cdot \mathrm{X} \cdot  \mathrm{d}\Omega = 0 \]
+\subsubsection{ In a dielectric - DC  }
+\[ \int_{\Omega} \epsilon \cdot \nabla  \mathrm{v}  \cdot \nabla \mathrm{X} \cdot \mathrm{d}\Omega = 0  \]
+
+\subsection{Gauss' Law for Magnetism}
+\[ \nabla \cdot \mathrm{B} = 0 \]
+\[ \nabla \cdot \mathrm{\nabla \times \mathrm{A}} = 0 \]
+The divergence of a curl is 0, hence :
+\[ 0 = 0 \]
+Therefore, we cannot get anything useful from this law
+\subsection{Lenz-Faraday's Law}
+\[ \nabla \times \mathrm{E} = - \frac{ \partial \mathrm{B} }{ \partial t } \]
+\[ \nabla \times \left( - \nabla \cdot \mathrm{v}  - \frac{\partial  \mathrm{A}  }{ \partial t } \right) = - \frac{ \partial \left( \nabla \times \mathrm{A} \right) }{ \partial t } \]
+\[ \nabla \times  \nabla \cdot \mathrm{v}  - \frac{ \partial \left( \nabla \times \mathrm{A} \right) }{ \partial t } = - \frac{ \partial \left( \nabla \times \mathrm{A} \right) }{ \partial t } \]
+\[ \nabla \times  \nabla \cdot \mathrm{v}  = 0 \]
+The curl of a gradient is 0, hence :
+\[ 0 = 0 \]
+Therefore, we cannot get anything useful from this law
+
+
+\subsection{Ampere's Law}
+\[ \nabla \times \mathrm{B} = \mu \left(  \mathrm{ J }  + \epsilon \frac{ \partial \mathrm{E} }{ \partial t } \right) \]
+\[ \nabla \times ( \nabla \times \mathrm{A} ) = \mu \left(  \mathrm{ J }  + \epsilon \frac{ \partial \left( - \nabla \cdot \mathrm{v}  - \frac{\partial  \mathrm{A}  }{ \partial t } \right) }{ \partial t } \right) \]
+\[ \frac{1}{\mu} \nabla \times (\nabla \times \mathrm{A} ) =   \mathrm{ J }  - \epsilon \frac{ \partial \left(  \frac{\partial  \mathrm{A}  }{ \partial t } \right) }{ \partial t } - \epsilon \frac{ \partial \left(  \nabla \cdot \mathrm{v}  \right) }{ \partial t } \]
+
+\[ \frac{1}{\mu}  \nabla \times ( \nabla \times \mathrm{A} ) =   \mathrm{ J }  - \epsilon \frac{ \partial ^2 A }{ \partial ^2 t } - \epsilon \nabla \cdot \frac{ \partial \left( \mathrm{v}  \right)
+ }{ \partial t } \]
+
+We now multiply both terms by a test function $\mathrm{X}$, and integrate it over a domain $\Omega$:
+
+\[ \int_{\Omega} \frac{1}{\mu} \nabla \times ( \nabla \times \mathrm{A} ) \cdot X \cdot {d}\Omega =  \int_{\Omega} J \cdot X \cdot {d}\Omega - \int_{\Omega}   \epsilon \frac{ \partial ^2 A }{ \partial ^2 t } \cdot X \cdot {d}\Omega - \int_{\Omega} \epsilon \nabla \cdot \frac{ \partial \left( \mathrm{v}  \right)
+}{ \partial t } \cdot X \cdot {d}\Omega  \]
+
+\[ \int_{\Omega} \frac{1}{\mu} \nabla \times ( \nabla \times \mathrm{A} ) \cdot X \cdot {d}\Omega =  \int_{\Omega} J \cdot X \cdot {d}\Omega - \int_{\Omega}   \epsilon \frac{ \partial ^2 A }{ \partial ^2 t } \cdot X \cdot {d}\Omega - \int_{\Omega} \epsilon \nabla \cdot \frac{ \partial \left( \mathrm{v}  \right)
+}{ \partial t } \cdot X \cdot {d}\Omega  \]
+
+\subsubsection{In a conductor - General case}
+In a conductor, a common approximation is the current density being proportional to the electric field, $ J = \sigma \cdot E $. $\sigma$ being the conductivity of the conductor.
+\\
+\[ \int_{\Omega} \frac{1}{\mu} \nabla \times ( \nabla \times \mathrm{A} ) \cdot X \cdot {d}\Omega =  - \int_{\Omega} \sigma \nabla v \cdot X \cdot {d}\Omega  - \int_{\Omega} \sigma  \frac{\partial  \mathrm{A}  }{ \partial t } \cdot X \cdot {d}\Omega - \int_{\Omega}   \epsilon \frac{ \partial ^2 A }{ \partial ^2 t } \cdot X \cdot {d}\Omega - \int_{\Omega} \epsilon \nabla \cdot \frac{ \partial \left( \mathrm{v}  \right)
+}{ \partial t } \cdot X \cdot {d}\Omega  \]
+
+We could even add that in a good conductor, there is little to no displacement current:
+
+\[ \int_{\Omega} \frac{1}{\mu} \nabla \times ( \nabla \times \mathrm{A} ) \cdot X \cdot {d}\Omega =  - \int_{\Omega} \sigma \nabla v \cdot X \cdot {d}\Omega  - \int_{\Omega} \sigma  \frac{\partial  \mathrm{A}  }{ \partial t } \cdot X \cdot {d}\Omega \]
+\subsubsection{In a conductor - DC}
+\[ \int_{\Omega} \frac{1}{\mu} \nabla \times ( \nabla \times \mathrm{A} ) \cdot X \cdot {d}\Omega =  - \int_{\Omega} \sigma \nabla v \cdot X \cdot {d}\Omega    \]
+\subsubsection{In a conductor - DC - Ignoring magnetic field}
+\[ \int_{\Omega} \sigma \nabla v \cdot X \cdot {d}\Omega = 0    \]
+
+\subsubsection{In a dielectric}
+There cannot be any current flowing in a good dielectric, hence $\mathrm{ J } = 0 $
+\[ \int_{\Omega} \frac{1}{\mu} \nabla \times ( \nabla \times \mathrm{A} ) \cdot X \cdot {d}\Omega = \epsilon \frac{ \partial ^2 A }{ \partial ^2 t } \cdot X \cdot {d}\Omega - \int_{\Omega} \epsilon \nabla \cdot \frac{ \partial \left( \mathrm{v}  \right)
+}{ \partial t } \cdot X \cdot {d}\Omega  \]
+
+
+\subsubsection{In a dielectric - DC}
+\[ \int_{\Omega} \frac{1}{\mu} \nabla \times ( \nabla \times \mathrm{A} ) \cdot X \cdot {d}\Omega =0 \]
+
+\end{document}
+

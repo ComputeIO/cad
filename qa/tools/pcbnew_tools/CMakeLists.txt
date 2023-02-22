@@ -53,6 +53,7 @@ target_link_libraries( qa_pcbnew_tools
     markdown_lib
     scripting
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     ${PYTHON_LIBRARIES}

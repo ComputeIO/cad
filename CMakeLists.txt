@@ -56,8 +56,8 @@ set( CMAKE_MODULE_PATH       "${KICAD_CMAKE_MODULE_PATH}" )
 #
 # KiCad build options should be added below.
 #
-# If you add a new build option, please add its state to the
-# OnCopyVersionInfo() function in common/dialog_about/dialog_about.cpp
+# If you add a new build option, please add it's state to the
+# GetVersionInfoData() function in common/build_version.cpp
 # so that build option settings can be included in bug reports.
 #
 
@@ -86,7 +86,11 @@ option( KICAD_BUILD_I18N
 
 option( KICAD_BUILD_QA_TESTS
     "Build software Quality assurance unit tests (default ON)"
-    ON )
+    OFF )
+
+option( KICAD_SPARSELIZARD
+    "Build tools and plugins related to Sparselizard (default OFF)"
+    OFF )
 
 option( KICAD_SCRIPTING_WXPYTHON
     "Build wxPython implementation for wx interface building in Python and py.shell (default ON)."
@@ -522,6 +526,11 @@ if( KICAD_SCRIPTING_WXPYTHON )
     add_definitions( -DKICAD_SCRIPTING_WXPYTHON )
 endif()
 
+
+if( KICAD_SPARSELIZARD )
+    add_definitions( -DKICAD_SPARSELIZARD )
+endif()
+
 if( KICAD_SPICE )
     add_definitions( -DKICAD_SPICE )
 endif()
@@ -811,6 +820,13 @@ if( OCC_VERSION_STRING VERSION_LESS 7.3.0 )
                          "================================================================\n")
 endif()
 include_directories( SYSTEM ${OCC_INCLUDE_DIR} )
+
+# Find Sparselizard and gmsh, required for FEM
+if( KICAD_SPARSELIZARD )
+    find_package( Sparselizard REQUIRED )
+    find_package( Gmsh REQUIRED )
+    include_directories( SYSTEM ${SPARSELIZARD_INCLUDE_DIRS} ${GMSH_INCLUDE_DIRS} )
+endif()
 
 # Assist with header file searching optimization:
 # INC_BEFORE and INC_AFTER are two lists which go at the front and back of the

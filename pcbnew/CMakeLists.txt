@@ -130,6 +130,7 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_pad_properties.cpp
     dialogs/dialog_pad_properties_base.cpp
     dialogs/dialog_pad_primitives_properties_base.cpp
+    dialogs/dialog_pcbnew_simul.cpp
     dialogs/dialog_plot.cpp
     dialogs/dialog_plot_base.cpp
     dialogs/dialog_pns_diff_pair_dimensions.cpp
@@ -187,10 +188,21 @@ set( PCBNEW_DIALOGS
     dialogs/panel_setup_text_and_graphics_base.cpp
     dialogs/panel_setup_tracks_and_vias.cpp
     dialogs/panel_setup_tracks_and_vias_base.cpp
+    dialogs/panel_pcbnew_simul_DC_power.cpp
+    dialogs/panel_pcbnew_simul_DC_power_base.cpp
+    dialogs/panel_pcbnew_simul_DC_plane_capacitance.cpp
+    dialogs/panel_pcbnew_simul_DC_plane_capacitance_base.cpp
     footprint_wizard.cpp
     footprint_wizard_frame.cpp
     footprint_wizard_frame_functions.cpp
     )
+
+if( KICAD_SCRIPTING AND KICAD_SCRIPTING_ACTION_MENU )
+    set( PCBNEW_DIALOGS ${PCBNEW_DIALOGS}
+        dialogs/panel_pcbnew_action_plugins.cpp
+        dialogs/panel_pcbnew_action_plugins_base.cpp
+        )
+endif()
 
 set( PCBNEW_BRDSTACKUP_MGR
     board_stackup_manager/dielectric_material.cpp
@@ -593,6 +605,13 @@ add_subdirectory( plugins/fabmaster )
 
 set( PCBNEW_IO_LIBRARIES pcad2kicadpcb altium2pcbnew cadstar2pcbnew fabmaster CACHE INTERNAL "")
 
+if( KICAD_SPARSELIZARD )
+    add_subdirectory( fem )
+
+    set( PCBNEW_FEM_LIBRARIES kicadfem CACHE INTERNAL "")
+endif()
+
+
 # a very small program launcher for pcbnew_kiface
 add_executable( pcbnew WIN32 MACOSX_BUNDLE
     ${CMAKE_SOURCE_DIR}/common/single_top.cpp
@@ -690,6 +709,7 @@ set( PCBNEW_KIFACE_LIBRARIES
     nanosvg
     markdown_lib
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${PYTHON_LIBRARIES}
     ${Boost_LIBRARIES}

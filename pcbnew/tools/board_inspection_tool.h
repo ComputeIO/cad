@@ -55,6 +55,11 @@ public:
      */
     int ShowBoardStatistics( const TOOL_EVENT& aEvent );
 
+#ifdef KICAD_SPARSELIZARD
+    ///< Show pcbnew simulation dialog
+    int ShowSimulationDialog( const TOOL_EVENT& aEvent );
+#endif
+
     ///< Highlight net belonging to the item under the cursor.
     int HighlightNet( const TOOL_EVENT& aEvent );
 

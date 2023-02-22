@@ -74,6 +74,7 @@ target_link_libraries( libeval_compiler_test
     common
     pcbcommon
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     common
     pcbcommon
     ${Boost_FILESYSTEM_LIBRARY}
