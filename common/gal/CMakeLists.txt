@@ -67,10 +67,12 @@ target_link_libraries( gal
     kimath
     kiplatform
     nlohmann_json
-    ${GLEW_LIBRARIES}
+    GLEW::GLEW
     ${CAIRO_LIBRARIES}
     ${PIXMAN_LIBRARIES}
-    ${OPENGL_LIBRARIES}
+    OpenGL::GL
+    "$<$<BOOL:${KICAD_USE_EGL}>:OpenGL::EGL>"
+    GLM::GLM
     ${GDI_PLUS_LIBRARIES}
     # outline font support
     ${FREETYPE_LIBRARIES}

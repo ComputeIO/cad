@@ -643,7 +643,7 @@ make_lexer(
     )
 
 target_link_libraries( pcbnew_kiface_objects
-    PRIVATE
+    PUBLIC
         common
         core
         nlohmann_json
@@ -651,7 +651,7 @@ target_link_libraries( pcbnew_kiface_objects
         gzip-hpp
         Boost::boost
         ZLIB::ZLIB
-        ${OCC_LIBRARIES}
+        ${OCC_LIBS}
     )
 
 add_library( pcbnew_kiface MODULE )
@@ -689,6 +689,7 @@ set( PCBNEW_KIFACE_LIBRARIES
     core
     idf3
     markdown_lib
+    ${OCC_LIBS}
     ${PCBNEW_IO_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${PYTHON_LIBRARIES}

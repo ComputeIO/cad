@@ -1,5 +1,5 @@
-#add_definitions(-DPRINT_STATISTICS_3D_VIEWER)
-add_compile_definitions( PCBNEW )
+# add_definitions(-DPRINT_STATISTICS_3D_VIEWER)
+add_compile_definitions(PCBNEW)
 
 include_directories(BEFORE ${INC_BEFORE})
 include_directories(
@@ -13,14 +13,15 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/include/gal/opengl
     ${CMAKE_SOURCE_DIR}/common/dialogs
     ${INC_AFTER}
-    )
+)
 
 # directories
-set( DIR_RAY 3d_rendering/raytracing )
-set( DIR_RAY_ACC ${DIR_RAY}/accelerators )
-set( DIR_RAY_2D ${DIR_RAY}/shapes2D )
-set( DIR_RAY_3D ${DIR_RAY}/shapes3D )
-set( DIR_3D_PLUGINS ${CMAKE_SOURCE_DIR}/plugins/ldr )
+set(DIR_DLG dialogs)
+set(DIR_RAY 3d_rendering/raytracing)
+set(DIR_RAY_ACC ${DIR_RAY}/accelerators)
+set(DIR_RAY_2D ${DIR_RAY}/shapes2D)
+set(DIR_RAY_3D ${DIR_RAY}/shapes3D)
+set(DIR_3D_PLUGINS ${CMAKE_SOURCE_DIR}/plugins/ldr)
 
 set(3D-VIEWER_SRCS
     ${DIR_3D_PLUGINS}/pluginldr.cpp
@@ -89,38 +90,26 @@ set(3D-VIEWER_SRCS
     common_ogl/ogl_utils.cpp
     3d_fastmath.cpp
     3d_math.cpp
-    dialogs/3d_cache_dialogs.cpp
-    dialogs/appearance_controls_3D.cpp
-    dialogs/appearance_controls_3D_base.cpp
-    dialogs/dialog_select_3d_model_base.cpp
-    dialogs/dialog_select_3d_model.cpp
-    dialogs/panel_preview_3d_model_base.cpp
-    dialogs/panel_preview_3d_model.cpp
-    dialogs/panel_3D_display_options.cpp
-    dialogs/panel_3D_display_options_base.cpp
-    dialogs/panel_3D_opengl_options.cpp
-    dialogs/panel_3D_opengl_options_base.cpp
-    dialogs/panel_3D_raytracing_options.cpp
-    dialogs/panel_3D_raytracing_options_base.cpp
-    )
+)
 
 add_library(3d-viewer STATIC ${3D-VIEWER_SRCS})
-add_dependencies( 3d-viewer pcbcommon )
+add_dependencies(3d-viewer pcbcommon)
 
-target_link_libraries( 3d-viewer
+target_link_libraries(3d-viewer
     PRIVATE
-        gal
-        kimath
-        core
-        common
-        nlohmann_json
-        Boost::headers
-        ${wxWidgets_LIBRARIES}
-        ${OPENGL_LIBRARIES}
-        kicad_3dsg )
+    gal
+    kimath
+    nlohmann_json
+    Boost::headers
+    ${wxWidgets_LIBRARIES}
+    OpenGL::GL
+    "$<$<BOOL:${KICAD_USE_EGL}>:OpenGL::EGL>"
+    kicad_3dsg)
 
-add_subdirectory( 3d_cache )
+add_subdirectory(3d_cache)
 
-message( STATUS "Including 3Dconnexion SpaceMouse navigation support in 3d-viewer" )
-add_subdirectory( 3d_navlib )
-target_link_libraries( 3d-viewer PRIVATE 3d-viewer_navlib)
+if(KICAD_USE_3DCONNEXION)
+    message(STATUS "Including 3Dconnexion SpaceMouse navigation support in 3d-viewer")
+    add_subdirectory(3d_navlib)
+    target_link_libraries(3d-viewer PRIVATE 3d-viewer_navlib)
+endif()
