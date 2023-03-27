@@ -31,16 +31,16 @@
 #include <wx/string.h>
 #include <memory>
 #include <string>
-#include <sim_types.h>
+#include <sim/sim_types.h>
 
 // Code under test
-#include <dialog_sim_settings.h>
+#include <dialogs/dialog_sim_settings.h>
 
 //Mocks code
-#include <eeschema/mock_sch_sheet_path.h>
-#include <eeschema/mock_schematic.h>
-#include <eeschema/sim/mock_netlist_exporter_pspice_sim.h>
-#include <eeschema/sim/mock_spice_settings.h>
+#include <mock_sch_sheet_path.h>
+#include <mock_schematic.h>
+#include <mock_netlist_exporter_pspice_sim.h>
+#include <mock_spice_settings.h>
 
 
 //Local and forward declarations

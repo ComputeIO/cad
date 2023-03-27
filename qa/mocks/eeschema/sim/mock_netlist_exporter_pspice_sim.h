@@ -23,7 +23,7 @@
 
 #pragma once
 #include <qa_utils/wx_utils/unit_test_utils.h>
-#include <netlist_exporter_pspice_sim.h>
+#include <eeschema/netlist_exporters/netlist_exporter_pspice_sim.h>
 
 MOCK_BASE_CLASS( MOCK_NETLIST_EXPORTER_PSPICE_SIM, NETLIST_EXPORTER_PSPICE_SIM )
 {

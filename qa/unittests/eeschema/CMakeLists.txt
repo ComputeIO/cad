@@ -41,7 +41,10 @@ endif()
 include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/eeschema
     ${CMAKE_SOURCE_DIR}/pcbnew
+    ${CMAKE_SOURCE_DIR}/qa/mocks/eeschema
+    ${CMAKE_SOURCE_DIR}/qa/mocks/eeschema/sim
     ${CMAKE_SOURCE_DIR}/qa/mocks/include
     ${CMAKE_SOURCE_DIR}/qa/qa_utils
     ${CMAKE_SOURCE_DIR}/qa
@@ -67,6 +70,8 @@ set( QA_EESCHEMA_SRCS
     ${CMAKE_SOURCE_DIR}/qa/unittests/common/test_array_options.cpp
 
     sch_plugins/altium/test_altium_parser_sch.cpp
+
+    dialogs/test_dialog_sim_settings.cpp
 
 	erc/test_erc_label_not_connected.cpp
 	erc/test_erc_stacking_pins.cpp
