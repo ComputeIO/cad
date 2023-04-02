@@ -28,79 +28,49 @@
 #   WXPYTHON_WXVERSION: wxWidgets version used by wxPython/Phoenix
 
 # Create a CMake list containing wxPython version
-set( _py_cmd "import wx;print(wx.version())" )
-
-# Add user specified Python site package path
-if( PYTHON_SITE_PACKAGE_PATH )
-    set( _py_site_path
-        "import sys;sys.path.insert(0, \"${PYTHON_SITE_PACKAGE_PATH}\");" )
-endif()
-
-if( VCPKG_TOOLCHAIN )
-# python 3.8+ requires us to use python to add additional load directories (PATH no longer supported)
-# vcpkg does not copy all the dlls into the python folder so we need this for development
-# as the wxpython modules need the wxwidgets library DLLs to load
-    set( _py_dll "import os;os.add_dll_directory(\"${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin\");os.add_dll_directory(\"${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/debug/bin\");" )
-else()
-    set( _py_dll "" )
-endif()
-
-execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "${_py_dll}${_py_site_path}${_py_cmd}"
-    RESULT_VARIABLE _WXPYTHON_VERSION_RESULT
-    OUTPUT_VARIABLE _WXPYTHON_VERSION_FOUND
+find_package(Python3 3.6 COMPONENTS Interpreter REQUIRED)
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import wx;print(wx.version())"
+    RESULT_VARIABLE wxPython_VERSION_RESULT
+    OUTPUT_VARIABLE wxPython_VERSION_FOUND
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    COMMAND_ERROR_IS_FATAL ANY
+)
+execute_process(COMMAND ${Python3_EXECUTABLE} -c "import wx;print(wx.wxWidgets_version.split(' ')[1])"
+    RESULT_VARIABLE wxPython_wxVersion_RESULT
+    OUTPUT_VARIABLE wxPython_wxVersion_FOUND
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+)
 
 # Check to see if any version of wxPython is installed on the system.
-if( _WXPYTHON_VERSION_RESULT GREATER 0 )
-    message( FATAL_ERROR "wxPython/Phoenix does not appear to be installed on the system" )
+if(wxPython_version_RESULT GREATER 0)
+    message(FATAL_ERROR "wxPython/Phoenix does not appear to be installed")
 endif()
-
 
 # Turn the version string to a list for easier processing
-set( _WXPYTHON_VERSION_LIST ${_WXPYTHON_VERSION_FOUND})
-separate_arguments( _WXPYTHON_VERSION_LIST )
-list( LENGTH _WXPYTHON_VERSION_LIST _VERSION_LIST_LEN )
+separate_arguments(wxPython_VERSION_FOUND)
+list(LENGTH wxPython_VERSION_FOUND _VERSION_LIST_LEN)
 
-if( _VERSION_LIST_LEN LESS 3 )
-    message( FATAL_ERROR "Unknown wxPython/Phoenix version string: ${_WXPYTHON_VERSION_FOUND}" )
+if(_VERSION_LIST_LEN LESS 3)
+    message(FATAL_ERROR "Unknown wxPython version string: ${wxPython_version_FOUND}")
 endif()
 
-# wxPython style, e.g. '3.0.2.0;gtk3;(classic) or Pheonix style: e.g. 4.0.1;gtk3;(phoenix)
-list( GET _WXPYTHON_VERSION_LIST 0 WXPYTHON_VERSION )
-list( GET _WXPYTHON_VERSION_LIST 1 WXPYTHON_TOOLKIT )
-list( GET _WXPYTHON_VERSION_LIST 2 WXPYTHON_FLAVOR )
+# Pheonix style: e.g. 4.0.1;gtk3;(phoenix)
+list(GET wxPython_VERSION_FOUND 0 wxPython_VERSION)
+list(GET wxPython_VERSION_FOUND 1 wxPython_TOOLKIT)
+list(GET wxPython_VERSION_FOUND 2 wxPython_FLAVOR)
 
-# Determine wxWidgets version used by wxPython/Phoenix
-if( WXPYTHON_FLAVOR MATCHES "phoenix" )
-    # 4.0.1;gtk3;(phoenix) does not contain wxWidgets version, request it explicitly
-
-    set( _py_cmd "import wx;print(wx.wxWidgets_version.split(' ')[1])")
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "${_py_dll}${_py_site_path}${_py_cmd}"
-        RESULT_VARIABLE WXPYTHON_WXVERSION_RESULT
-        OUTPUT_VARIABLE WXPYTHON_WXVERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-
-    if( NOT WXPYTHON_WXVERSION_RESULT EQUAL 0 )
-        set( WXPYTHON_WXVERSION "3.0.2" )
-        message( WARNING "Could not determine wxWidgets version used by Phoenix, "
-            "requesting ${WXPYTHON_WXVERSION}" )
-    endif()
-
-    set( WXPYTHON_FLAVOR "Phoenix" )
-
-elseif( WXPYTHON_FLAVOR MATCHES "classic" )
-    # 3.0.2.0;gtk3;(classic) has the wxWidgets version in the first part
-    set( WXPYTHON_WXVERSION ${WXPYTHON_VERSION} )
-    set( WXPYTHON_FLAVOR "wxPython" )
-
-else()
-    message( FATAL_ERROR "Unknown wxPython/Phoenix type: ${WXPYTHON_FLAVOR}")
+# Fix an inconsistency between the toolkit names reported by wx.version() and wx-config for cocoa
+if(wxPython_TOOLKIT STREQUAL "osx-cocoa")
+    set(wxPython_TOOLKIT "osx_cocoa")
 endif()
 
+set(wxPython_${wxPython_TOOLKIT}_FOUND true)
 
-# Fix an incosistency between the toolkit names reported by wx.version() and wx-config for cocoa
-if( WXPYTHON_TOOLKIT STREQUAL "osx-cocoa" )
-    set( WXPYTHON_TOOLKIT "osx_cocoa" )
-endif()
+include(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(wxPython
+    VERSION_VAR wxPython_VERSION
+    HANDLE_VERSION_RANGE
+    HANDLE_COMPONENTS
+)

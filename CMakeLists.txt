@@ -63,7 +63,6 @@ else()
     set( UNIX_NOT_APPLE OFF )
 endif()
 
-
 #
 # KiCad build options should be added below.
 #
@@ -834,31 +833,14 @@ set( INC_AFTER
 # Find Python and other scripting resources
 #
 
-# SWIG 4.0 or later require for proper C++11 support.
-find_package( SWIG 4.0 REQUIRED )
-include( ${SWIG_USE_FILE} )
 
-set( PythonInterp_FIND_VERSION 3.6 )
-set( PythonLibs_FIND_VERSION 3.6 )
+# to use the macOS bundled System Python, enable the cmake Python_FIND_FRAMEWORK var
+# to force a particular python, set Python_ROOT and Python3_ROOT
+# for example, k-m-b must do this to use its relocatable Python.framework
+find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
+set(PYTHON_SITE_PACKAGE_PATH ${Python_SITELIB})
 
-find_package( PythonInterp ${PythonInterp_FIND_VERSION} )
-
-check_find_package_result( PYTHONINTERP_FOUND "Python Interpreter" )
-
-# Get the correct Python site package install path from the Python interpreter found by
-# FindPythonInterp unless the user specifically defined a custom path.
-if( NOT PYTHON_SITE_PACKAGE_PATH )
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "import sysconfig;print(\"%s\"%sysconfig.get_path('platlib', vars={'platbase': '.'}))"
-        OUTPUT_VARIABLE PYTHON_SITE_PACKAGE_PATH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-
-    if( NOT PYTHON_SITE_PACKAGE_PATH )
-        message( FATAL_ERROR "Error occurred while attempting to find the Python site library path." )
-    endif()
-endif()
-
-if( APPLE )
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     set( OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR ${OSX_BUNDLE_LIB_DIR}/Python.framework/Versions/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages)
     set( OSX_BUNDLE_INSTALL_PYTHON_SITE_PACKAGES_DIR "${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR}")
     set( PYTHON_DEST "${OSX_BUNDLE_BUILD_DIR}/${OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR}"
@@ -887,47 +869,26 @@ else()
 endif()
 message( STATUS "Python module install path: ${PYTHON_DEST}" )
 
-find_package( PythonLibs 3.6 REQUIRED )
-
 # pybind11 is header-only, so include the subdir
 add_subdirectory(thirdparty/pybind11)
 
 # Make sure that we get our pybind11 and not the system pybind11 (ours is patched to work with wx)
 include_directories( BEFORE SYSTEM ${PYBIND11_INCLUDE_DIR} )
 
-# Infrequently needed headers go at end of search paths, append to INC_AFTER which
-# although is used for all components, should be a harmless hit for something like eeschema
-# so long as unused search paths are at the end like this.
-set( INC_AFTER ${INC_AFTER} ${PYTHON_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/scripting )
-
-
 if( KICAD_SCRIPTING_WXPYTHON )
     # Find the wxPython installation
-    if( NOT VCPKG_TOOLCHAIN AND NOT KICAD_BUILD_ARCH_ARM64 )
-        find_package( wxPython REQUIRED )
+    set(WXCOMPONENTS wxVersion "$<$<PLATFORM_ID:Linux>:gtk3>")
+    if(NOT VCPKG_TOOLCHAIN AND NOT KICAD_BUILD_ARCH_ARM64)
+        find_package(wxPython 4.0.0 REQUIRED COMPONENTS "${WXCOMPONENTS}" )
 
-        if( WXPYTHON_VERSION VERSION_LESS 4.0.0 )
-            message( FATAL_ERROR "wxPython Phoenix is required" )
-        endif()
-
-        if( WXPYTHON_WXVERSION VERSION_LESS 3.2.0 )
-            message( FATAL_ERROR "wxWidgets 3.2.0 or greater is required" )
+        if(wxPython_wxVersion_FOUND VERSION_LESS 3.2.0)
+            message(FATAL_ERROR "wxPython must use wxWidgets 3.2.0 or greater")
         endif()
     endif()
 
-endif()
-
-# GTK3 is required on Linux
-if( UNIX AND NOT APPLE AND KICAD_SCRIPTING_WXPYTHON )
-    if( NOT "${WXPYTHON_TOOLKIT}" STREQUAL "gtk3" )
-        message( FATAL_ERROR "GTK3-based wxPython/Phoenix toolkit is required.")
-    endif()
-endif()
-
-if( WXPYTHON_FLAVOR )
-    message( STATUS "Found wxPython ${WXPYTHON_FLAVOR} "
-        "${WXPYTHON_VERSION}/${WXPYTHON_TOOLKIT} "
-        "(wxWidgets ${WXPYTHON_WXVERSION})" )
+    message(STATUS "Found wxPython ${wxPython_FLAVOR} "
+        "${wxPython_VERSION}/${wxPython_TOOLKIT} "
+        "(wxWidgets ${wxPython_wxVersion_FOUND})")
 endif()
 
 #
@@ -943,12 +904,12 @@ if( WXWIDGETS_REQUESTED_TOOLKIT
     message( WARNING "wxWidgets and wxPython must be based on the same toolkit.\n"
         "It will be fixed automatically if you skip the '--toolkit=xxx' "
         "wxWidgets_CONFIG_OPTIONS parameter.")
-elseif( UNIX AND NOT APPLE )
+elseif( UNIX_NOT_APPLE )
     # Force the use of GTK3 on Linux
-    set( wxWidgets_CONFIG_OPTIONS ${wxWidgets_CONFIG_OPTIONS} "--toolkit=gtk3" )
+    list(APPEND wxWidgets_CONFIG_OPTIONS "--toolkit=gtk3" )
 else()
     # Use the same toolkit as wxPython otherwise there will be a symbol conflict
-    set( wxWidgets_CONFIG_OPTIONS ${wxWidgets_CONFIG_OPTIONS} "--toolkit=${WXPYTHON_TOOLKIT}" )
+    list(APPEND wxWidgets_CONFIG_OPTIONS "--toolkit=${WXPYTHON_TOOLKIT}" )
 endif()
 
 # Require the same wxWidgets version as is used by wxPython
@@ -959,7 +920,7 @@ else()
 endif()
 
 # See line 49 of cmake/FindwxWidgets.cmake
-set( wxWidgets_CONFIG_OPTIONS ${wxWidgets_CONFIG_OPTIONS} --static=no )
+list(APPEND wxWidgets_CONFIG_OPTIONS --static=no )
 
 find_package( wxWidgets ${wxWidgets_REQ_VERSION} COMPONENTS gl aui adv html core net base propgrid xml stc richtext REQUIRED )
 
