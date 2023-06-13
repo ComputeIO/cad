@@ -1,3 +1,13 @@
+
+set_property(
+    SOURCE python_scripting.cpp
+    APPEND
+    PROPERTY COMPILE_DEFINITIONS
+    PYTHON_DEST=${PYTHON_DEST}
+    # required if on mac (__WXMAC__), harmless if not
+    OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR="${OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR}"
+)
+
 set( KIPYTHON_SRCS
     kipython_settings.cpp
     python_scripting.cpp
@@ -7,11 +17,12 @@ add_library( scripting STATIC
     ${KIPYTHON_SRCS}
 )
 
-target_link_libraries( scripting
-    ${wxWidgets_LIBRARIES}      # wxLogDebug, wxASSERT
-    ${PYTHON_LIBRARIES}
+target_link_libraries(scripting PUBLIC
+    ${wxWidgets_LIBRARIES} # wxLogDebug, wxASSERT
+    Python::Module
     Boost::headers
     common
+    nlohmann_json
 )
 
 target_include_directories( scripting PUBLIC
