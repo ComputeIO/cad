@@ -54,22 +54,10 @@
 static const wxChar* const traceNgspice = wxT( "KICAD_NGSPICE" );
 
 
-NGSPICE::NGSPICE() :
-        m_ngSpice_Init( nullptr ),
-        m_ngSpice_Circ( nullptr ),
-        m_ngSpice_Command( nullptr ),
-        m_ngGet_Vec_Info( nullptr ),
-        m_ngSpice_CurPlot( nullptr ),
-        m_ngSpice_AllPlots( nullptr ),
-        m_ngSpice_AllVecs( nullptr ),
-        m_ngSpice_Running( nullptr ),
-        m_error( false )
+NGSPICE::NGSPICE() : m_error( false )
 {
     init_dll();
 }
-
-
-NGSPICE::~NGSPICE() = default;
 
 
 void NGSPICE::Init( const SPICE_SIMULATOR_SETTINGS* aSettings )
@@ -87,8 +75,8 @@ void NGSPICE::Init( const SPICE_SIMULATOR_SETTINGS* aSettings )
 std::vector<std::string> NGSPICE::AllPlots() const
 {
     LOCALE_IO c_locale; // ngspice works correctly only with C locale
-    char*     currentPlot = m_ngSpice_CurPlot();
-    char**    allPlots    = m_ngSpice_AllVecs( currentPlot );
+    char*     currentPlot = ngSpice_CurPlot();
+    char**    allPlots    = ngSpice_AllVecs( currentPlot );
     int       noOfPlots   = 0;
 
     std::vector<std::string> retVal;
@@ -116,7 +104,7 @@ std::vector<COMPLEX> NGSPICE::GetPlot( const std::string& aName, int aMaxLen )
 {
     LOCALE_IO            c_locale;       // ngspice works correctly only with C locale
     std::vector<COMPLEX> data;
-    vector_info*         vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*         vi = ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -143,7 +131,7 @@ std::vector<double> NGSPICE::GetRealPlot( const std::string& aName, int aMaxLen 
 {
     LOCALE_IO           c_locale;       // ngspice works correctly only with C locale
     std::vector<double> data;
-    vector_info*        vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*        vi = ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -173,7 +161,7 @@ std::vector<double> NGSPICE::GetImagPlot( const std::string& aName, int aMaxLen 
 {
     LOCALE_IO           c_locale;       // ngspice works correctly only with C locale
     std::vector<double> data;
-    vector_info*        vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*        vi = ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -195,7 +183,7 @@ std::vector<double> NGSPICE::GetMagPlot( const std::string& aName, int aMaxLen )
 {
     LOCALE_IO           c_locale;       // ngspice works correctly only with C locale
     std::vector<double> data;
-    vector_info*        vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*        vi = ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -222,7 +210,7 @@ std::vector<double> NGSPICE::GetPhasePlot( const std::string& aName, int aMaxLen
 {
     LOCALE_IO c_locale;       // ngspice works correctly only with C locale
     std::vector<double> data;
-    vector_info* vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*        vi = ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -286,7 +274,7 @@ bool NGSPICE::LoadNetlist( const std::string& aNetlist )
     lines.push_back( nullptr ); // sentinel, as requested in ngSpice_Circ description
 
     Command( "remcirc" );
-    bool success = !m_ngSpice_Circ( lines.data() );
+    bool success = !ngSpice_Circ( lines.data() );
 
     for( char* line : lines )
         free( line );
@@ -310,7 +298,7 @@ bool NGSPICE::Run()
         {
             wxMilliSleep( 50 );
             wxYield();
-        } while( m_ngSpice_Running() );
+        } while( ngSpice_running() );
     }
 
     return success;
@@ -327,7 +315,7 @@ bool NGSPICE::Stop()
 bool NGSPICE::IsRunning()
 {
     // No need to use C locale here
-    return m_ngSpice_Running();
+    return ngSpice_running();
 }
 
 
@@ -335,7 +323,7 @@ bool NGSPICE::Command( const std::string& aCmd )
 {
     LOCALE_IO c_locale;               // ngspice works correctly only with C locale
     validate();
-    return !m_ngSpice_Command( (char*) aCmd.c_str() );
+    return !ngSpice_Command( (char*) aCmd.c_str() );
 }
 
 
@@ -424,89 +412,8 @@ void NGSPICE::init_dll()
     LOCALE_IO c_locale;               // ngspice works correctly only with C locale
     const wxStandardPaths& stdPaths = wxStandardPaths::Get();
 
-    if( m_dll.IsLoaded() )      // enable force reload
-        m_dll.Unload();
-
-    // Extra effort to find libngspice
-    // @todo Shouldn't we be using the normal KiCad path searching mechanism here?
-    wxFileName dllFile( "", NGSPICE_DLL_FILE );
-#if defined(__WINDOWS__)
-  #if defined( _MSC_VER )
-    const std::vector<std::string> dllPaths = { "" };
-  #else
-    const std::vector<std::string> dllPaths = { "", "/mingw64/bin", "/mingw32/bin" };
-  #endif
-#elif defined(__WXMAC__)
-    const std::vector<std::string> dllPaths = {
-        PATHS::GetOSXKicadUserDataDir().ToStdString() + "/PlugIns/ngspice",
-        PATHS::GetOSXKicadMachineDataDir().ToStdString() + "/PlugIns/ngspice",
-
-        // when running kicad.app
-        stdPaths.GetPluginsDir().ToStdString() + "/sim",
-
-        // when running eeschema.app
-        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString() +
-                "/../../../../../Contents/PlugIns/sim"
-    };
-#else   // Unix systems
-    const std::vector<std::string> dllPaths = { "/usr/local/lib" };
-#endif
-
-#if defined(__WINDOWS__) || (__WXMAC__)
-    for( const auto& path : dllPaths )
-    {
-        dllFile.SetPath( path );
-        wxLogTrace( traceNgspice, "libngspice search path: %s", dllFile.GetFullPath() );
-        m_dll.Load( dllFile.GetFullPath(), wxDL_VERBATIM | wxDL_QUIET | wxDL_NOW );
-
-        if( m_dll.IsLoaded() )
-        {
-            wxLogTrace( traceNgspice, "libngspice path found in: %s", dllFile.GetFullPath() );
-            break;
-        }
-    }
-
-    if( !m_dll.IsLoaded() ) // try also the system libraries
-        m_dll.Load( wxDynamicLibrary::CanonicalizeName( "ngspice" ) );
-#else
-    // First, try the system libraries
-    m_dll.Load( NGSPICE_DLL_FILE, wxDL_VERBATIM | wxDL_QUIET | wxDL_NOW );
-
-    // If failed, try some other paths:
-    if( !m_dll.IsLoaded() )
-    {
-        for( const auto& path : dllPaths )
-        {
-            dllFile.SetPath( path );
-            wxLogTrace( traceNgspice, "libngspice search path: %s", dllFile.GetFullPath() );
-            m_dll.Load( dllFile.GetFullPath(), wxDL_VERBATIM | wxDL_QUIET | wxDL_NOW );
-
-            if( m_dll.IsLoaded() )
-            {
-                wxLogTrace( traceNgspice, "libngspice path found in: %s", dllFile.GetFullPath() );
-                break;
-            }
-        }
-    }
-#endif
-
-    if( !m_dll.IsLoaded() )
-        throw std::runtime_error( "Missing ngspice shared library" );
-
-    m_error = false;
-
-    // Obtain function pointers
-    m_ngSpice_Init = (ngSpice_Init) m_dll.GetSymbol( "ngSpice_Init" );
-    m_ngSpice_Circ = (ngSpice_Circ) m_dll.GetSymbol( "ngSpice_Circ" );
-    m_ngSpice_Command = (ngSpice_Command) m_dll.GetSymbol( "ngSpice_Command" );
-    m_ngGet_Vec_Info = (ngGet_Vec_Info) m_dll.GetSymbol( "ngGet_Vec_Info" );
-    m_ngSpice_CurPlot  = (ngSpice_CurPlot) m_dll.GetSymbol( "ngSpice_CurPlot" );
-    m_ngSpice_AllPlots = (ngSpice_AllPlots) m_dll.GetSymbol( "ngSpice_AllPlots" );
-    m_ngSpice_AllVecs = (ngSpice_AllVecs) m_dll.GetSymbol( "ngSpice_AllVecs" );
-    m_ngSpice_Running = (ngSpice_Running) m_dll.GetSymbol( "ngSpice_running" ); // it is not a typo
-
-    m_ngSpice_Init( &cbSendChar, &cbSendStat, &cbControlledExit, nullptr, nullptr,
-                    &cbBGThreadRunning, this );
+    ngSpice_Init( &cbSendChar, &cbSendStat, &cbControlledExit, NULL, NULL, &cbBGThreadRunning,
+                  this );
 
     // Load a custom spinit file, to fix the problem with loading .cm files
     // Switch to the executable directory, so the relative paths are correct
@@ -574,7 +481,7 @@ void NGSPICE::init_dll()
     lines.push_back( strdup( ".end" ) );
     lines.push_back( nullptr ); // Sentinel.
 
-    m_ngSpice_Circ( lines.data() );
+    ngSpice_Circ( lines.data() );
 
     for( auto line : lines )
         free( line );
