@@ -89,6 +89,21 @@ void SCH_DATABASE_PLUGIN::EnumerateSymbolLib( std::vector<LIB_SYMBOL*>& aSymbolL
             continue;
         }
 
+        // filter results by filter_col
+        wxLogDebug("Filter database rows for lib %s with filter: %s:%s", table.name, table.filter_col, table.filter_value);
+        std::vector<DATABASE_CONNECTION::ROW> filtered_results;
+        for( DATABASE_CONNECTION::ROW& result : results )
+        {
+            if( !result.count( table.filter_col ) )
+                continue;
+
+            std::string filter_value = std::any_cast<std::string>( result[table.filter_col] );
+            if (filter_value == table.filter_value){
+                filtered_results.push_back(result);
+            }
+        }
+        results = filtered_results;
+
         for( DATABASE_CONNECTION::ROW& result : results )
         {
             if( !result.count( table.key_col ) )
@@ -320,6 +335,34 @@ void SCH_DATABASE_PLUGIN::connect()
             return;
         }
 
+        // cache info for the filter column
+        std::set<std::string> cols;
+        cols.insert(m_settings->m_TemplateTable.key_col);
+        cols.insert(m_settings->m_TemplateTable.filter_col);
+        m_conn->CacheTableInfo(m_settings->m_TemplateTable.table, cols);
+        std::vector<DATABASE_CONNECTION::ROW> rows;
+        m_conn->SelectAll( m_settings->m_TemplateTable.table, m_settings->m_TemplateTable.key_col,rows );
+        std::set<std::string> lib_filter_keys;
+
+        // get unique filter values
+        for (auto const& row: rows)
+        {
+            if( row.count( m_settings->m_TemplateTable.filter_col ) )
+            {
+                std::string value = std::any_cast<std::string>( row.at(m_settings->m_TemplateTable.filter_col) );
+                lib_filter_keys.insert(value);
+                wxLogDebug("added filter value: %s", value);
+            }
+        }
+
+        // generate new tables  based on filter values and template library table
+        for (auto key: lib_filter_keys){
+            DATABASE_LIB_TABLE table = m_settings->m_TemplateTable;
+            table.filter_value = key;
+            table.name = key;
+            m_settings->m_Tables.push_back(table);
+        }     
+
         for( const DATABASE_LIB_TABLE& tableIter : m_settings->m_Tables )
         {
             std::set<std::string> columns;
@@ -327,6 +370,7 @@ void SCH_DATABASE_PLUGIN::connect()
             columns.insert( tableIter.key_col );
             columns.insert( tableIter.footprints_col );
             columns.insert( tableIter.symbols_col );
+            columns.insert( tableIter.filter_col);
 
             columns.insert( tableIter.properties.description );
             columns.insert( tableIter.properties.footprint_filters );
