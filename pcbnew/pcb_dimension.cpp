@@ -39,16 +39,22 @@
 #include <settings/settings_manager.h>
 #include <trigo.h>
 
+#define ARROW_LEGNTH_TO_HEAD_RATIO 3
 
 static const EDA_ANGLE s_arrowAngle( 27.5, DEGREES_T );
+
+const wxString PCB_DIM_RADIAL::PREFIX_RADIUS_STR     = "R ";
+const wxString PCB_DIM_RADIAL::PREFIX_DIA_STR        = "\u03A6 "; ///< phi
 
 
 PCB_DIMENSION_BASE::PCB_DIMENSION_BASE( BOARD_ITEM* aParent, KICAD_T aType ) :
         PCB_TEXT( aParent, aType ),
         m_overrideTextEnabled( false ),
+        m_overridePrefixEnabled( true ),
         m_units( EDA_UNITS::INCHES ),
         m_autoUnits( false ),
         m_unitsFormat( DIM_UNITS_FORMAT::BARE_SUFFIX ),
+        m_arrowDirection( DIM_ARROW_DIRECTION::AUTOMATIC ),
         m_precision( DIM_PRECISION::X_XXXX ),
         m_suppressZeroes( false ),
         m_lineThickness( pcbIUScale.mmToIU( 0.2 ) ),
@@ -158,6 +164,26 @@ double PCB_DIMENSION_BASE::Similarity( const BOARD_ITEM& aOther ) const
 }
 
 
+void PCB_DIMENSION_BASE::drawAnArrow( VECTOR2I startPoint, EDA_ANGLE anAngle, int aLength )
+{
+    if( aLength )
+    {
+        VECTOR2I tailEnd( aLength, 0 );
+        RotatePoint( tailEnd, -anAngle );
+        m_shapes.emplace_back( new SHAPE_SEGMENT( startPoint, startPoint + tailEnd ) );
+    }
+
+    VECTOR2I arrowEndPos( m_arrowLength, 0 );
+    VECTOR2I arrowEndNeg( m_arrowLength, 0 );
+
+    RotatePoint( arrowEndPos, -anAngle + s_arrowAngle );
+    RotatePoint( arrowEndNeg, -anAngle - s_arrowAngle );
+
+    m_shapes.emplace_back( new SHAPE_SEGMENT( startPoint, startPoint + arrowEndPos ) );
+    m_shapes.emplace_back( new SHAPE_SEGMENT( startPoint, startPoint + arrowEndNeg ) );
+}
+
+
 void PCB_DIMENSION_BASE::updateText()
 {
     wxString text = m_overrideTextEnabled ? m_valueString : GetValueText();
@@ -176,7 +202,7 @@ void PCB_DIMENSION_BASE::updateText()
         break;
     }
 
-    text.Prepend( m_prefix );
+    text.Prepend( GetPrefix() );
     text.Append( m_suffix );
 
     SetText( text );
@@ -705,7 +731,7 @@ void PCB_DIM_ALIGNED::updateGeometry()
     m_shapes.clear();
 
     VECTOR2I dimension( m_end - m_start );
-
+    
     m_measuredValue = KiROUND( dimension.EuclideanNorm() );
 
     VECTOR2I extension;
@@ -720,13 +746,13 @@ void PCB_DIM_ALIGNED::updateGeometry()
 
     VECTOR2I extStart( m_start );
     extStart += extension.Resize( m_extensionOffset );
-
-    addShape( SHAPE_SEGMENT( extStart, extStart + extension.Resize( extensionHeight ) ) );
+    SHAPE_SEGMENT extensionLine1( extStart, extStart + extension.Resize( extensionHeight ));
+    addShape( extensionLine1 );
 
     extStart = VECTOR2I( m_end );
     extStart += extension.Resize( m_extensionOffset );
-
-    addShape( SHAPE_SEGMENT( extStart, extStart + extension.Resize( extensionHeight ) ) );
+    SHAPE_SEGMENT extensionLine2( extStart, extStart + extension.Resize( extensionHeight ));
+    addShape( extensionLine2 );
 
     // Add crossbar
     VECTOR2I crossBarDistance = sign( m_height ) * extension.Resize( m_height );
@@ -747,37 +773,50 @@ void PCB_DIM_ALIGNED::updateGeometry()
     polyBox.Append( textBox.GetEnd() );
     polyBox.Append( textBox.GetEnd().x, textBox.GetOrigin().y );
     polyBox.Rotate( GetTextAngle(), textBox.GetCenter() );
+    
+    m_shapes.emplace_back(polyBox.Clone());
 
     // The ideal crossbar, if the text doesn't collide
     SEG crossbar( m_crossBarStart, m_crossBarEnd );
 
-    // Now we can draw 0, 1, or 2 crossbar lines depending on how the polygon collides
-    bool containsA = polyBox.Contains( crossbar.A );
-    bool containsB = polyBox.Contains( crossbar.B );
+    /* draw inward based on DIRECTION::INWARD or automatic detection */
+    bool drawInwardArrows = m_arrowDirection == DIM_ARROW_DIRECTION::INWARD;
+        
+    if ( m_arrowDirection == DIM_ARROW_DIRECTION::AUTOMATIC )
+    {
+        VECTOR2I point = polyBox.BBox().ClosestPointTo( crossbar.Center() );
+        drawInwardArrows = !crossbar.Contains( crossbar.LineProject( point ) );
+    }
 
-    OPT_VECTOR2I endpointA = segPolyIntersection( polyBox, crossbar );
-    OPT_VECTOR2I endpointB = segPolyIntersection( polyBox, crossbar, false );
+    if ( drawInwardArrows ) 
+    {
+        drawAnArrow( m_crossBarStart, EDA_ANGLE( dimension ) + EDA_ANGLE( 180 ), m_arrowLength * ARROW_LEGNTH_TO_HEAD_RATIO );
+        drawAnArrow( m_crossBarEnd,   EDA_ANGLE( dimension ), m_arrowLength * ARROW_LEGNTH_TO_HEAD_RATIO );
+    } 
+    else 
+    {
 
-    if( endpointA )
-        m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar.A, *endpointA ) );
+        // Now we can draw 0, 1, or 2 crossbar lines depending on how the polygon collides
+        bool containsA = polyBox.Contains( crossbar.A );
+        bool containsB = polyBox.Contains( crossbar.B );
 
-    if( endpointB )
-        m_shapes.emplace_back( new SHAPE_SEGMENT( *endpointB, crossbar.B ) );
+        OPT_VECTOR2I endpointA = segPolyIntersection( polyBox, crossbar );
+        OPT_VECTOR2I endpointB = segPolyIntersection( polyBox, crossbar, false );
 
-    if( !containsA && !containsB && !endpointA && !endpointB )
-        m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar ) );
+        if( endpointA )
+            m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar.A, *endpointA ) );
 
-    // Add arrows
-    VECTOR2I arrowEndPos( m_arrowLength, 0 );
-    VECTOR2I arrowEndNeg( m_arrowLength, 0 );
-    RotatePoint( arrowEndPos, -EDA_ANGLE( dimension ) + s_arrowAngle );
-    RotatePoint( arrowEndNeg, -EDA_ANGLE( dimension ) - s_arrowAngle );
+        if( endpointB )
+            m_shapes.emplace_back( new SHAPE_SEGMENT( *endpointB, crossbar.B ) );
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarStart, m_crossBarStart + arrowEndPos ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarStart, m_crossBarStart + arrowEndNeg ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarEnd, m_crossBarEnd - arrowEndPos ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarEnd, m_crossBarEnd - arrowEndNeg ) );
+        if( !containsA && !containsB && !endpointA && !endpointB )
+            m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar ) );
+
+        drawAnArrow( m_crossBarStart, EDA_ANGLE( dimension ), 0 );
+        drawAnArrow( m_crossBarEnd,   EDA_ANGLE( dimension ) + EDA_ANGLE( 180 ), 0 );
+    }
 }
+
 
 
 void PCB_DIM_ALIGNED::updateText()
@@ -834,15 +873,13 @@ void PCB_DIM_ALIGNED::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_P
     aList.emplace_back( _( "Height" ), unitsProvider.MessageTextFromValue( m_height ) );
 }
 
-
 PCB_DIM_ORTHOGONAL::PCB_DIM_ORTHOGONAL( BOARD_ITEM* aParent ) :
-        PCB_DIM_ALIGNED( aParent, PCB_DIM_ORTHOGONAL_T )
+    PCB_DIM_ALIGNED( aParent, PCB_DIM_ORTHOGONAL_T )
 {
     // To preserve look of old dimensions, initialize extension height based on default arrow length
     m_extensionHeight = static_cast<int>( m_arrowLength * s_arrowAngle.Sin() );
     m_orientation = DIR::HORIZONTAL;
 }
-
 
 EDA_ITEM* PCB_DIM_ORTHOGONAL::Clone() const
 {
@@ -894,6 +931,7 @@ void PCB_DIM_ORTHOGONAL::updateGeometry()
     addShape( SHAPE_SEGMENT( extStart, extStart + extension.Resize( extensionHeight ) ) );
 
     // Add crossbar
+    
     VECTOR2I crossBarDistance = sign( m_height ) * extension.Resize( m_height );
     m_crossBarStart = m_start + crossBarDistance;
 
@@ -901,7 +939,7 @@ void PCB_DIM_ORTHOGONAL::updateGeometry()
         m_crossBarEnd = VECTOR2I( m_end.x, m_crossBarStart.y );
     else
         m_crossBarEnd = VECTOR2I( m_crossBarStart.x, m_end.y );
-
+    
     // Add second extension line (m_end to crossbar end)
     if( m_orientation == DIR::HORIZONTAL )
         extension = VECTOR2I( 0, m_end.y - m_crossBarEnd.y );
@@ -914,7 +952,7 @@ void PCB_DIM_ORTHOGONAL::updateGeometry()
     extStart -= extension.Resize( m_extensionHeight );
 
     addShape( SHAPE_SEGMENT( extStart, extStart + extension.Resize( extensionHeight ) ) );
-
+    
     // Update text after calculating crossbar position but before adding crossbar lines
     updateText();
 
@@ -932,34 +970,43 @@ void PCB_DIM_ORTHOGONAL::updateGeometry()
 
     // The ideal crossbar, if the text doesn't collide
     SEG crossbar( m_crossBarStart, m_crossBarEnd );
-
-    // Now we can draw 0, 1, or 2 crossbar lines depending on how the polygon collides
-    bool containsA = polyBox.Contains( crossbar.A );
-    bool containsB = polyBox.Contains( crossbar.B );
-
-    OPT_VECTOR2I endpointA = segPolyIntersection( polyBox, crossbar );
-    OPT_VECTOR2I endpointB = segPolyIntersection( polyBox, crossbar, false );
-
-    if( endpointA )
-        m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar.A, *endpointA ) );
-
-    if( endpointB )
-        m_shapes.emplace_back( new SHAPE_SEGMENT( *endpointB, crossbar.B ) );
-
-    if( !containsA && !containsB && !endpointA && !endpointB )
-        m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar ) );
-
-    // Add arrows
     EDA_ANGLE crossBarAngle( m_crossBarEnd - m_crossBarStart );
-    VECTOR2I  arrowEndPos( m_arrowLength, 0 );
-    VECTOR2I  arrowEndNeg( m_arrowLength, 0 );
-    RotatePoint( arrowEndPos, -crossBarAngle + s_arrowAngle );
-    RotatePoint( arrowEndNeg, -crossBarAngle - s_arrowAngle );
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarStart, m_crossBarStart + arrowEndPos ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarStart, m_crossBarStart + arrowEndNeg ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarEnd, m_crossBarEnd - arrowEndPos ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_crossBarEnd, m_crossBarEnd - arrowEndNeg ) );
+    bool drawInwardArrows = m_arrowDirection == DIM_ARROW_DIRECTION::INWARD;
+
+    if ( m_arrowDirection == DIM_ARROW_DIRECTION::AUTOMATIC )
+    {
+        VECTOR2I point = polyBox.BBox().ClosestPointTo( crossbar.Center() );
+        drawInwardArrows = !crossbar.Contains( crossbar.LineProject( point ) );
+    }
+
+    if ( drawInwardArrows ) 
+    {
+        // Arrows with fixed length.
+        drawAnArrow( m_crossBarStart, crossBarAngle + EDA_ANGLE( 180 ), m_arrowLength * ARROW_LEGNTH_TO_HEAD_RATIO );
+        drawAnArrow( m_crossBarEnd, crossBarAngle, m_arrowLength * ARROW_LEGNTH_TO_HEAD_RATIO );
+    } 
+    else 
+    {
+        // Now we can draw 0, 1, or 2 crossbar lines depending on how the polygon collides
+        bool containsA = polyBox.Contains( crossbar.A );
+        bool containsB = polyBox.Contains( crossbar.B );
+
+        OPT_VECTOR2I endpointA = segPolyIntersection( polyBox, crossbar );
+        OPT_VECTOR2I endpointB = segPolyIntersection( polyBox, crossbar, false );
+
+        if( endpointA )
+            m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar.A, *endpointA ) );
+
+        if( endpointB )
+            m_shapes.emplace_back( new SHAPE_SEGMENT( *endpointB, crossbar.B ) );
+
+        if( !containsA && !containsB && !endpointA && !endpointB )
+            m_shapes.emplace_back( new SHAPE_SEGMENT( crossbar ) );
+
+        drawAnArrow( m_crossBarStart, crossBarAngle, 0);
+        drawAnArrow( m_crossBarEnd, crossBarAngle + EDA_ANGLE( 180 ), 0);
+    }
 }
 
 
@@ -1139,15 +1186,7 @@ void PCB_DIM_LEADER::updateGeometry()
 
     m_shapes.emplace_back( new SHAPE_SEGMENT( start, *arrowSegEnd ) );
 
-    // Add arrows
-    VECTOR2I arrowEndPos( m_arrowLength, 0 );
-    VECTOR2I arrowEndNeg( m_arrowLength, 0 );
-    RotatePoint( arrowEndPos, -EDA_ANGLE( firstLine ) + s_arrowAngle );
-    RotatePoint( arrowEndNeg, -EDA_ANGLE( firstLine ) - s_arrowAngle );
-
-    m_shapes.emplace_back( new SHAPE_SEGMENT( start, start + arrowEndPos ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( start, start + arrowEndNeg ) );
-
+    drawAnArrow( start, EDA_ANGLE( firstLine ), 0 );    
 
     if( !GetText().IsEmpty() )
     {
@@ -1201,12 +1240,14 @@ void PCB_DIM_LEADER::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PA
 PCB_DIM_RADIAL::PCB_DIM_RADIAL( BOARD_ITEM* aParent ) :
         PCB_DIMENSION_BASE( aParent, PCB_DIM_RADIAL_T )
 {
-    m_unitsFormat         = DIM_UNITS_FORMAT::NO_SUFFIX;
-    m_overrideTextEnabled = false;
-    m_keepTextAligned     = true;
-    m_isDiameter          = false;
-    m_prefix              = "R ";
-    m_leaderLength        = m_arrowLength * 3;
+    m_unitsFormat           = DIM_UNITS_FORMAT::NO_SUFFIX;
+    m_arrowDirection        = DIM_ARROW_DIRECTION::AUTOMATIC;
+    m_overrideTextEnabled   = false;
+    m_overridePrefixEnabled = false;
+    m_keepTextAligned       = true;
+    m_isDiameter            = false;
+    m_prefix                = PREFIX_RADIUS_STR;
+    m_leaderLength          = m_arrowLength * ARROW_LEGNTH_TO_HEAD_RATIO;
 }
 
 
@@ -1242,49 +1283,56 @@ VECTOR2I PCB_DIM_RADIAL::GetKnee() const
     return m_end + radial.Resize( m_leaderLength );
 }
 
-
 void PCB_DIM_RADIAL::updateText()
 {
     if( m_keepTextAligned )
-    {
-        VECTOR2I  textLine( GetTextPos() - GetKnee() );
-        EDA_ANGLE textAngle = FULL_CIRCLE - EDA_ANGLE( textLine );
-
-        textAngle.Normalize();
-
-        if( textAngle > ANGLE_90 && textAngle <= ANGLE_270 )
-            textAngle -= ANGLE_180;
-
-        // Round to nearest degree
-        textAngle = EDA_ANGLE( KiROUND( textAngle.AsDegrees() ), DEGREES_T );
-
-        SetTextAngle( textAngle );
-    }
+        updateTextAngle();
 
     PCB_DIMENSION_BASE::updateText();
 }
 
-
-void PCB_DIM_RADIAL::updateGeometry()
+void PCB_DIM_RADIAL::updateTextAngle() 
 {
-    m_shapes.clear();
+    VECTOR2I  textLine( GetTextPos() - GetKnee() );
+    EDA_ANGLE textAngle = FULL_CIRCLE - EDA_ANGLE( textLine );
 
-    VECTOR2I center( m_start );
-    VECTOR2I centerArm( 0, m_arrowLength );
+    textAngle.Normalize();
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( center - centerArm, center + centerArm ) );
+    if( textAngle > ANGLE_90 && textAngle <= ANGLE_270 )
+        textAngle -= ANGLE_180;
 
-    RotatePoint( centerArm, -ANGLE_90 );
+    // Round to nearest degree
+    textAngle = EDA_ANGLE( KiROUND( textAngle.AsDegrees() ), DEGREES_T );
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( center - centerArm, center + centerArm ) );
+    SetTextAngle( textAngle );
+}
 
+void PCB_DIM_RADIAL::updateMeasuredValue() 
+{
     VECTOR2I radius( m_end - m_start );
 
     if( m_isDiameter )
         m_measuredValue = KiROUND( radius.EuclideanNorm() * 2 );
     else
         m_measuredValue = KiROUND( radius.EuclideanNorm() );
+}
 
+wxString PCB_DIM_RADIAL::GetPrefix() const
+{
+    if ( m_overridePrefixEnabled )
+        return m_prefix;
+    
+    if ( m_isDiameter )
+        return PREFIX_DIA_STR;
+    else
+        return PREFIX_RADIUS_STR;
+}
+
+void PCB_DIM_RADIAL::updateGeometry()
+{
+    m_shapes.clear();
+
+    //updateMeasuredValue();
     updateText();
 
     // Now that we have the text updated, we can determine how to draw the second line
@@ -1302,30 +1350,61 @@ void PCB_DIM_RADIAL::updateGeometry()
     VECTOR2I radial( m_end - m_start );
     radial = radial.Resize( m_leaderLength );
 
-    SEG arrowSeg( m_end, m_end + radial );
-    SEG textSeg( arrowSeg.B, GetTextPos() );
+    bool isOutwardArrow = DIM_ARROW_DIRECTION::OUTWARD == m_arrowDirection;
 
-    OPT_VECTOR2I arrowSegEnd = segPolyIntersection( polyBox, arrowSeg );
-    OPT_VECTOR2I textSegEnd = segPolyIntersection( polyBox, textSeg );
+    if (m_arrowDirection == DIM_ARROW_DIRECTION::AUTOMATIC)
+        isOutwardArrow = (m_start - textBox.GetOrigin()).EuclideanNorm() < m_measuredValue;
+    
+    if ( isOutwardArrow ) 
+    {
+        m_isDiameter = true;
+        updateMeasuredValue();
+        //set text to center position.
+        SetTextPos(m_start);
+        updateText();
+        
+        //todo: anchor overlap, we need to setup moving anchor to move the text not m_start point.
+        EDA_ANGLE arrowAngle = EDA_ANGLE(atan2(m_start.y - m_end.y, m_start.x - m_end.x), EDA_ANGLE_T::RADIANS_T);
+        const int arrowTail = (m_start - m_end).EuclideanNorm() - textBox.GetWidth() / 2;
+        drawAnArrow( m_end, arrowAngle, arrowTail);
+        drawAnArrow( 2 * m_start - m_end, ANGLE_180 + arrowAngle, arrowTail);
+    } 
+    else 
+    {
+        m_isDiameter = false;
+        updateMeasuredValue();
+        updateText();
+        VECTOR2I center( m_start );
+        VECTOR2I centerArm( 0, m_arrowLength );
 
-    if( arrowSegEnd )
-        arrowSeg.B = *arrowSegEnd;
+        m_shapes.emplace_back( new SHAPE_SEGMENT( center - centerArm, center + centerArm ) );
+        RotatePoint( centerArm, -ANGLE_90 );
+        m_shapes.emplace_back( new SHAPE_SEGMENT( center - centerArm, center + centerArm ) );
 
-    if( textSegEnd )
-        textSeg.B = *textSegEnd;
+        SEG arrowSeg( m_end, m_end + radial );
+        SEG textSeg( m_end + radial, GetTextPos() );
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( arrowSeg ) );
+        OPT_VECTOR2I arrowSegEnd = segPolyIntersection( polyBox, arrowSeg );
+        OPT_VECTOR2I textSegEnd = segPolyIntersection( polyBox, textSeg );
 
-    // Add arrows
-    VECTOR2I arrowEndPos( m_arrowLength, 0 );
-    VECTOR2I arrowEndNeg( m_arrowLength, 0 );
-    RotatePoint( arrowEndPos, -EDA_ANGLE( radial ) + s_arrowAngle );
-    RotatePoint( arrowEndNeg, -EDA_ANGLE( radial ) - s_arrowAngle );
+        if( arrowSegEnd )
+            arrowSeg.B = *arrowSegEnd;
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_end, m_end + arrowEndPos ) );
-    m_shapes.emplace_back( new SHAPE_SEGMENT( m_end, m_end + arrowEndNeg ) );
+        if( textSegEnd )
+            textSeg.B = *textSegEnd;
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( textSeg ) );
+        m_shapes.emplace_back( new SHAPE_SEGMENT( arrowSeg ) );
+
+        // Add arrows
+        VECTOR2I arrowEndPos( m_arrowLength, 0 );
+        VECTOR2I arrowEndNeg( m_arrowLength, 0 );
+        RotatePoint( arrowEndPos, -EDA_ANGLE( radial ) + s_arrowAngle );
+        RotatePoint( arrowEndNeg, -EDA_ANGLE( radial ) - s_arrowAngle );
+
+        m_shapes.emplace_back( new SHAPE_SEGMENT( m_end, m_end + arrowEndPos ) );
+        m_shapes.emplace_back( new SHAPE_SEGMENT( m_end, m_end + arrowEndNeg ) );
+        m_shapes.emplace_back( new SHAPE_SEGMENT( textSeg ) );
+    }
 }
 
 
@@ -1423,6 +1502,11 @@ static struct DIMENSION_DESC
                     .Map( DIM_UNITS_MODE::MILLIMETRES, _HKI( "Millimeters" ) )
                     .Map( DIM_UNITS_MODE::AUTOMATIC,   _HKI( "Automatic" ) );
 
+        ENUM_MAP<DIM_ARROW_DIRECTION>::Instance()
+            .Map( DIM_ARROW_DIRECTION::AUTOMATIC,   _HKI( "Automatic" ) )
+            .Map( DIM_ARROW_DIRECTION::INWARD,      _HKI( "Inward" ) )
+            .Map( DIM_ARROW_DIRECTION::OUTWARD,     _HKI( "Outward" ) );
+
         PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
         REGISTER_TYPE( PCB_DIMENSION_BASE );
         propMgr.AddTypeCast( new TYPE_CAST<PCB_DIMENSION_BASE, PCB_TEXT> );
@@ -1446,6 +1530,12 @@ static struct DIMENSION_DESC
             return dynamic_cast<PCB_DIM_LEADER*>( aItem ) == nullptr;
                 };
 
+        auto isMultiArrowDirection =
+            []( INSPECTABLE* aItem ) -> bool {
+            return dynamic_cast<PCB_DIM_ALIGNED*>( aItem ) != nullptr 
+                || dynamic_cast<PCB_DIM_RADIAL*>( aItem ) != nullptr;
+                };
+        
         propMgr.AddProperty( new PROPERTY<PCB_DIMENSION_BASE, wxString>( _HKI( "Prefix" ),
                 &PCB_DIMENSION_BASE::ChangePrefix, &PCB_DIMENSION_BASE::GetPrefix ),
                 groupDimension )
@@ -1480,12 +1570,16 @@ static struct DIMENSION_DESC
                 &PCB_DIMENSION_BASE::ChangeSuppressZeroes, &PCB_DIMENSION_BASE::GetSuppressZeroes ),
                 groupDimension )
                 .SetAvailableFunc( isNotLeader );
+        propMgr.AddProperty( new PROPERTY_ENUM<PCB_DIMENSION_BASE, DIM_ARROW_DIRECTION>( _HKI( "Arrow Direction"),
+            &PCB_DIMENSION_BASE::changeArrowDirection, &PCB_DIMENSION_BASE::getArrowDirection ), groupDimension )
+                .SetAvailableFunc( isMultiArrowDirection );
     }
 } _DIMENSION_DESC;
 
 ENUM_TO_WXANY( DIM_PRECISION )
 ENUM_TO_WXANY( DIM_UNITS_FORMAT )
 ENUM_TO_WXANY( DIM_UNITS_MODE )
+ENUM_TO_WXANY( DIM_ARROW_DIRECTION )
 
 
 static struct ALIGNED_DIMENSION_DESC
@@ -1513,7 +1607,7 @@ static struct ALIGNED_DIMENSION_DESC
                 &PCB_DIM_ALIGNED::ChangeExtensionHeight, &PCB_DIM_ALIGNED::GetExtensionHeight,
                 PROPERTY_DISPLAY::PT_SIZE ),
                 groupDimension );
-
+                
         propMgr.OverrideAvailability( TYPE_HASH( PCB_DIM_ALIGNED ), TYPE_HASH( EDA_TEXT ),
                                       _HKI( "Visible" ),
                                       []( INSPECTABLE* aItem ) { return false; } );

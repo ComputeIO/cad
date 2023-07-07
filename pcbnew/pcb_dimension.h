@@ -77,6 +77,16 @@ enum class DIM_UNITS_MODE
 };
 
 /**
+* Used for dimension's arrow.
+*/
+enum class DIM_ARROW_DIRECTION
+{
+    INWARD,     ///< >-----<
+    OUTWARD,    ///< <----->
+    AUTOMATIC   ///< automatic based on text position
+};
+
+/**
  * Frame to show around dimension text
  */
 enum class DIM_TEXT_BORDER
@@ -128,6 +138,9 @@ public:
     bool GetOverrideTextEnabled() const { return m_overrideTextEnabled; }
     void SetOverrideTextEnabled( bool aOverride ) { m_overrideTextEnabled = aOverride; }
 
+    bool GetOverridePrefixEnabled() const { return m_overridePrefixEnabled; }
+    void SetOverridePrefixEnabled( bool aOverride ) { m_overridePrefixEnabled = aOverride; }
+
     wxString GetOverrideText() const { return m_valueString; }
     void SetOverrideText( const wxString& aValue ) { m_valueString = aValue; }
 
@@ -163,7 +176,10 @@ public:
         updateText();
     }
 
-    wxString GetPrefix() const { return m_prefix; }
+    /**
+     * Gets prefix value.
+     */
+    virtual wxString GetPrefix() const { return m_prefix; }
     void SetPrefix( const wxString& aPrefix );
 
     void ChangePrefix( const wxString& aPrefix )
@@ -179,6 +195,15 @@ public:
     {
         SetSuffix( aSuffix );
         updateText();
+    }
+
+    DIM_ARROW_DIRECTION getArrowDirection() const { return m_arrowDirection; }
+    void setArrowDirection( const DIM_ARROW_DIRECTION& aDirection ) { m_arrowDirection = aDirection; }
+    
+    void changeArrowDirection( const DIM_ARROW_DIRECTION& aDirection ) {
+        setArrowDirection( aDirection );
+        updateText();
+        updateGeometry();
     }
 
     EDA_UNITS GetUnits() const { return m_units; }
@@ -313,28 +338,40 @@ protected:
                                              bool aStart = true );
     static OPT_VECTOR2I segCircleIntersection( CIRCLE& aCircle, SEG& aSeg, bool aStart = true );
 
+    /**
+     * Draws an arrow and updates the shape container.
+     * example arrow 0Deg tail:4  (---->)
+     * 
+     * @param startPoint arrow point.
+     * @param anAngle arrow angle.
+     * @param aLength arrow tail length.
+     */
+    void drawAnArrow( VECTOR2I aStartPoint, EDA_ANGLE anAngle, int aLength );
+
     // Value format
-    bool              m_overrideTextEnabled;   ///< Manually specify the displayed measurement value
-    wxString          m_valueString;     ///< Displayed value when m_overrideValue = true
-    wxString          m_prefix;          ///< String prepended to the value
-    wxString          m_suffix;          ///< String appended to the value
-    EDA_UNITS         m_units;           ///< 0 = inches, 1 = mm
-    bool              m_autoUnits;       ///< If true, follow the currently selected UI units
-    DIM_UNITS_FORMAT  m_unitsFormat;     ///< How to render the units suffix
-    DIM_PRECISION     m_precision;       ///< Number of digits to display after decimal
-    bool              m_suppressZeroes;  ///< Suppress trailing zeroes
+    bool                    m_overrideTextEnabled;   ///< Manually specify the displayed measurement value
+    wxString                m_valueString;     ///< Displayed value when m_overrideValue = true
+    bool                    m_overridePrefixEnabled; ///< Manually specify the displayed prefix value.
+    wxString                m_prefix;          ///< String prepended to the value
+    wxString                m_suffix;          ///< String appended to the value
+    EDA_UNITS               m_units;           ///< 0 = inches, 1 = mm
+    bool                    m_autoUnits;       ///< If true, follow the currently selected UI units
+    DIM_UNITS_FORMAT        m_unitsFormat;     ///< How to render the units suffix
+    DIM_ARROW_DIRECTION     m_arrowDirection;  ///< direction of dimension arrow.
+    DIM_PRECISION           m_precision;       ///< Number of digits to display after decimal
+    bool                    m_suppressZeroes;  ///< Suppress trailing zeroes
 
     // Geometry
-    int               m_lineThickness;    ///< Thickness used for all graphics in the dimension
-    int               m_arrowLength;      ///< Length of arrow shapes
-    int               m_extensionOffset;  ///< Distance from feature points to extension line start
-    DIM_TEXT_POSITION m_textPosition;     ///< How to position the text
-    bool              m_keepTextAligned;  ///< Calculate text orientation to match dimension
+    int                     m_lineThickness;    ///< Thickness used for all graphics in the dimension
+    int                     m_arrowLength;      ///< Length of arrow shapes
+    int                     m_extensionOffset;  ///< Distance from feature points to extension line start
+    DIM_TEXT_POSITION       m_textPosition;     ///< How to position the text
+    bool                    m_keepTextAligned;  ///< Calculate text orientation to match dimension
 
     // Internal
-    int               m_measuredValue;    ///< value of PCB dimensions
-    VECTOR2I          m_start;
-    VECTOR2I          m_end;
+    int                     m_measuredValue;    ///< value of PCB dimensions
+    VECTOR2I                m_start;
+    VECTOR2I                m_end;
 
     ///< Internal cache of drawn shapes
     std::vector<std::shared_ptr<SHAPE>> m_shapes;
@@ -571,10 +608,15 @@ protected:
 
     void updateText() override;
     void updateGeometry() override;
+    wxString GetPrefix() const override;
 
 private:
+    static const wxString PREFIX_RADIUS_STR;
+    static const wxString PREFIX_DIA_STR;
     bool m_isDiameter;
     int  m_leaderLength;
+    void updateTextAngle();
+    void updateMeasuredValue();
 };
 
 

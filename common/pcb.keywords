@@ -41,6 +41,7 @@ arrow1a
 arrow1b
 arrow2a
 arrow2b
+arrow_direction
 arrow_length
 at
 attr
@@ -223,6 +224,7 @@ other_layers_line_width
 other_layers_text_dims
 oval
 override_value
+override_prefix
 pad
 pads
 pad_drill

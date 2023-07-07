@@ -66,12 +66,15 @@ class DIALOG_DIMENSION_PROPERTIES_BASE : public DIALOG_SHIM
 		wxChoice* m_cbUnits;
 		wxStaticText* m_lblPrefix;
 		wxTextCtrl* m_txtPrefix;
+		wxCheckBox* m_cbOverridePrefix;
 		wxStaticText* m_txtUnitsFormat;
 		wxChoice* m_cbUnitsFormat;
 		wxStaticText* m_lblSuffix;
 		wxTextCtrl* m_txtSuffix;
 		wxStaticText* m_lblPrecision;
+		wxStaticText* m_lblArrowDirection;
 		wxChoice* m_cbPrecision;
+		wxChoice* m_cbArrowDirection;
 		wxCheckBox* m_cbSuppressZeroes;
 		wxStaticText* m_lblLayer;
 		PCB_LAYER_BOX_SELECTOR* m_cbLayer;
