@@ -147,8 +147,8 @@ void DATABASE_LIB_SETTINGS::parse_lib_entry( const nlohmann::json entry,
     std::string filter = fetchOrDefault<std::string>( entry, "table_filter" );
     if( filter != "" )
     {
-        table->filter_col = filter.substr( 0, filter.find( ":" ) );
-        filter.erase( 0, filter.find( ":" ) + 1 );
+        table->filter_col = filter.substr( 0, filter.find( "=" ) );
+        filter.erase( 0, filter.find( "=" ) + 1 );
         table->filter_value = filter;
     }
 

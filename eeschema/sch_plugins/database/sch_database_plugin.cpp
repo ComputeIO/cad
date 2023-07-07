@@ -90,19 +90,24 @@ void SCH_DATABASE_PLUGIN::EnumerateSymbolLib( std::vector<LIB_SYMBOL*>& aSymbolL
         }
 
         // filter results by filter_col
-        wxLogDebug("Filter database rows for lib %s with filter: %s:%s", table.name, table.filter_col, table.filter_value);
-        std::vector<DATABASE_CONNECTION::ROW> filtered_results;
-        for( DATABASE_CONNECTION::ROW& result : results )
+        if( table.filter_col != "" && table.filter_value != "" )
         {
-            if( !result.count( table.filter_col ) )
-                continue;
+            wxLogDebug( "Filter database rows for lib %s with filter: %s:%s", table.name,
+                        table.filter_col, table.filter_value );
+            std::vector<DATABASE_CONNECTION::ROW> filtered_results;
+            for( DATABASE_CONNECTION::ROW& result : results )
+            {
+                if( !result.count( table.filter_col ) )
+                    continue;
 
-            std::string filter_value = std::any_cast<std::string>( result[table.filter_col] );
-            if (filter_value == table.filter_value){
-                filtered_results.push_back(result);
+                std::string filter_value = std::any_cast<std::string>( result[table.filter_col] );
+                if( filter_value == table.filter_value )
+                {
+                    filtered_results.push_back( result );
+                }
             }
+            results = filtered_results;
         }
-        results = filtered_results;
 
         for( DATABASE_CONNECTION::ROW& result : results )
         {
