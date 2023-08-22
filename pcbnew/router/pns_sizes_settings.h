@@ -59,8 +59,8 @@ public:
     void ClearLayerPairs();
     void AddLayerPair( int aL1, int aL2 );
 
-    // The working clearance, from the current net to anything else (without knowing the net of the
-    // other object).  Specific clearance to another object may be resolved differently.
+    // The optimal working clearance, from the current net to anything else (without knowing the 
+    // net of the other object).  Specific clearance to another object may be resolved differently.
     int Clearance() const { return m_clearance; }
     void SetClearance( int aClearance ) { m_clearance = aClearance; }
 
@@ -101,6 +101,9 @@ public:
 
     int ViaDrill() const { return m_viaDrill; }
     void SetViaDrill( int aDrill ) { m_viaDrill = aDrill; }
+
+    int ViaClearance() const { return m_viaClearance; }
+    void SetViaClearance( int aViaClearance ) { m_viaClearance = aViaClearance; }
 
     std::optional<int> PairedLayer( int aLayerId )
     {
@@ -144,6 +147,7 @@ private:
     VIATYPE m_viaType;
     int     m_viaDiameter;
     int     m_viaDrill;
+    int     m_viaClearance;
 
     int     m_diffPairWidth;
     int     m_diffPairGap;

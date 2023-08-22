@@ -740,30 +740,11 @@ bool ROUTER::movePlacing( const VECTOR2I& aP, ITEM* aEndItem )
             continue;
 
         const LINE* l = static_cast<const LINE*>( item );
-        int clearance = GetRuleResolver()->Clearance( item, nullptr );
-
-        m_iface->DisplayItem( l, clearance, false, PNS_HEAD_TRACE );
+        m_iface->DisplayItem( l, m_sizes.Clearance(), false, PNS_HEAD_TRACE );
 
         if( l->EndsWithVia() )
-        {
-            const VIA& via = l->Via();
-            clearance = GetRuleResolver()->Clearance( &via, nullptr );
-
-            if( via.HasHole() )
-            {
-                int holeClearance = GetRuleResolver()->Clearance( via.Hole(), nullptr );
-                int annularWidth = std::max( 0, via.Diameter() - via.Drill() ) / 2;
-                int excessHoleClearance = holeClearance - annularWidth;
-
-                if( excessHoleClearance > clearance )
-                    clearance = excessHoleClearance;
-            }
-
-            m_iface->DisplayItem( &l->Via(), clearance, false, PNS_HEAD_TRACE );
-        }
+            m_iface->DisplayItem( &l->Via(), m_sizes.ViaClearance(), false, PNS_HEAD_TRACE );
     }
-
-    //ITEM_SET tmp( &current );
 
     updateView( m_placer->CurrentNode( true ), current );
 

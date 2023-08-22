@@ -70,8 +70,9 @@ public:
     void UpdateItem( PNS::ITEM* aItem ) override;
     void RemoveItem( PNS::ITEM* aItem ) override;
     void Commit() override {}
-    bool ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* aStartItem,
-                      PNS::NET_HANDLE aNet ) override;
+    bool ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* aStartItem,
+                     PCB_LAYER_ID aLayer,
+                     PNS::NET_HANDLE aNet, VECTOR2I aPos ) override;
     int StackupHeight( int aFirstLayer, int aSecondLayer ) const override;
 
     int GetNetCode( PNS::NET_HANDLE aNet ) const override { return -1; }
@@ -80,8 +81,6 @@ public:
     PNS::NET_HANDLE GetOrphanedNetHandle() override;
 
     void SetDebugDecorator( PNS::DEBUG_DECORATOR* aDec );
-
-    void SetStartLayer( int aLayer ) { m_startLayer = aLayer; }
 
     virtual PNS::NODE* GetWorld() const override { return m_world; };
 
@@ -108,7 +107,6 @@ protected:
 protected:
     PNS::NODE* m_world;
     BOARD*     m_board;
-    int        m_startLayer;
 };
 
 class PNS_KICAD_IFACE : public PNS_KICAD_IFACE_BASE

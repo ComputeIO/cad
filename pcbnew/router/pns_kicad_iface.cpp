@@ -641,26 +641,54 @@ bool PNS_KICAD_IFACE_BASE::inheritTrackWidth( PNS::ITEM* aItem, int* aInheritedW
 }
 
 
-bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* aStartItem,
-                                        PNS::NET_HANDLE aNet )
+bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* aStartItem, 
+                                       PCB_LAYER_ID aLayer, PNS::NET_HANDLE aNet, VECTOR2I aPos )
 {
     BOARD_DESIGN_SETTINGS& bds = m_board->GetDesignSettings();
-    PNS::CONSTRAINT        constraint;
+    std::shared_ptr<DRC_ENGINE> drcEngine = bds.m_DRCEngine;
+    DRC_CONSTRAINT        constraint;
 
-    if( aStartItem && m_startLayer < 0 )
-        m_startLayer = aStartItem->Layer();
+    if( aStartItem )
+    { // Try to initialise if missing
+        if( aLayer < 0 )
+            aLayer = ToLAYER_ID( aStartItem->Layer() );
+        if( aNet == nullptr )
+            aNet = aStartItem->Net();
+        if( aPos.x == 0 || aPos.y == 0 )
+            aPos = aStartItem->Anchor( 0 );
+    }
+    
+    PNS:::NET_HANDLE coupledNet = aNet == nullptr ? nullptr : m_ruleResolver->DpCoupledNet( aNet );
+
+    PCB_TRACK dummyTrack( m_board );
+    dummyTrack.SetFlags( ROUTER_TRANSIENT );
+    dummyTrack.SetLayer( aLayer );
+    dummyTrack.SetNet( static_cast<NETINFO_ITEM*>( aNet ) );
+    dummyTrack.SetStart( aPos );
+    dummyTrack.SetEnd( aPos );
+
+    PCB_TRACK coupledTrack( m_board );
+    coupledTrack.SetFlags( ROUTER_TRANSIENT );
+    coupledTrack.SetLayer( aLayer );
+    coupledTrack.SetNet( static_cast<NETINFO_ITEM*>( coupleNet ) );
+    coupledTrack.SetStart( aPos );
+    coupledTrack.SetEnd( aPos );
 
     aSizes.SetClearance( bds.m_MinClearance );
     aSizes.SetMinClearance( bds.m_MinClearance );
     aSizes.SetClearanceSource( _( "board minimum clearance" ) );
 
-    if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_CLEARANCE, aStartItem, nullptr,
-                                         m_startLayer, &constraint ) )
+    if( !(constraint = drcEngine->EvalRules( CLEARANCE_CONSTRAINT, &dummyTrack,
+                                             nullptr, aLayer )).IsNull() )
     {
+        if( constraint.m_Value.Opt() > bds.m_MinClearance )
+        {
+            aSizes.SetClearance( constraint.m_Value.Opt() );
+        }
         if( constraint.m_Value.Min() > bds.m_MinClearance )
         {
-            aSizes.SetClearance( constraint.m_Value.Min() );
-            aSizes.SetClearanceSource( constraint.m_RuleName );
+            aSizes.SetMinClearance( constraint.m_Value.Min() );
+            aSizes.SetClearanceSource( constraint.GetName() );
         }
     }
 
@@ -676,16 +704,16 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
             aSizes.SetWidthSource( _( "existing track" ) );
     }
 
-    if( !found && bds.UseNetClassTrack() && aStartItem )
+    if( !found && bds.UseNetClassTrack() )
     {
-        if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_WIDTH, aStartItem, nullptr,
-                                             m_startLayer, &constraint ) )
+        if( !(constraint = drcEngine->EvalRules( TRACK_WIDTH_CONSTRAINT, &dummyTrack, 
+                                                 nullptr, aLayer )).IsNull() )
         {
             trackWidth = std::max( trackWidth, constraint.m_Value.Opt() );
             found = true;
 
             if( trackWidth == constraint.m_Value.Opt() )
-                aSizes.SetWidthSource( constraint.m_RuleName );
+                aSizes.SetWidthSource( constraint.GetName() );
         }
     }
 
@@ -705,27 +733,36 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
 
     int viaDiameter = bds.m_ViasMinSize;
     int viaDrill = bds.m_MinThroughDrill;
+    int viaClearance = bds.m_MinClearance;
 
-    PNS::VIA dummyVia, coupledVia;
+    PCB_VIA dummyVia( m_board );
+    dummyVia.SetFlags( ROUTER_TRANSIENT );
+    dummyVia.SetNet( static_cast<NETINFO_ITEM*>( aNet ) );
+    dummyVia.SetStart( aPos );
 
-    if( aStartItem )
+    PCB_VIA coupledVia( m_board );
+    coupledVia.SetFlags( ROUTER_TRANSIENT );
+    coupledVia.SetNet( nullptr );
+    coupledVia.SetStart( aPos );
+
+    if( bds.UseNetClassVia() )   // netclass value
     {
-        dummyVia.SetNet( aStartItem->Net() );
-        coupledVia.SetNet( m_ruleResolver->DpCoupledNet( aStartItem->Net() ) );
-    }
-
-    if( bds.UseNetClassVia() && aStartItem )   // netclass value
-    {
-        if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_VIA_DIAMETER, &dummyVia,
-                                             nullptr, m_startLayer, &constraint ) )
+        if( !(constraint = drcEngine->EvalRules( VIA_DIAMETER_CONSTRAINT, &dummyVia,
+                                                 nullptr, aLayer )).IsNull() )
         {
             viaDiameter = std::max( viaDiameter, constraint.m_Value.Opt() );
         }
 
-        if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_VIA_HOLE, &dummyVia,
-                                             nullptr, m_startLayer, &constraint ) )
+        if( !(constraint = drcEngine->EvalRules( HOLE_SIZE_CONSTRAINT, &dummyVia,
+                                                 nullptr, aLayer )).IsNull() )
         {
             viaDrill = std::max( viaDrill, constraint.m_Value.Opt() );
+        }
+
+        if( !(constraint = drcEngine->EvalRules( CLEARANCE_CONSTRAINT, &dummyVia,
+                                                 &coupledVia, aLayer )).IsNull() )
+        { // Needs a different via to accommodate rulesets that have explicit requirements on B on all rules
+            viaClearance = std::max( viaClearance, constraint.m_Value.Opt() );
         }
     }
     else
@@ -736,10 +773,12 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
 
     aSizes.SetViaDiameter( viaDiameter );
     aSizes.SetViaDrill( viaDrill );
+    aSizes.SetViaClearance( viaClearance );
 
     int diffPairWidth = bds.m_TrackMinWidth;
     int diffPairGap = bds.m_MinClearance;
     int diffPairViaGap = bds.m_MinClearance;
+    coupledVia.SetNet( static_cast<NETINFO_ITEM*>( coupledNet ) );
 
     aSizes.SetDiffPairWidthSource( _( "board minimum track width" ) );
     aSizes.SetDiffPairGapSource( _( "board minimum clearance" ) );
@@ -751,25 +790,30 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
         found = inheritTrackWidth( aStartItem, &diffPairWidth );
 
     // Next, pick up gap from netclass, and width also if we didn't get a starting width above
-    if( bds.UseNetClassDiffPair() && aStartItem )
+    if( bds.UseNetClassDiffPair() )
     {
-        if( !found && m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_WIDTH, aStartItem,
-                                                       nullptr, m_startLayer, &constraint ) )
+        if( !found && !(constraint = drcEngine->EvalRules( TRACK_WIDTH_CONSTRAINT, &dummyTrack,
+                                                           &coupledTrack, aLayer )).IsNull() )
         {
             diffPairWidth = std::max( diffPairWidth, constraint.m_Value.Opt() );
 
             if( diffPairWidth == constraint.m_Value.Opt() )
-                aSizes.SetDiffPairWidthSource( constraint.m_RuleName );
+                aSizes.SetDiffPairWidthSource( constraint.GetName() );
         }
 
-        if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_DIFF_PAIR_GAP, aStartItem,
-                                             nullptr, m_startLayer, &constraint ) )
+        if( !(constraint = drcEngine->EvalRules( DIFF_PAIR_GAP_CONSTRAINT, &dummyTrack,
+                                                 &coupledTrack, aLayer )).IsNull() )
         {
             diffPairGap = std::max( diffPairGap, constraint.m_Value.Opt() );
-            diffPairViaGap = std::max( diffPairViaGap, constraint.m_Value.Opt() );
 
             if( diffPairGap == constraint.m_Value.Opt() )
-                aSizes.SetDiffPairGapSource( constraint.m_RuleName );
+                aSizes.SetDiffPairGapSource( constraint.GetName() );
+        }
+
+        if( !(constraint = drcEngine->EvalRules( CLEARANCE_CONSTRAINT, &dummyVia, &coupledVia,
+                                                 UNDEFINED_LAYER )).IsNull() )
+        {
+            diffPairViaGap = std::max( diffPairViaGap, constraint.m_Value.Opt() );
         }
     }
     else
@@ -789,16 +833,16 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
 
     int holeToHoleMin = bds.m_HoleToHoleMin;
 
-    if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, &dummyVia,
-                                         &dummyVia, UNDEFINED_LAYER, &constraint ) )
+    if( !(constraint = drcEngine->EvalRules( HOLE_TO_HOLE_CONSTRAINT, &dummyVia, &dummyVia,
+                                             UNDEFINED_LAYER )).IsNull() )
     {
         holeToHoleMin = constraint.m_Value.Min();
     }
 
     aSizes.SetHoleToHole( holeToHoleMin );
 
-    if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, &dummyVia,
-                                         &coupledVia, UNDEFINED_LAYER, &constraint ) )
+    if( !(constraint = drcEngine->EvalRules( HOLE_TO_HOLE_CONSTRAINT, &dummyVia, &coupledVia,
+                                             UNDEFINED_LAYER )).IsNull() )
     {
         holeToHoleMin = constraint.m_Value.Min();
     }
@@ -1040,7 +1084,6 @@ PNS_KICAD_IFACE_BASE::PNS_KICAD_IFACE_BASE()
     m_board = nullptr;
     m_world = nullptr;
     m_debugDecorator = nullptr;
-    m_startLayer = -1;
 }
 
 

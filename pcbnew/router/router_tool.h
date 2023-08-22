@@ -79,7 +79,7 @@ private:
 
     int getStartLayer( const PNS::ITEM* aItem );
     void switchLayerOnViaPlacement();
-    void updateSizesAfterLayerSwitch( PCB_LAYER_ID targetLayer, const VECTOR2I& aPos );
+    void reprobeSizes( const VECTOR2I& aPos, PCB_LAYER_ID overrideLayer = UNDEFINED_LAYER );
 
     int onLayerCommand( const TOOL_EVENT& aEvent );
     int onViaCommand( const TOOL_EVENT& aEvent );
