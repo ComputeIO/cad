@@ -815,6 +815,18 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
         {
             diffPairViaGap = std::max( diffPairViaGap, constraint.m_Value.Opt() );
         }
+
+        if( !(constraint = drcEngine->EvalRules( HOLE_TO_HOLE_CONSTRAINT, &dummyVia, &coupledVia,
+                                                 UNDEFINED_LAYER )).IsNull() )
+        {
+            diffPairViaGap = std::max( diffPairViaGap, constraint.m_Value.Opt() - (viaDiameter-viaDrill) );
+        }
+
+        if( !(constraint = drcEngine->EvalRules( HOLE_CLEARANCE_CONSTRAINT, &dummyVia, &coupledVia,
+                                                 UNDEFINED_LAYER )).IsNull() )
+        {
+            diffPairViaGap = std::max( diffPairViaGap, constraint.m_Value.Opt() - (viaDiameter-viaDrill)/2 );
+        }
     }
     else
     {
@@ -840,14 +852,6 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
     }
 
     aSizes.SetHoleToHole( holeToHoleMin );
-
-    if( !(constraint = drcEngine->EvalRules( HOLE_TO_HOLE_CONSTRAINT, &dummyVia, &coupledVia,
-                                             UNDEFINED_LAYER )).IsNull() )
-    {
-        holeToHoleMin = constraint.m_Value.Min();
-    }
-
-    aSizes.SetDiffPairHoleToHole( holeToHoleMin );
 
     return true;
 }

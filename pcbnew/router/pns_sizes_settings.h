@@ -78,22 +78,18 @@ public:
     void SetBoardMinTrackWidth( int aWidth ) { m_boardMinTrackWidth = aWidth; }
 
     int DiffPairWidth() const { return m_diffPairWidth; }
+    void SetDiffPairWidth( int aWidth ) { m_diffPairWidth = aWidth; }
+
     int DiffPairGap() const { return m_diffPairGap; }
+    void SetDiffPairGap( int aGap ) { m_diffPairGap = aGap; }
+
+    bool DiffPairViaGapSameAsTraceGap() const { return m_diffPairViaGapSameAsTraceGap; }
+    void SetDiffPairViaGapSameAsTraceGap ( bool aEnable ) { m_diffPairViaGapSameAsTraceGap = aEnable; }
 
     int DiffPairViaGap() const
     {
         return m_diffPairViaGapSameAsTraceGap ? m_diffPairGap : m_diffPairViaGap;
     }
-
-    bool DiffPairViaGapSameAsTraceGap() const { return m_diffPairViaGapSameAsTraceGap; }
-
-    void SetDiffPairWidth( int aWidth ) { m_diffPairWidth = aWidth; }
-    void SetDiffPairGap( int aGap ) { m_diffPairGap = aGap; }
-    void SetDiffPairViaGapSameAsTraceGap ( bool aEnable )
-    {
-        m_diffPairViaGapSameAsTraceGap = aEnable;
-    }
-
     void SetDiffPairViaGap( int aGap ) { m_diffPairViaGap = aGap; }
 
     int ViaDiameter() const { return m_viaDiameter; }
@@ -133,9 +129,6 @@ public:
 
     wxString GetDiffPairGapSource() const { return m_diffPairGapSource; }
     void SetDiffPairGapSource( const wxString& aSource ) { m_diffPairGapSource = aSource; }
-
-    void SetDiffPairHoleToHole( int aHoleToHole ) { m_diffPairHoleToHole = aHoleToHole; }
-    int GetDiffPairHoleToHole() const { return m_diffPairHoleToHole; }
 
 private:
     int     m_clearance;

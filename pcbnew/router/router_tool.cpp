@@ -713,7 +713,7 @@ void ROUTER_TOOL::reprobeSizes( const VECTOR2I& aPos, PCB_LAYER_ID overrideLayer
 
     std::vector<PNS::NET_HANDLE> &nets = m_router->GetCurrentNets();
     PNS::NET_HANDLE net = nets.empty() ? (m_startItem ? m_startItem->Net() : nullptr) : nets.front();
-    PCB_LAYER_ID layer = overrideLayer == UNDEFINED_LAYER? frame()->GetActiveLayer() : overrideLayer;
+    PCB_LAYER_ID layer = overrideLayer == UNDEFINED_LAYER ? frame()->GetActiveLayer() : overrideLayer;
 
     // TODO: Location-sensitive rules (area rules) would need start and end pos technically
     // But a proper implementation of that would have to re-evaluate rules constantly
