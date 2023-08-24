@@ -72,7 +72,7 @@ public:
     void Commit() override {}
     bool ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* aStartItem,
                      PCB_LAYER_ID aLayer,
-                     PNS::NET_HANDLE aNet, VECTOR2I aPos ) override;
+                     PNS::NET_HANDLE aNet = nullptr, VECTOR2I aPos = VECTOR2I() ) override;
     int StackupHeight( int aFirstLayer, int aSecondLayer ) const override;
 
     int GetNetCode( PNS::NET_HANDLE aNet ) const override { return -1; }

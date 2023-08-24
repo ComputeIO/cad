@@ -654,7 +654,7 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
             aLayer = ToLAYER_ID( aStartItem->Layer() );
         if( aNet == nullptr )
             aNet = aStartItem->Net();
-        if( aPos.x == 0 || aPos.y == 0 )
+        if( aPos.x == 0 && aPos.y == 0 )
             aPos = aStartItem->Anchor( 0 );
     }
     

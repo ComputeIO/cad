@@ -114,8 +114,7 @@ void PNS_LOG_PLAYER::ReplayLog( PNS_LOG_FILE* aLog, int aStartEventIndex, int aF
         case LOGGER::EVT_START_ROUTE:
         {
             PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
-            m_iface->SetStartLayer( routingLayer );
-            m_iface->ProbeSizes( sizes, ritem );
+            m_iface->ProbeSizes( sizes, ritem, ToLAYER_ID( routingLayer ) );
             m_router->UpdateSizes( sizes );
 
             m_debugDecorator->NewStage( "route-start", 0, PNSLOGINFO );
@@ -134,8 +133,7 @@ void PNS_LOG_PLAYER::ReplayLog( PNS_LOG_FILE* aLog, int aStartEventIndex, int aF
         case LOGGER::EVT_START_DRAG:
         {
             PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
-            m_iface->SetStartLayer( routingLayer );
-            m_iface->ProbeSizes( sizes, ritem );
+            m_iface->ProbeSizes( sizes, ritem, ToLAYER_ID( routingLayer ) );
             m_router->UpdateSizes( sizes );
 
             m_debugDecorator->NewStage( "drag-start", 0, PNSLOGINFO );
