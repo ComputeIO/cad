@@ -519,6 +519,8 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
 
     for( int layer = layers.Start(); layer <= layers.End(); ++layer )
     {
+        if (!m_board->IsLayerEnabled(ToLAYER_ID(layer)))
+            continue;
         if( IsDrilledHole( aA ) && IsDrilledHole( aB ) )
         {
             if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, aA, aB, layer, &constraint ) )
@@ -684,11 +686,11 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
         if( constraint.m_Value.Opt() > bds.m_MinClearance )
         {
             aSizes.SetClearance( constraint.m_Value.Opt() );
+            aSizes.SetClearanceSource( constraint.GetName() );
         }
         if( constraint.m_Value.Min() > bds.m_MinClearance )
         {
             aSizes.SetMinClearance( constraint.m_Value.Min() );
-            aSizes.SetClearanceSource( constraint.GetName() );
         }
     }
 
@@ -696,7 +698,7 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
     bool found = false;
     aSizes.SetWidthSource( _( "board minimum track width" ) );
 
-    if( bds.m_UseConnectedTrackWidth && !bds.m_TempOverrideTrackWidth && aStartItem != nullptr )
+    if( bds.m_UseConnectedTrackWidth && !bds.m_TempOverrideTrackWidth && aStartItem != nullptr && aStartItem->Owner() != nullptr )
     {
         found = inheritTrackWidth( aStartItem, &trackWidth );
 
