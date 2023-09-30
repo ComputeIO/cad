@@ -519,8 +519,9 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
 
     for( int layer = layers.Start(); layer <= layers.End(); ++layer )
     {
-        if (!m_board->IsLayerEnabled(ToLAYER_ID(layer)))
+        if ( !m_board->IsLayerEnabled( ToLAYER_ID( layer ) ) )
             continue;
+
         if( IsDrilledHole( aA ) && IsDrilledHole( aB ) )
         {
             if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, aA, aB, layer, &constraint ) )
