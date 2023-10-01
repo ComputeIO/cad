@@ -35,7 +35,7 @@ namespace PNS {
 void WALKAROUND::start( const LINE& aInitialPath )
 {
     m_iteration = 0;
-    m_iterationLimit = 50;
+    m_iterationLimit = 10;
 }
 
 

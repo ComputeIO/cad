@@ -42,7 +42,7 @@ ROUTING_SETTINGS::ROUTING_SETTINGS( JSON_SETTINGS* aParent, const std::string& a
     m_startDiagonal = false;
     m_shoveIterationLimit = 250;
     m_shoveTimeLimit = 1000;
-    m_walkaroundIterationLimit = 40;
+    m_walkaroundIterationLimit = 10;
     m_jumpOverObstacles = false;
     m_smoothDraggedSegments = true;
     m_allowDRCViolations = false;
@@ -82,7 +82,7 @@ ROUTING_SETTINGS::ROUTING_SETTINGS( JSON_SETTINGS* aParent, const std::string& a
             },
             1000 ) );
 
-    m_params.emplace_back( new PARAM<int>( "walkaround_iteration_limit", &m_walkaroundIterationLimit, 40 ) );
+    m_params.emplace_back( new PARAM<int>( "walkaround_iteration_limit", &m_walkaroundIterationLimit, 10 ) );
     m_params.emplace_back( new PARAM<bool>( "jump_over_obstacles",       &m_jumpOverObstacles, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "smooth_dragged_segments",   &m_smoothDraggedSegments, true ) );
