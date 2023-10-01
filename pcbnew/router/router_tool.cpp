@@ -2628,7 +2628,7 @@ void ROUTER_TOOL::UpdateMessagePanel()
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetDiffPairWidthSource() ) );
 
-            items.emplace_back( wxString::Format( _( "Min Clearance: %s" ),
+            items.emplace_back( wxString::Format( _( "Clearance: %s" ),
                                                   FORMAT_VALUE( sizes.Clearance() ) ),
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetClearanceSource() ) );
@@ -2657,7 +2657,7 @@ void ROUTER_TOOL::UpdateMessagePanel()
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetWidthSource() ) );
 
-            items.emplace_back( wxString::Format( _( "Min Clearance: %s" ),
+            items.emplace_back( wxString::Format( _( "Clearance: %s" ),
                                                   FORMAT_VALUE( sizes.Clearance() ) ),
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetClearanceSource() ) );
