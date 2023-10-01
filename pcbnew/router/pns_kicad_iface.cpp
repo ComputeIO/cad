@@ -479,7 +479,6 @@ void PNS_PCBNEW_RULE_RESOLVER::ClearCaches()
     m_tempClearanceCache.clear();
 }
 
-
 void PNS_PCBNEW_RULE_RESOLVER::ClearTemporaryCaches()
 {
     m_tempClearanceCache.clear();
