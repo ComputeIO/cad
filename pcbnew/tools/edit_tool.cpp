@@ -297,9 +297,7 @@ bool EDIT_TOOL::Init()
     menu.AddItem( PCB_ACTIONS::skip,              isSkippable );
     menu.AddItem( PCB_ACTIONS::breakTrack,        SELECTION_CONDITIONS::Count( 1 )
                                                       && SELECTION_CONDITIONS::OnlyTypes( trackTypes ) );
-    menu.AddItem( PCB_ACTIONS::drag45Degree,      SELECTION_CONDITIONS::Count( 1 )
-                                                      && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::DraggableItems ) );
-    menu.AddItem( PCB_ACTIONS::dragFreeAngle,     SELECTION_CONDITIONS::Count( 1 )
+    menu.AddItem( PCB_ACTIONS::drag,              SELECTION_CONDITIONS::Count( 1 )
                                                       && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::DraggableItems )
                                                       && !SELECTION_CONDITIONS::OnlyTypes( { PCB_FOOTPRINT_T } ) );
     menu.AddItem( PCB_ACTIONS::filletTracks,      SELECTION_CONDITIONS::OnlyTypes( trackTypes ) );
@@ -433,7 +431,7 @@ int EDIT_TOOL::Drag( const TOOL_EVENT& aEvent )
 
     int mode = PNS::DM_ANY;
 
-    if( aEvent.IsAction( &PCB_ACTIONS::dragFreeAngle ) )
+    if( !frame()->GetPcbNewSettings()->m_Use45DegreeLimit )
         mode |= PNS::DM_FREE_ANGLE;
 
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
@@ -2743,8 +2741,7 @@ void EDIT_TOOL::setTransitions()
     Go( &EDIT_TOOL::GetAndPlace,           PCB_ACTIONS::getAndPlace.MakeEvent() );
     Go( &EDIT_TOOL::Move,                  PCB_ACTIONS::move.MakeEvent() );
     Go( &EDIT_TOOL::Move,                  PCB_ACTIONS::moveIndividually.MakeEvent() );
-    Go( &EDIT_TOOL::Drag,                  PCB_ACTIONS::drag45Degree.MakeEvent() );
-    Go( &EDIT_TOOL::Drag,                  PCB_ACTIONS::dragFreeAngle.MakeEvent() );
+    Go( &EDIT_TOOL::Drag,                  PCB_ACTIONS::drag.MakeEvent() );
     Go( &EDIT_TOOL::Rotate,                PCB_ACTIONS::rotateCw.MakeEvent() );
     Go( &EDIT_TOOL::Rotate,                PCB_ACTIONS::rotateCcw.MakeEvent() );
     Go( &EDIT_TOOL::Flip,                  PCB_ACTIONS::flip.MakeEvent() );

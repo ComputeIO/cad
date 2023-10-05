@@ -533,8 +533,7 @@ bool ROUTER_TOOL::Init()
     menu.AddItem( PCB_ACTIONS::routerAttemptFinish,   hasOtherEnd );
     menu.AddItem( PCB_ACTIONS::breakTrack,            notRoutingCond );
 
-    menu.AddItem( PCB_ACTIONS::drag45Degree,          notRoutingCond );
-    menu.AddItem( PCB_ACTIONS::dragFreeAngle,         notRoutingCond );
+    menu.AddItem( PCB_ACTIONS::drag,                  notRoutingCond );
 
     menu.AddItem( ACT_PlaceThroughVia,                SELECTION_CONDITIONS::ShowAlways );
     menu.AddItem( ACT_PlaceBlindVia,                  SELECTION_CONDITIONS::ShowAlways );
@@ -1763,15 +1762,14 @@ int ROUTER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
         {
             updateStartItem( *evt );
         }
-        else if( evt->IsAction( &PCB_ACTIONS::dragFreeAngle ) )
+        else if( evt->IsAction( &PCB_ACTIONS::drag ) )
         {
             updateStartItem( *evt, true );
-            performDragging( PNS::DM_ANY | PNS::DM_FREE_ANGLE );
-        }
-        else if( evt->IsAction( &PCB_ACTIONS::drag45Degree ) )
-        {
-            updateStartItem( *evt, true );
-            performDragging( PNS::DM_ANY );
+
+            if ( frame->GetPcbNewSettings()->m_Use45DegreeLimit )
+                performDragging( PNS::DM_ANY | PNS::DM_FREE_ANGLE );
+            else
+                performDragging( PNS::DM_ANY );
         }
         else if( evt->IsAction( &PCB_ACTIONS::breakTrack ) )
         {
@@ -1865,7 +1863,7 @@ void ROUTER_TOOL::performDragging( int aMode )
 
         m_cancelled = true;
 
-        m_toolMgr->PostAction( PCB_ACTIONS::drag45Degree );
+        m_toolMgr->PostAction( PCB_ACTIONS::drag );
 
         return;
     }

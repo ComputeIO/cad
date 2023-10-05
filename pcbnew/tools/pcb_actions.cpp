@@ -2331,22 +2331,13 @@ TOOL_ACTION PCB_ACTIONS::breakTrack( TOOL_ACTION_ARGS()
         .Tooltip( _( "Splits the track segment into two segments connected at the cursor position." ) )
         .Icon( BITMAPS::break_line ) );
 
-TOOL_ACTION PCB_ACTIONS::drag45Degree( TOOL_ACTION_ARGS()
-        .Name( "pcbnew.InteractiveRouter.Drag45Degree" )
-        .Scope( AS_GLOBAL )
-        .DefaultHotkey( 'D' )
-        .LegacyHotkeyName( "Drag Track Keep Slope" )
-        .MenuText( _( "Drag (45 degree mode)" ) )
-        .Tooltip( _( "Drags the track segment while keeping connected tracks at 45 degrees." ) )
-        .Icon( BITMAPS::drag_segment_withslope ) );
-
-TOOL_ACTION PCB_ACTIONS::dragFreeAngle( TOOL_ACTION_ARGS()
-        .Name( "pcbnew.InteractiveRouter.DragFreeAngle" )
+TOOL_ACTION PCB_ACTIONS::drag( TOOL_ACTION_ARGS()
+        .Name( "pcbnew.InteractiveRouter.Drag" )
         .Scope( AS_GLOBAL )
         .DefaultHotkey( 'G' )
         .LegacyHotkeyName( "Drag Item" )
-        .MenuText( _( "Drag (free angle)" ) )
-        .Tooltip( _( "Drags the nearest joint in the track without restricting the track angle." ) )
+        .MenuText( _( "Drag" ) )
+        .Tooltip( _( "Drags the nearest joint in the track. Respects active angle restrictions." ) )
         .Icon( BITMAPS::drag ) );
 
 

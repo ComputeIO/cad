@@ -185,8 +185,7 @@ public:
     /// Break a single track into two segments at the cursor
     static TOOL_ACTION breakTrack;
 
-    static TOOL_ACTION drag45Degree;
-    static TOOL_ACTION dragFreeAngle;
+    static TOOL_ACTION drag;
 
     // Drawing Tool Activations
     static TOOL_ACTION drawLine;
