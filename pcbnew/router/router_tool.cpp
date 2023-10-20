@@ -711,7 +711,7 @@ void ROUTER_TOOL::reprobeSizes( const VECTOR2I& aPos, PCB_LAYER_ID overrideLayer
     PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
 
 
-    std::vector<PNS::NET_HANDLE> &nets = m_router->GetCurrentNets();
+    std::vector<PNS::NET_HANDLE> nets = m_router->GetCurrentNets();
     PNS::NET_HANDLE net = nets.empty() ? (m_startItem ? m_startItem->Net() : nullptr) : nets.front();
     PCB_LAYER_ID layer = overrideLayer == UNDEFINED_LAYER ? frame()->GetActiveLayer() : overrideLayer;
 
@@ -1141,6 +1141,7 @@ bool ROUTER_TOOL::prepareInteractive()
 
     reprobeSizes( m_startSnapPoint );
 
+    PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
     sizes.AddLayerPair( frame()->GetScreen()->m_Route_Layer_TOP,
                         frame()->GetScreen()->m_Route_Layer_BOTTOM );
 

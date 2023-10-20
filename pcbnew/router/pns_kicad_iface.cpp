@@ -660,7 +660,7 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
             aPos = aStartItem->Anchor( 0 );
     }
     
-    PNS:::NET_HANDLE coupledNet = aNet == nullptr ? nullptr : m_ruleResolver->DpCoupledNet( aNet );
+    PNS::NET_HANDLE coupledNet = aNet == nullptr ? nullptr : m_ruleResolver->DpCoupledNet( aNet );
 
     PCB_TRACK dummyTrack( m_board );
     dummyTrack.SetFlags( ROUTER_TRANSIENT );
@@ -672,7 +672,7 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
     PCB_TRACK coupledTrack( m_board );
     coupledTrack.SetFlags( ROUTER_TRANSIENT );
     coupledTrack.SetLayer( aLayer );
-    coupledTrack.SetNet( static_cast<NETINFO_ITEM*>( coupleNet ) );
+    coupledTrack.SetNet( static_cast<NETINFO_ITEM*>( coupledNet ) );
     coupledTrack.SetStart( aPos );
     coupledTrack.SetEnd( aPos );
 

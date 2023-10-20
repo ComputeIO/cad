@@ -1205,8 +1205,6 @@ bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COM
     PNS_KICAD_IFACE* iface = aTool->GetInterface();
     int              layer = GetLayer();
 
-    iface->SetStartLayer( layer );
-
     if( router->RoutingInProgress() )
     {
         router->StopRouting();
