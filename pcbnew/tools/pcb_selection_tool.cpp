@@ -436,9 +436,7 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                                          && dynamic_cast<PCB_TRACK*>( m_selection.GetItem( 0 ) );
 
                     if( haveTrack && trackDragAction == TRACK_DRAG_ACTION::DRAG )
-                        m_toolMgr->RunAction( PCB_ACTIONS::drag45Degree );
-                    else if( haveTrack && trackDragAction == TRACK_DRAG_ACTION::DRAG_FREE_ANGLE )
-                        m_toolMgr->RunAction( PCB_ACTIONS::dragFreeAngle );
+                        m_toolMgr->RunAction( PCB_ACTIONS::drag );
                     else
                         m_toolMgr->RunAction( PCB_ACTIONS::move );
                 }
