@@ -788,8 +788,13 @@ bool PNS_KICAD_IFACE_BASE::ProbeSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* a
     found = false;
 
     // First try to pick up diff pair width from starting track, if enabled
-    if( bds.m_UseConnectedTrackWidth && aStartItem )
+    if( bds.m_UseConnectedTrackWidth && aStartItem && aStartItem->Owner() != nullptr )
+    {
         found = inheritTrackWidth( aStartItem, &diffPairWidth );
+
+        if( found )
+            aSizes.SetDiffPairWidthSource( _( "existing track" ) );
+    }
 
     // Next, pick up gap from netclass, and width also if we didn't get a starting width above
     if( bds.UseNetClassDiffPair() )
