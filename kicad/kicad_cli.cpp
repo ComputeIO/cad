@@ -61,6 +61,7 @@
 #include "cli/command_sch_export_pythonbom.h"
 #include "cli/command_sch_export_netlist.h"
 #include "cli/command_sch_export_plot.h"
+#include "cli/command_pcb_resave.h"
 #include "cli/command_fp.h"
 #include "cli/command_fp_export.h"
 #include "cli/command_fp_export_svg.h"
@@ -127,6 +128,7 @@ struct COMMAND_ENTRY
 
 static CLI::PCB_COMMAND                  pcbCmd{};
 static CLI::PCB_DRC_COMMAND              pcbDrcCmd{};
+static CLI::PCB_RESAVE_COMMAND           pcbResaveCmd{};
 static CLI::PCB_EXPORT_DRILL_COMMAND     exportPcbDrillCmd{};
 static CLI::PCB_EXPORT_DXF_COMMAND       exportPcbDxfCmd{};
 static CLI::PCB_EXPORT_3D_COMMAND        exportPcbGlbCmd{ "glb", UTF8STDSTR( _( "Export GLB (binary GLTF)" ) ), JOB_EXPORT_PCB_3D::FORMAT::GLB };
@@ -195,6 +197,9 @@ static std::vector<COMMAND_ENTRY> commandStack = {
                     &exportPcbSvgCmd,
                     &exportPcbVrmlCmd
                 }
+            },
+            {
+                &pcbResaveCmd
             }
         }
     },

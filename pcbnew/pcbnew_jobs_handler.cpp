@@ -37,6 +37,7 @@
 #include <jobs/job_export_pcb_svg.h>
 #include <jobs/job_export_pcb_3d.h>
 #include <jobs/job_pcb_drc.h>
+#include <jobs/job_pcb_resave.h>
 #include <cli/exit_codes.h>
 #include <exporters/place_file_exporter.h>
 #include <exporters/step/exporter_step.h>
@@ -84,6 +85,7 @@ PCBNEW_JOBS_HANDLER::PCBNEW_JOBS_HANDLER()
     Register( "fpsvg",
               std::bind( &PCBNEW_JOBS_HANDLER::JobExportFpSvg, this, std::placeholders::_1 ) );
     Register( "drc", std::bind( &PCBNEW_JOBS_HANDLER::JobExportDrc, this, std::placeholders::_1 ) );
+    Register( "resave", std::bind( &PCBNEW_JOBS_HANDLER::JobResave, this, std::placeholders::_1 ) );
 }
 
 
@@ -1030,6 +1032,23 @@ int PCBNEW_JOBS_HANDLER::JobExportDrc( JOB* aJob )
             return CLI::EXIT_CODES::ERR_RC_VIOLATIONS;
         }
     }
+
+    return CLI::EXIT_CODES::SUCCESS;
+}
+
+
+int PCBNEW_JOBS_HANDLER::JobResave( JOB* aJob )
+{
+    JOB_PCB_RESAVE* aResaveJob = dynamic_cast<JOB_PCB_RESAVE*>( aJob );
+
+    // TODO: Implement code here
+    if( aResaveJob == nullptr )
+        return CLI::EXIT_CODES::ERR_UNKNOWN;
+
+    if( aResaveJob->IsCli() )
+        m_reporter->Report( _( "Loading board\n" ), RPT_SEVERITY_INFO );
+
+    BOARD* brd = LoadBoard( aResaveJob->m_filename );
 
     return CLI::EXIT_CODES::SUCCESS;
 }

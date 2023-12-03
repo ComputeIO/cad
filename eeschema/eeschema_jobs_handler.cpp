@@ -81,6 +81,8 @@ EESCHEMA_JOBS_HANDLER::EESCHEMA_JOBS_HANDLER()
               std::bind( &EESCHEMA_JOBS_HANDLER::JobSymExportSvg, this, std::placeholders::_1 ) );
     Register( "erc",
               std::bind( &EESCHEMA_JOBS_HANDLER::JobSchErc, this, std::placeholders::_1 ) );
+    Register( "resave",
+              std::bind( &EESCHEMA_JOBS_HANDLER::JobResave, this, std::placeholders::_1 ) );
 }
 
 
@@ -1017,6 +1019,13 @@ int EESCHEMA_JOBS_HANDLER::JobSchErc( JOB* aJob )
         }
     }
 
+    return CLI::EXIT_CODES::SUCCESS;
+}
+
+
+int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
+{
+    // TODO: K1000 complete
     return CLI::EXIT_CODES::SUCCESS;
 }
 
