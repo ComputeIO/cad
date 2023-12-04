@@ -1041,14 +1041,25 @@ int PCBNEW_JOBS_HANDLER::JobResave( JOB* aJob )
 {
     JOB_PCB_RESAVE* aResaveJob = dynamic_cast<JOB_PCB_RESAVE*>( aJob );
 
-    // TODO: Implement code here
     if( aResaveJob == nullptr )
         return CLI::EXIT_CODES::ERR_UNKNOWN;
 
     if( aResaveJob->IsCli() )
         m_reporter->Report( _( "Loading board\n" ), RPT_SEVERITY_INFO );
 
+    
     BOARD* brd = LoadBoard( aResaveJob->m_filename );
+    PCB_PLUGIN pcbIo;
+
+    try
+    {
+        pcbIo.SaveBoard(brd->GetFileName(), brd);
+    }
+    catch ( ... )
+    {
+        m_reporter->Report( _("Cannot save PCB file\n"), RPT_SEVERITY_ERROR );   // TODO: Check how to mange translation + correct exception
+        return CLI::EXIT_CODES::ERR_UNKNOWN;
+    }
 
     return CLI::EXIT_CODES::SUCCESS;
 }
