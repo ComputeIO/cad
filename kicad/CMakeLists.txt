@@ -48,6 +48,7 @@ set( KICAD_CLI_SRCS
     cli/command_pcb_resave.cpp
     cli/command_fp_export_svg.cpp
     cli/command_fp_upgrade.cpp
+    cli/command_sch_resave.cpp
     cli/command_sch_export_bom.cpp
     cli/command_sch_export_pythonbom.cpp
     cli/command_sch_export_netlist.cpp

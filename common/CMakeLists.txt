@@ -93,6 +93,7 @@ set( KICOMMON_SRCS
     jobs/job_sym_export_svg.cpp
     jobs/job_sym_upgrade.cpp
     jobs/job_pcb_resave.cpp
+    jobs/job_sch_resave.cpp
 
     kicad_curl/kicad_curl.cpp
     kicad_curl/kicad_curl_easy.cpp

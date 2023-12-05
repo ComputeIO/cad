@@ -67,8 +67,10 @@
 #include "cli/command_fp_export_svg.h"
 #include "cli/command_fp_upgrade.h"
 #include "cli/command_sch.h"
+#include "cli/command_pcb_resave.h"
 #include "cli/command_sch_erc.h"
 #include "cli/command_sch_export.h"
+#include "cli/command_sch_resave.h"
 #include "cli/command_sym.h"
 #include "cli/command_sym_export.h"
 #include "cli/command_sym_export_svg.h"
@@ -143,6 +145,7 @@ static CLI::PCB_EXPORT_COMMAND           exportPcbCmd{};
 static CLI::SCH_EXPORT_COMMAND           exportSchCmd{};
 static CLI::SCH_COMMAND                  schCmd{};
 static CLI::SCH_ERC_COMMAND              schErcCmd{};
+static CLI::SCH_RESAVE_COMMAND           schResaveCmd{};
 static CLI::SCH_EXPORT_BOM_COMMAND       exportSchBomCmd{};
 static CLI::SCH_EXPORT_PYTHONBOM_COMMAND exportSchPythonBomCmd{};
 static CLI::SCH_EXPORT_NETLIST_COMMAND   exportSchNetlistCmd{};
@@ -221,6 +224,9 @@ static std::vector<COMMAND_ENTRY> commandStack = {
                     &exportSchPythonBomCmd,
                     &exportSchSvgCmd
                 }
+            },
+            {
+                &schResaveCmd
             }
         }
     },

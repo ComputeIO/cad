@@ -9,12 +9,7 @@ class KICOMMON_API JOB_PCB_RESAVE : public JOB
 {
 public:
     JOB_PCB_RESAVE( bool aIsCli );
-
     wxString m_filename;
-    //wxString m_libraryPath;
-    //wxString m_outputLibraryPath;
-
-    bool m_force;
 };
 
 #endif

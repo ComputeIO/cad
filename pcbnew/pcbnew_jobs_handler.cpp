@@ -1047,17 +1047,17 @@ int PCBNEW_JOBS_HANDLER::JobResave( JOB* aJob )
     if( aResaveJob->IsCli() )
         m_reporter->Report( _( "Loading board\n" ), RPT_SEVERITY_INFO );
 
-    
     BOARD* brd = LoadBoard( aResaveJob->m_filename );
     PCB_PLUGIN pcbIo;
 
     try
     {
-        pcbIo.SaveBoard(brd->GetFileName(), brd);
+        pcbIo.SaveBoard( brd->GetFileName(), brd );
     }
-    catch ( ... )
+    catch ( const IO_ERROR& ioe )
     {
-        m_reporter->Report( _("Cannot save PCB file\n"), RPT_SEVERITY_ERROR );   // TODO: Check how to mange translation + correct exception
+        wxString msg = wxString::Format( _( "Error saving PCB file.\n%s" ), ioe.What().GetData() );
+        m_reporter->Report( msg, RPT_SEVERITY_ERROR );
         return CLI::EXIT_CODES::ERR_UNKNOWN;
     }
 
