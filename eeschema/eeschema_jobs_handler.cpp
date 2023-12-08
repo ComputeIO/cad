@@ -31,6 +31,7 @@
 #include <jobs/job_sch_erc.h>
 #include <jobs/job_sym_export_svg.h>
 #include <jobs/job_sym_upgrade.h>
+#include <jobs/job_sch_resave.h>
 #include <schematic.h>
 #include <wx/dir.h>
 #include <wx/file.h>
@@ -51,6 +52,7 @@
 
 #include <sch_file_versions.h>
 #include <sch_plugins/kicad/sch_sexpr_lib_plugin_cache.h>
+#include <sch_plugins/sch_sexpr_plugin.h>
 
 #include <netlist.h>
 #include <netlist_exporter_base.h>
@@ -1025,7 +1027,29 @@ int EESCHEMA_JOBS_HANDLER::JobSchErc( JOB* aJob )
 
 int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
 {
-    // TODO: K1000 complete
+    JOB_SCH_RESAVE* aResaveJob = dynamic_cast<JOB_SCH_RESAVE*>( aJob );
+
+    if( aResaveJob == nullptr )
+        return CLI::EXIT_CODES::ERR_UNKNOWN;
+
+    if( aResaveJob->IsCli() )
+        m_reporter->Report( _( "Loading schematic\n" ), RPT_SEVERITY_INFO );
+
+    SCHEMATIC* sch = EESCHEMA_HELPERS::LoadSchematic( aResaveJob->m_filename ); // TODO: who releases memory 
+    SCH_SEXPR_PLUGIN plg;
+
+    try
+    {
+        pcbIo.SaveBoard( brd->GetFileName(), brd );
+    }
+    catch ( const IO_ERROR& ioe )
+    {
+        wxString msg = wxString::Format( _( "Error saving PCB file.\n%s" ), ioe.What().GetData() );
+        m_reporter->Report( msg, RPT_SEVERITY_ERROR );
+        return CLI::EXIT_CODES::ERR_UNKNOWN;
+    }
+
+    // TODO: K1000 complete take a look at SaveSchematicFile
     return CLI::EXIT_CODES::SUCCESS;
 }
 
