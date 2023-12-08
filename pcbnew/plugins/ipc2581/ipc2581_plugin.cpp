@@ -212,6 +212,42 @@ wxString IPC2581_PLUGIN::pinName( const PAD* aPad ) const
 }
 
 
+wxString IPC2581_PLUGIN::componentName( FOOTPRINT* aFootprint )
+{
+    auto tryInsert =
+            [&]( const wxString& aName )
+            {
+                if( m_footprint_refdes_dict.count( aName ) )
+                {
+                    if( m_footprint_refdes_dict.at( aName ) != aFootprint )
+                        return false;
+                }
+                else
+                {
+                    m_footprint_refdes_dict.insert( { aName, aFootprint } );
+                }
+
+                return true;
+            };
+
+    if( m_footprint_refdes_reverse_dict.count( aFootprint ) )
+        return m_footprint_refdes_reverse_dict.at( aFootprint );
+
+    wxString baseName = genString( aFootprint->GetReference(), "CMP" );
+    wxString name = baseName;
+    int      suffix = 1;
+
+    while( !tryInsert( name ) )
+    {
+        name = wxString::Format( "%s%d", name, suffix );
+    }
+
+    m_footprint_refdes_reverse_dict[aFootprint] = name;
+
+    return name;
+}
+
+
 wxString IPC2581_PLUGIN::floatVal( double aVal )
 {
     wxString str = wxString::FromCDouble( aVal, m_sigfig );
@@ -542,6 +578,9 @@ void IPC2581_PLUGIN::addLineDesc( wxXmlNode* aNode, int aWidth, LINE_STYLE aDash
 
 void IPC2581_PLUGIN::addText( wxXmlNode* aContentNode, EDA_TEXT* aText, const KIFONT::METRICS& aFontMetrics )
 {
+    if( !aText->IsVisible() )
+            return;
+
     KIGFX::GAL_DISPLAY_OPTIONS empty_opts;
     KIFONT::FONT*              font = aText->GetFont();
     TEXT_ATTRIBUTES            attrs = aText->GetAttributes();
@@ -1223,6 +1262,9 @@ wxXmlNode* IPC2581_PLUGIN::generateBOMSection( wxXmlNode* aEcadNode )
         }
     }
 
+    if( bom_entries.empty() )
+        return nullptr;
+
     wxFileName fn( m_board->GetFileName() );
 
     wxXmlNode* bomNode = new wxXmlNode( wxXML_ELEMENT_NODE, "Bom" );
@@ -1231,7 +1273,7 @@ wxXmlNode* IPC2581_PLUGIN::generateBOMSection( wxXmlNode* aEcadNode )
 
     wxXmlNode* bomHeaderNode = appendNode( bomNode, "BomHeader" );
     addAttribute( bomHeaderNode,  "revision", "1.0" );
-    addAttribute( bomHeaderNode,  "assembly", wxString::Format( "%s", fn.GetName() ) );
+    addAttribute( bomHeaderNode,  "assembly", genString( fn.GetName() ) );
 
     wxXmlNode* stepRefNode = appendNode( bomHeaderNode, "StepRef" );
     addAttribute( stepRefNode,  "name", genString( fn.GetName(), "BOARD" ) );
@@ -1292,6 +1334,12 @@ void IPC2581_PLUGIN::addCadHeader( wxXmlNode* aEcadNode )
 {
     wxXmlNode* cadHeaderNode = appendNode( aEcadNode, "CadHeader" );
     addAttribute( cadHeaderNode,  "units", m_units_str );
+}
+
+
+bool IPC2581_PLUGIN::isValidLayerFor2581( PCB_LAYER_ID aLayer )
+{
+    return ( aLayer >= F_Cu && aLayer <= User_9 ) || aLayer == UNDEFINED_LAYER;
 }
 
 
@@ -1389,6 +1437,9 @@ void IPC2581_PLUGIN::generateCadLayers( wxXmlNode* aCadLayerNode )
     {
         BOARD_STACKUP_ITEM* stackup_item = layers.at( i );
 
+        if( !isValidLayerFor2581( stackup_item->GetBrdLayerId() ) )
+            continue;
+
         for( int sublayer_id = 0; sublayer_id < stackup_item->GetSublayersCount(); sublayer_id++ )
         {
             wxXmlNode* cadLayerNode = appendNode( aCadLayerNode, "Layer" );
@@ -1432,7 +1483,7 @@ void IPC2581_PLUGIN::generateCadLayers( wxXmlNode* aCadLayerNode )
 
     for( PCB_LAYER_ID layer : layer_seq )
     {
-        if( added_layers.find( layer ) != added_layers.end() )
+        if( added_layers.find( layer ) != added_layers.end() || !isValidLayerFor2581( layer ) )
             continue;
 
         wxString ly_name = genString( m_board->GetLayerName( layer ), "LAYER" );
@@ -1552,7 +1603,7 @@ void IPC2581_PLUGIN::addPad( wxXmlNode* aContentNode, const PAD* aPad, PCB_LAYER
         wxXmlNode* pinRefNode = appendNode( padNode, "PinRef" );
 
         addAttribute( pinRefNode,  "pin", pinName( aPad ) );
-        addAttribute( pinRefNode,  "componentRef", genString( fp->GetReference(), "CMP" ) );
+        addAttribute( pinRefNode,  "componentRef", componentName( fp ) );
     }
 }
 
@@ -2135,7 +2186,7 @@ void IPC2581_PLUGIN::generateComponents( wxXmlNode* aStepNode )
     for( FOOTPRINT* fp : m_board->Footprints() )
     {
         wxXmlNode* componentNode = new wxXmlNode( wxXML_ELEMENT_NODE, "Component" );
-        addAttribute( componentNode,  "refDes", genString( fp->GetReference(), "CMP" ) );
+        addAttribute( componentNode,  "refDes", componentName( fp ) );
         wxXmlNode* pkg = addPackage( componentNode, fp );
 
         if( pkg )
@@ -2518,7 +2569,8 @@ void IPC2581_PLUGIN::generateLayerSetNet( wxXmlNode* aLayerNode, PCB_LAYER_ID aL
             if( FOOTPRINT* fp = zone->GetParentFootprint() )
             {
                 wxXmlNode* tempSetNode = appendNode( aLayerNode, "Set" );
-                addAttribute( tempSetNode,  "componentRef", genString( fp->GetReference(), "CMP" ) );
+                wxString refDes = componentName( zone->GetParentFootprint() );
+                addAttribute( tempSetNode,  "componentRef", refDes );
                 wxXmlNode* newFeatures = appendNode( tempSetNode, "Features" );
                 addLocationNode( newFeatures, 0.0, 0.0 );
                 zoneFeatureNode = appendNode( newFeatures, "UserSpecial" );
@@ -2542,7 +2594,7 @@ void IPC2581_PLUGIN::generateLayerSetNet( wxXmlNode* aLayerNode, PCB_LAYER_ID aL
             if( m_version > 'B' )
                 addAttribute( tempSetNode,  "geometryUsage", "GRAPHIC" );
 
-            addAttribute( tempSetNode,  "componentRef", genString( fp->GetReference(), "CMP" ) );
+            addAttribute( tempSetNode,  "componentRef", componentName( fp ) );
 
             wxXmlNode* tempFeature = appendNode( tempSetNode, "Features" );
             addLocationNode( tempFeature, *shape );
@@ -2576,7 +2628,7 @@ void IPC2581_PLUGIN::generateLayerSetNet( wxXmlNode* aLayerNode, PCB_LAYER_ID aL
         else if( PCB_TEXTBOX* tmp_text = dynamic_cast<PCB_TEXTBOX*>( text ) )
             text_item = static_cast<EDA_TEXT*>( tmp_text );
 
-        if( text_item->GetShownText( false ).empty() )
+        if( !text_item->IsVisible() || text_item->GetShownText( false ).empty() )
             return;
 
         wxXmlNode* tempSetNode = appendNode( aLayerNode, "Set" );
@@ -2585,7 +2637,7 @@ void IPC2581_PLUGIN::generateLayerSetNet( wxXmlNode* aLayerNode, PCB_LAYER_ID aL
             addAttribute( tempSetNode,  "geometryUsage", "TEXT" );
 
         if( fp )
-            addAttribute( tempSetNode,  "componentRef", genString( fp->GetReference(), "CMP" ) );
+            addAttribute( tempSetNode, "componentRef", componentName( fp ) );
 
         wxXmlNode* nonStandardAttributeNode = appendNode( tempSetNode, "NonstandardAttribute" );
         addAttribute( nonStandardAttributeNode,  "name", "TEXT" );

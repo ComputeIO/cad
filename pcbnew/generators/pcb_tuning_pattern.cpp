@@ -143,14 +143,14 @@ public:
         gal->PushDepth();
         gal->SetLayerDepth( gal->GetMinDepth() );
 
-        KIGFX::PREVIEW::TEXT_DIMS headerDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -2 );
-        KIGFX::PREVIEW::TEXT_DIMS textDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -1 );
+        KIGFX::PREVIEW::TEXT_DIMS headerDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -3 );
+        KIGFX::PREVIEW::TEXT_DIMS textDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -2 );
         KIFONT::FONT*             font = KIFONT::FONT::GetFont();
         const KIFONT::METRICS&    fontMetrics = KIFONT::METRICS::Default();
         TEXT_ATTRIBUTES           textAttrs;
 
         int      glyphWidth = textDims.GlyphSize.x;
-        VECTOR2I margin( glyphWidth / 2, glyphWidth );
+        VECTOR2I margin( KiROUND( glyphWidth * 0.4 ), KiROUND( glyphWidth * 0.9 ) );
         VECTOR2I size( glyphWidth * 25 + margin.x * 2, headerDims.GlyphSize.y + textDims.GlyphSize.y );
         VECTOR2I offset( margin.x * 2, -( size.y + margin.y * 2 ) );
 
@@ -210,7 +210,7 @@ public:
         textAttrs.m_StrokeWidth = textDims.StrokeWidth;
 
         textPos = GetPosition() + offset;
-        textPos.y += KiROUND( headerDims.LinePitch * 1.2 );
+        textPos.y += KiROUND( headerDims.LinePitch * 1.3 );
         font->Draw( gal, m_currentText, textPos, textAttrs, KIFONT::METRICS::Default() );
 
         textPos.x += glyphWidth * 11 + margin.x;
@@ -265,7 +265,7 @@ public:
 
     static PCB_TUNING_PATTERN* CreateNew( GENERATOR_TOOL* aTool, PCB_BASE_EDIT_FRAME* aFrame,
                                           BOARD_CONNECTED_ITEM* aStartItem,
-                                          LENGTH_TUNING_MODE aMode, bool aAllowGUI = true );
+                                          LENGTH_TUNING_MODE aMode );
 
     void EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
                     BOARD_COMMIT* aCommit ) override;
@@ -406,7 +406,7 @@ public:
     void ShowPropertiesDialog( PCB_BASE_EDIT_FRAME* aEditFrame ) override;
 
     std::vector<EDA_ITEM*> GetPreviewItems( GENERATOR_TOOL* aTool, PCB_BASE_EDIT_FRAME* aFrame,
-                                            bool aStatusOnly = false ) override;
+                                            bool aStatusItemsOnly = false ) override;
 
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) override;
 
@@ -620,7 +620,7 @@ bool PCB_TUNING_PATTERN::baselineValid()
 PCB_TUNING_PATTERN* PCB_TUNING_PATTERN::CreateNew( GENERATOR_TOOL* aTool,
                                                    PCB_BASE_EDIT_FRAME* aFrame,
                                                    BOARD_CONNECTED_ITEM* aStartItem,
-                                                   LENGTH_TUNING_MODE aMode, bool aAllowGUI )
+                                                   LENGTH_TUNING_MODE aMode )
 {
     BOARD*                       board = aStartItem->GetBoard();
     std::shared_ptr<DRC_ENGINE>& drcEngine = board->GetDesignSettings().m_DRCEngine;
@@ -634,50 +634,20 @@ PCB_TUNING_PATTERN* PCB_TUNING_PATTERN::CreateNew( GENERATOR_TOOL* aTool,
 
     constraint = drcEngine->EvalRules( LENGTH_CONSTRAINT, aStartItem, nullptr, layer );
 
-    if( aMode == DIFF_PAIR_SKEW )
+    if( !constraint.IsNull() )
     {
-        if( !constraint.IsNull() )
-        {
+        if( aMode == DIFF_PAIR_SKEW )
             pattern->m_settings.SetTargetSkew( constraint.GetValue() );
-            pattern->m_settings.m_overrideCustomRules = false;
-        }
-        else if( aAllowGUI )
-        {
-            WX_UNIT_ENTRY_DIALOG dlg( aFrame, _( "Tune Skew" ), _( "Target skew:" ), 0 );
-
-            if( dlg.ShowModal() != wxID_OK )
-                return nullptr;
-
-            pattern->m_settings.SetTargetSkew( dlg.GetValue() );
-            pattern->m_settings.m_overrideCustomRules = true;
-        }
         else
-        {
-            pattern->m_unconstrained = true;
-        }
+            pattern->m_settings.SetTargetLength( constraint.GetValue() );
+    }
+    else if( aMode == DIFF_PAIR_SKEW )
+    {
+        pattern->m_settings.SetTargetSkew( 0 );
     }
     else
     {
-        if( !constraint.IsNull() )
-        {
-            pattern->m_settings.SetTargetLength( constraint.GetValue() );
-            pattern->m_settings.m_overrideCustomRules = false;
-        }
-        else if( aAllowGUI )
-        {
-            WX_UNIT_ENTRY_DIALOG dlg( aFrame, _( "Tune Length" ), _( "Target length:" ),
-                                      100 * PCB_IU_PER_MM );
-
-            if( dlg.ShowModal() != wxID_OK )
-                return nullptr;
-
-            pattern->m_settings.SetTargetLength( dlg.GetValue() );
-            pattern->m_settings.m_overrideCustomRules = true;
-        }
-        else
-        {
-            pattern->m_unconstrained = true;
-        }
+        pattern->m_unconstrained = true;
     }
 
     pattern->SetFlags( IS_NEW );
@@ -1848,19 +1818,19 @@ void PCB_TUNING_PATTERN::ShowPropertiesDialog( PCB_BASE_EDIT_FRAME* aEditFrame )
 
 std::vector<EDA_ITEM*> PCB_TUNING_PATTERN::GetPreviewItems( GENERATOR_TOOL* aTool,
                                                             PCB_BASE_EDIT_FRAME* aFrame,
-                                                            bool aStatusOnly )
+                                                            bool aStatusItemsOnly )
 {
     std::vector<EDA_ITEM*> previewItems;
     KIGFX::VIEW*           view = aFrame->GetCanvas()->GetView();
 
     if( auto* placer = dynamic_cast<PNS::MEANDER_PLACER_BASE*>( aTool->Router()->Placer() ) )
     {
-        if( !aStatusOnly )
+        if( !aStatusItemsOnly )
         {
             PNS::ITEM_SET items = placer->TunedPath();
 
             for( PNS::ITEM* item : items )
-                previewItems.push_back( new ROUTER_PREVIEW_ITEM( item, view, true ) );
+                previewItems.push_back( new ROUTER_PREVIEW_ITEM( item, view, PNS_HOVER_ITEM ) );
         }
 
         TUNING_STATUS_VIEW_ITEM* statusItem = new TUNING_STATUS_VIEW_ITEM( aFrame );
@@ -2087,7 +2057,7 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
                 if( m_pickerItem )
                 {
                     dummyPattern.reset( PCB_TUNING_PATTERN::CreateNew( generatorTool, m_frame,
-                                                                       m_pickerItem, mode, false ) );
+                                                                       m_pickerItem, mode ) );
                     dummyPattern->SetPosition( m_pickerItem->GetPosition() );
                     dummyPattern->SetEnd( m_pickerItem->GetPosition() );
                 }
@@ -2200,23 +2170,20 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
                 m_tuningPattern = PCB_TUNING_PATTERN::CreateNew( generatorTool, m_frame,
                                                                  m_pickerItem, mode );
 
-                if( m_tuningPattern )
+                int      dummyDist;
+                int      dummyClearance = std::numeric_limits<int>::max() / 2;
+                VECTOR2I closestPt;
+
+                // With an artificially-large clearance this can't *not* collide, but the
+                // if stmt keeps Coverity happy....
+                if( m_pickerItem->GetEffectiveShape()->Collide( cursorPos, dummyClearance,
+                                                                &dummyDist, &closestPt ) )
                 {
-                    int      dummyDist;
-                    int      dummyClearance = std::numeric_limits<int>::max() / 2;
-                    VECTOR2I closestPt;
-
-                    // With an artificially-large clearance this can't *not* collide, but the
-                    // if stmt keeps Coverity happy....
-                    if( m_pickerItem->GetEffectiveShape()->Collide( cursorPos, dummyClearance,
-                                                                    &dummyDist, &closestPt ) )
-                    {
-                        m_tuningPattern->SetPosition( closestPt );
-                        m_tuningPattern->SetEnd( closestPt );
-                    }
-
-                    m_preview.Add( m_tuningPattern->Clone() );
+                    m_tuningPattern->SetPosition( closestPt );
+                    m_tuningPattern->SetEnd( closestPt );
                 }
+
+                m_preview.Add( m_tuningPattern->Clone() );
             }
             else if( m_pickerItem && m_tuningPattern )
             {

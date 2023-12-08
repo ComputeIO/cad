@@ -221,10 +221,7 @@ bool SCH_LINE_WIRE_BUS_TOOL::Init()
 
     ctxMenu.AddItem( EE_ACTIONS::undoLastSegment,      EE_CONDITIONS::ShowAlways, 10 );
     ctxMenu.AddItem( EE_ACTIONS::switchSegmentPosture, EE_CONDITIONS::ShowAlways, 10 );
-
-    ctxMenu.AddItem( EE_ACTIONS::finishWire,           IsDrawingWire, 10 );
-    ctxMenu.AddItem( EE_ACTIONS::finishBus,            IsDrawingBus, 10 );
-    ctxMenu.AddItem( EE_ACTIONS::finishLine,           IsDrawingLine, 10 );
+    ctxMenu.AddItem( ACTIONS::finishInteractive,       IsDrawingLineWireOrBus, 10 );
 
     ctxMenu.AddMenu( busUnfoldMenu.get(),              EE_CONDITIONS::Idle, 10 );
 
@@ -248,27 +245,6 @@ bool SCH_LINE_WIRE_BUS_TOOL::Init()
     selToolMenu.AddMenu( selBusUnfoldMenu.get(),       busSelection && EE_CONDITIONS::Idle, 100 );
 
     return true;
-}
-
-
-bool SCH_LINE_WIRE_BUS_TOOL::IsDrawingLine( const SELECTION& aSelection )
-{
-    return IsDrawingLineWireOrBus( aSelection )
-                && aSelection.Front()->IsType( { SCH_ITEM_LOCATE_GRAPHIC_LINE_T } );
-}
-
-
-bool SCH_LINE_WIRE_BUS_TOOL::IsDrawingWire( const SELECTION& aSelection )
-{
-    return IsDrawingLineWireOrBus( aSelection )
-                && aSelection.Front()->IsType( { SCH_ITEM_LOCATE_WIRE_T } );
-}
-
-
-bool SCH_LINE_WIRE_BUS_TOOL::IsDrawingBus( const SELECTION& aSelection )
-{
-    return IsDrawingLineWireOrBus( aSelection )
-                && aSelection.Front()->IsType( { SCH_ITEM_LOCATE_BUS_T } );
 }
 
 
@@ -742,10 +718,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const TOOL_EVENT& aTool, int aType, 
         //------------------------------------------------------------------------
         // Handle finish:
         //
-        else if( evt->IsAction( &EE_ACTIONS::finishLineWireOrBus )
-                     || evt->IsAction( &EE_ACTIONS::finishWire )
-                     || evt->IsAction( &EE_ACTIONS::finishBus )
-                     || evt->IsAction( &EE_ACTIONS::finishLine ) )
+        else if( evt->IsAction( &ACTIONS::finishInteractive ) )
         {
             if( segment || m_busUnfold.in_progress )
             {
