@@ -1054,12 +1054,18 @@ int PCBNEW_JOBS_HANDLER::JobResave( JOB* aJob )
     {
         pcbIo.SaveBoard( brd->GetFileName(), brd );
     }
-    catch ( const IO_ERROR& ioe )
+    catch( const IO_ERROR& ioe )
     {
-        wxString msg = wxString::Format( _( "Error saving PCB file.\n%s" ), ioe.What().GetData() );
-        m_reporter->Report( msg, RPT_SEVERITY_ERROR );
+        if( aResaveJob->IsCli() )
+        {
+            wxString msg = wxString::Format( _( "Error saving PCB file.\n%s" ), ioe.What().GetData() );
+            m_reporter->Report( msg, RPT_SEVERITY_ERROR );
+        }
         return CLI::EXIT_CODES::ERR_UNKNOWN;
     }
+
+    if( aResaveJob->IsCli() )
+        m_reporter->Report( _( "Successfully saved PCB file using the latest format\n" ), RPT_SEVERITY_INFO );
 
     return CLI::EXIT_CODES::SUCCESS;
 }

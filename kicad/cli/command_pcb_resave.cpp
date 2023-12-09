@@ -6,7 +6,7 @@
 CLI::PCB_RESAVE_COMMAND::PCB_RESAVE_COMMAND() : COMMAND( "resave" )
 {
     addCommonArgs( true, false, false, false);
-    m_argParser.add_description( UTF8STDSTR( _( "Resave a PCB file's format into the current one" ) ) );
+    m_argParser.add_description( UTF8STDSTR( _( "Resave a PCB file's format to the latest one" ) ) );
 }
 
 int CLI::PCB_RESAVE_COMMAND::doPerform(KIWAY& aKiway)

@@ -52,7 +52,7 @@
 
 #include <sch_file_versions.h>
 #include <sch_plugins/kicad/sch_sexpr_lib_plugin_cache.h>
-#include <sch_plugins/sch_sexpr_plugin.h>
+#include <sch_plugins/kicad/sch_sexpr_plugin.h>
 
 #include <netlist.h>
 #include <netlist_exporter_base.h>
@@ -1035,21 +1035,32 @@ int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
     if( aResaveJob->IsCli() )
         m_reporter->Report( _( "Loading schematic\n" ), RPT_SEVERITY_INFO );
 
-    SCHEMATIC* sch = EESCHEMA_HELPERS::LoadSchematic( aResaveJob->m_filename ); // TODO: who releases memory 
+    // SCH_SEXPR_PLUGIN needs an absolute path
+    wxFileName schPath = aResaveJob->m_filename;
+    schPath.MakeAbsolute();
+    wxString schFullPath = schPath.GetFullPath();
+
+    SCHEMATIC* loadedSch = EESCHEMA_HELPERS::LoadSchematic( aResaveJob->m_filename );
     SCH_SEXPR_PLUGIN plg;
 
     try
     {
-        pcbIo.SaveBoard( brd->GetFileName(), brd );
+        SCH_SHEET* loadedSheet = plg.LoadSchematicFile( schFullPath, loadedSch );
+        plg.SaveSchematicFile( schFullPath, loadedSheet, loadedSch );
     }
-    catch ( const IO_ERROR& ioe )
+    catch( const IO_ERROR& ioe )
     {
-        wxString msg = wxString::Format( _( "Error saving PCB file.\n%s" ), ioe.What().GetData() );
-        m_reporter->Report( msg, RPT_SEVERITY_ERROR );
+        if( aResaveJob->IsCli() )
+        {
+            wxString msg = wxString::Format( _( "Error saving SCH file.\n%s" ), ioe.What().GetData() );
+            m_reporter->Report( msg, RPT_SEVERITY_ERROR );
+        }
         return CLI::EXIT_CODES::ERR_UNKNOWN;
     }
 
-    // TODO: K1000 complete take a look at SaveSchematicFile
+    if( aResaveJob->IsCli() )
+        m_reporter->Report( _( "Successfully saved SCH file using the latest format\n" ), RPT_SEVERITY_INFO );
+
     return CLI::EXIT_CODES::SUCCESS;
 }
 
