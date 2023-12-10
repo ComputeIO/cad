@@ -1047,11 +1047,10 @@ int PCBNEW_JOBS_HANDLER::JobResave( JOB* aJob )
     if( aResaveJob->IsCli() )
         m_reporter->Report( _( "Loading board\n" ), RPT_SEVERITY_INFO );
 
-    BOARD* brd = LoadBoard( aResaveJob->m_filename );
     PCB_PLUGIN pcbIo;
-
     try
     {
+        BOARD* brd = LoadBoard( aResaveJob->m_filename );
         pcbIo.SaveBoard( brd->GetFileName(), brd );
     }
     catch( const IO_ERROR& ioe )

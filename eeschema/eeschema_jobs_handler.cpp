@@ -1035,14 +1035,19 @@ int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
     if( aResaveJob->IsCli() )
         m_reporter->Report( _( "Loading schematic\n" ), RPT_SEVERITY_INFO );
 
+    SCHEMATIC* loadedSch = EESCHEMA_HELPERS::LoadSchematic( aResaveJob->m_filename );
+    if( loadedSch == nullptr )
+    {
+        m_reporter->Report( _( "Failed to load schematic file\n" ), RPT_SEVERITY_ERROR );
+        return CLI::EXIT_CODES::ERR_INVALID_INPUT_FILE;
+    }
+
     // SCH_SEXPR_PLUGIN needs an absolute path
     wxFileName schPath = aResaveJob->m_filename;
     schPath.MakeAbsolute();
     wxString schFullPath = schPath.GetFullPath();
 
-    SCHEMATIC* loadedSch = EESCHEMA_HELPERS::LoadSchematic( aResaveJob->m_filename );
     SCH_SEXPR_PLUGIN plg;
-
     try
     {
         SCH_SHEET* loadedSheet = plg.LoadSchematicFile( schFullPath, loadedSch );
