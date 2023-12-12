@@ -323,9 +323,9 @@ public:
 
     const GENERATORS& Generators() const { return m_generators; }
 
-    BOARD_BOUNDING_BOX* BoardOutline() { return m_boardOutline; }
+    BOARD_BOUNDING_BOX*       BoardOutline() { return m_boardOutline; }
     const BOARD_BOUNDING_BOX* BoardOutline() const { return m_boardOutline; }
-    void UpdateBoardOutline();
+    void                      UpdateBoardOutline();
 
     const MARKERS& Markers() const { return m_markers; }
 
@@ -1349,7 +1349,7 @@ private:
     NETINFO_LIST                 m_NetInfo;         // net info list (name, design constraints...
 
     std::vector<BOARD_LISTENER*> m_listeners;
-    BOARD_BOUNDING_BOX*               m_boardOutline;
+    BOARD_BOUNDING_BOX*          m_boardOutline;
 };
 
 

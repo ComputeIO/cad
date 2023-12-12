@@ -84,7 +84,8 @@ BOARD::BOARD() :
         m_designSettings( new BOARD_DESIGN_SETTINGS( nullptr, "board.design_settings" ) ),
         m_skipMaxClearanceCacheUpdate( false ),
         m_maxClearanceValue( 0 ),
-        m_NetInfo( this ),m_boardOutline( new BOARD_BOUNDING_BOX({}) )
+        m_NetInfo( this ),
+        m_boardOutline( new BOARD_BOUNDING_BOX( BOX2I()  ) )
 {
     // A too small value do not allow connecting 2 shapes (i.e. segments) not exactly connected
     // A too large value do not allow safely connecting 2 shapes like very short segments.

@@ -2828,5 +2828,4 @@ void PCB_PAINTER::draw( const BOARD_BOUNDING_BOX* aBoardBoundingBox, int aLayer 
 }
 
 
-
 const double PCB_RENDER_SETTINGS::MAX_FONT_SIZE = pcbIUScale.mmToIU( 10.0 );

@@ -522,7 +522,6 @@ void PCB_DRAW_PANEL_GAL::SyncLayersVisibility( const BOARD* aBoard )
     m_view->SetLayerVisible( LAYER_RATSNEST, true );
     m_view->SetLayerVisible( LAYER_MARKER_SHADOWS, true );
     m_view->SetLayerVisible( LAYER_BOARD_BOUNDING_BOX, true );
-
 }
 
 

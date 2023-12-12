@@ -49,7 +49,7 @@ public:
 
     wxString GetClass() const override;
 
-     void ViewGetLayers( int aLayers[], int& aCount ) const override;
+    void ViewGetLayers( int aLayers[], int& aCount ) const override;
 
 
 #if defined( DEBUG )
@@ -61,7 +61,6 @@ public:
 
 private:
     std::shared_ptr<BOX2I> m_boundingBox;
-
 };
 
 #endif

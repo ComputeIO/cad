@@ -213,7 +213,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, int aCommitFlags )
                 solderMaskDirty = true;
             }
 
-            if ( boardItem->GetLayer() == Edge_Cuts )
+            if( boardItem->GetLayer() == Edge_Cuts )
             {
                 updateBoardBoundingBox = true;
             }
@@ -531,7 +531,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, int aCommitFlags )
             if( BOARD_BOUNDING_BOX* outline = board->BoardOutline() )
             {
                 board->UpdateBoardOutline();
-                view->Update(  outline );
+                view->Update( outline );
             }
         }
 

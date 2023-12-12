@@ -222,7 +222,7 @@ void PCB_BASE_EDIT_FRAME::RestoreCopyFromUndoList( wxCommandEvent& aEvent )
     m_toolManager->PostEvent( EVENTS::SelectedItemsModified );
 
     m_pcb->UpdateBoardOutline();
-    GetCanvas()->GetView()->Update(m_pcb->BoardOutline());
+    GetCanvas()->GetView()->Update( m_pcb->BoardOutline() );
     GetCanvas()->Refresh();
 }
 
@@ -254,7 +254,7 @@ void PCB_BASE_EDIT_FRAME::RestoreCopyFromRedoList( wxCommandEvent& aEvent )
     m_toolManager->PostEvent( EVENTS::SelectedItemsModified );
 
     m_pcb->UpdateBoardOutline();
-    GetCanvas()->GetView()->Update(m_pcb->BoardOutline());
+    GetCanvas()->GetView()->Update( m_pcb->BoardOutline() );
     GetCanvas()->Refresh();
 }
 
@@ -659,6 +659,6 @@ void PCB_BASE_EDIT_FRAME::RollbackFromUndo()
     delete undo;
 
     m_pcb->UpdateBoardOutline();
-    GetCanvas()->GetView()->Update(m_pcb->BoardOutline());
+    GetCanvas()->GetView()->Update( m_pcb->BoardOutline() );
     GetCanvas()->Refresh();
 }

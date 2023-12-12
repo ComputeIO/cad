@@ -27,18 +27,17 @@
 #include <memory>
 #include <board_item_container.h>
 
-BOARD_BOUNDING_BOX::BOARD_BOUNDING_BOX(BOX2I const& aBoundingBox ) :
-        EDA_ITEM(  KICAD_T::PCB_BOUNDING_BOX_T ),
+BOARD_BOUNDING_BOX::BOARD_BOUNDING_BOX( BOX2I const& aBoundingBox ) :
+        EDA_ITEM( KICAD_T::PCB_BOUNDING_BOX_T ),
         m_boundingBox( std::make_shared<BOX2I>( aBoundingBox ) )
 {
-    SetFlags(SKIP_STRUCT);
+    SetFlags( SKIP_STRUCT );
 }
 
 BOARD_BOUNDING_BOX::BOARD_BOUNDING_BOX( const BOARD_BOUNDING_BOX& aOther ) :
-        EDA_ITEM(  KICAD_T::PCB_BOUNDING_BOX_T ),
-        m_boundingBox( aOther.m_boundingBox )
+        EDA_ITEM( KICAD_T::PCB_BOUNDING_BOX_T ), m_boundingBox( aOther.m_boundingBox )
 {
-    SetFlags(SKIP_STRUCT);
+    SetFlags( SKIP_STRUCT );
 }
 
 BOARD_BOUNDING_BOX& BOARD_BOUNDING_BOX::operator=( const BOARD_BOUNDING_BOX& aOther )
@@ -72,10 +71,10 @@ wxString BOARD_BOUNDING_BOX::GetClass() const
     return "BOARD_BOUNDING_BOX";
 }
 
-void BOARD_BOUNDING_BOX::ViewGetLayers(int aLayers[], int& aCount) const
+void BOARD_BOUNDING_BOX::ViewGetLayers( int aLayers[], int& aCount ) const
 {
     aCount = 1;
-    aLayers[0]  = LAYER_BOARD_BOUNDING_BOX;
+    aLayers[0] = LAYER_BOARD_BOUNDING_BOX;
 }
 
 #if defined( DEBUG )
