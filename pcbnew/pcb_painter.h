@@ -59,6 +59,7 @@ class PCB_MARKER;
 class NET_SETTINGS;
 class NETINFO_LIST;
 class TEXT_ATTRIBUTES;
+class BOARD_BOUNDING_BOX;
 
 namespace KIFONT
 {
@@ -193,6 +194,7 @@ protected:
     void draw( const PCB_DIMENSION_BASE* aDimension, int aLayer );
     void draw( const PCB_TARGET* aTarget );
     void draw( const PCB_MARKER* aMarker, int aLayer );
+    void draw( const BOARD_BOUNDING_BOX* aBoardBoundingBox, int aLayer );
 
     /**
      * Get the thickness to draw for a line (e.g. 0 thickness lines get a minimum value).

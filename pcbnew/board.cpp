@@ -64,6 +64,7 @@
 #include <core/thread_pool.h>
 #include <zone.h>
 #include <mutex>
+#include <board_bounding_box.h>
 
 // This is an odd place for this, but CvPcb won't link if it's in board_item.cpp like I first
 // tried it.
@@ -83,7 +84,7 @@ BOARD::BOARD() :
         m_designSettings( new BOARD_DESIGN_SETTINGS( nullptr, "board.design_settings" ) ),
         m_skipMaxClearanceCacheUpdate( false ),
         m_maxClearanceValue( 0 ),
-        m_NetInfo( this )
+        m_NetInfo( this ),m_boardOutline( new BOARD_BOUNDING_BOX({}) )
 {
     // A too small value do not allow connecting 2 shapes (i.e. segments) not exactly connected
     // A too large value do not allow safely connecting 2 shapes like very short segments.
@@ -184,6 +185,7 @@ BOARD::~BOARD()
     for( PCB_GENERATOR* g : m_generators )
         delete g;
 
+    delete m_boardOutline;
     m_generators.clear();
 }
 
@@ -2912,6 +2914,11 @@ bool BOARD::operator==( const BOARD_ITEM& aItem ) const
         return false;
 
     return true;
+}
+
+void BOARD::UpdateBoardOutline()
+{
+    m_boardOutline->SetBoundingBox(GetBoardEdgesBoundingBox());
 }
 
 

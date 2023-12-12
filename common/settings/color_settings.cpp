@@ -134,6 +134,7 @@ COLOR_SETTINGS::COLOR_SETTINGS( const wxString& aFilename, bool aAbsolutePath ) 
     CLR( "board.via_through",              LAYER_VIA_THROUGH        );
     CLR( "board.worksheet",                LAYER_DRAWINGSHEET       );
     CLR( "board.page_limits",              LAYER_PAGE_LIMITS        );
+    CLR( "board.bounding_box",             LAYER_BOARD_BOUNDING_BOX );
 
     CLR( "board.copper.f",      F_Cu    );
     CLR( "board.copper.in1",    In1_Cu  );

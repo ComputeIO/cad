@@ -61,6 +61,7 @@ class CONNECTIVITY_DATA;
 class COMPONENT;
 class PROJECT;
 class PROGRESS_REPORTER;
+class BOARD_BOUNDING_BOX;
 struct ISOLATED_ISLANDS;
 
 // The default value for m_outlinesChainingEpsilon to convert a board outlines to polygons
@@ -321,6 +322,10 @@ public:
     const ZONES& Zones() const { return m_zones; }
 
     const GENERATORS& Generators() const { return m_generators; }
+
+    BOARD_BOUNDING_BOX* BoardOutline() { return m_boardOutline; }
+    const BOARD_BOUNDING_BOX* BoardOutline() const { return m_boardOutline; }
+    void UpdateBoardOutline();
 
     const MARKERS& Markers() const { return m_markers; }
 
@@ -1344,6 +1349,7 @@ private:
     NETINFO_LIST                 m_NetInfo;         // net info list (name, design constraints...
 
     std::vector<BOARD_LISTENER*> m_listeners;
+    BOARD_BOUNDING_BOX*               m_boardOutline;
 };
 
 
