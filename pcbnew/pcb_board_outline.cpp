@@ -39,7 +39,7 @@ void PCB_BOARD_OUTLINE::CopyPros( const PCB_BOARD_OUTLINE& aCopyFrom, PCB_BOARD_
 
 
 PCB_BOARD_OUTLINE::PCB_BOARD_OUTLINE( BOARD_ITEM* aParent ) :
-        BOARD_ITEM( aParent, KICAD_T::PCB_SHAPE_T, Edge_Cuts ),
+        BOARD_ITEM( aParent, KICAD_T::PCB_BOARD_OUTLINE_T, Edge_Cuts ),
         m_outlines( std::make_shared<SHAPE_POLY_SET>() ), m_boundingBox( std::make_shared<BOX2I>() )
 {
     SetFlags( SKIP_STRUCT );
