@@ -608,6 +608,7 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
             break;
         default: draw( static_cast<const PCB_SHAPE*>( item ), aLayer ); break;
         }
+
         break;
 
     case PCB_REFERENCE_IMAGE_T:

@@ -2919,8 +2919,8 @@ bool BOARD::operator==( const BOARD_ITEM& aItem ) const
 
 void BOARD::UpdateBoardOutline()
 {
-    m_boardOutline->SetBoundingBox(GetBoardEdgesBoundingBox());
     GetBoardPolygonOutlines( m_boardOutline->GetOutline() );
+    m_boardOutline->UpdateBoundingBox();
 }
 
 

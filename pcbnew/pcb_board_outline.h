@@ -50,7 +50,7 @@ public:
 
     const BOX2I GetBoundingBox() const override;
 
-    void SetBoundingBox( BOX2I const& aBox );
+    void UpdateBoundingBox();
 
     PCB_LAYER_ID GetLayer() const override;
 

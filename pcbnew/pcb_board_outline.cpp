@@ -66,9 +66,9 @@ const BOX2I PCB_BOARD_OUTLINE::GetBoundingBox() const
     return *m_boundingBox;
 }
 
-void PCB_BOARD_OUTLINE::SetBoundingBox( BOX2I const& aBox )
+void PCB_BOARD_OUTLINE::UpdateBoundingBox()
 {
-    *m_boundingBox = aBox;
+    *m_boundingBox = m_outlines->BBox();
 }
 
 PCB_LAYER_ID PCB_BOARD_OUTLINE::GetLayer() const
