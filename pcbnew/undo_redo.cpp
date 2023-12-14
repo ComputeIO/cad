@@ -45,7 +45,7 @@ using namespace std::placeholders;
 #include <board_commit.h>
 #include <drawing_sheet/ds_proxy_undo_item.h>
 #include <wx/msgdlg.h>
-#include <board_bounding_box.h>
+#include <pcb_board_outline.h>
 
 /* Functions to undo and redo edit commands.
  *  commands to undo are stored in CurrentScreen->m_UndoList

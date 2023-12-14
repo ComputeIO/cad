@@ -108,7 +108,6 @@ enum KICAD_T
     PCB_ITEM_LIST_T,         ///< class BOARD_ITEM_LIST, a list of board items
     PCB_NETINFO_T,           ///< class NETINFO_ITEM, a description of a net
     PCB_GROUP_T,             ///< class PCB_GROUP, a set of BOARD_ITEMs
-    PCB_BOUNDING_BOX_T,      ///< class BOARD_BOUNDING_BOX, a board bounding box
 
     // Be prudent with these types:
     // they should be used only to locate a specific field type among PCB_FIELD_Ts
@@ -463,7 +462,6 @@ constexpr bool IsPcbnewType( const KICAD_T aType )
     case PCB_NETINFO_T:
     case PCB_GROUP_T:
     case PCB_GENERATOR_T:
-    case PCB_BOUNDING_BOX_T:
 
     case PCB_FIELD_LOCATE_REFERENCE_T:
     case PCB_FIELD_LOCATE_VALUE_T:

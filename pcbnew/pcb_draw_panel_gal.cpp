@@ -40,7 +40,7 @@
 #include <pcbnew_settings.h>
 #include <ratsnest/ratsnest_data.h>
 #include <ratsnest/ratsnest_view_item.h>
-#include <board_bounding_box.h>
+#include <pcb_board_outline.h>
 
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
@@ -521,7 +521,7 @@ void PCB_DRAW_PANEL_GAL::SyncLayersVisibility( const BOARD* aBoard )
     m_view->SetLayerVisible( LAYER_SELECT_OVERLAY, true );
     m_view->SetLayerVisible( LAYER_RATSNEST, true );
     m_view->SetLayerVisible( LAYER_MARKER_SHADOWS, true );
-    m_view->SetLayerVisible( LAYER_BOARD_BOUNDING_BOX, true );
+    m_view->SetLayerVisible( LAYER_BOARD_OUTLINE, true );
 }
 
 

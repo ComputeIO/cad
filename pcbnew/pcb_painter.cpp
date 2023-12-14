@@ -42,7 +42,7 @@
 #include <pcb_marker.h>
 #include <pcb_dimension.h>
 #include <pcb_target.h>
-#include <board_bounding_box.h>
+#include <pcb_board_outline.h>
 
 #include <layer_ids.h>
 #include <pcb_painter.h>
@@ -539,14 +539,7 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     const BOARD_ITEM* item = dynamic_cast<const BOARD_ITEM*>( aItem );
 
     if( !item )
-    {
-        if( const BOARD_BOUNDING_BOX* outline = dynamic_cast<const BOARD_BOUNDING_BOX*>( aItem ) )
-        {
-            draw( outline, aLayer );
-            return true;
-        }
         return false;
-    }
 
     if( const BOARD* board = item->GetBoard() )
     {
@@ -607,7 +600,14 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
         break;
 
     case PCB_SHAPE_T:
-        draw( static_cast<const PCB_SHAPE*>( item ), aLayer );
+
+        switch( aLayer )
+        {
+        case LAYER_BOARD_OUTLINE:
+            draw( static_cast<const PCB_BOARD_OUTLINE*>( item ), aLayer );
+            break;
+        default: draw( static_cast<const PCB_SHAPE*>( item ), aLayer ); break;
+        }
         break;
 
     case PCB_REFERENCE_IMAGE_T:
@@ -2809,20 +2809,17 @@ void PCB_PAINTER::draw( const PCB_MARKER* aMarker, int aLayer )
     m_gal->Restore();
 }
 
-void PCB_PAINTER::draw( const BOARD_BOUNDING_BOX* aBoardBoundingBox, int aLayer )
+void PCB_PAINTER::draw( const PCB_BOARD_OUTLINE* aBoardOutline, int aLayer )
 {
-    if( aLayer != LAYER_BOARD_BOUNDING_BOX )
-        return;
-
     m_gal->Save();
     m_gal->PushDepth();
-    const COLOR4D& outlineColor = m_pcbSettings.GetColor( aBoardBoundingBox, aLayer );
+    const COLOR4D& outlineColor = m_pcbSettings.GetColor( aBoardOutline, aLayer );
     m_gal->SetFillColor( outlineColor );
     m_gal->AdvanceDepth();
     m_gal->SetLineWidth( 0 );
     m_gal->SetIsFill( true );
     m_gal->SetIsStroke( false );
-    m_gal->DrawRectangle( aBoardBoundingBox->ViewBBox() );
+    m_gal->DrawPolygon( aBoardOutline->GetOutline() );
     m_gal->PopDepth();
     m_gal->Restore();
 }

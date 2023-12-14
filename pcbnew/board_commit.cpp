@@ -37,7 +37,7 @@
 #include <tools/pcb_actions.h>
 #include <connectivity/connectivity_data.h>
 #include <teardrop/teardrop.h>
-#include <board_bounding_box.h>
+#include <pcb_board_outline.h>
 
 #include <functional>
 using namespace std::placeholders;
@@ -528,7 +528,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, int aCommitFlags )
 
         if( updateBoardBoundingBox && view )
         {
-            if( BOARD_BOUNDING_BOX* outline = board->BoardOutline() )
+            if( PCB_BOARD_OUTLINE* outline = board->BoardOutline() )
             {
                 board->UpdateBoardOutline();
                 view->Update( outline );
