@@ -608,7 +608,6 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
             break;
         default: draw( static_cast<const PCB_SHAPE*>( item ), aLayer ); break;
         }
-
         break;
 
     case PCB_REFERENCE_IMAGE_T:
@@ -2820,7 +2819,12 @@ void PCB_PAINTER::draw( const PCB_BOARD_OUTLINE* aBoardOutline, int aLayer )
     m_gal->SetLineWidth( 0 );
     m_gal->SetIsFill( true );
     m_gal->SetIsStroke( false );
-    m_gal->DrawPolygon( aBoardOutline->GetOutline() );
+
+    if( aBoardOutline->HasOutline() )
+        m_gal->DrawPolygon( aBoardOutline->GetOutline() );
+    else
+        m_gal->DrawRectangle( aBoardOutline->GetBoundingBox() );
+
     m_gal->PopDepth();
     m_gal->Restore();
 }

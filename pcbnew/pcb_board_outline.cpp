@@ -29,6 +29,15 @@
 #include <memory>
 #include <board_item_container.h>
 
+void PCB_BOARD_OUTLINE::CopyPros( const PCB_BOARD_OUTLINE& aCopyFrom, PCB_BOARD_OUTLINE& aCopyTo )
+{
+    aCopyTo.m_outlines = aCopyFrom.m_outlines;
+    aCopyTo.m_boundingBox = aCopyFrom.m_boundingBox;
+    aCopyTo.m_parent = aCopyFrom.m_parent;
+    aCopyTo.m_has_outline = aCopyFrom.m_has_outline;
+}
+
+
 PCB_BOARD_OUTLINE::PCB_BOARD_OUTLINE( BOARD_ITEM* aParent ) :
         BOARD_ITEM( aParent, KICAD_T::PCB_SHAPE_T, Edge_Cuts ),
         m_outlines( std::make_shared<SHAPE_POLY_SET>() ), m_boundingBox( std::make_shared<BOX2I>() )
@@ -39,15 +48,12 @@ PCB_BOARD_OUTLINE::PCB_BOARD_OUTLINE( BOARD_ITEM* aParent ) :
 PCB_BOARD_OUTLINE::PCB_BOARD_OUTLINE( const PCB_BOARD_OUTLINE& aOther ) :
         PCB_BOARD_OUTLINE( aOther.GetParent() )
 {
-    m_outlines = aOther.m_outlines;
-    m_boundingBox = aOther.m_boundingBox;
+    CopyPros( aOther, *this );
 }
 
 PCB_BOARD_OUTLINE& PCB_BOARD_OUTLINE::operator=( const PCB_BOARD_OUTLINE& aOther )
 {
-    m_outlines = aOther.m_outlines;
-    m_boundingBox = aOther.m_boundingBox;
-    m_parent = aOther.m_parent;
+    CopyPros( aOther, *this );
     return *this;
 }
 
@@ -115,6 +121,13 @@ void PCB_BOARD_OUTLINE::SetOutline( const SHAPE_POLY_SET& aOutline )
 {
     *m_outlines = aOutline;
     *m_boundingBox = m_outlines->BBox();
+    m_has_outline = true;
+}
+
+void PCB_BOARD_OUTLINE::SetOutline( const BOX2I& aOutline )
+{
+    *m_boundingBox = m_outlines->BBox();
+    m_has_outline = false;
 }
 
 wxString PCB_BOARD_OUTLINE::GetClass() const

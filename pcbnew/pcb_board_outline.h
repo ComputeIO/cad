@@ -62,6 +62,12 @@ public:
 
     void SetOutline( const SHAPE_POLY_SET& aOutline );
 
+    void SetOutline( const BOX2I& aOutline );
+
+    bool HasOutline() const { return m_has_outline; }
+
+    static void CopyPros( const PCB_BOARD_OUTLINE& aCopyFrom, PCB_BOARD_OUTLINE& aCopyTo );
+
 #if defined( DEBUG )
 
     void Show( int nestLevel, std::ostream& os ) const override;
@@ -73,6 +79,7 @@ public:
 private:
     std::shared_ptr<SHAPE_POLY_SET> m_outlines;
     std::shared_ptr<BOX2I>          m_boundingBox;
+    bool                            m_has_outline;
 };
 
 #endif
