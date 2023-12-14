@@ -66,11 +66,6 @@ const BOX2I PCB_BOARD_OUTLINE::GetBoundingBox() const
     return *m_boundingBox;
 }
 
-void PCB_BOARD_OUTLINE::UpdateBoundingBox()
-{
-    *m_boundingBox = m_outlines->BBox();
-}
-
 PCB_LAYER_ID PCB_BOARD_OUTLINE::GetLayer() const
 {
     return UNDEFINED_LAYER;
@@ -114,6 +109,12 @@ bool PCB_BOARD_OUTLINE::operator==( const BOARD_ITEM& aItem ) const
 EDA_ITEM* PCB_BOARD_OUTLINE::Clone() const
 {
     return new PCB_BOARD_OUTLINE( *this );
+}
+
+void PCB_BOARD_OUTLINE::SetOutline( const SHAPE_POLY_SET& aOutline )
+{
+    *m_outlines = aOutline;
+    *m_boundingBox = m_outlines->BBox();
 }
 
 wxString PCB_BOARD_OUTLINE::GetClass() const

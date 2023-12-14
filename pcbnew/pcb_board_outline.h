@@ -44,13 +44,9 @@ public:
 
     const SHAPE_POLY_SET& GetOutline() const { return *m_outlines; }
 
-    SHAPE_POLY_SET& GetOutline() { return *m_outlines; }
-
     void ViewGetLayers( int aLayers[], int& aCount ) const override;
 
     const BOX2I GetBoundingBox() const override;
-
-    void UpdateBoundingBox();
 
     PCB_LAYER_ID GetLayer() const override;
 
@@ -64,6 +60,7 @@ public:
 
     EDA_ITEM* Clone() const override;
 
+    void SetOutline( const SHAPE_POLY_SET& aOutline );
 
 #if defined( DEBUG )
 
