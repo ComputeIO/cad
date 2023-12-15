@@ -600,7 +600,14 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
         break;
 
     case PCB_SHAPE_T:
-        draw( static_cast<const PCB_SHAPE*>( item ), aLayer );
+
+        switch( aLayer )
+        {
+        case LAYER_BOARD_OUTLINE:
+            draw( static_cast<const PCB_BOARD_OUTLINE*>( item ), aLayer );
+            break;
+        default: draw( static_cast<const PCB_SHAPE*>( item ), aLayer ); break;
+        }
         break;
 
     case PCB_REFERENCE_IMAGE_T:
@@ -646,10 +653,6 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 
     case PCB_MARKER_T:
         draw( static_cast<const PCB_MARKER*>( item ), aLayer );
-        break;
-
-    case PCB_BOARD_OUTLINE_T:
-        draw( static_cast<const PCB_BOARD_OUTLINE*>( item ), aLayer );
         break;
 
     default:
@@ -2825,7 +2828,6 @@ void PCB_PAINTER::draw( const PCB_BOARD_OUTLINE* aBoardOutline, int aLayer )
     m_gal->PopDepth();
     m_gal->Restore();
 }
-
 
 
 const double PCB_RENDER_SETTINGS::MAX_FONT_SIZE = pcbIUScale.mmToIU( 10.0 );
