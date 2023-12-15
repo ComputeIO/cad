@@ -43,6 +43,7 @@
 #include <pcb_dimension.h>
 #include <pcb_target.h>
 #include <pcb_group.h>
+#include <pcb_board_outline.h>
 
 class TEST_BOARD_ITEM_FIXTURE
 {
@@ -104,6 +105,7 @@ public:
         case PCB_DIM_RADIAL_T:        return new PCB_DIM_RADIAL( &m_board );
         case PCB_DIM_ORTHOGONAL_T:    return new PCB_DIM_ORTHOGONAL( &m_board );
         case PCB_TARGET_T:            return new PCB_TARGET( &m_board );
+        case PCB_BOARD_OUTLINE_T:     return new PCB_BOARD_OUTLINE( &m_board );
         case PCB_ZONE_T:
         {
             ZONE* zone = new ZONE( &m_board );
