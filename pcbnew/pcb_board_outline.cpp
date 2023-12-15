@@ -126,7 +126,7 @@ void PCB_BOARD_OUTLINE::SetOutline( const SHAPE_POLY_SET& aOutline )
 
 void PCB_BOARD_OUTLINE::SetOutline( const BOX2I& aOutline )
 {
-    *m_boundingBox = m_outlines->BBox();
+    *m_boundingBox = aOutline;
     m_has_outline = false;
 }
 
