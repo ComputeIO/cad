@@ -23,6 +23,8 @@
     - cd build/linux
     - cmake
       -G Ninja
+      -DCMAKE_C_COMPILER_LAUNCHER=ccache
+      -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
       -DCMAKE_BUILD_TYPE=QABUILD
       -DKICAD_STDLIB_LIGHT_DEBUG=ON
       -DKICAD_BUILD_I18N=ON
