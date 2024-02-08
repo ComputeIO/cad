@@ -167,6 +167,7 @@ bool CACHED_CONTAINER_GPU::defragmentResize( unsigned int aNewSize )
     ITEMS::iterator it, it_end;
     int             newOffset = 0;
 
+    PROF_TIMER      copyTime( "glCopyBuffer" );
     // Defragmentation
     for( it = m_items.begin(), it_end = m_items.end(); it != it_end; ++it )
     {
@@ -205,10 +206,15 @@ bool CACHED_CONTAINER_GPU::defragmentResize( unsigned int aNewSize )
     m_isMapped = false;
     glDeleteBuffers( 1, &m_glBufferHandle );
 
+    std::cerr << "Time to copy " << m_currentSize << " bytes and " << m_items.size() << " items: ";
+    copyTime.Show();
+
     // Switch to the new vertex buffer
     m_glBufferHandle = newBuffer;
+    PROF_TIMER mapTime( "glCopyBuffer post Map" );
     Map();
     checkGlError( "switching buffers during defragmentation", __FILE__, __LINE__ );
+    mapTime.Show();
 
 #ifdef KICAD_GAL_PROFILE
     totalTime.Stop();
@@ -264,7 +270,9 @@ bool CACHED_CONTAINER_GPU::defragmentResizeMemcpy( unsigned int aNewSize )
     newBufferMem = static_cast<VERTEX*>( glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY ) );
     checkGlError( "creating buffer during defragmentation", __FILE__, __LINE__ );
 
+    PROF_TIMER defragTime( "memcpy defrag time" );
     defragment( newBufferMem );
+    defragTime.Show();
 
     // Cleanup
     glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
@@ -274,8 +282,10 @@ bool CACHED_CONTAINER_GPU::defragmentResizeMemcpy( unsigned int aNewSize )
 
     // Switch to the new vertex buffer
     m_glBufferHandle = newBuffer;
+    PROF_TIMER mapTime( "memcpy post Map" );
     Map();
     checkGlError( "switching buffers during defragmentation", __FILE__, __LINE__ );
+    mapTime.Show();
 
 #ifdef KICAD_GAL_PROFILE
     totalTime.Stop();
