@@ -225,6 +225,7 @@ bool CACHED_CONTAINER::reallocate( unsigned int aSize )
     if( newChunk == m_freeChunks.end() )
     {
         bool result;
+        static double cum_time = 0.0;
 
         PROF_TIMER defragResize( "CACHED_CONTAINER::reallocate" );
 
@@ -240,8 +241,12 @@ bool CACHED_CONTAINER::reallocate( unsigned int aSize )
             result = defragmentResize( pow( 2, ceil( log2( m_currentSize * 2 + aSize ) ) ) );
         }
 
-        std::cerr << "Time to defrag  " << m_currentSize << " bytes: ";
+        defragResize.Stop();
+        cum_time += defragResize.msecs();
+        std::cerr << "Time to defrag  " << m_currentSize << " vertices, ( cumulative " << cum_time <<" ) : ";
         defragResize.Show();
+        std::cerr << std::endl;
+
 
         if( !result )
             return false;
