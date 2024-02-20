@@ -713,93 +713,26 @@ void ROUTER_TOOL::switchLayerOnViaPlacement()
 
     m_router->SwitchLayer( *newLayer );
     m_lastTargetLayer = *newLayer;
-
-    updateSizesAfterLayerSwitch( ToLAYER_ID( *newLayer ), m_endSnapPoint );
 }
 
 
-void ROUTER_TOOL::updateSizesAfterLayerSwitch( PCB_LAYER_ID targetLayer, const VECTOR2I& aPos )
+void ROUTER_TOOL::reprobeSizes( const VECTOR2I& aPos, PCB_LAYER_ID overrideLayer )
 {
+    PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
+
+
     std::vector<PNS::NET_HANDLE> nets = m_router->GetCurrentNets();
+    PNS::NET_HANDLE net = nets.empty() ? (m_startItem ? m_startItem->Net() : nullptr) : nets.front();
+    PCB_LAYER_ID layer = overrideLayer == UNDEFINED_LAYER ? frame()->GetActiveLayer() : overrideLayer;
 
-    PNS::SIZES_SETTINGS          sizes     = m_router->Sizes();
-    BOARD_DESIGN_SETTINGS&       bds       = board()->GetDesignSettings();
-    std::shared_ptr<DRC_ENGINE>& drcEngine = bds.m_DRCEngine;
-    DRC_CONSTRAINT               constraint;
-
-    PCB_TRACK dummyTrack( board() );
-    dummyTrack.SetFlags( ROUTER_TRANSIENT );
-    dummyTrack.SetLayer( targetLayer );
-    dummyTrack.SetNet( nets.empty() ? nullptr: static_cast<NETINFO_ITEM*>( nets[0] ) );
-    dummyTrack.SetStart( aPos );
-    dummyTrack.SetEnd( dummyTrack.GetStart() );
-
-    if( bds.UseNetClassTrack() || !sizes.TrackWidthIsExplicit() )
-    {
-        constraint = drcEngine->EvalRules( TRACK_WIDTH_CONSTRAINT, &dummyTrack, nullptr,
-                                           targetLayer );
-
-        if( !constraint.IsNull() )
-        {
-            int width = sizes.TrackWidth();
-
-            // Only change the size if we're explicitly using the net class, or we're out of range
-            // for our new constraints. Otherwise, just leave the track width alone so we don't
-            // change for no reason.
-            if( bds.UseNetClassTrack()
-                    || ( width < bds.m_TrackMinWidth )
-                    || ( width < constraint.m_Value.Min() )
-                    || ( width > constraint.m_Value.Max() ) )
-            {
-                sizes.SetTrackWidth( std::max( bds.m_TrackMinWidth, constraint.m_Value.Opt() ) );
-            }
-
-            if( sizes.TrackWidth() == constraint.m_Value.Opt() )
-                sizes.SetWidthSource( constraint.GetName() );
-            else if( sizes.TrackWidth() == bds.m_TrackMinWidth )
-                sizes.SetWidthSource( _( "board minimum track width" ) );
-            else
-                sizes.SetWidthSource( _( "existing track" ) );
-        }
-    }
-
-    if( nets.size() >= 2 && ( bds.UseNetClassDiffPair() || !sizes.TrackWidthIsExplicit() ) )
-    {
-        PCB_TRACK dummyTrackB( board() );
-        dummyTrackB.SetFlags( ROUTER_TRANSIENT );
-        dummyTrackB.SetLayer( targetLayer );
-        dummyTrackB.SetNet( static_cast<NETINFO_ITEM*>( nets[1] ) );
-        dummyTrackB.SetStart( aPos );
-        dummyTrackB.SetEnd( dummyTrackB.GetStart() );
-
-        constraint = drcEngine->EvalRules( TRACK_WIDTH_CONSTRAINT, &dummyTrack, &dummyTrackB,
-                                           targetLayer );
-
-        if( !constraint.IsNull() )
-        {
-            sizes.SetDiffPairWidth( std::max( bds.m_TrackMinWidth, constraint.m_Value.Opt() ) );
-
-            if( sizes.DiffPairWidth() == constraint.m_Value.Opt() )
-                sizes.SetDiffPairWidthSource( constraint.GetName() );
-            else
-                sizes.SetDiffPairWidthSource( _( "board minimum track width" ) );
-        }
-
-        constraint = drcEngine->EvalRules( DIFF_PAIR_GAP_CONSTRAINT, &dummyTrack, &dummyTrackB,
-                                           targetLayer );
-
-        if( !constraint.IsNull() )
-        {
-            sizes.SetDiffPairGap( std::max( bds.m_MinClearance, constraint.m_Value.Opt() ) );
-
-            if( sizes.DiffPairGap() == constraint.m_Value.Opt() )
-                sizes.SetDiffPairGapSource( constraint.GetName() );
-            else
-                sizes.SetDiffPairGapSource( _( "board minimum clearance" ) );
-        }
-    }
+    // TODO: Location-sensitive rules (area rules) would need start and end pos technically
+    // But a proper implementation of that would have to re-evaluate rules constantly
+    // So simplified implementation is fine
+    m_iface->ProbeSizes( sizes, m_startItem, layer, net, aPos );
 
     m_router->UpdateSizes( sizes );
+
+    UpdateMessagePanel();
 }
 
 
@@ -969,8 +902,8 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
         if( !aForceVia && m_router && m_router->SwitchLayer( targetLayer ) )
         {
             updateEndItem( aEvent );
-            updateSizesAfterLayerSwitch( targetLayer, m_endSnapPoint );
-            m_router->Move( m_endSnapPoint, m_endItem );        // refresh
+            reprobeSizes( m_endSnapPoint, targetLayer );
+            m_router->Move( m_endSnapPoint, m_endItem );
             return 0;
         }
     }
@@ -1214,12 +1147,11 @@ bool ROUTER_TOOL::prepareInteractive()
         editFrame->GetCanvas()->Refresh();
     }
 
-    PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
-
-    m_iface->SetStartLayer( routingLayer );
-
     frame()->GetBoard()->GetDesignSettings().m_TempOverrideTrackWidth = false;
-    m_iface->ImportSizes( sizes, m_startItem, nullptr );
+
+    reprobeSizes( m_startSnapPoint );
+
+    PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
     sizes.AddLayerPair( frame()->GetScreen()->m_Route_Layer_TOP,
                         frame()->GetScreen()->m_Route_Layer_BOTTOM );
 
@@ -1417,6 +1349,9 @@ void ROUTER_TOOL::performRouting()
 
             // Synchronize the indicated layer
             syncRouterAndFrameLayer();
+
+            // Probe again at placed position to update location-sensitive rules
+            reprobeSizes( m_endSnapPoint );
 
             updateEndItem( *evt );
             m_router->Move( m_endSnapPoint, m_endItem );
@@ -1829,7 +1764,7 @@ int ROUTER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
         {
             m_router->SwitchLayer( frame->GetActiveLayer() );
             updateStartItem( *evt );
-            updateSizesAfterLayerSwitch( frame->GetActiveLayer(), m_startSnapPoint );
+            reprobeSizes( m_startSnapPoint );
         }
         else if( evt->IsKeyPressed() )
         {
@@ -2597,20 +2532,13 @@ int ROUTER_TOOL::CustomTrackWidthDialog( const TOOL_EVENT& aEvent )
 
 int ROUTER_TOOL::onTrackViaSizeChanged( const TOOL_EVENT& aEvent )
 {
-    PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
-
-    if( !m_router->GetCurrentNets().empty() )
-        m_iface->ImportSizes( sizes, m_startItem, m_router->GetCurrentNets()[0] );
-
-    m_router->UpdateSizes( sizes );
+    reprobeSizes( m_startSnapPoint );
 
     // Changing the track width can affect the placement, so call the
     // move routine without changing the destination
     // Update end item first to avoid moving to an invalid/missing item
     updateEndItem( aEvent );
     m_router->Move( m_endSnapPoint, m_endItem );
-
-    UpdateMessagePanel();
 
     return 0;
 }
@@ -2711,7 +2639,7 @@ void ROUTER_TOOL::UpdateMessagePanel()
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetDiffPairWidthSource() ) );
 
-            items.emplace_back( wxString::Format( _( "Min Clearance: %s" ),
+            items.emplace_back( wxString::Format( _( "Clearance: %s" ),
                                                   FORMAT_VALUE( sizes.Clearance() ) ),
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetClearanceSource() ) );
@@ -2740,7 +2668,7 @@ void ROUTER_TOOL::UpdateMessagePanel()
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetWidthSource() ) );
 
-            items.emplace_back( wxString::Format( _( "Min Clearance: %s" ),
+            items.emplace_back( wxString::Format( _( "Clearance: %s" ),
                                                   FORMAT_VALUE( sizes.Clearance() ) ),
                                 wxString::Format( _( "(from %s)" ),
                                                   sizes.GetClearanceSource() ) );
