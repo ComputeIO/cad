@@ -827,6 +827,19 @@ bool SCH_EDIT_FRAME::saveSchematicFile( SCH_SHEET* aSheet, const wxString& aSave
     // Write through symlinks, don't replace them
     WX_FILENAME::ResolvePossibleSymlinks( schematicFileName );
 
+    if( !schematicFileName.DirExists() )
+    {
+        if( !wxMkdir( schematicFileName.GetPath() ) )
+        {
+            msg.Printf( _( "Error saving schematic file '%s'.\n%s" ),
+                        schematicFileName.GetFullPath(),
+                        "Could not create directory: %s" + schematicFileName.GetPath() );
+            DisplayError( this, msg );
+
+            return false;
+        }
+    }
+
     if( !IsWritable( schematicFileName ) )
         return false;
 
