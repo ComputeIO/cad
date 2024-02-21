@@ -235,7 +235,10 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
 
     // If the loaded schematic is in a different folder from the current project and
     // it contains hierarchical sheets, the hierarchical sheet paths need to be updated.
-    if( fileName.GetPathWithSep() != Prj().GetProjectPath() && tmpSheet->CountSheets() )
+    //
+    // Additionally, we need to make all backing screens absolute paths be in the current project
+    // path not the source path.
+    if( fileName.GetPathWithSep() != Prj().GetProjectPath() && tmpSheet->CountSheets() > 1 )
     {
         SCH_SHEET_LIST loadedSheets( tmpSheet.get() );
 
@@ -246,7 +249,7 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
             if( sheetPath.size() == 1 )
                 continue;
 
-            wxString lastSheetPath = fileName.GetPathWithSep();
+            wxString lastSheetPath = Prj().GetProjectPath();
 
             for( unsigned i = 1; i < sheetPath.size(); i++ )
             {
@@ -255,6 +258,14 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
 
                 SCH_SCREEN* screen = sheet->GetScreen();
                 wxCHECK2( screen, continue );
+
+                // Fix screen path to be based on the current project path.
+                // Basically, make an absolute screen path relative to the schematic file
+                // we started with, then make it absolute again using the current project path.
+                wxFileName screenFileName = screen->GetFileName();
+                screenFileName.MakeRelativeTo( fileName.GetPath() );
+                screenFileName.MakeAbsolute( Prj().GetProjectPath() );
+                screen->SetFileName( screenFileName.GetFullPath() );
 
                 // Use the screen file name which should always be absolute.
                 wxFileName loadedSheetFileName = screen->GetFileName();
@@ -268,7 +279,6 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
                 else
                     sheetFileName = loadedSheetFileName.GetFullPath();
 
-                sheetFileName.Replace( wxT( "\\" ), wxT( "/" ) );
                 sheet->SetFileName( sheetFileName );
                 lastSheetPath = loadedSheetFileName.GetPath();
             }
