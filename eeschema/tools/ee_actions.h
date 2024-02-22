@@ -90,6 +90,7 @@ public:
     static TOOL_ACTION placeHierLabel;
     static TOOL_ACTION drawSheet;
     static TOOL_ACTION placeSheetPin;
+    static TOOL_ACTION importSheetCopy;
     // Sync sheet pins for selected sheet symbol
     static TOOL_ACTION syncSheetPins;
     // Sync sheet pins for all sheet symbols
