@@ -2433,6 +2433,7 @@ int SCH_DRAWING_TOOLS::DrawTable( const TOOL_EVENT& aEvent )
 
 int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
 {
+    bool       isImportSheetCopy = aEvent.IsAction( &EE_ACTIONS::importSheetCopy );
     SCH_SHEET* sheet = nullptr;
 
     if( m_inDrawingTool )
@@ -2556,15 +2557,61 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
 
             m_toolMgr->RunAction( EE_ACTIONS::clearSelection );
 
-            sheet = new SCH_SHEET( m_frame->GetCurrentSheet().Last(), cursorPos );
+            if( isImportSheetCopy )
+            {
+                wxFileDialog dlg( m_frame, _( "Choose Sheet" ), m_mruPath, wxEmptyString,
+                                  FILEEXT::AllSchematicFilesWildcard(), wxFD_OPEN );
+
+                if( dlg.ShowModal() != wxID_OK )
+                    break;
+
+                wxString fullFilename = dlg.GetPath();
+                m_mruPath = wxPathOnly( fullFilename );
+
+                if( !wxFileExists( fullFilename ) )
+                {
+                    wxMessageBox( _( "File '%s' does not exist." ), fullFilename );
+                    break;
+                }
+
+                sheet = new SCH_SHEET( m_frame->GetCurrentSheet().Last(), cursorPos );
+
+                if( !m_frame->LoadSheetFromFile( sheet, &m_frame->GetCurrentSheet(),
+                                                 fullFilename ) )
+                {
+                    wxMessageBox( _( "Could not import sheet from '%s'." ), fullFilename );
+                    delete sheet;
+                    sheet = nullptr;
+                    break;
+                }
+
+                sheet->GetFields()[SHEETNAME].SetText( "Imported Sheet" );
+                sheet->GetFields()[SHEETFILENAME].SetText( dlg.GetFilename() );
+            }
+            else
+            {
+                sheet = new SCH_SHEET( m_frame->GetCurrentSheet().Last(), cursorPos );
+                sheet->SetScreen( nullptr );
+                sheet->GetFields()[SHEETNAME].SetText( "Untitled Sheet" );
+                sheet->GetFields()[SHEETFILENAME].SetText( "untitled."
+                                                           + FILEEXT::KiCadSchematicFileExtension );
+            }
+
             sheet->SetFlags( IS_NEW | IS_MOVING );
-            sheet->SetScreen( nullptr );
             sheet->SetBorderWidth( schIUScale.MilsToIU( cfg->m_Drawing.default_line_thickness ) );
             sheet->SetBorderColor( cfg->m_Drawing.default_sheet_border_color );
             sheet->SetBackgroundColor( cfg->m_Drawing.default_sheet_background_color );
-            sheet->GetFields()[ SHEETNAME ].SetText( "Untitled Sheet" );
-            sheet->GetFields()[ SHEETFILENAME ].SetText( "untitled." + FILEEXT::KiCadSchematicFileExtension );
             sizeSheet( sheet, cursorPos );
+
+            SCH_SHEET_LIST hierarchy = m_frame->Schematic().GetFullHierarchy();
+            SCH_SHEET_PATH instance = m_frame->GetCurrentSheet();
+            instance.push_back( sheet );
+            wxString pageNumber;
+
+            // Don't try to be too clever when assigning the next availabe page number.  Just use
+            // the number of sheets plus one.
+            pageNumber.Printf( wxT( "%d" ), static_cast<int>( hierarchy.size() ) + 1 );
+            instance.SetPageNumber( pageNumber );
 
             m_view->ClearPreview();
             m_view->AddToPreview( sheet->Clone() );
@@ -2577,8 +2624,9 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
             getViewControls()->SetAutoPan( false );
             getViewControls()->CaptureCursor( false );
 
-            if( m_frame->EditSheetProperties( static_cast<SCH_SHEET*>( sheet ),
-                                              &m_frame->GetCurrentSheet() ) )
+            if( isImportSheetCopy
+                || m_frame->EditSheetProperties( static_cast<SCH_SHEET*>( sheet ),
+                                                 &m_frame->GetCurrentSheet() ) )
             {
                 m_view->ClearPreview();
 
@@ -2586,7 +2634,7 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
 
                 SCH_COMMIT commit( m_toolMgr );
                 commit.Add( sheet, m_frame->GetScreen() );
-                commit.Push( "Draw Sheet" );
+                commit.Push( isImportSheetCopy ? "Import Sheet Copy" : "Draw Sheet" );
 
                 SCH_SHEET_PATH newPath = m_frame->GetCurrentSheet();
                 newPath.push_back( sheet );
@@ -2816,6 +2864,7 @@ void SCH_DRAWING_TOOLS::setTransitions()
     Go( &SCH_DRAWING_TOOLS::TwoClickPlace,       EE_ACTIONS::placeGlobalLabel.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::DrawSheet,           EE_ACTIONS::drawSheet.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::TwoClickPlace,       EE_ACTIONS::placeSheetPin.MakeEvent() );
+    Go( &SCH_DRAWING_TOOLS::DrawSheet,           EE_ACTIONS::importSheetCopy.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::TwoClickPlace,       EE_ACTIONS::placeSchematicText.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::DrawShape,           EE_ACTIONS::drawRectangle.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::DrawShape,           EE_ACTIONS::drawCircle.MakeEvent() );

@@ -238,20 +238,15 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
     //
     // Additionally, we need to make all backing screens absolute paths be in the current project
     // path not the source path.
-    if( fileName.GetPathWithSep() != Prj().GetProjectPath() && tmpSheet->CountSheets() > 1 )
+    if( fileName.GetPathWithSep() != Prj().GetProjectPath() )
     {
         SCH_SHEET_LIST loadedSheets( tmpSheet.get() );
 
         for( const SCH_SHEET_PATH& sheetPath : loadedSheets )
         {
-            // Skip the loaded sheet since the user already determined if the file path should
-            // be relative or absolute.
-            if( sheetPath.size() == 1 )
-                continue;
-
             wxString lastSheetPath = Prj().GetProjectPath();
 
-            for( unsigned i = 1; i < sheetPath.size(); i++ )
+            for( unsigned i = 0; i < sheetPath.size(); i++ )
             {
                 SCH_SHEET* sheet = sheetPath.at( i );
                 wxCHECK2( sheet, continue );

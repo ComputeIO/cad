@@ -508,6 +508,14 @@ TOOL_ACTION EE_ACTIONS::syncAllSheetsPins( TOOL_ACTION_ARGS()
         .Icon( BITMAPS::import_hierarchical_label )
         .Flags( AF_ACTIVATE ) );
 
+TOOL_ACTION EE_ACTIONS::importSheetCopy( TOOL_ACTION_ARGS()
+        .Name( "eeschema.InteractiveDrawing.importSheetCopy" )
+        .Scope( AS_GLOBAL )
+        .FriendlyName( _( "Import Sheet Copy" ) )
+        .Tooltip( _( "Copy sheet into project and add to schematic" ) )
+        .Icon( BITMAPS::add_hierarchical_subsheet )
+        .Flags( AF_ACTIVATE ) );
+
 TOOL_ACTION EE_ACTIONS::placeGlobalLabel( TOOL_ACTION_ARGS()
         .Name( "eeschema.InteractiveDrawing.placeGlobalLabel" )
         .Scope( AS_GLOBAL )
