@@ -149,11 +149,23 @@ DIALOG_DIMENSION_PROPERTIES::DIALOG_DIMENSION_PROPERTIES( PCB_BASE_EDIT_FRAME* a
                     m_txtValue->SetValue( m_dimension->GetValueText() );
             } );
 
+    m_cbOverridePrefix->Bind( wxEVT_CHECKBOX,
+        [&]( wxCommandEvent& evt )
+        {
+            m_txtPrefix->Enable( m_cbOverridePrefix->GetValue() );
+
+            if( !m_cbOverridePrefix->GetValue() )
+                m_txtPrefix->SetValue( m_dimension->GetPrefix() );
+        } );
+
     auto updateEventHandler =
             [&]( wxCommandEvent& evt )
             {
                 if( !m_cbOverrideValue->GetValue() )
                     m_txtValue->ChangeValue( m_dimension->GetValueText() );
+
+                if( !m_cbOverridePrefix->GetValue() )
+                    m_txtPrefix->ChangeValue( m_dimension->GetPrefix() );
 
                 updatePreviewText();
             };
@@ -203,12 +215,22 @@ bool DIALOG_DIMENSION_PROPERTIES::TransferDataToWindow()
     m_txtValue->Enable( m_dimension->GetOverrideTextEnabled() );
     m_cbOverrideValue->SetValue( m_dimension->GetOverrideTextEnabled() );
 
+    m_txtPrefix->Enable( m_dimension->GetOverridePrefixEnabled() );
+    m_cbOverridePrefix->SetValue( m_dimension->GetOverridePrefixEnabled() );
+
     switch( m_dimension->GetUnitsMode() )
     {
         case DIM_UNITS_MODE::INCHES:        m_cbUnits->SetSelection( 0 ); break;
         case DIM_UNITS_MODE::MILS:          m_cbUnits->SetSelection( 1 ); break;
         case DIM_UNITS_MODE::MILLIMETRES:   m_cbUnits->SetSelection( 2 ); break;
         case DIM_UNITS_MODE::AUTOMATIC:     m_cbUnits->SetSelection( 3 ); break;
+    }
+
+    switch ( m_dimension->getArrowDirection() )
+    {
+        case DIM_ARROW_DIRECTION::AUTOMATIC:    m_cbArrowDirection->SetSelection( 0 ); break;
+        case DIM_ARROW_DIRECTION::INWARD:       m_cbArrowDirection->SetSelection( 1 ); break;
+        case DIM_ARROW_DIRECTION::OUTWARD:      m_cbArrowDirection->SetSelection( 2 ); break;
     }
 
     m_cbUnitsFormat->SetSelection( static_cast<int>( m_dimension->GetUnitsFormat() ) );
@@ -371,6 +393,7 @@ void DIALOG_DIMENSION_PROPERTIES::updateDimensionFromDialog( PCB_DIMENSION_BASE*
     BOARD* board = m_frame->GetBoard();
 
     aTarget->SetOverrideTextEnabled( m_cbOverrideValue->GetValue() );
+    aTarget->SetOverridePrefixEnabled( m_cbOverridePrefix->GetValue() );
 
     if( m_cbOverrideValue->GetValue() )
     {
@@ -381,6 +404,12 @@ void DIALOG_DIMENSION_PROPERTIES::updateDimensionFromDialog( PCB_DIMENSION_BASE*
     aTarget->SetPrefix( board->ConvertCrossReferencesToKIIDs( m_txtPrefix->GetValue() ) );
     aTarget->SetSuffix( board->ConvertCrossReferencesToKIIDs( m_txtSuffix->GetValue() ) );
     aTarget->SetLayer( static_cast<PCB_LAYER_ID>( m_cbLayerActual->GetLayerSelection() ) );
+
+    switch ( m_cbArrowDirection->GetSelection() ) {
+        case 0: aTarget->setArrowDirection( DIM_ARROW_DIRECTION::AUTOMATIC );  break;
+        case 1: aTarget->setArrowDirection( DIM_ARROW_DIRECTION::INWARD );     break;
+        case 2: aTarget->setArrowDirection( DIM_ARROW_DIRECTION::OUTWARD );    break;
+    }
 
     switch( m_cbUnits->GetSelection() )
     {

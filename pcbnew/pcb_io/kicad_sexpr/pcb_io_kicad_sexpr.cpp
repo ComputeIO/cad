@@ -893,18 +893,13 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_DIMENSION_BASE* aDimension, int aNest
     {
         format( static_cast<const PCB_TEXT*>( aDimension ), aNestLevel + 1 );
 
-        m_out->Print( aNestLevel + 1, "(format (prefix %s) (suffix %s) (units %d) (units_format %d) (precision %d)",
-                      m_out->Quotew( aDimension->GetPrefix() ).c_str(),
-                      m_out->Quotew( aDimension->GetSuffix() ).c_str(),
-                      static_cast<int>( aDimension->GetUnitsMode() ),
-                      static_cast<int>( aDimension->GetUnitsFormat() ),
-                      static_cast<int>(  aDimension->GetPrecision() ) );
-
-        if( aDimension->GetOverrideTextEnabled() )
-        {
-            m_out->Print( 0, " (override_value %s)",
-                          m_out->Quotew( aDimension->GetOverrideText() ).c_str() );
-        }
+        m_out->Print( aNestLevel + 1, "(format (prefix %s) (override_prefix %d) (suffix %s) (units %d) (units_format %d) (precision %d)",
+                    m_out->Quotew( aDimension->GetPrefix() ).c_str(),
+                    aDimension->GetOverridePrefixEnabled(),
+                    m_out->Quotew( aDimension->GetSuffix() ).c_str(),
+                    static_cast<int>( aDimension->GetUnitsMode() ),
+                    static_cast<int>( aDimension->GetUnitsFormat() ),
+                    static_cast<int>(  aDimension->GetPrecision() ) );
 
         if( aDimension->GetSuppressZeroes() )
             m_out->Print( 0, " suppress_zeroes" );
@@ -916,6 +911,9 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_DIMENSION_BASE* aDimension, int aNest
                   formatInternalUnits( aDimension->GetLineThickness() ).c_str(),
                   formatInternalUnits( aDimension->GetArrowLength() ).c_str(),
                   static_cast<int>( aDimension->GetTextPositionMode() ) );
+
+    if ( ortho || radial || aligned )
+        m_out->Print( 0, " (arrow_direction %d)", aDimension->getArrowDirection() );
 
     if( aligned )
     {

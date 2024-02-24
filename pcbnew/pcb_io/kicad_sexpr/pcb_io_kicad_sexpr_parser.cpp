@@ -3505,6 +3505,14 @@ PCB_DIMENSION_BASE* PCB_IO_KICAD_SEXPR_PARSER::parseDIMENSION( BOARD_ITEM* aPare
         }
 
         NeedRIGHT();
+
+        //before parsing further set default properites for old kicad file versions that didnt have these properties:
+        dim->SetOverridePrefixEnabled( true );
+
+        if ( dim->Type() == PCB_DIM_RADIAL_T )
+            dim->setArrowDirection( DIM_ARROW_DIRECTION::INWARD );
+        else
+            dim->setArrowDirection( DIM_ARROW_DIRECTION::OUTWARD );
     }
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
@@ -3638,6 +3646,11 @@ PCB_DIMENSION_BASE* PCB_IO_KICAD_SEXPR_PARSER::parseDIMENSION( BOARD_ITEM* aPare
                     break;
                 }
 
+                case T_override_prefix:
+                    dim->SetOverridePrefixEnabled( parseInt( "override_prefix" ) );
+                    NeedRIGHT();
+                    break;
+
                 case T_units_format:
                 {
                     int format = parseInt( "dimension units format" );
@@ -3664,7 +3677,7 @@ PCB_DIMENSION_BASE* PCB_IO_KICAD_SEXPR_PARSER::parseDIMENSION( BOARD_ITEM* aPare
                     break;
 
                 default:
-                    Expecting( "prefix, suffix, units, units_format, precision, override_value, "
+                    Expecting( "prefix, suffix, units, units_format, precision, override_value, override_prefix, "
                                "suppress_zeroes" );
                 }
             }
@@ -3685,6 +3698,12 @@ PCB_DIMENSION_BASE* PCB_IO_KICAD_SEXPR_PARSER::parseDIMENSION( BOARD_ITEM* aPare
 
                 case T_thickness:
                     dim->SetLineThickness( parseBoardUnits( "extension line thickness value" ) );
+                    NeedRIGHT();
+                    break;
+
+                case T_arrow_direction:
+                    dim->changeArrowDirection(
+                            static_cast<DIM_ARROW_DIRECTION>( parseInt( "arrow_direction" ) ) );
                     NeedRIGHT();
                     break;
 
