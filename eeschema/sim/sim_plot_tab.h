@@ -288,12 +288,11 @@ public:
         return !m_axis_x->GetTicks();
     }
 
-    void ShowLinear( bool aEnable )
+    void SetLinearPlot( bool aEnable )
     {
         m_linear_plot = aEnable;
-        for ( auto const& [name,trace] : GetTraces() ){
+        for( const auto& [ name, trace ] : m_traces )
             trace->SetLinear(aEnable);
-        }
         m_plotWin->UpdateAll();
     }
 
@@ -301,11 +300,6 @@ public:
     {
         m_legend->SetVisible( aEnable );
         m_plotWin->UpdateAll();
-    }
-
-    bool IsLinearShown() const
-    {
-        return m_linear_plot;
     }
 
     bool IsLegendShown() const
@@ -342,6 +336,12 @@ public:
     {
         return m_dotted_cp;
     }
+
+    bool GetLinearPlot() const
+    {
+        return m_linear_plot;
+    }
+
 
     ///< Toggle cursor for a particular trace.
     void EnableCursor( const wxString& aVectorName, int aType, int aCursorId, bool aEnable,
