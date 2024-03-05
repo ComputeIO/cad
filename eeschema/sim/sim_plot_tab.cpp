@@ -542,25 +542,25 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
         case ST_AC:
             if( !m_axis_x )
             {
-                wxString sim_cmd = GetSimCommand().Lower();
-                wxStringTokenizer tokens( sim_cmd, wxS( " \t" ), wxTOKEN_STRTOK );
-                wxString cmd = tokens.GetNextToken();
-                cmd = tokens.GetNextToken();
-                if (cmd=="lin") 
-                    m_axis_x = new LIN_SCALE<mpScaleX>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
-                if (cmd=="dec") 
-                    m_axis_x = new LOG_SCALE<mpScaleXLog>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
-                m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
-                m_plotWin->AddLayer( m_axis_x );
+            wxString          sim_cmd = GetSimCommand().Lower();
+            wxStringTokenizer tokens( sim_cmd, wxS( " \t" ), wxTOKEN_STRTOK );
+            wxString          cmd = tokens.GetNextToken();
+            cmd = tokens.GetNextToken();
+            if( cmd == "lin" )
+                m_axis_x = new LIN_SCALE<mpScaleX>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
+            if( cmd == "dec" )
+                m_axis_x = new LOG_SCALE<mpScaleXLog>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
+            m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
+            m_plotWin->AddLayer( m_axis_x );
 
-                m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dBV" ), mpALIGN_LEFT );
-                m_axis_y1->SetNameAlign( mpALIGN_LEFT );
-                m_plotWin->AddLayer( m_axis_y1 );
+            m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dBV" ), mpALIGN_LEFT );
+            m_axis_y1->SetNameAlign( mpALIGN_LEFT );
+            m_plotWin->AddLayer( m_axis_y1 );
 
-                m_axis_y2 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "°" ), mpALIGN_RIGHT );
-                m_axis_y2->SetNameAlign( mpALIGN_RIGHT );
-                m_axis_y2->SetMasterScale( m_axis_y1 );
-                m_plotWin->AddLayer( m_axis_y2 );
+            m_axis_y2 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "°" ), mpALIGN_RIGHT );
+            m_axis_y2->SetNameAlign( mpALIGN_RIGHT );
+            m_axis_y2->SetMasterScale( m_axis_y1 );
+            m_plotWin->AddLayer( m_axis_y2 );
             }
 
             m_axis_x->SetName( _( "Frequency" ) );
