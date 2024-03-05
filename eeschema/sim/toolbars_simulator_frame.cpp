@@ -122,7 +122,9 @@ void SIMULATOR_FRAME::doReCreateMenuBar()
     viewMenu->AppendSeparator();
     viewMenu->Add( ACTIONS::toggleGrid,               ACTION_MENU::CHECK );
     viewMenu->Add( EE_ACTIONS::toggleLegend,          ACTION_MENU::CHECK );
+    viewMenu->Add( EE_ACTIONS::toggleLinearPlot,      ACTION_MENU::CHECK );
     viewMenu->Add( EE_ACTIONS::toggleDottedSecondary, ACTION_MENU::CHECK );
+    viewMenu->Add( EE_ACTIONS::toggleLinearPlot,      ACTION_MENU::CHECK );
     viewMenu->Add( EE_ACTIONS::toggleDarkModePlots,   ACTION_MENU::CHECK );
 
 

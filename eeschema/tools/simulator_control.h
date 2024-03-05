@@ -66,6 +66,7 @@ public:
     int ToggleGrid( const TOOL_EVENT& aEvent );
     int ToggleLegend( const TOOL_EVENT& aEvent );
     int ToggleDottedSecondary( const TOOL_EVENT& aEvent );
+    int ToggleLinearPlot( const TOOL_EVENT& aEvent );
     int ToggleDarkModePlots( const TOOL_EVENT& aEvent );
 
     int EditAnalysisTab( const TOOL_EVENT& aEvent );

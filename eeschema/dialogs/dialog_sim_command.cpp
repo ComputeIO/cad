@@ -244,6 +244,7 @@ void DIALOG_SIM_COMMAND::SetPlotSettings( const SIM_TAB* aSimTab )
 
         m_grid->SetValue( plotTab->IsGridShown() );
         m_legend->SetValue( plotTab->IsLegendShown() );
+        m_linear_plot->SetValue( plotTab->GetLinearPlot() );
         m_dottedSecondary->SetValue( plotTab->GetDottedSecondary() );
 
 #define GET_STR( val ) EDA_UNIT_UTILS::UI::MessageTextFromValue( unityScale, EDA_UNITS::UNSCALED, \
@@ -548,6 +549,7 @@ void DIALOG_SIM_COMMAND::ApplySettings( SIM_TAB* aTab )
 
         plotTab->ShowGrid( m_grid->GetValue() );
         plotTab->ShowLegend( m_legend->GetValue() );
+        plotTab->SetLinearPlot( m_linear_plot->GetValue() );
         plotTab->SetDottedSecondary( m_dottedSecondary->GetValue() );
 
         plotTab->GetPlotWin()->SetMarginLeft( TO_INT( m_marginLeft ) );

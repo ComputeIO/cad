@@ -553,7 +553,10 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
             m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
             m_plotWin->AddLayer( m_axis_x );
 
-            m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dBV" ), mpALIGN_LEFT );
+            if ( GetLinearPlot() == true )
+                m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "V" ), mpALIGN_LEFT );
+	    else
+                m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dBV" ), mpALIGN_LEFT );
             m_axis_y1->SetNameAlign( mpALIGN_LEFT );
             m_plotWin->AddLayer( m_axis_y1 );
 
@@ -903,7 +906,7 @@ void SIM_PLOT_TAB::SetTraceData( TRACE* trace, std::vector<double>& aX, std::vec
         }
         else
         {
-            if ( trace->GetLinear() == FALSE )
+            if ( GetLinearPlot() == false )
                 for( double& pt : aY )
                 {
                     // log( 0 ) is not valid.

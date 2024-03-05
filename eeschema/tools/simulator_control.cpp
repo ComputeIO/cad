@@ -321,6 +321,18 @@ int SIMULATOR_CONTROL::ToggleDottedSecondary( const TOOL_EVENT& aEvent )
 }
 
 
+int SIMULATOR_CONTROL::ToggleLinearPlot( const TOOL_EVENT& aEvent )
+{
+    if( SIM_PLOT_TAB* plotTab = dynamic_cast<SIM_PLOT_TAB*>( getCurrentSimTab() ) )
+    {
+        plotTab->SetLinearPlot( !plotTab->GetLinearPlot() );
+        m_simulatorFrame->OnModify();
+    }
+
+    return 0;
+}
+
+
 int SIMULATOR_CONTROL::ToggleDarkModePlots( const TOOL_EVENT& aEvent )
 {
     m_simulatorFrame->ToggleDarkModePlots();
@@ -524,6 +536,7 @@ void SIMULATOR_CONTROL::setTransitions()
     Go( &SIMULATOR_CONTROL::ToggleGrid,             ACTIONS::toggleGrid.MakeEvent() );
     Go( &SIMULATOR_CONTROL::ToggleLegend,           EE_ACTIONS::toggleLegend.MakeEvent() );
     Go( &SIMULATOR_CONTROL::ToggleDottedSecondary,  EE_ACTIONS::toggleDottedSecondary.MakeEvent() );
+    Go( &SIMULATOR_CONTROL::ToggleLinearPlot,       EE_ACTIONS::toggleLinearPlot.MakeEvent() );
     Go( &SIMULATOR_CONTROL::ToggleDarkModePlots,    EE_ACTIONS::toggleDarkModePlots.MakeEvent() );
 
     Go( &SIMULATOR_CONTROL::EditAnalysisTab,        EE_ACTIONS::simAnalysisProperties.MakeEvent() );
