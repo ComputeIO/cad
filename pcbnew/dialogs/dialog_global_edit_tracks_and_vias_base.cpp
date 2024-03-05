@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.10.1-0-g8feb16b)
+// C++ code generated with wxFormBuilder (version 4.1.0-0-g733bf3d)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -174,6 +174,9 @@ DIALOG_GLOBAL_EDIT_TRACKS_AND_VIAS_BASE::DIALOG_GLOBAL_EDIT_TRACKS_AND_VIAS_BASE
 
 	m_setToDesignRuleValues = new wxRadioButton( sbAction->GetStaticBox(), ID_SPECIFIED_NET_TO_NETCLASS_VALUES, _("Set to net class / custom rule values"), wxDefaultPosition, wxDefaultSize, 0 );
 	sbAction->Add( m_setToDesignRuleValues, 0, wxBOTTOM, 5 );
+
+	m_addToSelection = new wxCheckBox( sbAction->GetStaticBox(), wxID_ANY, _("Add to selection"), wxDefaultPosition, wxDefaultSize, 0 );
+	sbAction->Add( m_addToSelection, 0, wxBOTTOM, 5 );
 
 
 	bMainSizer->Add( sbAction, 1, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 10 );
