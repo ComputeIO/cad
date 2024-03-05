@@ -542,7 +542,14 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
         case ST_AC:
             if( !m_axis_x )
             {
-                m_axis_x = new LOG_SCALE<mpScaleXLog>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
+                wxString sim_cmd = GetSimCommand().Lower();
+                wxStringTokenizer tokens( sim_cmd, wxS( " \t" ), wxTOKEN_STRTOK );
+                wxString cmd = tokens.GetNextToken();
+                cmd = tokens.GetNextToken();
+                if (cmd=="lin") 
+                    m_axis_x = new LIN_SCALE<mpScaleX>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
+                if (cmd=="dec") 
+                    m_axis_x = new LOG_SCALE<mpScaleXLog>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
                 m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
                 m_plotWin->AddLayer( m_axis_x );
 
