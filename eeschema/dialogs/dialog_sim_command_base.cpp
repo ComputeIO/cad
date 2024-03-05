@@ -802,6 +802,10 @@ DIALOG_SIM_COMMAND_BASE::DIALOG_SIM_COMMAND_BASE( wxWindow* parent, wxWindowID i
 	m_grid = new wxCheckBox( m_panelPlotSetup, wxID_ANY, _("Show grid"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_grid->SetValue(true);
 	bSizerCheckboxes->Add( m_grid, 0, wxALL, 5 );
+	
+	m_linear_plot = new wxCheckBox( m_panelPlotSetup, wxID_ANY, _("Linear Y axis"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_linear_plot->SetValue(false);
+	bSizerCheckboxes->Add( m_linear_plot, 0, wxALL, 5 );
 
 	m_legend = new wxCheckBox( m_panelPlotSetup, wxID_ANY, _("Show legend"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizerCheckboxes->Add( m_legend, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
