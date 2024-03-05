@@ -447,7 +447,7 @@ SIM_PLOT_TAB::SIM_PLOT_TAB( const wxString& aSimCommand, wxWindow* parent ) :
 
     updateAxes();
 
-    // a mpInfoLegend displays le name of traces on the left top panel corner:
+    // a mpInfoLegend displays the name of traces on the left top panel corner:
     m_legend = new mpInfoLegend( wxRect( 0, 0, 200, 40 ), wxTRANSPARENT_BRUSH );
     m_legend->SetVisible( false );
     m_plotWin->AddLayer( m_legend );
@@ -903,12 +903,13 @@ void SIM_PLOT_TAB::SetTraceData( TRACE* trace, std::vector<double>& aX, std::vec
         }
         else
         {
-            for( double& pt : aY )
-            {
-                // log( 0 ) is not valid.
-                if( pt != 0 )
-                    pt = 20 * log( pt ) / log( 10.0 );      // convert to dB
-            }
+            if ( trace->GetLinear() == FALSE )
+                for( double& pt : aY )
+                {
+                    // log( 0 ) is not valid.
+                    if( pt != 0 )
+                        pt = 20 * log( pt ) / log( 10.0 );      // convert to dB
+                }
         }
     }
 

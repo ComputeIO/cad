@@ -177,6 +177,8 @@ public:
     std::map<int, CURSOR*>& GetCursors() { return m_cursors; }
 
     SIM_TRACE_TYPE GetType() const { return m_type; }
+    void SetLinear(bool aLinear) { m_linear_plot = aLinear; }
+    bool GetLinear() const { return m_linear_plot; }
 
     void SetTraceColour( const wxColour& aColour ) { m_traceColour = aColour; }
     wxColour GetTraceColour() const { return m_traceColour; }
@@ -185,6 +187,7 @@ protected:
     std::map<int, CURSOR*> m_cursors;       // No ownership; the mpWindow owns the CURSORs
     SIM_TRACE_TYPE         m_type;
     wxColour               m_traceColour;
+    bool                   m_linear_plot;
 };
 
 
@@ -285,10 +288,24 @@ public:
         return !m_axis_x->GetTicks();
     }
 
+    void ShowLinear( bool aEnable )
+    {
+        m_linear_plot = aEnable;
+        for ( auto const& [name,trace] : GetTraces() ){
+            trace->SetLinear(aEnable);
+        }
+        m_plotWin->UpdateAll();
+    }
+
     void ShowLegend( bool aEnable )
     {
         m_legend->SetVisible( aEnable );
         m_plotWin->UpdateAll();
+    }
+
+    bool IsLinearShown() const
+    {
+        return m_linear_plot;
     }
 
     bool IsLegendShown() const
@@ -386,7 +403,7 @@ private:
     mpScaleY*                    m_axis_y2;
     mpScaleY*                    m_axis_y3;
     mpInfoLegend*                m_legend;
-
+    bool                         m_linear_plot;
     bool                         m_dotted_cp;
 
     // Measurements (and their format strings)
