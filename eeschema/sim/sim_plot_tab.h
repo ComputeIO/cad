@@ -302,6 +302,11 @@ public:
         m_plotWin->UpdateAll();
     }
 
+    bool IsLinearShown() const
+    {
+        return m_linear_plot;
+    }
+
     bool IsLegendShown() const
     {
         return m_legend->IsVisible();
