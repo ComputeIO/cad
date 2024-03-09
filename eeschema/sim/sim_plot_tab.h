@@ -177,8 +177,8 @@ public:
     std::map<int, CURSOR*>& GetCursors() { return m_cursors; }
 
     SIM_TRACE_TYPE GetType() const { return m_type; }
-    void SetLinear(bool aLinear) { m_linear_plot = aLinear; }
-    bool GetLinear() const { return m_linear_plot; }
+    void           SetLinear( bool aLinear ) { m_linear_plot = aLinear; }
+    bool           GetLinear() const { return m_linear_plot; }
 
     void SetTraceColour( const wxColour& aColour ) { m_traceColour = aColour; }
     wxColour GetTraceColour() const { return m_traceColour; }
@@ -291,7 +291,7 @@ public:
     void SetLinearPlot( bool aEnable )
     {
         m_linear_plot = aEnable;
-        for( const auto& [ name, trace ] : m_traces )
+        for( const auto& [name, trace] : m_traces )
             trace->SetLinear(aEnable);
         m_plotWin->UpdateAll();
     }
@@ -302,10 +302,7 @@ public:
         m_plotWin->UpdateAll();
     }
 
-    bool IsLinearShown() const
-    {
-        return m_linear_plot;
-    }
+    bool IsLinearShown() const { return m_linear_plot; }
 
     bool IsLegendShown() const
     {

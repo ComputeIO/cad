@@ -140,7 +140,7 @@ public:
     {};
 
     wxString GetUnits() const { return m_unit; }
-    void SetUnits( wxString suffix ) { m_unit = suffix; }
+    void     SetUnits( wxString suffix ) { m_unit = suffix; }
 
 private:
     void formatLabels() override
@@ -555,9 +555,9 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
             m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
             m_plotWin->AddLayer( m_axis_x );
 
-            if ( GetLinearPlot() == true )
+            if( GetLinearPlot() == true )
                 m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "V" ), mpALIGN_LEFT );
-	    else
+            else
                 m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dBV" ), mpALIGN_LEFT );
             m_axis_y1->SetNameAlign( mpALIGN_LEFT );
             m_plotWin->AddLayer( m_axis_y1 );
@@ -568,7 +568,7 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
             m_plotWin->AddLayer( m_axis_y2 );
             }
 
-            if ( GetLinearPlot() == true )
+            if( GetLinearPlot() == true )
                 dynamic_cast<LIN_SCALE<mpScaleY>*>( m_axis_y1 )->SetUnits( wxT("V") );
             else
                 dynamic_cast<LIN_SCALE<mpScaleY>*>( m_axis_y1 )->SetUnits( wxT("dBV") );
@@ -913,7 +913,7 @@ void SIM_PLOT_TAB::SetTraceData( TRACE* trace, std::vector<double>& aX, std::vec
         }
         else
         {
-            if ( GetLinearPlot() == false )
+            if( GetLinearPlot() == false )
                 for( double& pt : aY )
                 {
                     // log( 0 ) is not valid.
@@ -937,7 +937,7 @@ void SIM_PLOT_TAB::SetTraceData( TRACE* trace, std::vector<double>& aX, std::vec
         if( cursor )
             cursor->SetCoordX( cursor->GetCoords().x );
     }
-    updateAxes();   // needed if linear/log scale was toggled
+    updateAxes(); // needed if linear/log scale was toggled
 }
 
 
