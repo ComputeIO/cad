@@ -140,6 +140,7 @@ public:
     {};
 
     wxString GetUnits() const { return m_unit; }
+    void SetUnits( wxString suffix ) { m_unit = suffix; }
 
 private:
     void formatLabels() override
@@ -182,7 +183,7 @@ private:
     }
 
 private:
-    const wxString m_unit;
+    wxString       m_unit;
     wxString       m_base_axis_label;
 };
 
@@ -435,6 +436,7 @@ SIM_PLOT_TAB::SIM_PLOT_TAB( const wxString& aSimCommand, wxWindow* parent ) :
         m_axis_y1( nullptr ),
         m_axis_y2( nullptr ),
         m_axis_y3( nullptr ),
+        m_linear_plot( false ),
         m_dotted_cp( false )
 {
     m_sizer   = new wxBoxSizer( wxVERTICAL );
@@ -566,6 +568,11 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
             m_plotWin->AddLayer( m_axis_y2 );
             }
 
+            if ( GetLinearPlot() == true )
+                dynamic_cast<LIN_SCALE<mpScaleY>*>( m_axis_y1 )->SetUnits( wxT("V") );
+            else
+                dynamic_cast<LIN_SCALE<mpScaleY>*>( m_axis_y1 )->SetUnits( wxT("dBV") );
+            m_axis_y1->SetNameAlign( mpALIGN_LEFT );
             m_axis_x->SetName( _( "Frequency" ) );
             m_axis_y1->SetName( _( "Gain" ) );
             m_axis_y2->SetName( _( "Phase" ) );
@@ -930,6 +937,7 @@ void SIM_PLOT_TAB::SetTraceData( TRACE* trace, std::vector<double>& aX, std::vec
         if( cursor )
             cursor->SetCoordX( cursor->GetCoords().x );
     }
+    updateAxes();   // needed if linear/log scale was toggled
 }
 
 
