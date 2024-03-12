@@ -49,6 +49,7 @@ public:
     static TOOL_ACTION showCalculator;
     static TOOL_ACTION editDrawingSheet;
     static TOOL_ACTION openTextEditor;
+    static TOOL_ACTION showDesignBlockLibTable;
     static TOOL_ACTION showPluginManager;
 
     static TOOL_ACTION editOtherSch;

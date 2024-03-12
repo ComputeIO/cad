@@ -41,6 +41,7 @@
 #include <project_sch.h>
 #include <symbol_library.h>
 #include <sch_base_frame.h>
+#include <design_block.h>
 #include <symbol_lib_table.h>
 #include <tool/action_toolbar.h>
 #include <tool/tool_manager.h>
@@ -206,6 +207,16 @@ void SCH_BASE_FRAME::UpdateStatusBar()
     DisplayUnitsMsg();
 }
 
+DESIGN_BLOCK* SCH_BASE_FRAME::GetDesignBlock( const LIB_ID& aLibId, bool aUseCacheLib,
+                                              bool aShowErrorMsg )
+{
+    //SYMBOL_LIB* cache =
+            //( aUseCacheLib ) ? PROJECT_SCH::SchLibs( &Prj() )->GetCacheLibrary() : nullptr;
+
+    //return SchGetLibSymbol( aLibId, PROJECT_SCH::SchSymbolLibTable( &Prj() ), cache, this,
+                            //aShowErrorMsg );
+    return nullptr;
+}
 
 LIB_SYMBOL* SCH_BASE_FRAME::GetLibSymbol( const LIB_ID& aLibId, bool aUseCacheLib,
                                           bool aShowErrorMsg )

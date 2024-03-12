@@ -29,6 +29,7 @@
 #include <confirm.h>
 #include <core/arraydim.h>
 #include <core/kicad_algo.h>
+#include <design_block_lib_table.h>
 #include <fp_lib_table.h>
 #include <string_utils.h>
 #include <kiface_ids.h>
@@ -165,6 +166,12 @@ const wxString PROJECT::SymbolLibTableName() const
 const wxString PROJECT::FootprintLibTblName() const
 {
     return libTableName( wxS( "fp-lib-table" ) );
+}
+
+
+const wxString PROJECT::DesignBlockLibTblName() const
+{
+    return libTableName( wxS( "design-block-lib-table" ) );
 }
 
 
@@ -369,6 +376,42 @@ FP_LIB_TABLE* PROJECT::PcbFootprintLibs( KIWAY& aKiway )
         catch( ... )
         {
             DisplayErrorMessage( nullptr, _( "Error loading project footprint library table." ) );
+        }
+    }
+
+    return tbl;
+}
+
+
+DESIGN_BLOCK_LIB_TABLE* PROJECT::DesignBlockLibs()
+{
+    // This is a lazy loading function, it loads the project specific table when
+    // that table is asked for, not before.
+
+    DESIGN_BLOCK_LIB_TABLE* tbl = (DESIGN_BLOCK_LIB_TABLE*) GetElem( ELEM_DESIGN_BLOCK_LIB_TABLE );
+
+    if( tbl )
+    {
+        wxASSERT( tbl->Type() == DESIGN_BLOCK_LIB_TABLE_T );
+    }
+    else
+    {
+        try
+        {
+            tbl = new DESIGN_BLOCK_LIB_TABLE( &GDesignBlockTable );
+            tbl->Load( DesignBlockLibTblName() );
+
+            SetElem( ELEM_DESIGN_BLOCK_LIB_TABLE, tbl );
+        }
+        catch( const IO_ERROR& ioe )
+        {
+            DisplayErrorMessage( nullptr, _( "Error loading project design block library table." ),
+                                 ioe.What() );
+        }
+        catch( ... )
+        {
+            DisplayErrorMessage( nullptr,
+                                 _( "Error loading project design block library table." ) );
         }
     }
 
