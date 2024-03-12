@@ -751,6 +751,7 @@ void SCH_EDIT_FRAME::setupUIConditions()
     CURRENT_TOOL( EE_ACTIONS::highlightNetTool );
     CURRENT_TOOL( EE_ACTIONS::placeSymbol );
     CURRENT_TOOL( EE_ACTIONS::placePower );
+    CURRENT_TOOL( EE_ACTIONS::placeDesignBlock );
     CURRENT_TOOL( EE_ACTIONS::drawWire );
     CURRENT_TOOL( EE_ACTIONS::drawBus );
     CURRENT_TOOL( EE_ACTIONS::placeBusWireEntry );

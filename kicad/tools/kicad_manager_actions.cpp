@@ -179,6 +179,13 @@ TOOL_ACTION KICAD_MANAGER_ACTIONS::editDrawingSheet( TOOL_ACTION_ARGS()
         .Icon( BITMAPS::icon_pagelayout_editor_24 )
         .Parameter<wxString*>( nullptr ) );      // Default to no filename
 
+TOOL_ACTION KICAD_MANAGER_ACTIONS::showDesignBlockLibTable( TOOL_ACTION_ARGS()
+        .Name( "common.SuiteControl.showDesignBlockLibTable" )
+        .Scope( AS_GLOBAL )
+        .FriendlyName( _( "Manage Design Block Libraries..." ) )
+        .Tooltip( _( "Edit the global and project design block library lists" ) )
+        .Icon( BITMAPS::library_table ) );
+
 TOOL_ACTION KICAD_MANAGER_ACTIONS::showPluginManager( TOOL_ACTION_ARGS()
         .Name( "kicad.Control.pluginContentManager" )
         .Scope( AS_GLOBAL )

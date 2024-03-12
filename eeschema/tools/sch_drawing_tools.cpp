@@ -34,9 +34,11 @@
 #include <tools/ee_grid_helper.h>
 #include <tools/rule_area_create_helper.h>
 #include <gal/graphics_abstraction_layer.h>
+#include <design_block_lib_table.h>
 #include <ee_actions.h>
 #include <sch_edit_frame.h>
 #include <pgm_base.h>
+#include <design_block.h>
 #include <eeschema_id.h>
 #include <confirm.h>
 #include <view/view_controls.h>
@@ -524,6 +526,213 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
 
     getViewControls()->SetAutoPan( false );
     getViewControls()->CaptureCursor( false );
+    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+
+    return 0;
+}
+
+
+int SCH_DRAWING_TOOLS::PlaceDesignBlock( const TOOL_EVENT& aEvent )
+{
+    DESIGN_BLOCK_LIB_TABLE*     dbtbl = m_frame->Prj().DesignBlockLibs();
+    DESIGN_BLOCK*               designBlock = aEvent.Parameter<DESIGN_BLOCK*>();
+    bool                        ignorePrimePosition = false;
+    COMMON_SETTINGS*            common_settings = Pgm().GetCommonSettings();
+    SCH_SCREEN*                 screen = m_frame->GetScreen();
+
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
+
+    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    EE_GRID_HELPER        grid( m_toolMgr );
+    VECTOR2I              cursorPos;
+
+    m_frame->PushTool( aEvent );
+
+    auto setCursor =
+            [&]()
+            {
+                m_frame->GetCanvas()->SetCurrentCursor( designBlock ? KICURSOR::MOVING
+                                                               : KICURSOR::COMPONENT );
+            };
+
+    auto cleanup =
+            [&]()
+            {
+                m_toolMgr->RunAction( EE_ACTIONS::clearSelection );
+                m_view->ClearPreview();
+                delete designBlock;
+                designBlock = nullptr;
+            };
+
+    Activate();
+
+    // Must be done after Activate() so that it gets set into the correct context
+    getViewControls()->ShowCursor( true );
+
+    // Set initial cursor
+    setCursor();
+
+    // Prime the pump
+    if( designBlock )
+    {
+        getViewControls()->WarpMouseCursor( getViewControls()->GetMousePosition( false ) );
+    }
+    else if( aEvent.HasPosition() )
+    {
+        m_toolMgr->PrimeTool( aEvent.Position() );
+    }
+    else if( common_settings->m_Input.immediate_actions && !aEvent.IsReactivate() )
+    {
+        m_toolMgr->PrimeTool( { 0, 0 } );
+        ignorePrimePosition = true;
+    }
+
+    // Main loop: keep receiving events
+    while( TOOL_EVENT* evt = Wait() )
+    {
+        setCursor();
+        grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
+
+        cursorPos = grid.Align( controls->GetMousePosition(), GRID_HELPER_GRIDS::GRID_CONNECTABLE );
+        controls->ForceCursorPosition( true, cursorPos );
+
+        // The tool hotkey is interpreted as a click when drawing
+        bool isSyntheticClick = designBlock && evt->IsActivate() && evt->HasPosition()
+                                && evt->Matches( aEvent );
+
+        if( evt->IsCancelInteractive() || ( designBlock && evt->IsAction( &ACTIONS::undo ) ) )
+        {
+            m_frame->GetInfoBar()->Dismiss();
+
+            if( designBlock )
+            {
+                cleanup();
+            }
+            else
+            {
+                m_frame->PopTool( aEvent );
+                break;
+            }
+        }
+        else if( evt->IsActivate() && !isSyntheticClick )
+        {
+            if( designBlock && evt->IsMoveTool() )
+            {
+                // we're already moving our own item; ignore the move tool
+                evt->SetPassEvent( false );
+                continue;
+            }
+
+            if( designBlock )
+            {
+                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel design block placement." ) );
+                evt->SetPassEvent( false );
+                continue;
+            }
+
+            if( evt->IsMoveTool() )
+            {
+                // leave ourselves on the stack so we come back after the move
+                break;
+            }
+            else
+            {
+                m_frame->PopTool( aEvent );
+                break;
+            }
+        }
+        else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) || isSyntheticClick )
+        {
+            if( !designBlock )
+            {
+                m_toolMgr->RunAction( EE_ACTIONS::clearSelection );
+
+                // Pick the symbol to be placed
+                LIB_ID sel = m_frame->PickDesignBlockFromLibrary( m_designBlockHistoryList );
+
+                if( !sel.IsValid() )
+                    continue;
+
+                designBlock = dbtbl->DesignBlockLoadWithOptionalNickname( sel );
+
+                if( !designBlock )
+                    continue;
+
+                // If we started with a hotkey which has a position then warp back to that.
+                // Otherwise update to the current mouse position pinned inside the autoscroll
+                // boundaries.
+                if( evt->IsPrime() && !ignorePrimePosition )
+                {
+                    cursorPos = grid.Align( evt->Position(), GRID_HELPER_GRIDS::GRID_CONNECTABLE );
+                    getViewControls()->WarpMouseCursor( cursorPos, true );
+                }
+                else
+                {
+                    getViewControls()->PinCursorInsideNonAutoscrollArea( true );
+                    cursorPos = grid.Align( getViewControls()->GetMousePosition(),
+                                            GRID_HELPER_GRIDS::GRID_CONNECTABLE );
+                }
+
+                // Update cursor now that we have a symbol
+                setCursor();
+            }
+
+
+            bool placed;
+            do {
+                placed = m_frame->AddSheetAndUpdateDisplay( designBlock->GetSchematicFile() );
+            } while( placed && m_frame->eeconfig()->m_DesignBlockChooserPanel.repeated_placement );
+
+            // We need to push ourselves back on the stack as AddSheetAndUpdateDisplay will pop
+            // our tool off the stack when the move completes
+            m_frame->PushTool( aEvent );
+
+            cleanup();
+        }
+        else if( evt->IsClick( BUT_RIGHT ) )
+        {
+            // Warp after context menu only if dragging...
+            if( !designBlock )
+                m_toolMgr->VetoContextMenuMouseWarp();
+
+            m_menu.ShowContextMenu( m_selectionTool->GetSelection() );
+        }
+        else if( evt->IsAction( &ACTIONS::duplicate )
+                 || evt->IsAction( &EE_ACTIONS::repeatDrawItem ) )
+        {
+            if( designBlock )
+            {
+                // This doesn't really make sense; we'll just end up dragging a stack of
+                // objects so we ignore the duplicate and just carry on.
+                wxBell();
+                continue;
+            }
+
+            // Exit.  The duplicate will run in its own loop.
+            m_frame->PopTool( aEvent );
+            break;
+        }
+        else if( designBlock && ( evt->IsAction( &ACTIONS::refreshPreview ) || evt->IsMotion() ) )
+        {
+        }
+        else if( designBlock && evt->IsAction( &ACTIONS::doDelete ) )
+        {
+            cleanup();
+        }
+        else if( designBlock && evt->IsAction( &ACTIONS::redo ) )
+        {
+            wxBell();
+        }
+        else
+        {
+            evt->SetPassEvent();
+        }
+    }
+
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
 
     return 0;
@@ -2855,6 +3064,7 @@ void SCH_DRAWING_TOOLS::setTransitions()
 {
     Go( &SCH_DRAWING_TOOLS::PlaceSymbol,         EE_ACTIONS::placeSymbol.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::PlaceSymbol,         EE_ACTIONS::placePower.MakeEvent() );
+    Go( &SCH_DRAWING_TOOLS::PlaceDesignBlock,    EE_ACTIONS::placeDesignBlock.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::SingleClickPlace,    EE_ACTIONS::placeNoConnect.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::SingleClickPlace,    EE_ACTIONS::placeJunction.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::SingleClickPlace,    EE_ACTIONS::placeBusWireEntry.MakeEvent() );

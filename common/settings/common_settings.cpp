@@ -658,6 +658,10 @@ void COMMON_SETTINGS::InitializeEnvironment()
     path = basePath;
     path.AppendDir( wxT( "symbols" ) );
     addVar( ENV_VAR::GetVersionedEnvVarName( wxS( "SYMBOL_DIR" ) ), path.GetFullPath() );
+
+    path = basePath;
+    path.AppendDir( wxT( "blocks" ) );
+    addVar( ENV_VAR::GetVersionedEnvVarName( wxS( "DESIGN_BLOCK_DIR" ) ), path.GetFullPath() );
 }
 
 

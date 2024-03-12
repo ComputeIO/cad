@@ -412,6 +412,16 @@ TOOL_ACTION EE_ACTIONS::placePower( TOOL_ACTION_ARGS()
         .Flags( AF_ACTIVATE )
         .Parameter<SCH_SYMBOL*>( nullptr ) );
 
+TOOL_ACTION EE_ACTIONS::placeDesignBlock( TOOL_ACTION_ARGS()
+        .Name( "eeschema.InteractiveDrawing.placeDesignBlock" )
+        .Scope( AS_GLOBAL )
+        .FriendlyName( _( "Add Design Block" ) )
+        .Tooltip( _( "Add design block" ) )
+        .Icon( BITMAPS::add_component )
+        .Flags( AF_ACTIVATE )
+        .Parameter<DESIGN_BLOCK*>( nullptr ) );
+
+
 TOOL_ACTION EE_ACTIONS::placeNoConnect( TOOL_ACTION_ARGS()
         .Name( "eeschema.InteractiveDrawing.placeNoConnect" )
         .Scope( AS_GLOBAL )

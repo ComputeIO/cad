@@ -381,17 +381,17 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
             {
                 if( !symLibTableFn.Exists() || !symLibTableFn.IsFileReadable() )
                 {
-                    msg = _( "The selected file was created as part of a different project.  "
-                             "Linking the file to this project may result in missing or "
-                             "incorrect symbol library references.\n\n"
-                             "Do you wish to continue?" );
-                    wxMessageDialog msgDlg4( this, msg, _( "Continue Load Schematic" ),
-                                             wxOK | wxCANCEL | wxCANCEL_DEFAULT |
-                                             wxCENTER | wxICON_QUESTION );
-                    msgDlg4.SetOKCancelLabels( okButtonLabel, cancelButtonLabel );
+                    //msg = _( "The selected file was created as part of a different project.  "
+                             //"Linking the file to this project may result in missing or "
+                             //"incorrect symbol library references.\n\n"
+                             //"Do you wish to continue?" );
+                    //wxMessageDialog msgDlg4( this, msg, _( "Continue Load Schematic" ),
+                                             //wxOK | wxCANCEL | wxCANCEL_DEFAULT |
+                                             //wxCENTER | wxICON_QUESTION );
+                    //msgDlg4.SetOKCancelLabels( okButtonLabel, cancelButtonLabel );
 
-                    if( msgDlg4.ShowModal() == wxID_CANCEL )
-                        return false;
+                    //if( msgDlg4.ShowModal() == wxID_CANCEL )
+                        //return false;
                 }
                 else
                 {

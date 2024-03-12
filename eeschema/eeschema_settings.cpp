@@ -604,6 +604,27 @@ EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
     m_params.emplace_back( new PARAM<bool>( "symbol_chooser.place_all_units",
             &m_SymChooserPanel.place_all_units, true ) );
 
+    m_params.emplace_back( new PARAM<int>( "design_block_chooser.sash_pos_h",
+            &m_DesignBlockChooserPanel.sash_pos_h, -1 ) );
+
+    m_params.emplace_back( new PARAM<int>( "design_block_chooser.sash_pos_v",
+            &m_DesignBlockChooserPanel.sash_pos_v, -1 ) );
+
+    m_params.emplace_back( new PARAM<int>( "design_block_chooser.width",
+            &m_DesignBlockChooserPanel.width, -1 ) );
+
+    m_params.emplace_back( new PARAM<int>( "design_block_chooser.height",
+            &m_DesignBlockChooserPanel.height, -1 ) );
+
+    m_params.emplace_back( new PARAM<int>( "design_block_chooser.sort_mode",
+            &m_DesignBlockChooserPanel.sort_mode, 0 ) );
+
+    m_params.emplace_back( new PARAM<bool>( "design_block_chooser.repeated_placement",
+            &m_DesignBlockChooserPanel.repeated_placement, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "design_block_chooser.place_as_sheet",
+            &m_DesignBlockChooserPanel.place_as_sheet, false ) );
+
     m_params.emplace_back( new PARAM<bool>( "import_graphics.interactive_placement",
             &m_ImportGraphics.interactive_placement, true ) );
 

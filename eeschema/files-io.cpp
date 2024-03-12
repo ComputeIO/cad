@@ -662,15 +662,23 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName )
             item->ClearFlags( SKIP_STRUCT );
     }
 
+    bool placed;
+
     // Start moving selection, cancel undoes the insertion
     if( !m_toolManager->RunSynchronousAction( EE_ACTIONS::move, &commit ) )
+    {
+        placed = false;
         commit.Revert();
+    }
     else
+    {
+        placed = true;
         commit.Push( _( "Import Schematic Sheet Content..." ) );
+    }
 
     UpdateHierarchyNavigator();
 
-    return true;
+    return placed;
 }
 
 
