@@ -169,8 +169,9 @@ public:
 
     void RunEeschema();
 
-    void UpdateTrackWidthSelectBox( wxChoice* aTrackWidthSelectBox, bool aEdit = true );
-    void UpdateViaSizeSelectBox( wxChoice* aViaSizeSelectBox, bool aEdit = true );
+    void UpdateTrackWidthSelectBox( wxChoice* aTrackWidthSelectBox, bool aShowNetclass,
+                                    bool aShowEdit );
+    void UpdateViaSizeSelectBox( wxChoice* aViaSizeSelectBox, bool aShowNetclass, bool aShowEdit );
 
     /**
      * Return the angle used for rotate operations.
@@ -804,7 +805,7 @@ protected:
 
     void onSize( wxSizeEvent& aEvent );
 
-    int inferLegacyEdgeClearance( BOARD* aBoard );
+    int inferLegacyEdgeClearance( BOARD* aBoard, bool aShowUserMsg = true );
 
     void redrawNetnames( wxTimerEvent& aEvent );
 

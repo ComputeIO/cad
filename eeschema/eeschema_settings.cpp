@@ -73,7 +73,7 @@ const wxAuiPaneInfo& defaultNetNavigatorPaneInfo()
             .Left().Layer( 3 ).Position( 0 )
             .TopDockable( false )
             .BottomDockable( false )
-            .CloseButton( true )
+            .CloseButton( false )
             .MinSize( 120, 60 )
             .BestSize( 200, 200 )
             .FloatingSize( 200, 200 )
@@ -95,7 +95,7 @@ const wxAuiPaneInfo& defaultPropertiesPaneInfo( wxWindow* aWindow )
             .Left().Layer( 3 ).Position( 2 )
             .TopDockable( false )
             .BottomDockable( false )
-            .CloseButton( true )
+            .CloseButton( false )
             .MinSize( aWindow->FromDIP( wxSize( 240, 60 ) ) )
             .BestSize( aWindow->FromDIP( wxSize( 300, 200 ) ) )
             .FloatingSize( aWindow->FromDIP( wxSize( 300, 400 ) ) )
@@ -496,6 +496,9 @@ EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
 
     m_params.emplace_back( new PARAM<bool>( "plot.pdf_property_popups",
             &m_PlotPanel.pdf_property_popups, true ) );
+
+    m_params.emplace_back( new PARAM<bool>( "plot.pdf_metadata",
+            &m_PlotPanel.pdf_metadata, true ) );
 
     m_params.emplace_back( new PARAM<int>( "plot.hpgl_paper_size",
             &m_PlotPanel.hpgl_paper_size, 0 ) );

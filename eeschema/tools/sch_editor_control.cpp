@@ -81,6 +81,14 @@
 #include "sch_edit_table_tool.h"
 
 
+/**
+ * Flag to enable schematic paste debugging output.
+ *
+ * @ingroup trace_env_vars
+ */
+static const wxChar traceSchPaste[] = wxT( "KICAD_SCH_PASTE" );
+
+
 int SCH_EDITOR_CONTROL::New( const TOOL_EVENT& aEvent )
 {
     m_frame->NewProject();
@@ -1438,12 +1446,16 @@ void SCH_EDITOR_CONTROL::updatePastedSymbol( SCH_SYMBOL* aSymbol,
 
     for( const SCH_SYMBOL_INSTANCE& tmp : aSymbol->GetInstances() )
     {
-        if( tmp.m_Path.EndsWith( aClipPath ) )
+        if( ( tmp.m_Path.empty() && aClipPath.empty() )
+          || ( !aClipPath.empty() && tmp.m_Path.EndsWith( aClipPath ) ) )
         {
             newInstance = tmp;
             instanceFound = true;
 
-            wxLogDebug( wxS( "Pasting found symbol instance:\n\tpath: %s\n\tuuid: %s." ),
+            wxLogTrace( traceSchPaste,
+                        wxS( "Pasting found symbol instance with reference %s, unit %d:"
+                             "\n\tClipboard path: %s\n\tSymbol UUID: %s." ),
+                        tmp.m_Reference, tmp.m_Unit,
                         aClipPath.AsString(), aSymbol->m_Uuid.AsString() );
 
             break;
@@ -1455,7 +1467,9 @@ void SCH_EDITOR_CONTROL::updatePastedSymbol( SCH_SYMBOL* aSymbol,
 
     if( !instanceFound )
     {
-        wxLogDebug( wxS( "Clipboard symbol instance **not** found:\n\tpath: %s\n\tuuid: %s." ),
+        wxLogTrace( traceSchPaste,
+                    wxS( "Clipboard symbol instance **not** found:\n\tClipboard path: %s\n\t"
+                         "Symbol UUID: %s." ),
                     aClipPath.AsString(), aSymbol->m_Uuid.AsString() );
 
         // Some legacy versions saved value fields escaped.  While we still do in the symbol
@@ -1487,7 +1501,8 @@ SCH_SHEET_PATH SCH_EDITOR_CONTROL::updatePastedSheet( SCH_SHEET* aSheet,
                                                       const KIID_PATH& aClipPath,
                                                       bool aForceKeepAnnotations,
                                                       SCH_SHEET_LIST* aPastedSheets,
-                                                      std::map<SCH_SHEET_PATH, SCH_REFERENCE_LIST>& aPastedSymbols )
+                                                      std::map<SCH_SHEET_PATH,
+                                                      SCH_REFERENCE_LIST>& aPastedSymbols )
 {
     wxCHECK( aSheet && aPastedSheets, aPastePath );
 
