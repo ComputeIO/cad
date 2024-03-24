@@ -32,15 +32,12 @@
 void PCB_BOARD_OUTLINE::CopyPros( const PCB_BOARD_OUTLINE& aCopyFrom, PCB_BOARD_OUTLINE& aCopyTo )
 {
     aCopyTo.m_outlines = aCopyFrom.m_outlines;
-    aCopyTo.m_boundingBox = aCopyFrom.m_boundingBox;
     aCopyTo.m_parent = aCopyFrom.m_parent;
-    aCopyTo.m_has_outline = aCopyFrom.m_has_outline;
 }
 
 
 PCB_BOARD_OUTLINE::PCB_BOARD_OUTLINE( BOARD_ITEM* aParent ) :
-        BOARD_ITEM( aParent, KICAD_T::PCB_BOARD_OUTLINE_T, Edge_Cuts ),
-        m_outlines( std::make_shared<SHAPE_POLY_SET>() ), m_boundingBox( std::make_shared<BOX2I>() )
+        BOARD_ITEM( aParent, KICAD_T::PCB_BOARD_OUTLINE_T, Edge_Cuts )
 {
     SetFlags( SKIP_STRUCT );
 }
@@ -69,7 +66,7 @@ void PCB_BOARD_OUTLINE::ViewGetLayers( int aLayers[], int& aCount ) const
 
 const BOX2I PCB_BOARD_OUTLINE::GetBoundingBox() const
 {
-    return *m_boundingBox;
+    return m_outlines.BBox();
 }
 
 PCB_LAYER_ID PCB_BOARD_OUTLINE::GetLayer() const
@@ -105,8 +102,7 @@ bool PCB_BOARD_OUTLINE::operator==( const BOARD_ITEM& aItem ) const
 {
     if( const PCB_BOARD_OUTLINE* outline = dynamic_cast<const PCB_BOARD_OUTLINE*>( &aItem ) )
     {
-        return outline->m_parent == m_parent && outline->m_outlines.get() == m_outlines.get()
-               && outline->m_boundingBox.get() == m_boundingBox.get();
+        return outline->m_parent == m_parent;
     }
 
     return {};
@@ -115,19 +111,6 @@ bool PCB_BOARD_OUTLINE::operator==( const BOARD_ITEM& aItem ) const
 EDA_ITEM* PCB_BOARD_OUTLINE::Clone() const
 {
     return new PCB_BOARD_OUTLINE( *this );
-}
-
-void PCB_BOARD_OUTLINE::SetOutline( const SHAPE_POLY_SET& aOutline )
-{
-    *m_outlines = aOutline;
-    *m_boundingBox = m_outlines->BBox();
-    m_has_outline = true;
-}
-
-void PCB_BOARD_OUTLINE::SetOutline( const BOX2I& aOutline )
-{
-    *m_boundingBox = aOutline;
-    m_has_outline = false;
 }
 
 wxString PCB_BOARD_OUTLINE::GetClass() const

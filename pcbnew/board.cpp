@@ -2920,12 +2920,10 @@ bool BOARD::operator==( const BOARD_ITEM& aItem ) const
 void BOARD::UpdateBoardOutline()
 {
     SHAPE_POLY_SET outline;
-    bool           has_outline = GetBoardPolygonOutlines( outline );
+    bool           has_outline = GetBoardPolygonOutlines( m_boardOutline->GetOutline() );
 
     if( !has_outline )
-        m_boardOutline->SetOutline( ComputeBoundingBox( false ) );
-    else
-        m_boardOutline->SetOutline( std::move( outline ) );
+        m_boardOutline->GetOutline().RemoveAllContours();
 }
 
 

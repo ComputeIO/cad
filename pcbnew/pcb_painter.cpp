@@ -2808,6 +2808,9 @@ void PCB_PAINTER::draw( const PCB_MARKER* aMarker, int aLayer )
 
 void PCB_PAINTER::draw( const PCB_BOARD_OUTLINE* aBoardOutline, int aLayer )
 {
+    if( !aBoardOutline->HasOutline() )
+        return;
+
     m_gal->Save();
     m_gal->PushDepth();
     const COLOR4D& outlineColor = m_pcbSettings.GetColor( aBoardOutline, aLayer );
@@ -2816,12 +2819,7 @@ void PCB_PAINTER::draw( const PCB_BOARD_OUTLINE* aBoardOutline, int aLayer )
     m_gal->SetLineWidth( 0 );
     m_gal->SetIsFill( true );
     m_gal->SetIsStroke( false );
-
-    if( aBoardOutline->HasOutline() )
-        m_gal->DrawPolygon( aBoardOutline->GetOutline() );
-    else
-        m_gal->DrawRectangle( aBoardOutline->GetBoundingBox() );
-
+    m_gal->DrawPolygon( aBoardOutline->GetOutline() );
     m_gal->PopDepth();
     m_gal->Restore();
 }

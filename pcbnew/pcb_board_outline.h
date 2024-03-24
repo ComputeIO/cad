@@ -42,7 +42,9 @@ public:
 
     ~PCB_BOARD_OUTLINE() override;
 
-    const SHAPE_POLY_SET& GetOutline() const { return *m_outlines; }
+    const SHAPE_POLY_SET& GetOutline() const { return m_outlines; }
+
+    SHAPE_POLY_SET& GetOutline() { return m_outlines; }
 
     void ViewGetLayers( int aLayers[], int& aCount ) const override;
 
@@ -60,11 +62,7 @@ public:
 
     EDA_ITEM* Clone() const override;
 
-    void SetOutline( const SHAPE_POLY_SET& aOutline );
-
-    void SetOutline( const BOX2I& aOutline );
-
-    bool HasOutline() const { return m_has_outline; }
+    bool HasOutline() const { return !m_outlines.IsEmpty(); }
 
     static void CopyPros( const PCB_BOARD_OUTLINE& aCopyFrom, PCB_BOARD_OUTLINE& aCopyTo );
 
@@ -77,9 +75,7 @@ public:
     wxString GetClass() const override;
 
 private:
-    std::shared_ptr<SHAPE_POLY_SET> m_outlines;
-    std::shared_ptr<BOX2I>          m_boundingBox;
-    bool                            m_has_outline;
+    SHAPE_POLY_SET m_outlines;
 };
 
 #endif
