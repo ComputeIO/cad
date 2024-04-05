@@ -59,10 +59,11 @@
 /* Execute a remote command sent via a socket on port KICAD_PCB_PORT_SERVICE_NUMBER
  *
  * Commands are:
- *
- * $NET: "net name"               Highlight the given net
- * $NETS: "net name 1,net name 2" Highlight all given nets
- * $CLEAR                         Clear existing highlight
+ * $PART: "reference"                   Highlight footprint
+ * $PART: "reference" $PAD: "pin name"  Highlight footprint pin
+ * $NET: "net name"                     Highlight the given net
+ * $NETS: "net name 1,net name 2"       Highlight all given nets
+ * $CLEAR                               Clear existing highlight
  *
  * $CONFIG       Show the Manage Footprint Libraries dialog
  * $CUSTOM_RULES Show the "Custom Rules" page of the Board Setup dialog
@@ -185,10 +186,63 @@ void PCB_EDIT_FRAME::ExecuteRemoteCommand( const char* cmdline )
 
         // fall through to highlighting section
     }
+    else if( strcmp( idcmd, "$PART:" ) == 0 )
+    {
+        std::vector<BOARD_ITEM*> itemsToSelect;
+        
+        itemsToSelect.reserve( 1 ); //Single highlight for backward compatibility. No command function change - same functionality as in eeschema
 
+        wxString partRef = From_UTF8( text );
+        char* subCmd = strtok( nullptr, " \n\r" );
+
+        FOOTPRINT* highlightedFootprint = nullptr;
+        for( FOOTPRINT* seachFootprint : GetBoard()->Footprints() ) //Search for target Ref
+        {
+            wxString fpRefEscaped = EscapeString( seachFootprint->GetReference(), CTX_IPC );
+            if( fpRefEscaped == partRef )
+            {
+                highlightedFootprint = seachFootprint;
+                break;
+            }
+        }
+
+        if( highlightedFootprint != nullptr )
+        {
+            if( subCmd == nullptr ) // Highlighting full footprint
+            {
+                itemsToSelect.push_back( highlightedFootprint );
+            }
+            else //Sub/complementary command ( argument )
+            {
+                char* subCommandArg = strtok( nullptr, "\"\n\r" );
+                if( strcmp( subCmd, "$PAD:" ) == 0 ) //  "$PAD:" subcommand processing
+                {
+                    wxString highlightedPad = From_UTF8( subCommandArg );
+                    for( PAD* searchPad : highlightedFootprint->Pads() )
+                    {
+                        if( highlightedPad == searchPad->GetNumber() )
+                        {
+                            itemsToSelect.push_back( searchPad );
+                            break;
+                        }
+                    }
+                }
+                // TODO : ? For standalone functionality may be useful to extend commands by:
+                // $PARTS: "reference1,reference2..." Highlight several footprints
+                // $PART: "reference" $PADS: "pinName1,pinName2,..."  Highlight several pads on footprint
+            }
+
+            // Blocking cyclic/recursively highlight via m_probingSchToPcb. Used for compability. 
+            // Seem to be unactual neither for standalone mode, nor integrated-mode(due to KiWay)
+            m_probingSchToPcb = true; 
+            //Performing highlight 
+            GetToolManager()->RunAction( PCB_ACTIONS::syncSelection, &itemsToSelect );
+            m_probingSchToPcb = false; 
+        }
+    }
     BOX2I bbox;
 
-    if( footprint )
+    if( footprint )  //TODO : Does footprint always nullptr ???
     {
         bbox = footprint->GetBoundingBox( true, false ); // No invisible text in bbox calc
 
