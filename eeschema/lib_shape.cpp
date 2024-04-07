@@ -111,15 +111,15 @@ void LIB_SHAPE::Normalize()
 }
 
 
-void LIB_SHAPE::MirrorHorizontal( const VECTOR2I& aCenter )
+void LIB_SHAPE::MirrorHorizontally( int aCenter )
 {
-    flip( aCenter, true );
+    flip( VECTOR2I( aCenter, 0 ), true );
 }
 
 
-void LIB_SHAPE::MirrorVertical( const VECTOR2I& aCenter )
+void LIB_SHAPE::MirrorVertically( int aCenter )
 {
-    flip( aCenter, false );
+    flip( VECTOR2I( 0, aCenter ), false );
 }
 
 
@@ -131,14 +131,16 @@ void LIB_SHAPE::Rotate( const VECTOR2I& aCenter, bool aRotateCCW )
 }
 
 
-void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffset,
-                      const TRANSFORM& aTransform, bool aDimmed ) const
+void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS& aPlotOpts,
+                      int aUnit, int aBodyStyle, const VECTOR2I& aOffset, bool aDimmed )
 {
     if( IsPrivate() )
         return;
 
-    VECTOR2I  start = aTransform.TransformCoordinate( m_start ) + aOffset;
-    VECTOR2I  end = aTransform.TransformCoordinate( m_end ) + aOffset;
+    SCH_RENDER_SETTINGS* renderSettings = getRenderSettings( aPlotter );
+
+    VECTOR2I start = renderSettings->TransformCoordinate( m_start ) + aOffset;
+    VECTOR2I end = renderSettings->TransformCoordinate( m_end ) + aOffset;
 
     static std::vector<VECTOR2I> cornerList;
 
@@ -148,14 +150,14 @@ void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffs
         cornerList.clear();
 
         for( const VECTOR2I& pt : poly.CPoints() )
-            cornerList.push_back( aTransform.TransformCoordinate( pt ) + aOffset );
+            cornerList.push_back( renderSettings->TransformCoordinate( pt ) + aOffset );
     }
     else if( GetShape() == SHAPE_T::BEZIER )
     {
         cornerList.clear();
 
         for( const VECTOR2I& pt : m_bezierPoints )
-            cornerList.push_back( aTransform.TransformCoordinate( pt ) + aOffset );
+            cornerList.push_back( renderSettings->TransformCoordinate( pt ) + aOffset );
     }
 
     int        penWidth;
@@ -178,7 +180,7 @@ void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffs
             break;
 
         case FILL_T::FILLED_WITH_BG_BODYCOLOR:
-            color = aPlotter->RenderSettings()->GetLayerColor( LAYER_DEVICE_BACKGROUND );
+            color = renderSettings->GetLayerColor( LAYER_DEVICE_BACKGROUND );
             break;
 
         default:
@@ -191,7 +193,7 @@ void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffs
     else
     {
         if( !aPlotter->GetColorMode() || color == COLOR4D::UNSPECIFIED )
-            color = aPlotter->RenderSettings()->GetLayerColor( LAYER_DEVICE );
+            color = renderSettings->GetLayerColor( LAYER_DEVICE );
 
         if( lineStyle == LINE_STYLE::DEFAULT )
             lineStyle = LINE_STYLE::SOLID;
@@ -201,10 +203,10 @@ void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffs
         else
             fill = FILL_T::NO_FILL;
 
-        penWidth = GetEffectivePenWidth( aPlotter->RenderSettings() );
+        penWidth = GetEffectivePenWidth( renderSettings );
     }
 
-    COLOR4D bg = aPlotter->RenderSettings()->GetBackgroundColor();
+    COLOR4D bg = renderSettings->GetBackgroundColor();
 
     if( bg == COLOR4D::UNSPECIFIED || !aPlotter->GetColorMode() )
         bg = COLOR4D::WHITE;
@@ -222,7 +224,7 @@ void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffs
     {
     case SHAPE_T::ARC:
     {
-        VECTOR2I mid = aTransform.TransformCoordinate( GetArcMid() ) + aOffset;
+        VECTOR2I mid = renderSettings->TransformCoordinate( GetArcMid() ) + aOffset;
 
         aPlotter->Arc( start, mid, end, fill, penWidth );
         break;
@@ -230,7 +232,7 @@ void LIB_SHAPE::Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffs
 
     case SHAPE_T::CIRCLE:
     {
-        VECTOR2I center = aTransform.TransformCoordinate( getCenter() ) + aOffset;
+        VECTOR2I center = renderSettings->TransformCoordinate( getCenter() ) + aOffset;
 
         aPlotter->Circle( center, GetRadius() * 2, fill, penWidth );
         break;
@@ -259,21 +261,20 @@ int LIB_SHAPE::GetPenWidth() const
 }
 
 
-void LIB_SHAPE::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                       const TRANSFORM& aTransform, bool aDimmed )
+void LIB_SHAPE::Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                       const VECTOR2I& aOffset, bool aForceNoFill, bool aDimmed )
 {
     if( IsPrivate() )
         return;
 
-    bool forceNoFill = static_cast<bool>( aData );
     int  penWidth = GetEffectivePenWidth( aSettings );
 
-    if( forceNoFill && IsFilled() && penWidth == 0 )
+    if( aForceNoFill && IsFilled() && penWidth == 0 )
         return;
 
     wxDC*    DC = aSettings->GetPrintDC();
-    VECTOR2I pt1 = aTransform.TransformCoordinate( m_start ) + aOffset;
-    VECTOR2I pt2 = aTransform.TransformCoordinate( m_end ) + aOffset;
+    VECTOR2I pt1 = aSettings->m_Transform.TransformCoordinate( m_start ) + aOffset;
+    VECTOR2I pt2 = aSettings->m_Transform.TransformCoordinate( m_end ) + aOffset;
     VECTOR2I c;
     COLOR4D  color = GetStroke().GetColor();
 
@@ -302,7 +303,7 @@ void LIB_SHAPE::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset
         buffer = new VECTOR2I[ptCount];
 
         for( unsigned ii = 0; ii < ptCount; ++ii )
-            buffer[ii] = aTransform.TransformCoordinate( poly.CPoint( ii ) ) + aOffset;
+            buffer[ii] = aSettings->m_Transform.TransformCoordinate( poly.CPoint( ii ) ) + aOffset;
     }
     else if( GetShape() == SHAPE_T::BEZIER )
     {
@@ -310,11 +311,11 @@ void LIB_SHAPE::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset
         buffer = new VECTOR2I[ptCount];
 
         for( size_t ii = 0; ii < ptCount; ++ii )
-            buffer[ii] = aTransform.TransformCoordinate( m_bezierPoints[ii] ) + aOffset;
+            buffer[ii] = aSettings->m_Transform.TransformCoordinate( m_bezierPoints[ii] ) + aOffset;
     }
     else if( GetShape() == SHAPE_T::ARC )
     {
-        c = aTransform.TransformCoordinate( getCenter() ) + aOffset;
+        c = aSettings->m_Transform.TransformCoordinate( getCenter() ) + aOffset;
 
         EDA_ANGLE t1, t2;
 
@@ -322,7 +323,7 @@ void LIB_SHAPE::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset
 
         // N.B. The order of evaluation is critical here as MapAngles will modify t1, t2
         // and the Normalize routine depends on these modifications for the correct output
-        bool transformed = aTransform.MapAngles( &t1, &t2 );
+        bool transformed = aSettings->m_Transform.MapAngles( &t1, &t2 );
         EDA_ANGLE arc_angle =  ( t1 - t2 ).Normalize180();
         bool transformed2 = ( arc_angle > ANGLE_0 ) && ( arc_angle < ANGLE_180 );
 
@@ -332,7 +333,7 @@ void LIB_SHAPE::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset
 
     COLOR4D fillColor = COLOR4D::UNSPECIFIED;
 
-    if( !forceNoFill )
+    if( !aForceNoFill )
     {
         if( GetFillMode() == FILL_T::FILLED_SHAPE )
             fillColor = color;
@@ -418,12 +419,12 @@ void LIB_SHAPE::print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset
             for( SHAPE* shape : shapes )
             {
                 STROKE_PARAMS::Stroke( shape, GetEffectiveLineStyle(), penWidth, aSettings,
-                                       [&]( const VECTOR2I& a, const VECTOR2I& b )
-                                       {
-                                           VECTOR2I pts = aTransform.TransformCoordinate( a ) + aOffset;
-                                           VECTOR2I pte = aTransform.TransformCoordinate( b ) + aOffset;
-                                           GRLine( DC, pts.x, pts.y, pte.x, pte.y, penWidth, color );
-                                       } );
+                        [&]( const VECTOR2I& a, const VECTOR2I& b )
+                        {
+                            VECTOR2I pts = aSettings->m_Transform.TransformCoordinate( a ) + aOffset;
+                            VECTOR2I pte = aSettings->m_Transform.TransformCoordinate( b ) + aOffset;
+                            GRLine( DC, pts.x, pts.y, pte.x, pte.y, penWidth, color );
+                        } );
             }
 
             for( SHAPE* shape : shapes )
@@ -494,6 +495,7 @@ BITMAPS LIB_SHAPE::GetMenuImage() const
     case SHAPE_T::CIRCLE:    return BITMAPS::add_circle;
     case SHAPE_T::RECTANGLE: return BITMAPS::add_rectangle;
     case SHAPE_T::POLY:      return BITMAPS::add_graphical_segments;
+    case SHAPE_T::BEZIER:    return BITMAPS::add_bezier;
 
     default:
         UNIMPLEMENTED_FOR( SHAPE_T_asString() );
@@ -599,7 +601,8 @@ static struct LIB_SHAPE_DESC
         FILL_T ( LIB_SHAPE::*fillModeGetter )() const = &LIB_SHAPE::GetFillMode;
 
         propMgr.AddProperty( new PROPERTY_ENUM< LIB_SHAPE, FILL_T>( _HKI( "Fill" ),
-                        fillModeSetter, fillModeGetter ) );
+                        fillModeSetter, fillModeGetter ),
+                        _HKI( "Shape Properties" ) );
     }
 } _LIB_SHAPE_DESC;
 

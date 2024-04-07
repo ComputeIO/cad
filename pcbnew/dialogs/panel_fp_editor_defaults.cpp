@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 1992-2022 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2024 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -240,7 +240,7 @@ PANEL_FP_EDITOR_DEFAULTS::~PANEL_FP_EDITOR_DEFAULTS()
 
 void PANEL_FP_EDITOR_DEFAULTS::loadFPSettings( FOOTPRINT_EDITOR_SETTINGS* aCfg )
 {
-    wxColour disabledColour = wxSystemSettings::GetColour( wxSYS_COLOUR_BACKGROUND );
+    wxColour disabledColour = wxSystemSettings::GetColour( wxSYS_COLOUR_FRAMEBK );
 
     auto disableCell =
             [&]( int row, int col )
@@ -361,8 +361,8 @@ bool PANEL_FP_EDITOR_DEFAULTS::TransferDataFromWindow()
     // A minimal value for sizes and thickness:
     const int minWidth = pcbIUScale.mmToIU( MINIMUM_LINE_WIDTH_MM );
     const int maxWidth = pcbIUScale.mmToIU( MAXIMUM_LINE_WIDTH_MM );
-    const int minSize  = pcbIUScale.MilsToIU( TEXT_MIN_SIZE_MILS );
-    const int maxSize = pcbIUScale.MilsToIU( TEXT_MAX_SIZE_MILS );
+    const int minSize  = pcbIUScale.mmToIU( TEXT_MIN_SIZE_MM );
+    const int maxSize = pcbIUScale.mmToIU( TEXT_MAX_SIZE_MM );
     wxString errorsMsg;
 
     for( int i = 0; i < ROW_COUNT; ++i )
@@ -473,7 +473,8 @@ bool PANEL_FP_EDITOR_DEFAULTS::TransferDataFromWindow()
     if( errorsMsg.IsEmpty() )
         return true;
 
-    KIDIALOG dlg( this, errorsMsg, KIDIALOG::KD_ERROR, _( "Parameter error" ) );
+    KIDIALOG dlg( wxGetTopLevelParent( this ), errorsMsg, KIDIALOG::KD_ERROR,
+                  _( "Parameter error" ) );
     dlg.ShowModal();
 
     return false;

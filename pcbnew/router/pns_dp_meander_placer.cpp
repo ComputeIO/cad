@@ -324,6 +324,8 @@ bool DP_MEANDER_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
         curIndexN = tunedN.NextShape( curIndexN );
     }
 
+    m_result.AddCorner( tunedP.CPoint( -1 ), tunedN.CPoint( -1 ) );
+
     long long int dpLen = origPathLength();
 
     m_lastStatus = TUNED;
@@ -444,7 +446,7 @@ bool DP_MEANDER_PLACER::CheckFit( MEANDER_SHAPE* aShape )
         return false;
 
     int w = aShape->Width();
-    int clearance = w + m_settings.m_spacing;
+    int clearance = w + w * 3;
 
     return m_result.CheckSelfIntersections( aShape, clearance );
 }

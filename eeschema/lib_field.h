@@ -34,7 +34,7 @@
 #include <lib_item.h>
 
 
-class SCH_LEGACY_PLUGIN_CACHE;
+class SCH_IO_KICAD_LEGACY_LIB_CACHE;
 
 
 /**
@@ -171,12 +171,15 @@ public:
 
     VECTOR2I GetPosition() const override { return EDA_TEXT::GetTextPos(); }
 
-    void MirrorHorizontal( const VECTOR2I& aCenter ) override;
-    void MirrorVertical( const VECTOR2I& aCenter ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
     void Rotate( const VECTOR2I& aCenter, bool aRotateCCW = true ) override;
 
-    void Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffset,
-               const TRANSFORM& aTransform, bool aDimmed ) const override;
+    void Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                const VECTOR2I& aOffset, bool aForceNoFill, bool aDimmed ) override;
+
+    void Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS& aPlotOpts,
+               int aUnit, int aBodyStyle, const VECTOR2I& aOffset, bool aDimmed ) override;
 
     wxString GetItemDescription( UNITS_PROVIDER* aUnitsProvider ) const override;
 
@@ -219,22 +222,13 @@ private:
     int compare( const LIB_ITEM& aOther, int aCompareFlags = 0 ) const override;
 
     /**
-     * Print the field.
-     *
-     * If \a aData not NULL, \a aData must point a wxString which is used instead of
-     * the m_Text
-     */
-    void print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                const TRANSFORM& aTransform, bool aDimmed ) override;
-
-    /**
      * Calculate the new circle at \a aPosition when editing.
      *
      * @param aPosition - The position to edit the circle in drawing coordinates.
      */
     void CalcEdit( const VECTOR2I& aPosition ) override;
 
-    friend class SCH_LEGACY_PLUGIN_CACHE;   // Required to access m_name.
+    friend class SCH_IO_KICAD_LEGACY_LIB_CACHE;   // Required to access m_name.
 
     int      m_id;         ///< @see enum MANDATORY_FIELD_T
     wxString m_name;       ///< Name (not the field text value itself, that is #EDA_TEXT::m_Text)

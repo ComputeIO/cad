@@ -71,7 +71,8 @@ PANEL_SETUP_TEXT_AND_GRAPHICS::PANEL_SETUP_TEXT_AND_GRAPHICS( wxWindow* aParentW
                                COL_TEXT_WIDTH,
                                COL_TEXT_HEIGHT,
                                COL_TEXT_THICKNESS } );
-    m_grid->SetDefaultRowSize( m_grid->GetDefaultRowSize() + 4 );
+    m_grid->SetDefaultRowSize( m_grid->GetDefaultRowSize() + FromDIP( 4 ) );
+    m_grid->SetUseNativeColLabels();
 
     // Work around a bug in wxWidgets where it fails to recalculate the grid height
     // after changing the default row size
@@ -128,7 +129,7 @@ void PANEL_SETUP_TEXT_AND_GRAPHICS::onUnitsChanged( wxCommandEvent& aEvent )
 
 bool PANEL_SETUP_TEXT_AND_GRAPHICS::TransferDataToWindow()
 {
-    wxColour disabledColour = wxSystemSettings::GetColour( wxSYS_COLOUR_BACKGROUND );
+    wxColour disabledColour = wxSystemSettings::GetColour( wxSYS_COLOUR_FRAMEBK );
 
 #define SET_MILS_CELL( row, col, val ) \
     m_grid->SetCellValue( row, col, m_Frame->StringFromValue( val, true ) )
@@ -204,8 +205,8 @@ bool PANEL_SETUP_TEXT_AND_GRAPHICS::TransferDataFromWindow()
     // A minimal value for sizes and thickness
     const int minWidth = pcbIUScale.mmToIU( MINIMUM_LINE_WIDTH_MM );
     const int maxWidth = pcbIUScale.mmToIU( MAXIMUM_LINE_WIDTH_MM );
-    const int minSize  = pcbIUScale.MilsToIU( TEXT_MIN_SIZE_MILS );
-    const int maxSize = pcbIUScale.MilsToIU( TEXT_MAX_SIZE_MILS );
+    const int minSize  = pcbIUScale.mmToIU( TEXT_MIN_SIZE_MM );
+    const int maxSize = pcbIUScale.mmToIU( TEXT_MAX_SIZE_MM );
     wxString errorsMsg;
     UNITS_PROVIDER* unitProvider = m_Frame;
 
@@ -310,7 +311,8 @@ bool PANEL_SETUP_TEXT_AND_GRAPHICS::TransferDataFromWindow()
     if( errorsMsg.IsEmpty() )
         return true;
 
-    KIDIALOG dlg( this, errorsMsg, KIDIALOG::KD_ERROR, _( "Parameter error" ) );
+    KIDIALOG dlg( wxGetTopLevelParent( this ), errorsMsg, KIDIALOG::KD_ERROR,
+                  _( "Parameter error" ) );
     dlg.ShowModal();
 
     return false;

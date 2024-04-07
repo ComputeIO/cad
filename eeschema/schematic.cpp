@@ -312,15 +312,17 @@ std::vector<SCH_MARKER*> SCHEMATIC::ResolveERCExclusions()
 
     for( auto it = settings.m_ErcExclusions.begin(); it != settings.m_ErcExclusions.end(); )
     {
-        SCH_MARKER* testMarker = SCH_MARKER::Deserialize( this, *it );
+        SCH_MARKER* testMarker = SCH_MARKER::DeserializeFromString( this, *it );
+
         if( testMarker->IsLegacyMarker() )
         {
             const wxString settingsKey = testMarker->GetRCItem()->GetSettingsKey();
 
-            if( settingsKey != wxT( "pin_to_pin" ) && settingsKey != wxT( "hier_label_mismatch" )
+            if(    settingsKey != wxT( "pin_to_pin" )
+                && settingsKey != wxT( "hier_label_mismatch" )
                 && settingsKey != wxT( "different_unit_net" ) )
             {
-                migratedExclusions.insert( testMarker->Serialize() );
+                migratedExclusions.insert( testMarker->SerializeToString() );
             }
 
             it = settings.m_ErcExclusions.erase( it );
@@ -329,6 +331,7 @@ std::vector<SCH_MARKER*> SCHEMATIC::ResolveERCExclusions()
         {
             ++it;
         }
+
         delete testMarker;
     }
 
@@ -340,12 +343,13 @@ std::vector<SCH_MARKER*> SCHEMATIC::ResolveERCExclusions()
     {
         for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_MARKER_T ) )
         {
-            SCH_MARKER* marker = static_cast<SCH_MARKER*>( item );
-            auto        it = settings.m_ErcExclusions.find( marker->Serialize() );
+            SCH_MARKER*                  marker = static_cast<SCH_MARKER*>( item );
+            wxString                     serialized = marker->SerializeToString();
+            std::set<wxString>::iterator it = settings.m_ErcExclusions.find( serialized );
 
             if( it != settings.m_ErcExclusions.end() )
             {
-                marker->SetExcluded( true );
+                marker->SetExcluded( true, settings.m_ErcExclusionComments[serialized] );
                 settings.m_ErcExclusions.erase( it );
             }
         }
@@ -353,13 +357,13 @@ std::vector<SCH_MARKER*> SCHEMATIC::ResolveERCExclusions()
 
     std::vector<SCH_MARKER*> newMarkers;
 
-    for( const wxString& exclusionData : settings.m_ErcExclusions )
+    for( const wxString& serialized : settings.m_ErcExclusions )
     {
-        SCH_MARKER* marker = SCH_MARKER::Deserialize( this, exclusionData );
+        SCH_MARKER* marker = SCH_MARKER::DeserializeFromString( this, serialized );
 
         if( marker )
         {
-            marker->SetExcluded( true );
+            marker->SetExcluded( true, settings.m_ErcExclusionComments[serialized] );
             newMarkers.push_back( marker );
         }
     }
@@ -655,37 +659,20 @@ void SCHEMATIC::RecomputeIntersheetRefs( const std::function<void( SCH_GLOBALLAB
 
     pageRefsMap.clear();
 
-    SCH_SCREENS      screens( Root() );
-    std::vector<int> virtualPageNumbers;
-
-    /* Iterate over screens */
-    for( SCH_SCREEN* screen = screens.GetFirst(); screen != nullptr; screen = screens.GetNext() )
+    for( const SCH_SHEET_PATH& sheet : GetSheets() )
     {
-        virtualPageNumbers.clear();
-
-        /* Find in which sheets this screen is used */
-        for( const SCH_SHEET_PATH& sheet : GetSheets() )
+        for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_GLOBAL_LABEL_T ) )
         {
-            if( sheet.LastScreen() == screen )
-                virtualPageNumbers.push_back( sheet.GetVirtualPageNumber() );
-        }
+            SCH_GLOBALLABEL* global = static_cast<SCH_GLOBALLABEL*>( item );
+            wxString         resolvedLabel = global->GetShownText( &sheet, false );
 
-        for( SCH_ITEM* item : screen->Items() )
-        {
-            if( item->Type() == SCH_GLOBAL_LABEL_T )
-            {
-                SCH_GLOBALLABEL* globalLabel = static_cast<SCH_GLOBALLABEL*>( item );
-                std::set<int>&   virtualpageList = pageRefsMap[globalLabel->GetText()];
-
-                for( const int& pageNo : virtualPageNumbers )
-                    virtualpageList.insert( pageNo );
-            }
+            pageRefsMap[ resolvedLabel ].insert( sheet.GetVirtualPageNumber() );
         }
     }
 
     bool show = Settings().m_IntersheetRefsShow;
 
-    // Refresh all global labels.  Note that we have to collect them first as the
+    // Refresh all visible global labels.  Note that we have to collect them first as the
     // SCH_SCREEN::Update() call is going to invalidate the RTree iterator.
 
     std::vector<SCH_GLOBALLABEL*> currentSheetGlobalLabels;
@@ -814,6 +801,7 @@ void SCHEMATIC::RecordERCExclusions()
     ERC_SETTINGS&  ercSettings = ErcSettings();
 
     ercSettings.m_ErcExclusions.clear();
+    ercSettings.m_ErcExclusionComments.clear();
 
     for( unsigned i = 0; i < sheetList.size(); i++ )
     {
@@ -822,7 +810,11 @@ void SCHEMATIC::RecordERCExclusions()
             SCH_MARKER* marker = static_cast<SCH_MARKER*>( item );
 
             if( marker->IsExcluded() )
-                ercSettings.m_ErcExclusions.insert( marker->Serialize() );
+            {
+                wxString serialized = marker->SerializeToString();
+                ercSettings.m_ErcExclusions.insert( serialized );
+                ercSettings.m_ErcExclusionComments[ serialized ] = marker->GetComment();
+            }
         }
     }
 }

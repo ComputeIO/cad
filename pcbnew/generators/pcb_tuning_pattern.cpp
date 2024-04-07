@@ -129,8 +129,8 @@ public:
 
     void ViewGetLayers( int aLayers[], int& aCount ) const override
     {
-        aLayers[0] = LAYER_SELECT_OVERLAY;
-        aLayers[1] = LAYER_GP_OVERLAY;
+        aLayers[0] = LAYER_UI_START;
+        aLayers[1] = LAYER_UI_START + 1;
         aCount = 2;
     }
 
@@ -138,19 +138,19 @@ public:
     {
         KIGFX::GAL* gal = aView->GetGAL();
         bool        viewFlipped = gal->IsFlippedX();
-        bool        drawingDropShadows = ( aLayer == LAYER_GP_OVERLAY );
+        bool        drawingDropShadows = ( aLayer == LAYER_UI_START );
 
-        gal->PushDepth();
-        gal->SetLayerDepth( gal->GetMinDepth() );
+        gal->Save();
+        gal->Scale( { 1., 1. } );
 
-        KIGFX::PREVIEW::TEXT_DIMS headerDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -3 );
-        KIGFX::PREVIEW::TEXT_DIMS textDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -2 );
+        KIGFX::PREVIEW::TEXT_DIMS headerDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -2 );
+        KIGFX::PREVIEW::TEXT_DIMS textDims = KIGFX::PREVIEW::GetConstantGlyphHeight( gal, -1 );
         KIFONT::FONT*             font = KIFONT::FONT::GetFont();
         const KIFONT::METRICS&    fontMetrics = KIFONT::METRICS::Default();
         TEXT_ATTRIBUTES           textAttrs;
 
         int      glyphWidth = textDims.GlyphSize.x;
-        VECTOR2I margin( KiROUND( glyphWidth * 0.4 ), KiROUND( glyphWidth * 0.9 ) );
+        VECTOR2I margin( KiROUND( glyphWidth * 0.4 ), KiROUND( glyphWidth ) );
         VECTOR2I size( glyphWidth * 25 + margin.x * 2, headerDims.GlyphSize.y + textDims.GlyphSize.y );
         VECTOR2I offset( margin.x * 2, -( size.y + margin.y * 2 ) );
 
@@ -158,13 +158,14 @@ public:
         {
             gal->SetIsFill( true );
             gal->SetIsStroke( true );
-            gal->SetLineWidth( 1 );
+            gal->SetLineWidth( gal->GetScreenWorldMatrix().GetScale().x * 2 );
             gal->SetStrokeColor( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNTEXT ) );
-            gal->SetFillColor( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
+            KIGFX::COLOR4D bgColor( wxSystemSettings::GetColour( wxSYS_COLOUR_BTNFACE ) );
+            gal->SetFillColor( bgColor.WithAlpha( 0.9 ) );
 
             gal->DrawRectangle( GetPosition() + offset - margin,
                                 GetPosition() + offset + size + margin );
-            gal->PopDepth();
+            gal->Restore();
             return;
         }
 
@@ -221,7 +222,7 @@ public:
         gal->SetStrokeColor( m_current > m_max ? red : normal );
         font->Draw( gal, m_maxText, textPos, textAttrs, fontMetrics );
 
-        gal->PopDepth();
+        gal->Restore();
     }
 
 protected:
@@ -267,21 +268,16 @@ public:
                                           BOARD_CONNECTED_ITEM* aStartItem,
                                           LENGTH_TUNING_MODE aMode );
 
-    void EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                    BOARD_COMMIT* aCommit ) override;
+    void EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit ) override;
 
-    bool Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                 BOARD_COMMIT* aCommit ) override;
+    bool Update( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit ) override;
 
-    void EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                   BOARD_COMMIT* aCommit, const wxString& aCommitMsg = wxEmptyString,
-                   int aCommitFlags = 0 ) override;
+    void EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit,
+                   const wxString& aCommitMsg = wxEmptyString, int aCommitFlags = 0 ) override;
 
-    void EditRevert( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                     BOARD_COMMIT* aCommit ) override;
+    void EditRevert( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit ) override;
 
-    void Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                 BOARD_COMMIT* aCommit ) override;
+    void Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit ) override;
 
     bool MakeEditPoints( std::shared_ptr<EDIT_POINTS> points ) const override;
 
@@ -325,23 +321,32 @@ public:
 
     const BOX2I GetBoundingBox() const override
     {
-        return getRectShape().BBox();
+        return getOutline().BBox();
     }
 
     void ViewGetLayers( int aLayers[], int& aCount ) const override
     {
         aCount = 0;
         aLayers[aCount++] = LAYER_ANCHOR;
+        aLayers[aCount++] = GetLayer();
     }
 
     bool HitTest( const VECTOR2I& aPosition, int aAccuracy = 0 ) const override
     {
-        return getRectShape().Collide( aPosition, aAccuracy );
+        return getOutline().Collide( aPosition, aAccuracy );
     }
 
     bool HitTest( const BOX2I& aRect, bool aContained, int aAccuracy ) const override
     {
-        return GetBoundingBox().Intersects( aRect );
+        BOX2I sel = aRect;
+
+        if ( aAccuracy )
+            sel.Inflate( aAccuracy );
+
+        if( aContained )
+            return sel.Contains( GetBoundingBox() );
+
+        return sel.Intersects( GetBoundingBox() );
     }
 
     const BOX2I ViewBBox() const override { return GetBoundingBox(); }
@@ -361,11 +366,40 @@ public:
 
     LENGTH_TUNING_MODE GetTuningMode() const { return m_tuningMode; }
 
+    PNS::ROUTER_MODE GetPNSMode()
+    {
+        switch( m_tuningMode )
+        {
+        case LENGTH_TUNING_MODE::SINGLE:         return PNS::PNS_MODE_TUNE_SINGLE;
+        case LENGTH_TUNING_MODE::DIFF_PAIR:      return PNS::PNS_MODE_TUNE_DIFF_PAIR;
+        case LENGTH_TUNING_MODE::DIFF_PAIR_SKEW: return PNS::PNS_MODE_TUNE_DIFF_PAIR_SKEW;
+        default:                                 return PNS::PNS_MODE_TUNE_SINGLE;
+        }
+    }
+
+    PNS::MEANDER_SETTINGS& GetSettings() { return m_settings; }
+
     int  GetMinAmplitude() const { return m_settings.m_minAmplitude; }
-    void SetMinAmplitude( int aValue ) { m_settings.m_minAmplitude = aValue; }
+    void SetMinAmplitude( int aValue )
+    {
+        aValue = std::max( aValue, 0 );
+
+        m_settings.m_minAmplitude = aValue;
+
+        if( m_settings.m_maxAmplitude < m_settings.m_minAmplitude )
+            m_settings.m_maxAmplitude = m_settings.m_minAmplitude;
+    }
 
     int  GetMaxAmplitude() const { return m_settings.m_maxAmplitude; }
-    void SetMaxAmplitude( int aValue ) { m_settings.m_maxAmplitude = aValue; }
+    void SetMaxAmplitude( int aValue )
+    {
+        aValue = std::max( aValue, 0 );
+
+        m_settings.m_maxAmplitude = aValue;
+
+        if( m_settings.m_maxAmplitude < m_settings.m_minAmplitude )
+            m_settings.m_minAmplitude = m_settings.m_maxAmplitude;
+    }
 
     PNS::MEANDER_SIDE GetInitialSide() const { return m_settings.m_initialSide; }
     void              SetInitialSide( PNS::MEANDER_SIDE aValue ) { m_settings.m_initialSide = aValue; }
@@ -373,8 +407,21 @@ public:
     int  GetSpacing() const { return m_settings.m_spacing; }
     void SetSpacing( int aValue ) { m_settings.m_spacing = aValue; }
 
-    long long int GetTargetLength() const { return m_settings.m_targetLength.Opt(); }
-    void          SetTargetLength( long long int aValue ) { m_settings.SetTargetLength( aValue ); }
+    std::optional<int> GetTargetLength() const
+    {
+        if( m_settings.m_targetLength.Opt() == PNS::MEANDER_SETTINGS::LENGTH_UNCONSTRAINED )
+            return std::optional<int>();
+        else
+            return m_settings.m_targetLength.Opt();
+    }
+
+    void SetTargetLength( std::optional<int> aValue )
+    {
+        if( aValue.has_value() )
+            m_settings.SetTargetLength( aValue.value() );
+        else
+            m_settings.SetTargetLength( PNS::MEANDER_SETTINGS::LENGTH_UNCONSTRAINED );
+    }
 
     int  GetTargetSkew() const { return m_settings.m_targetSkew.Opt(); }
     void SetTargetSkew( int aValue ) { m_settings.SetTargetSkew( aValue ); }
@@ -418,8 +465,6 @@ protected:
         std::swap( *this, *static_cast<PCB_TUNING_PATTERN*>( aImage ) );
     }
 
-    PNS::ROUTER_MODE toPNSMode();
-
     bool recoverBaseline( PNS::ROUTER* aRouter );
 
     bool baselineValid();
@@ -432,16 +477,15 @@ protected:
 
     bool removeToBaseline( PNS::ROUTER* aRouter, int aLayer, SHAPE_LINE_CHAIN& aBaseLine );
 
-    bool resetToBaseline( PNS::ROUTER* aRouter, int aLayer, PCB_BASE_EDIT_FRAME* aFrame,
-                          SHAPE_LINE_CHAIN& aBaseLine, bool aPrimary );
+    bool resetToBaseline( GENERATOR_TOOL* aTool, int aLayer, SHAPE_LINE_CHAIN& aBaseLine,
+                          bool aPrimary );
 
-    SHAPE_LINE_CHAIN getRectShape() const;
+    SHAPE_LINE_CHAIN getOutline() const;
 
 protected:
     VECTOR2I              m_end;
 
     PNS::MEANDER_SETTINGS m_settings;
-    bool                  m_unconstrained;
 
     std::optional<SHAPE_LINE_CHAIN> m_baseLine;
     std::optional<SHAPE_LINE_CHAIN> m_baseLineCoupled;
@@ -455,9 +499,6 @@ protected:
     wxString              m_tuningInfo;
 
     PNS::MEANDER_PLACER_BASE::TUNING_STATUS m_tuningStatus;
-
-    // Temp storage during editing
-    std::set<BOARD_ITEM*> m_removedItems;
 };
 
 
@@ -560,7 +601,6 @@ static std::string sideToString( const PNS::MEANDER_SIDE aValue )
 PCB_TUNING_PATTERN::PCB_TUNING_PATTERN( BOARD_ITEM* aParent, PCB_LAYER_ID aLayer,
                                         LENGTH_TUNING_MODE aMode ) :
         PCB_GENERATOR( aParent, aLayer ),
-        m_unconstrained( false ),
         m_trackWidth( 0 ),
         m_diffPairGap( 0 ),
         m_tuningMode( aMode ),
@@ -584,9 +624,22 @@ static VECTOR2I snapToNearestTrack( const VECTOR2I& aP, BOARD* aBoard, NETINFO_I
         if( aNet && track->GetNet() != aNet )
             continue;
 
-        SEG seg( track->GetStart(), track->GetEnd() );
+        VECTOR2I nearest;
 
-        VECTOR2I    nearest = seg.NearestPoint( aP );
+        if( track->Type() == PCB_ARC_T )
+        {
+            PCB_ARC*  pcbArc = static_cast<PCB_ARC*>( track );
+            SHAPE_ARC arc( pcbArc->GetStart(), pcbArc->GetMid(), pcbArc->GetEnd(),
+                           pcbArc->GetWidth() );
+
+            nearest = arc.NearestPoint( aP );
+        }
+        else
+        {
+            SEG seg( track->GetStart(), track->GetEnd() );
+            nearest = seg.NearestPoint( aP );
+        }
+
         SEG::ecoord dist_sq = ( nearest - aP ).SquaredEuclideanNorm();
 
         if( dist_sq < minDist_sq )
@@ -622,17 +675,21 @@ PCB_TUNING_PATTERN* PCB_TUNING_PATTERN::CreateNew( GENERATOR_TOOL* aTool,
                                                    BOARD_CONNECTED_ITEM* aStartItem,
                                                    LENGTH_TUNING_MODE aMode )
 {
-    BOARD*                       board = aStartItem->GetBoard();
-    std::shared_ptr<DRC_ENGINE>& drcEngine = board->GetDesignSettings().m_DRCEngine;
-    DRC_CONSTRAINT               constraint;
-    PCB_LAYER_ID                 layer = aStartItem->GetLayer();
-
-    if( aMode == SINGLE && board->DpCoupledNet( aStartItem->GetNet() ) )
-        aMode = DIFF_PAIR;
+    BOARD*                 board = aStartItem->GetBoard();
+    BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
+    DRC_CONSTRAINT         constraint;
+    PCB_LAYER_ID           layer = aStartItem->GetLayer();
 
     PCB_TUNING_PATTERN* pattern = new PCB_TUNING_PATTERN( board, layer, aMode );
 
-    constraint = drcEngine->EvalRules( LENGTH_CONSTRAINT, aStartItem, nullptr, layer );
+    switch( aMode )
+    {
+    case SINGLE:         pattern->m_settings = bds.m_SingleTrackMeanderSettings; break;
+    case DIFF_PAIR:      pattern->m_settings = bds.m_DiffPairMeanderSettings;    break;
+    case DIFF_PAIR_SKEW: pattern->m_settings = bds.m_SkewMeanderSettings;        break;
+    }
+
+    constraint = bds.m_DRCEngine->EvalRules( LENGTH_CONSTRAINT, aStartItem, nullptr, layer );
 
     if( !constraint.IsNull() )
     {
@@ -641,25 +698,14 @@ PCB_TUNING_PATTERN* PCB_TUNING_PATTERN::CreateNew( GENERATOR_TOOL* aTool,
         else
             pattern->m_settings.SetTargetLength( constraint.GetValue() );
     }
-    else if( aMode == DIFF_PAIR_SKEW )
-    {
-        pattern->m_settings.SetTargetSkew( 0 );
-    }
-    else
-    {
-        pattern->m_unconstrained = true;
-    }
 
     pattern->SetFlags( IS_NEW );
 
     return pattern;
 }
 
-void PCB_TUNING_PATTERN::EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard,
-                                    PCB_BASE_EDIT_FRAME* aFrame, BOARD_COMMIT* aCommit )
+void PCB_TUNING_PATTERN::EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
-    m_removedItems.clear();
-
     if( aCommit )
     {
         if( IsNew() )
@@ -682,15 +728,18 @@ void PCB_TUNING_PATTERN::EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard,
     if( !baselineValid() )
         initBaseLines( router, layer, aBoard );
 
-    if( baselineValid() && !m_settings.m_overrideCustomRules )
+    if( !m_settings.m_overrideCustomRules )
     {
-        PCB_TRACK* track = nullptr;
+        PCB_TRACK*   track = nullptr;
+        PNS::SEGMENT pnsItem;
 
         m_origin = snapToNearestTrack( m_origin, aBoard, nullptr, &track );
         wxCHECK( track, /* void */ );
 
         NETINFO_ITEM* net = track->GetNet();
-        PNS::SEGMENT  pnsItem( m_baseLine->CSegment( 0 ), net );
+
+        pnsItem.SetParent( track );
+        pnsItem.SetNet( net );
 
         if( m_tuningMode == SINGLE )
         {
@@ -698,30 +747,37 @@ void PCB_TUNING_PATTERN::EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard,
                                            &pnsItem, nullptr, layer, &constraint ) )
             {
                 m_settings.SetTargetLength( constraint.m_Value );
-                aFrame->GetToolManager()->PostEvent( EVENTS::SelectedItemsModified );
+                aTool->GetManager()->PostEvent( EVENTS::SelectedItemsModified );
             }
         }
         else
         {
+            PCB_TRACK*    coupledTrack = nullptr;
+            PNS::SEGMENT  pnsCoupledItem;
             NETINFO_ITEM* coupledNet = aBoard->DpCoupledNet( net );
-            PNS::SEGMENT  coupledItem( m_baseLineCoupled->CSegment( 0 ), coupledNet );
+
+            if( coupledNet )
+                snapToNearestTrack( m_origin, aBoard, coupledNet, &coupledTrack );
+
+            pnsCoupledItem.SetParent( coupledTrack );
+            pnsCoupledItem.SetNet( coupledNet );
 
             if( m_tuningMode == DIFF_PAIR )
             {
                 if( resolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_LENGTH,
-                                               &pnsItem, &coupledItem, layer, &constraint ) )
+                                               &pnsItem, &pnsCoupledItem, layer, &constraint ) )
                 {
                     m_settings.SetTargetLength( constraint.m_Value );
-                    aFrame->GetToolManager()->PostEvent( EVENTS::SelectedItemsModified );
+                    aTool->GetManager()->PostEvent( EVENTS::SelectedItemsModified );
                 }
             }
             else
             {
                 if( resolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_DIFF_PAIR_SKEW,
-                                               &pnsItem, &coupledItem, layer, &constraint ) )
+                                               &pnsItem, &pnsCoupledItem, layer, &constraint ) )
                 {
                     m_settings.m_targetSkew = constraint.m_Value;
-                    aFrame->GetToolManager()->PostEvent( EVENTS::SelectedItemsModified );
+                    aTool->GetManager()->PostEvent( EVENTS::SelectedItemsModified );
                 }
             }
         }
@@ -730,34 +786,27 @@ void PCB_TUNING_PATTERN::EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard,
 
 
 static PNS::LINKED_ITEM* pickSegment( PNS::ROUTER* aRouter, const VECTOR2I& aWhere, int aLayer,
-                                      VECTOR2I& aPointOut )
+                                      VECTOR2I&               aPointOut,
+                                      const SHAPE_LINE_CHAIN& aBaseline = SHAPE_LINE_CHAIN() )
 {
+    int  maxSlopRadius = aRouter->Sizes().Clearance() + aRouter->Sizes().TrackWidth() / 2;
+
     static const int  candidateCount = 2;
     PNS::LINKED_ITEM* prioritized[candidateCount];
     SEG::ecoord       dist[candidateCount];
+    SEG::ecoord       distBaseline[candidateCount];
     VECTOR2I          point[candidateCount];
 
     for( int i = 0; i < candidateCount; i++ )
     {
         prioritized[i] = nullptr;
         dist[i] = VECTOR2I::ECOORD_MAX;
+        distBaseline[i] = VECTOR2I::ECOORD_MAX;
     }
 
-    auto haveCandidates =
-            [&]()
-            {
-                for( PNS::ITEM* item : prioritized )
-                {
-                    if( item )
-                        return true;
-                }
-
-                return false;
-            };
-
-    for( bool useClearance : { false, true } )
+    for( int slopRadius : { 0, maxSlopRadius } )
     {
-        PNS::ITEM_SET candidates = aRouter->QueryHoverItems( aWhere, useClearance );
+        PNS::ITEM_SET candidates = aRouter->QueryHoverItems( aWhere, slopRadius );
 
         for( PNS::ITEM* item : candidates.Items() )
         {
@@ -774,22 +823,33 @@ static PNS::LINKED_ITEM* pickSegment( PNS::ROUTER* aRouter, const VECTOR2I& aWhe
 
             if( item->Kind() & PNS::ITEM::ARC_T )
             {
-                SEG::ecoord d0 = ( item->Anchor( 0 ) - aWhere ).SquaredEuclideanNorm();
-                SEG::ecoord d1 = ( item->Anchor( 1 ) - aWhere ).SquaredEuclideanNorm();
+                PNS::ARC* pnsArc = static_cast<PNS::ARC*>( item );
 
-                if( d0 <= dist[1] )
+                VECTOR2I    nearest = pnsArc->Arc().NearestPoint( aWhere );
+                SEG::ecoord d0 = ( nearest - aWhere ).SquaredEuclideanNorm();
+
+                if( d0 > dist[1] )
+                    continue;
+
+                if( aBaseline.PointCount() > 0 )
                 {
-                    prioritized[1] = linked;
-                    dist[1] = d0;
-                    point[1] = item->Anchor( 0 );
+                    SEG::ecoord dcBaseline;
+                    VECTOR2I    target = pnsArc->Arc().GetArcMid();
+
+                    if( aBaseline.SegmentCount() > 0 )
+                        dcBaseline = aBaseline.SquaredDistance( target );
+                    else
+                        dcBaseline = ( aBaseline.CPoint( 0 ) - target ).SquaredEuclideanNorm();
+
+                    if( dcBaseline > distBaseline[1] )
+                        continue;
+
+                    distBaseline[1] = dcBaseline;
                 }
 
-                if( d1 <= dist[1] )
-                {
-                    prioritized[1] = linked;
-                    dist[1] = d1;
-                    point[1] = item->Anchor( 1 );
-                }
+                prioritized[1] = linked;
+                dist[1] = d0;
+                point[1] = nearest;
             }
             else if( item->Kind() & PNS::ITEM::SEGMENT_T )
             {
@@ -798,17 +858,30 @@ static PNS::LINKED_ITEM* pickSegment( PNS::ROUTER* aRouter, const VECTOR2I& aWhe
                 VECTOR2I    nearest = segm->CLine().NearestPoint( aWhere, false );
                 SEG::ecoord dd = ( aWhere - nearest ).SquaredEuclideanNorm();
 
-                if( dd <= dist[1] )
+                if( dd > dist[1] )
+                    continue;
+
+                if( aBaseline.PointCount() > 0 )
                 {
-                    prioritized[1] = segm;
-                    dist[1] = dd;
-                    point[1] = nearest;
+                    SEG::ecoord dcBaseline;
+                    VECTOR2I    target = segm->Shape()->Centre();
+
+                    if( aBaseline.SegmentCount() > 0 )
+                        dcBaseline = aBaseline.SquaredDistance( target );
+                    else
+                        dcBaseline = ( aBaseline.CPoint( 0 ) - target ).SquaredEuclideanNorm();
+
+                    if( dcBaseline > distBaseline[1] )
+                        continue;
+
+                    distBaseline[1] = dcBaseline;
                 }
+
+                prioritized[1] = segm;
+                dist[1] = dd;
+                point[1] = nearest;
             }
         }
-
-        if( haveCandidates() )
-            break;
     }
 
     PNS::LINKED_ITEM* rv = nullptr;
@@ -873,7 +946,7 @@ bool PCB_TUNING_PATTERN::initBaseLine( PNS::ROUTER* aRouter, int aLayer, BOARD* 
     wxASSERT( startItem );
     wxASSERT( endItem );
 
-    if( !startItem || !endItem || startSnapPoint == endSnapPoint )
+    if( !startItem || !endItem )
         return false;
 
     PNS::LINE               line = world->AssembleLine( startItem );
@@ -881,8 +954,8 @@ bool PCB_TUNING_PATTERN::initBaseLine( PNS::ROUTER* aRouter, int aLayer, BOARD* 
 
     wxASSERT( line.ContainsLink( endItem ) );
 
-    wxASSERT( chain.PointOnEdge( startSnapPoint, 1 ) );
-    wxASSERT( chain.PointOnEdge( endSnapPoint, 1 ) );
+    wxASSERT( chain.PointOnEdge( startSnapPoint, 40000 ) );
+    wxASSERT( chain.PointOnEdge( endSnapPoint, 40000 ) );
 
     SHAPE_LINE_CHAIN pre;
     SHAPE_LINE_CHAIN mid;
@@ -966,8 +1039,7 @@ bool PCB_TUNING_PATTERN::removeToBaseline( PNS::ROUTER* aRouter, int aLayer,
 }
 
 
-void PCB_TUNING_PATTERN::Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                                 BOARD_COMMIT* aCommit )
+void PCB_TUNING_PATTERN::Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
     SetFlags( IN_EDIT );
 
@@ -975,21 +1047,16 @@ void PCB_TUNING_PATTERN::Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_
 
     PNS::ROUTER* router = aTool->Router();
     int          layer = GetLayer();
-    int          undoFlags = 0;
 
     // Ungroup first so that undo works
     if( !GetItems().empty() )
     {
-        PCB_GENERATOR*    group = this;
-        PICKED_ITEMS_LIST undoList;
+        PCB_GENERATOR*  group = this;
 
         for( BOARD_ITEM* member : group->GetItems() )
-            undoList.PushItem( ITEM_PICKER( nullptr, member, UNDO_REDO::UNGROUP ) );
+            aCommit->Stage( member, CHT_UNGROUP );
 
-        group->RemoveAll();
-
-        aFrame->SaveCopyInUndoList( undoList, UNDO_REDO::UNGROUP );
-        undoFlags |= APPEND_UNDO;
+        group->GetItems().clear();
     }
 
     aCommit->Remove( this );
@@ -1027,26 +1094,10 @@ void PCB_TUNING_PATTERN::Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_
         }
 
         for( BOARD_ITEM* item : routerAddedItems )
-        {
             aCommit->Add( item );
-        }
-
-        aCommit->Push( "Remove Tuning Pattern", undoFlags );
-
-        undoFlags |= APPEND_UNDO;
     }
-}
 
-
-PNS::ROUTER_MODE PCB_TUNING_PATTERN::toPNSMode()
-{
-    switch( m_tuningMode )
-    {
-    case LENGTH_TUNING_MODE::SINGLE:         return PNS::PNS_MODE_TUNE_SINGLE;
-    case LENGTH_TUNING_MODE::DIFF_PAIR:      return PNS::PNS_MODE_TUNE_DIFF_PAIR;
-    case LENGTH_TUNING_MODE::DIFF_PAIR_SKEW: return PNS::PNS_MODE_TUNE_DIFF_PAIR_SKEW;
-    default:                                 return PNS::PNS_MODE_TUNE_SINGLE;
-    }
+    aCommit->Push( "Remove Tuning Pattern" );
 }
 
 
@@ -1054,8 +1105,8 @@ bool PCB_TUNING_PATTERN::recoverBaseline( PNS::ROUTER* aRouter )
 {
     PNS::SOLID queryItem;
 
-    SHAPE_LINE_CHAIN* chain = static_cast<SHAPE_LINE_CHAIN*>( getRectShape().Clone() );
-    queryItem.SetShape( chain );
+    SHAPE_LINE_CHAIN* chain = static_cast<SHAPE_LINE_CHAIN*>( getOutline().Clone() );
+    queryItem.SetShape( chain );        // PNS::SOLID takes ownership
     queryItem.SetLayer( m_layer );
 
     int lineWidth = 0;
@@ -1094,18 +1145,24 @@ bool PCB_TUNING_PATTERN::recoverBaseline( PNS::ROUTER* aRouter )
 
     if( baselineValid() )
     {
-        PNS::LINE recoverLine;
+        NETINFO_ITEM* recoverNet = GetBoard()->FindNet( m_lastNetName );
+        PNS::LINE     recoverLine;
+
         recoverLine.SetLayer( m_layer );
         recoverLine.SetWidth( lineWidth );
         recoverLine.Line() = *m_baseLine;
+        recoverLine.SetNet( recoverNet );
         branch->Add( recoverLine, false );
 
         if( m_tuningMode == DIFF_PAIR || m_tuningMode == DIFF_PAIR_SKEW )
         {
+            NETINFO_ITEM* recoverCoupledNet = GetBoard()->DpCoupledNet( recoverNet );
             PNS::LINE recoverLineCoupled;
+
             recoverLineCoupled.SetLayer( m_layer );
             recoverLineCoupled.SetWidth( lineWidth );
             recoverLineCoupled.Line() = *m_baseLineCoupled;
+            recoverLineCoupled.SetNet( recoverCoupledNet );
             branch->Add( recoverLineCoupled, false );
         }
     }
@@ -1118,16 +1175,16 @@ bool PCB_TUNING_PATTERN::recoverBaseline( PNS::ROUTER* aRouter )
 }
 
 
-bool PCB_TUNING_PATTERN::resetToBaseline( PNS::ROUTER* aRouter, int aLayer,
-                                          PCB_BASE_EDIT_FRAME* aFrame, SHAPE_LINE_CHAIN& aBaseLine,
-                                          bool aPrimary )
+bool PCB_TUNING_PATTERN::resetToBaseline( GENERATOR_TOOL* aTool, int aLayer,
+                                          SHAPE_LINE_CHAIN& aBaseLine, bool aPrimary )
 {
-    PNS::NODE* world = aRouter->GetWorld();
-    VECTOR2I   startSnapPoint, endSnapPoint;
+    PNS_KICAD_IFACE* iface = aTool->GetInterface();
+    PNS::ROUTER*     router = aTool->Router();
+    PNS::NODE*       world = router->GetWorld();
+    VECTOR2I         startSnapPoint, endSnapPoint;
 
-    std::optional<PNS::LINE> pnsLine = getPNSLine( aBaseLine.CPoint( 0 ),
-                                                   aBaseLine.CPoint( -1 ), aRouter, aLayer,
-                                                   startSnapPoint, endSnapPoint );
+    std::optional<PNS::LINE> pnsLine = getPNSLine( aBaseLine.CPoint( 0 ), aBaseLine.CPoint( -1 ),
+                                                   router, aLayer, startSnapPoint, endSnapPoint );
 
     if( !pnsLine )
     {
@@ -1149,20 +1206,9 @@ bool PCB_TUNING_PATTERN::resetToBaseline( PNS::ROUTER* aRouter, int aLayer,
         straightChain.Simplify();
     }
 
-    for( PNS::LINKED_ITEM* pnsItem : pnsLine->Links() )
-    {
-        if( BOARD_ITEM* item = pnsItem->Parent() )
-        {
-            aFrame->GetCanvas()->GetView()->Hide( item, true, true );
-            //m_removedItems.insert( item );
-        }
-    }
-
     branch->Remove( *pnsLine );
 
-    PNS::LINE straightLine( *pnsLine, straightChain );
-
-    branch->Add( straightLine, false );
+    SHAPE_LINE_CHAIN newLineChain;
 
     if( aPrimary )
     {
@@ -1180,6 +1226,10 @@ bool PCB_TUNING_PATTERN::resetToBaseline( PNS::ROUTER* aRouter, int aLayer,
             SHAPE_LINE_CHAIN pre, mid, post;
             straightChain.Split( m_origin, m_end, pre, mid, post );
 
+            newLineChain.Append( pre );
+            newLineChain.Append( mid );
+            newLineChain.Append( post );
+
             m_baseLine = mid;
         }
     }
@@ -1192,22 +1242,51 @@ bool PCB_TUNING_PATTERN::resetToBaseline( PNS::ROUTER* aRouter, int aLayer,
             SHAPE_LINE_CHAIN pre, mid, post;
             straightChain.Split( start, end, pre, mid, post );
 
+            newLineChain.Append( pre );
+            newLineChain.Append( mid );
+            newLineChain.Append( post );
+
             m_baseLineCoupled = mid;
         }
     }
 
-    aRouter->CommitRouting( branch );
+    PNS::LINE newLine( *pnsLine, newLineChain );
+
+    branch->Add( newLine, false );
+    router->CommitRouting( branch );
+
+    int clearance = router->GetRuleResolver()->Clearance( &newLine, nullptr );
+
+    iface->DisplayItem( &newLine, clearance, true, PNS_COLLISION );
 
     return true;
 }
 
 
-bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                                 BOARD_COMMIT* aCommit )
+bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
+    if( !( GetFlags() & IN_EDIT ) )
+        return false;
+
+    KIGFX::VIEW*     view = aTool->GetManager()->GetView();
     PNS::ROUTER*     router = aTool->Router();
     PNS_KICAD_IFACE* iface = aTool->GetInterface();
     int              layer = GetLayer();
+
+    auto hideRemovedItems = [&]( bool aHide )
+    {
+        if( view )
+        {
+            for( const GENERATOR_PNS_CHANGES& pnsCommit : aTool->GetRouterChanges() )
+            {
+                for( BOARD_ITEM* item : pnsCommit.removedItems )
+                {
+                    if( view )
+                        view->Hide( item, aHide, aHide );
+                }
+            }
+        }
+    };
 
     iface->SetStartLayer( layer );
 
@@ -1222,7 +1301,7 @@ bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_
     }
     else
     {
-        if( resetToBaseline( router, layer, aFrame, *m_baseLine, true ) )
+        if( resetToBaseline( aTool, layer, *m_baseLine, true ) )
         {
             m_origin = m_baseLine->CPoint( 0 );
             m_end = m_baseLine->CPoint( -1 );
@@ -1235,7 +1314,7 @@ bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_
 
         if( m_tuningMode == DIFF_PAIR )
         {
-            if( !resetToBaseline( router, layer, aFrame, *m_baseLineCoupled, false ) )
+            if( !resetToBaseline( aTool, layer, *m_baseLineCoupled, false ) )
             {
                 initBaseLines( router, layer, aBoard );
                 return false;
@@ -1243,11 +1322,14 @@ bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_
         }
     }
 
+    hideRemovedItems( true );
     // Snap points
     VECTOR2I startSnapPoint, endSnapPoint;
 
-    PNS::LINKED_ITEM* startItem = pickSegment( router, m_origin, layer, startSnapPoint );
-    PNS::LINKED_ITEM* endItem = pickSegment( router, m_end, layer, endSnapPoint );
+    wxCHECK( m_baseLine, false );
+
+    PNS::LINKED_ITEM* startItem = pickSegment( router, m_origin, layer, startSnapPoint, *m_baseLine);
+    PNS::LINKED_ITEM* endItem = pickSegment( router, m_end, layer, endSnapPoint, *m_baseLine );
 
     wxASSERT( startItem );
     wxASSERT( endItem );
@@ -1255,7 +1337,7 @@ bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_
     if( !startItem || !endItem )
         return false;
 
-    router->SetMode( toPNSMode() );
+    router->SetMode( GetPNSMode() );
 
     if( !router->StartRouting( startSnapPoint, startItem, layer ) )
     {
@@ -1295,38 +1377,45 @@ bool PCB_TUNING_PATTERN::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_
     default:                                  statusMessage = _( "unknown" );   break;
     }
 
-    m_tuningInfo.Printf( wxS( "%s (%s)" ),
-                         aFrame->MessageTextFromValue( (double) placer->TuningResult() ),
-                         statusMessage );
+    wxString  result;
+    EDA_UNITS userUnits = EDA_UNITS::MILLIMETRES;
+
+    if( aTool->GetManager()->GetSettings() )
+        userUnits = static_cast<EDA_UNITS>( aTool->GetManager()->GetSettings()->m_System.units );
+
+    result = EDA_UNIT_UTILS::UI::MessageTextFromValue( pcbIUScale, userUnits,
+                                                       (double) placer->TuningResult() );
+
+    m_tuningInfo.Printf( wxS( "%s (%s)" ), result, statusMessage );
 
     return true;
 }
 
 
-void PCB_TUNING_PATTERN::EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard,
-                                   PCB_BASE_EDIT_FRAME* aFrame, BOARD_COMMIT* aCommit,
+void PCB_TUNING_PATTERN::EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit,
                                    const wxString& aCommitMsg, int aCommitFlags )
 {
+    if( !( GetFlags() & IN_EDIT ) )
+        return;
+
     ClearFlags( IN_EDIT );
 
+    KIGFX::VIEW*      view = aTool->GetManager()->GetView();
     PNS::ROUTER*      router = aTool->Router();
-    SHAPE_LINE_CHAIN  bounds = getRectShape();
-    PICKED_ITEMS_LIST groupUndoList;
+    PNS_KICAD_IFACE*  iface = aTool->GetInterface();
+    SHAPE_LINE_CHAIN  bounds = getOutline();
     int               epsilon = aBoard->GetDesignSettings().GetDRCEpsilon();
+
+    iface->EraseView();
 
     if( router->RoutingInProgress() )
     {
-        router->FixRoute( m_end, nullptr, true );
+        bool forceFinish = true;
+        bool forceCommit = false;
+
+        router->FixRoute( m_end, nullptr, forceFinish, forceCommit );
         router->StopRouting();
     }
-
-    for( BOARD_ITEM* item : m_removedItems )
-    {
-        aFrame->GetCanvas()->GetView()->Hide( item, false );
-        aCommit->Remove( item );
-    }
-
-    m_removedItems.clear();
 
     const std::vector<GENERATOR_PNS_CHANGES>& pnsCommits = aTool->GetRouterChanges();
 
@@ -1341,6 +1430,9 @@ void PCB_TUNING_PATTERN::EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard,
 
         for( BOARD_ITEM* item : routerRemovedItems )
         {
+            if( view )
+                view->Hide( item, false );
+
             aCommit->Remove( item );
         }
 
@@ -1348,38 +1440,44 @@ void PCB_TUNING_PATTERN::EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard,
         {
             if( PCB_TRACK* track = dynamic_cast<PCB_TRACK*>( item ) )
             {
-                if( bounds.PointInside( track->GetPosition(), epsilon )
+                if( bounds.PointInside( track->GetStart(), epsilon )
                     && bounds.PointInside( track->GetEnd(), epsilon ) )
                 {
                     AddItem( item );
-                    groupUndoList.PushItem( ITEM_PICKER( nullptr, item, UNDO_REDO::REGROUP ) );
+                    aCommit->Stage( item, CHT_GROUP );
                 }
             }
 
             aCommit->Add( item );
         }
-
-        if( aCommitMsg.IsEmpty() )
-            aCommit->Push( _( "Edit Tuning Pattern" ), aCommitFlags );
-        else
-            aCommit->Push( aCommitMsg, aCommitFlags );
-
-        aCommitFlags |= APPEND_UNDO;
     }
 
-    aFrame->AppendCopyToUndoList( groupUndoList, UNDO_REDO::REGROUP );
+    if( aCommitMsg.IsEmpty() )
+        aCommit->Push( _( "Edit Tuning Pattern" ), aCommitFlags );
+    else
+        aCommit->Push( aCommitMsg, aCommitFlags );
 }
 
 
-void PCB_TUNING_PATTERN::EditRevert( GENERATOR_TOOL* aTool, BOARD* aBoard,
-                                     PCB_BASE_EDIT_FRAME* aFrame, BOARD_COMMIT* aCommit )
+void PCB_TUNING_PATTERN::EditRevert( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
+    if( !( GetFlags() & IN_EDIT ) )
+        return;
+
     ClearFlags( IN_EDIT );
 
-    for( BOARD_ITEM* item : m_removedItems )
-        aFrame->GetCanvas()->GetView()->Hide( item, false );
+    PNS_KICAD_IFACE* iface = aTool->GetInterface();
 
-    m_removedItems.clear();
+    iface->EraseView();
+
+    if( KIGFX::VIEW* view = aTool->GetManager()->GetView() )
+    {
+        for( const GENERATOR_PNS_CHANGES& pnsCommit : aTool->GetRouterChanges() )
+        {
+            for( BOARD_ITEM* item : pnsCommit.removedItems )
+                view->Hide( item, false );
+        }
+    }
 
     aTool->Router()->StopRouting();
 
@@ -1463,7 +1561,7 @@ bool PCB_TUNING_PATTERN::UpdateFromEditPoints( std::shared_ptr<EDIT_POINTS> aEdi
         if( m_tuningMode == DIFF_PAIR )
             value -= m_trackWidth + m_diffPairGap;
 
-        SetMaxAmplitude( KiROUND( value / pcbIUScale.mmToIU( 0.1 ) ) * pcbIUScale.mmToIU( 0.1 ) );
+        SetMaxAmplitude( KiROUND( value / pcbIUScale.mmToIU( 0.01 ) ) * pcbIUScale.mmToIU( 0.01 ) );
 
         int side = base.Side( wHandle );
 
@@ -1528,20 +1626,34 @@ bool PCB_TUNING_PATTERN::UpdateEditPoints( std::shared_ptr<EDIT_POINTS> aEditPoi
 }
 
 
-SHAPE_LINE_CHAIN PCB_TUNING_PATTERN::getRectShape() const
+SHAPE_LINE_CHAIN PCB_TUNING_PATTERN::getOutline() const
 {
     if( m_baseLine )
     {
-        bool singleSided = m_settings.m_singleSided;
+        int clampedMaxAmplitude = m_settings.m_maxAmplitude;
+        int minAllowedAmplitude = 0;
+        int baselineOffset = m_tuningMode == DIFF_PAIR ? ( m_diffPairGap + m_trackWidth ) / 2 : 0;
 
-        if( singleSided )
+        if( m_settings.m_cornerStyle == PNS::MEANDER_STYLE::MEANDER_STYLE_ROUND )
+        {
+            minAllowedAmplitude = baselineOffset + m_trackWidth;
+        }
+        else
+        {
+            int correction = m_trackWidth * tan( 1 - tan( DEG2RAD( 22.5 ) ) );
+            minAllowedAmplitude = baselineOffset + correction;
+        }
+
+        clampedMaxAmplitude = std::max( clampedMaxAmplitude, minAllowedAmplitude );
+
+        if( m_settings.m_singleSided )
         {
             SHAPE_LINE_CHAIN clBase = *m_baseLine;
             SHAPE_LINE_CHAIN left, right;
 
             if( m_tuningMode != DIFF_PAIR )
             {
-                int amplitude = m_settings.m_maxAmplitude + KiROUND( m_trackWidth / 2.0 );
+                int amplitude = clampedMaxAmplitude + KiROUND( m_trackWidth / 2.0 );
 
                 SHAPE_LINE_CHAIN chain;
 
@@ -1557,8 +1669,7 @@ SHAPE_LINE_CHAIN PCB_TUNING_PATTERN::getRectShape() const
             }
             else if( m_tuningMode == DIFF_PAIR && m_baseLineCoupled )
             {
-                int amplitude =
-                        m_settings.m_maxAmplitude + m_trackWidth + KiROUND( m_diffPairGap / 2.0 );
+                int amplitude = clampedMaxAmplitude + m_trackWidth + KiROUND( m_diffPairGap / 2.0 );
 
                 SHAPE_LINE_CHAIN clCoupled = *m_baseLineCoupled;
                 SHAPE_LINE_CHAIN chain1, chain2;
@@ -1617,22 +1728,28 @@ SHAPE_LINE_CHAIN PCB_TUNING_PATTERN::getRectShape() const
         SHAPE_POLY_SET   poly;
         SHAPE_LINE_CHAIN cl = *m_baseLine;
 
-        int amplitude = m_settings.m_maxAmplitude + KiROUND( m_trackWidth / 2.0 );
+        int amplitude = 0;
 
         if( m_tuningMode == DIFF_PAIR )
-            amplitude += m_trackWidth + m_diffPairGap;
+            amplitude = clampedMaxAmplitude + m_diffPairGap / 2 + KiROUND( m_trackWidth );
+        else
+            amplitude = clampedMaxAmplitude + KiROUND( m_trackWidth / 2.0 );
 
-        if( m_tuningMode == DIFF_PAIR && m_baseLineCoupled
-            && m_baseLineCoupled->SegmentCount() > 0 )
+        poly.OffsetLineChain( *m_baseLine, amplitude, CORNER_STRATEGY::ROUND_ALL_CORNERS,
+                              ARC_LOW_DEF, false );
+
+        if( m_tuningMode == DIFF_PAIR && m_baseLineCoupled )
         {
-            for( int i = 0; i < cl.PointCount() - 1 && i < m_baseLineCoupled->PointCount(); ++i )
-                cl.SetPoint( i, ( cl.CPoint( i ) + m_baseLineCoupled->CPoint( i ) ) / 2 );
+            SHAPE_POLY_SET polyCoupled;
+            polyCoupled.OffsetLineChain( *m_baseLineCoupled, amplitude,
+                                         CORNER_STRATEGY::ROUND_ALL_CORNERS, ARC_LOW_DEF, false );
 
-            cl.SetPoint( -1, ( cl.CPoint( -1 ) + m_baseLineCoupled->CPoint( -1 ) ) / 2 );
+            SHAPE_POLY_SET merged;
+            merged.BooleanAdd( poly, polyCoupled, SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+
+            if( merged.OutlineCount() > 0 )
+                return merged.Outline( 0 );
         }
-
-        poly.OffsetLineChain( cl, amplitude, CORNER_STRATEGY::ROUND_ALL_CORNERS, ARC_LOW_DEF,
-                              false );
 
         if( poly.OutlineCount() > 0 )
             return poly.Outline( 0 );
@@ -1652,29 +1769,32 @@ void PCB_TUNING_PATTERN::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
     int size = KiROUND( aView->ToWorld( EDIT_POINT::POINT_SIZE ) * 0.8 );
     size = std::max( size, pcbIUScale.mmToIU( 0.05 ) );
 
-    if( m_baseLine )
+    if( !HasFlag( IN_EDIT ) )
     {
-        for( int i = 0; i < m_baseLine->SegmentCount(); i++ )
+        if( m_baseLine )
         {
-            SEG seg = m_baseLine->CSegment( i );
-            ctx.DrawLineDashed( seg.A, seg.B, size, size / 6, true );
+            for( int i = 0; i < m_baseLine->SegmentCount(); i++ )
+            {
+                SEG seg = m_baseLine->CSegment( i );
+                ctx.DrawLineDashed( seg.A, seg.B, size, size / 6, true );
+            }
+        }
+        else
+        {
+            ctx.DrawLineDashed( m_origin, m_end, size, size / 6, false );
+        }
+
+        if( m_tuningMode == DIFF_PAIR && m_baseLineCoupled )
+        {
+            for( int i = 0; i < m_baseLineCoupled->SegmentCount(); i++ )
+            {
+                SEG seg = m_baseLineCoupled->CSegment( i );
+                ctx.DrawLineDashed( seg.A, seg.B, size, size / 6, true );
+            }
         }
     }
-    else
-    {
-        ctx.DrawLineDashed( m_origin, m_end, size, size / 6, false );
-    }
 
-    if( m_tuningMode == DIFF_PAIR && m_baseLineCoupled )
-    {
-        for( int i = 0; i < m_baseLineCoupled->SegmentCount(); i++ )
-        {
-            SEG seg = m_baseLineCoupled->CSegment( i );
-            ctx.DrawLineDashed( seg.A, seg.B, size, size / 6, true );
-        }
-    }
-
-    SHAPE_LINE_CHAIN chain = getRectShape();
+    SHAPE_LINE_CHAIN chain = getOutline();
 
     for( int i = 0; i < chain.SegmentCount(); i++ )
     {
@@ -1698,6 +1818,7 @@ const STRING_ANY_MAP PCB_TUNING_PATTERN::GetProperties() const
     props.set( "rounded", m_settings.m_cornerStyle == PNS::MEANDER_STYLE_ROUND );
 
     props.set_iu( "max_amplitude", m_settings.m_maxAmplitude );
+    props.set_iu( "min_amplitude", m_settings.m_minAmplitude );
     props.set_iu( "min_spacing", m_settings.m_spacing );
     props.set_iu( "target_length_min", m_settings.m_targetLength.Min() );
     props.set_iu( "target_length", m_settings.m_targetLength.Opt() );
@@ -1743,7 +1864,7 @@ void PCB_TUNING_PATTERN::SetProperties( const STRING_ANY_MAP& aProps )
     aProps.get_to( "single_sided", m_settings.m_singleSided );
     aProps.get_to( "side", m_settings.m_initialSide );
 
-    bool rounded;
+    bool rounded = false;
     aProps.get_to( "rounded", rounded );
     m_settings.m_cornerStyle = rounded ? PNS::MEANDER_STYLE_ROUND : PNS::MEANDER_STYLE_CHAMFER;
 
@@ -1770,6 +1891,7 @@ void PCB_TUNING_PATTERN::SetProperties( const STRING_ANY_MAP& aProps )
         m_settings.m_targetSkew.SetMax( int_val );
 
     aProps.get_to_iu( "max_amplitude", m_settings.m_maxAmplitude );
+    aProps.get_to_iu( "min_amplitude", m_settings.m_minAmplitude );
     aProps.get_to_iu( "min_spacing", m_settings.m_spacing );
     aProps.get_to_iu( "last_track_width", m_trackWidth );
     aProps.get_to_iu( "last_diff_pair_gap", m_diffPairGap );
@@ -1802,17 +1924,19 @@ void PCB_TUNING_PATTERN::ShowPropertiesDialog( PCB_BASE_EDIT_FRAME* aEditFrame )
             settings.SetTargetLength( constraint.GetValue() );
     }
 
-    DIALOG_TUNING_PATTERN_PROPERTIES dlg( aEditFrame, settings, toPNSMode(), constraint );
+    DIALOG_TUNING_PATTERN_PROPERTIES dlg( aEditFrame, settings, GetPNSMode(), constraint );
 
     if( dlg.ShowModal() == wxID_OK )
     {
         BOARD_COMMIT commit( aEditFrame );
         commit.Modify( this );
         m_settings = settings;
-        commit.Push( _( "Edit Tuning Pattern" ) );
-    }
 
-    aEditFrame->GetToolManager()->PostAction<PCB_GENERATOR*>( PCB_ACTIONS::regenerateItem, this );
+        GENERATOR_TOOL* generatorTool = aEditFrame->GetToolManager()->GetTool<GENERATOR_TOOL>();
+        EditStart( generatorTool, GetBoard(), &commit );
+        Update( generatorTool, GetBoard(), &commit );
+        EditPush( generatorTool, GetBoard(), &commit );
+    }
 }
 
 
@@ -1835,18 +1959,21 @@ std::vector<EDA_ITEM*> PCB_TUNING_PATTERN::GetPreviewItems( GENERATOR_TOOL* aToo
 
         TUNING_STATUS_VIEW_ITEM* statusItem = new TUNING_STATUS_VIEW_ITEM( aFrame );
 
-        if( m_unconstrained )
-        {
-            statusItem->ClearMinMax();
-        }
-        else if( m_tuningMode == DIFF_PAIR_SKEW )
+        if( m_tuningMode == DIFF_PAIR_SKEW )
         {
             statusItem->SetMinMax( m_settings.m_targetSkew.Min(), m_settings.m_targetSkew.Max() );
         }
         else
         {
-            statusItem->SetMinMax( (double) m_settings.m_targetLength.Min(),
-                                   (double) m_settings.m_targetLength.Max() );
+            if( m_settings.m_targetLength.Opt() == PNS::MEANDER_SETTINGS::LENGTH_UNCONSTRAINED )
+            {
+                statusItem->ClearMinMax();
+            }
+            else
+            {
+                statusItem->SetMinMax( (double) m_settings.m_targetLength.Min(),
+                                       (double) m_settings.m_targetLength.Max() );
+            }
         }
 
         if( m_tuningMode == DIFF_PAIR_SKEW )
@@ -2016,6 +2143,9 @@ using SCOPED_DRAW_MODE = SCOPED_SET_RESET<DRAWING_TOOL::MODE>;
 
 int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
 {
+    if( m_isFootprintEditor )
+        return 0;
+
     if( m_inDrawingTool )
         return 0;
 
@@ -2026,13 +2156,15 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
     m_frame->PushTool( aEvent );
     Activate();
 
-    LENGTH_TUNING_MODE       mode = fromPNSMode( aEvent.Parameter<PNS::ROUTER_MODE>() );
+    BOARD*                       board = m_frame->GetBoard();
+    std::shared_ptr<DRC_ENGINE>& drcEngine = board->GetDesignSettings().m_DRCEngine;
+    GENERATOR_TOOL*              generatorTool = m_toolMgr->GetTool<GENERATOR_TOOL>();
+    PNS::ROUTER*                 router = generatorTool->Router();
+    LENGTH_TUNING_MODE           mode = fromPNSMode( aEvent.Parameter<PNS::ROUTER_MODE>() );
+
     KIGFX::VIEW_CONTROLS*    controls = getViewControls();
-    BOARD*                   board = m_frame->GetBoard();
     PCB_SELECTION_TOOL*      selectionTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
     GENERAL_COLLECTORS_GUIDE guide = m_frame->GetCollectorsGuide();
-    GENERATOR_TOOL*          generatorTool = m_toolMgr->GetTool<GENERATOR_TOOL>();
-    PNS::ROUTER*             router = generatorTool->Router();
     SCOPED_DRAW_MODE         scopedDrawMode( m_mode, MODE::TUNING );
 
     m_pickerItem = nullptr;
@@ -2058,14 +2190,14 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
                 {
                     dummyPattern.reset( PCB_TUNING_PATTERN::CreateNew( generatorTool, m_frame,
                                                                        m_pickerItem, mode ) );
-                    dummyPattern->SetPosition( m_pickerItem->GetPosition() );
-                    dummyPattern->SetEnd( m_pickerItem->GetPosition() );
+                    dummyPattern->SetPosition( m_pickerItem->GetFocusPosition() );
+                    dummyPattern->SetEnd( m_pickerItem->GetFocusPosition() );
                 }
 
                 if( dummyPattern )
                 {
-                    dummyPattern->EditStart( generatorTool, m_board, m_frame, nullptr );
-                    dummyPattern->Update( generatorTool, m_board, m_frame, nullptr );
+                    dummyPattern->EditStart( generatorTool, m_board, nullptr );
+                    dummyPattern->Update( generatorTool, m_board, nullptr );
 
                     m_preview.FreeItems();
 
@@ -2088,8 +2220,8 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
             {
                 if( m_tuningPattern && m_tuningPattern->GetPosition() != m_tuningPattern->GetEnd() )
                 {
-                    m_tuningPattern->EditStart( generatorTool, m_board, m_frame, nullptr );
-                    m_tuningPattern->Update( generatorTool, m_board, m_frame, nullptr );
+                    m_tuningPattern->EditStart( generatorTool, m_board, nullptr );
+                    m_tuningPattern->Update( generatorTool, m_board, nullptr );
 
                     m_preview.FreeItems();
 
@@ -2111,12 +2243,13 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
         setCursor();
         VECTOR2D cursorPos = controls->GetMousePosition();
 
-        if( evt->IsCancelInteractive() || evt->IsActivate() )
+        if( evt->IsCancelInteractive() || evt->IsActivate()
+            || ( m_tuningPattern && evt->IsAction( &ACTIONS::undo ) ) )
         {
             if( m_tuningPattern )
             {
                 // First click already made; clean up tuning pattern preview
-                m_tuningPattern->EditRevert( generatorTool, m_board, m_frame, nullptr );
+                m_tuningPattern->EditRevert( generatorTool, m_board, nullptr );
 
                 delete m_tuningPattern;
                 m_tuningPattern = nullptr;
@@ -2143,10 +2276,34 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
                 if( collector.GetCount() > 1 )
                     selectionTool->GuessSelectionCandidates( collector, cursorPos );
 
-                if( collector.GetCount() == 1 )
-                    m_pickerItem = static_cast<BOARD_CONNECTED_ITEM*>( collector[0] );
-                else
-                    m_pickerItem = nullptr;
+                m_pickerItem = nullptr;
+
+                if( collector.GetCount() > 0 )
+                {
+                    double min_dist_sq = std::numeric_limits<double>().max();
+
+                    for( EDA_ITEM* candidate : collector )
+                    {
+                        VECTOR2I candidatePos;
+
+                        if( candidate->Type() == PCB_TRACE_T )
+                        {
+                            candidatePos = static_cast<PCB_TRACK*>( candidate )->GetCenter();
+                        }
+                        else if( candidate->Type() == PCB_ARC_T )
+                        {
+                            candidatePos = static_cast<PCB_ARC*>( candidate )->GetMid();
+                        }
+
+                        double dist_sq = ( cursorPos - candidatePos ).SquaredEuclideanNorm();
+
+                        if( dist_sq < min_dist_sq )
+                        {
+                            min_dist_sq = dist_sq;
+                            m_pickerItem = static_cast<BOARD_CONNECTED_ITEM*>( candidate );
+                        }
+                    }
+                }
 
                 updateHoverStatus();
             }
@@ -2164,35 +2321,43 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
             {
                 // First click; create a tuning pattern
 
-                m_preview.FreeItems();
-
-                m_frame->SetActiveLayer( m_pickerItem->GetLayer() );
-                m_tuningPattern = PCB_TUNING_PATTERN::CreateNew( generatorTool, m_frame,
-                                                                 m_pickerItem, mode );
-
-                int      dummyDist;
-                int      dummyClearance = std::numeric_limits<int>::max() / 2;
-                VECTOR2I closestPt;
-
-                // With an artificially-large clearance this can't *not* collide, but the
-                // if stmt keeps Coverity happy....
-                if( m_pickerItem->GetEffectiveShape()->Collide( cursorPos, dummyClearance,
-                                                                &dummyDist, &closestPt ) )
+                if( dynamic_cast<PCB_TUNING_PATTERN*>( m_pickerItem->GetParentGroup() ) )
                 {
-                    m_tuningPattern->SetPosition( closestPt );
-                    m_tuningPattern->SetEnd( closestPt );
+                    m_frame->ShowInfoBarWarning(
+                            _( "Unable to tune segments inside other tuning patterns." ) );
                 }
+                else
+                {
+                    m_preview.FreeItems();
 
-                m_preview.Add( m_tuningPattern->Clone() );
+                    m_frame->SetActiveLayer( m_pickerItem->GetLayer() );
+                    m_tuningPattern = PCB_TUNING_PATTERN::CreateNew( generatorTool, m_frame,
+                                                                     m_pickerItem, mode );
+
+                    int      dummyDist;
+                    int      dummyClearance = std::numeric_limits<int>::max() / 2;
+                    VECTOR2I closestPt;
+
+                    // With an artificially-large clearance this can't *not* collide, but the
+                    // if stmt keeps Coverity happy....
+                    if( m_pickerItem->GetEffectiveShape()->Collide( cursorPos, dummyClearance,
+                                                                    &dummyDist, &closestPt ) )
+                    {
+                        m_tuningPattern->SetPosition( closestPt );
+                        m_tuningPattern->SetEnd( closestPt );
+                    }
+
+                    m_preview.Add( m_tuningPattern->Clone() );
+                }
             }
             else if( m_pickerItem && m_tuningPattern )
             {
                 // Second click; we're done
                 BOARD_COMMIT commit( m_frame );
 
-                m_tuningPattern->EditStart( generatorTool, m_board, m_frame, &commit );
-                m_tuningPattern->Update( generatorTool, m_board, m_frame, &commit );
-                m_tuningPattern->EditPush( generatorTool, m_board, m_frame, &commit, _( "Tune" ) );
+                m_tuningPattern->EditStart( generatorTool, m_board, &commit );
+                m_tuningPattern->Update( generatorTool, m_board, &commit );
+                m_tuningPattern->EditPush( generatorTool, m_board, &commit, _( "Tune" ) );
 
                 for( BOARD_ITEM* item : m_tuningPattern->GetItems() )
                     item->SetSelected();
@@ -2227,6 +2392,27 @@ int DRAWING_TOOL::PlaceTuningPattern( const TOOL_EVENT& aEvent )
                 placer->AmplitudeStep( evt->IsAction( &PCB_ACTIONS::amplIncrease ) ? 1 : -1 );
                 m_tuningPattern->SetMaxAmplitude( placer->MeanderSettings().m_maxAmplitude );
                 updateTuningPattern();
+            }
+        }
+        else if( evt->IsAction( &PCB_ACTIONS::properties ) )
+        {
+            if( m_tuningPattern )
+            {
+                DRC_CONSTRAINT constraint;
+
+                if( !m_tuningPattern->GetItems().empty() )
+                {
+                    BOARD_ITEM* startItem = *m_tuningPattern->GetItems().begin();
+
+                    constraint = drcEngine->EvalRules( LENGTH_CONSTRAINT, startItem, nullptr,
+                                                       startItem->GetLayer() );
+                }
+
+                DIALOG_TUNING_PATTERN_PROPERTIES dlg( m_frame, m_tuningPattern->GetSettings(),
+                                                      m_tuningPattern->GetPNSMode(), constraint );
+
+                if( dlg.ShowModal() == wxID_OK )
+                    updateTuningPattern();
             }
         }
         // TODO: It'd be nice to be able to say "don't allow any non-trivial editing actions",
@@ -2352,7 +2538,7 @@ static struct PCB_TUNING_PATTERN_DESC
                     return !isSkew( aItem );
                 };
 
-        propMgr.AddProperty( new PROPERTY<PCB_TUNING_PATTERN, long long int>(
+        propMgr.AddProperty( new PROPERTY<PCB_TUNING_PATTERN, std::optional<int>>(
                                      _HKI( "Target Length" ),
                                      &PCB_TUNING_PATTERN::SetTargetLength,
                                      &PCB_TUNING_PATTERN::GetTargetLength,

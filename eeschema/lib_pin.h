@@ -143,16 +143,8 @@ public:
 
     ALT GetAlt( const wxString& aAlt ) { return m_alternates[ aAlt ]; }
 
-    /**
-     * Print a pin, with or without the pin texts
-     *
-     * @param aOffset Offset to draw
-     * @param aData = used here as a boolean indicating whether or not to draw the pin
-     *                electrical types
-     * @param aTransform Transform Matrix (rotation, mirror ..)
-     */
-    void print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                const TRANSFORM& aTransform, bool aDimmed ) override;
+    void Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                const VECTOR2I& aOffset, bool aForceNoFill, bool aDimmed ) override;
 
     /**
      * Return the pin real orientation (PIN_UP, PIN_DOWN, PIN_RIGHT, PIN_LEFT),
@@ -207,23 +199,10 @@ public:
     bool IsGlobalPower() const
     {
         return GetType() == ELECTRICAL_PINTYPE::PT_POWER_IN
-               && ( !IsVisible() || (LIB_SYMBOL*) GetParent()->IsPower() );
+               && ( !IsVisible() || GetParentSymbol()->IsPower() );
     }
 
     int GetPenWidth() const override;
-
-    /**
-     * Plot the pin number and pin text info, given the pin line coordinates.
-     * Same as DrawPinTexts((), but output is the plotter
-     * The line must be vertical or horizontal.
-     * If TextInside then the text is been put inside (moving from x1, y1 in
-     * the opposite direction to x2,y2), otherwise all is drawn outside.
-     */
-    void PlotPinTexts( PLOTTER *aPlotter, const VECTOR2I &aPinPos, PIN_ORIENTATION aPinOrient,
-                       int aTextInside, bool aDrawPinNum, bool aDrawPinName, bool aDimmed ) const;
-
-    void PlotSymbol( PLOTTER *aPlotter, const VECTOR2I &aPosition, PIN_ORIENTATION aOrientation,
-                     bool aDimmed ) const;
 
     void Offset( const VECTOR2I& aOffset ) override;
 
@@ -240,16 +219,30 @@ public:
 
     VECTOR2I GetPinRoot() const;
 
-    void MirrorHorizontal( const VECTOR2I& aCenter ) override;
-    void MirrorVertical( const VECTOR2I& aCenter ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
     void Rotate( const VECTOR2I& aCenter, bool aRotateCCW = true ) override;
 
-    void Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffset,
-               const TRANSFORM& aTransform, bool aDimmed ) const override;
+    /**
+     * Plot the pin number and pin text info, given the pin line coordinates.
+     * Same as DrawPinTexts((), but output is the plotter
+     * The line must be vertical or horizontal.
+     * If TextInside then the text is been put inside (moving from x1, y1 in
+     * the opposite direction to x2,y2), otherwise all is drawn outside.
+     */
+    void PlotPinTexts( PLOTTER *aPlotter, const VECTOR2I &aPinPos, PIN_ORIENTATION aPinOrient,
+                       int aTextInside, bool aDrawPinNum, bool aDrawPinName, bool aDimmed ) const;
+
+    void PlotPinType( PLOTTER *aPlotter, const VECTOR2I &aPosition, PIN_ORIENTATION aOrientation,
+                      bool aDimmed ) const;
+
+    void Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS& aPlotOpts,
+               int aUnit, int aBodyStyle, const VECTOR2I& aOffset, bool aDimmed ) override;
 
     BITMAPS GetMenuImage() const override;
 
     wxString GetItemDescription( UNITS_PROVIDER* aUnitsProvider ) const override;
+    wxString GetItemDescription( UNITS_PROVIDER* aUnitsProvider, ALT* aAlt ) const;
 
     EDA_ITEM* Clone() const override;
 
@@ -273,6 +266,8 @@ public:
     bool operator>( const LIB_PIN& aRhs ) const { return compare( aRhs, EQUALITY ) > 0; }
 
 protected:
+    wxString getItemDescription( ALT* aAlt ) const;
+
     struct EXTENTS_CACHE
     {
         KIFONT::FONT* m_Font = nullptr;
@@ -287,7 +282,7 @@ protected:
      * Print the pin symbol without text.
      * If \a aColor != 0, draw with \a aColor, else with the normal pin color.
      */
-    void printPinSymbol( const RENDER_SETTINGS *aSettings, const VECTOR2I &aPos,
+    void printPinSymbol( const SCH_RENDER_SETTINGS *aSettings, const VECTOR2I &aPos,
                          PIN_ORIENTATION aOrientation, bool aDimmed );
 
     /**

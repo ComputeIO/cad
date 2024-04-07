@@ -71,9 +71,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer131;
 	bSizer131 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_stLenPercentUnits = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stLenPercentUnits->Wrap( -1 );
-	bSizer131->Add( m_stLenPercentUnits, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stLenPercentUnits;
+	stLenPercentUnits = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	stLenPercentUnits->Wrap( -1 );
+	bSizer131->Add( stLenPercentUnits, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 	wxStaticText* stLenPercentHint;
 	stLenPercentHint = new wxStaticText( this, wxID_ANY, _("d"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -82,9 +83,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 
 	bSizer131->Add( stLenPercentHint, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText76 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText76->Wrap( -1 );
-	bSizer131->Add( m_staticText76, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* staticText76;
+	staticText76 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	staticText76->Wrap( -1 );
+	bSizer131->Add( staticText76, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer->Add( bSizer131, wxGBPosition( 0, 2 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
@@ -111,9 +113,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer13;
 	bSizer13 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_stWidthPercentUnits = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stWidthPercentUnits->Wrap( -1 );
-	bSizer13->Add( m_stWidthPercentUnits, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stWidthPercentUnits;
+	stWidthPercentUnits = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	stWidthPercentUnits->Wrap( -1 );
+	bSizer13->Add( stWidthPercentUnits, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 	wxStaticText* stWidthPercentHint;
 	stWidthPercentHint = new wxStaticText( this, wxID_ANY, _("d"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -122,9 +125,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 
 	bSizer13->Add( stWidthPercentHint, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText77 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText77->Wrap( -1 );
-	bSizer13->Add( m_staticText77, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stWidthPercentSuffix;
+	stWidthPercentSuffix = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	stWidthPercentSuffix->Wrap( -1 );
+	bSizer13->Add( stWidthPercentSuffix, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer->Add( bSizer13, wxGBPosition( 3, 2 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
@@ -148,6 +152,8 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	gbSizer->Add( m_curvePointsCtrl, wxGBPosition( 6, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_cbPreferZoneConnection = new wxCheckBox( this, wxID_ANY, _("Prefer zone connection"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cbPreferZoneConnection->SetToolTip( _("Do not create teardrops on tracks connected to pads that are also connected to a copper zone.") );
+
 	gbSizer->Add( m_cbPreferZoneConnection, wxGBPosition( 1, 3 ), wxGBSpan( 1, 3 ), wxALIGN_CENTER_VERTICAL|wxLEFT, 40 );
 
 	m_stHDRatio = new wxStaticText( this, wxID_ANY, _("Maximum track width:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -165,9 +171,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer1311;
 	bSizer1311 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_minTrackWidthUnits = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_minTrackWidthUnits->Wrap( -1 );
-	bSizer1311->Add( m_minTrackWidthUnits, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* minTrackWidthUnits;
+	minTrackWidthUnits = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	minTrackWidthUnits->Wrap( -1 );
+	bSizer1311->Add( minTrackWidthUnits, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 	wxStaticText* stMinTrackWidthHint;
 	stMinTrackWidthHint = new wxStaticText( this, wxID_ANY, _("d"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -176,15 +183,18 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 
 	bSizer1311->Add( stMinTrackWidthHint, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText78 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText78->Wrap( -1 );
-	bSizer1311->Add( m_staticText78, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stMinTrackWidthSuffix;
+	stMinTrackWidthSuffix = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	stMinTrackWidthSuffix->Wrap( -1 );
+	bSizer1311->Add( stMinTrackWidthSuffix, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer->Add( bSizer1311, wxGBPosition( 0, 5 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_cbTeardropsUseNextTrack = new wxCheckBox( this, wxID_ANY, _("Allow teardrop to span two track segments"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_cbTeardropsUseNextTrack->SetValue(true);
+	m_cbTeardropsUseNextTrack->SetToolTip( _("Allows a teardrop to extend over the first 2 connected track segments if the first track segment is too short to accommodate the best length.") );
+
 	gbSizer->Add( m_cbTeardropsUseNextTrack, wxGBPosition( 6, 2 ), wxGBSpan( 1, 5 ), wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 
@@ -194,7 +204,7 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	m_gridSizer->Add( bSizerShapeColumns, 1, wxEXPAND, 5 );
 
 
-	m_gridSizer->Add( 0, 30, 0, wxEXPAND, 5 );
+	m_gridSizer->Add( 0, 10, 0, wxEXPAND, 5 );
 
 	m_rectShapesLabel = new wxStaticText( this, wxID_ANY, _("Default properties for rectangular shapes:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_rectShapesLabel->Wrap( -1 );
@@ -240,9 +250,9 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	gbSizer1->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	gbSizer1->SetEmptyCellSize( wxSize( 10,7 ) );
 
-	m_stLenPercentLabel1 = new wxStaticText( this, wxID_ANY, _("Best length (L):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stLenPercentLabel1->Wrap( -1 );
-	gbSizer1->Add( m_stLenPercentLabel1, wxGBPosition( 0, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stLenPercent1Label = new wxStaticText( this, wxID_ANY, _("Best length (L):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stLenPercent1Label->Wrap( -1 );
+	gbSizer1->Add( m_stLenPercent1Label, wxGBPosition( 0, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_spLenPercent1 = new wxSpinCtrlDouble( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 20, 100, 40.000000, 10 );
 	m_spLenPercent1->SetDigits( 0 );
@@ -251,9 +261,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer122;
 	bSizer122 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_stLenPercentUnits1 = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stLenPercentUnits1->Wrap( -1 );
-	bSizer122->Add( m_stLenPercentUnits1, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stLenPercent1Units;
+	stLenPercent1Units = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	stLenPercent1Units->Wrap( -1 );
+	bSizer122->Add( stLenPercent1Units, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 	wxStaticText* stLenPercent1Hint;
 	stLenPercent1Hint = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -262,9 +273,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 
 	bSizer122->Add( stLenPercent1Hint, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText75 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText75->Wrap( -1 );
-	bSizer122->Add( m_staticText75, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stLenPercent1Suffix;
+	stLenPercent1Suffix = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	stLenPercent1Suffix->Wrap( -1 );
+	bSizer122->Add( stLenPercent1Suffix, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer1->Add( bSizer122, wxGBPosition( 0, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
@@ -276,13 +288,13 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	m_tcTdMaxLen1 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	gbSizer1->Add( m_tcTdMaxLen1, wxGBPosition( 1, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
-	m_stMaxLenUnits1 = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stMaxLenUnits1->Wrap( -1 );
-	gbSizer1->Add( m_stMaxLenUnits1, wxGBPosition( 1, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stMaxLen1Units = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stMaxLen1Units->Wrap( -1 );
+	gbSizer1->Add( m_stMaxLen1Units, wxGBPosition( 1, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_stWidthLabel1 = new wxStaticText( this, wxID_ANY, _("Best width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stWidthLabel1->Wrap( -1 );
-	gbSizer1->Add( m_stWidthLabel1, wxGBPosition( 3, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stWidth1Label = new wxStaticText( this, wxID_ANY, _("Best width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stWidth1Label->Wrap( -1 );
+	gbSizer1->Add( m_stWidth1Label, wxGBPosition( 3, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_spWidthPercent1 = new wxSpinCtrlDouble( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 60, 100, 100.000000, 10 );
 	m_spWidthPercent1->SetDigits( 0 );
@@ -291,9 +303,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer12;
 	bSizer12 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_stWidthPercentUnits1 = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stWidthPercentUnits1->Wrap( -1 );
-	bSizer12->Add( m_stWidthPercentUnits1, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stWidthPercent1Units;
+	stWidthPercent1Units = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	stWidthPercent1Units->Wrap( -1 );
+	bSizer12->Add( stWidthPercent1Units, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 	wxStaticText* stSizePercent1Hint;
 	stSizePercent1Hint = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -302,32 +315,35 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 
 	bSizer12->Add( stSizePercent1Hint, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText74 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText74->Wrap( -1 );
-	bSizer12->Add( m_staticText74, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stSizePercent1Suffix;
+	stSizePercent1Suffix = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	stSizePercent1Suffix->Wrap( -1 );
+	bSizer12->Add( stSizePercent1Suffix, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer1->Add( bSizer12, wxGBPosition( 3, 2 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_stMaxWidthLabel1 = new wxStaticText( this, wxID_ANY, _("Maximum width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stMaxWidthLabel1->Wrap( -1 );
-	gbSizer1->Add( m_stMaxWidthLabel1, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stMaxWidth1Label = new wxStaticText( this, wxID_ANY, _("Maximum width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stMaxWidth1Label->Wrap( -1 );
+	gbSizer1->Add( m_stMaxWidth1Label, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_tcMaxWidth1 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	gbSizer1->Add( m_tcMaxWidth1, wxGBPosition( 4, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
-	m_stMaxWidthUnits1 = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stMaxWidthUnits1->Wrap( -1 );
-	gbSizer1->Add( m_stMaxWidthUnits1, wxGBPosition( 4, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stMaxWidth1Units = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stMaxWidth1Units->Wrap( -1 );
+	gbSizer1->Add( m_stMaxWidth1Units, wxGBPosition( 4, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_curvePointsLabel1 = new wxStaticText( this, wxID_ANY, _("Curve points:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_curvePointsLabel1->Wrap( -1 );
-	gbSizer1->Add( m_curvePointsLabel1, wxGBPosition( 6, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_curvePoints1Label = new wxStaticText( this, wxID_ANY, _("Curve points:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_curvePoints1Label->Wrap( -1 );
+	gbSizer1->Add( m_curvePoints1Label, wxGBPosition( 6, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_curvePointsCtrl1 = new wxSpinCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 3, 10, 5 );
 	gbSizer1->Add( m_curvePointsCtrl1, wxGBPosition( 6, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_cbPreferZoneConnection1 = new wxCheckBox( this, wxID_ANY, _("Prefer zone connection"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cbPreferZoneConnection1->SetToolTip( _("Do not create teardrops on tracks connected to pads that are also connected to a copper zone.") );
+
 	gbSizer1->Add( m_cbPreferZoneConnection1, wxGBPosition( 1, 3 ), wxGBSpan( 1, 3 ), wxALIGN_CENTER_VERTICAL|wxLEFT, 40 );
 
 	m_stHDRatio1 = new wxStaticText( this, wxID_ANY, _("Maximum track width:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -345,9 +361,10 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer1221;
 	bSizer1221 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_minTrackWidthUnits1 = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_minTrackWidthUnits1->Wrap( -1 );
-	bSizer1221->Add( m_minTrackWidthUnits1, 0, 0, 5 );
+	wxStaticText* minTrackWidthUnits1;
+	minTrackWidthUnits1 = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	minTrackWidthUnits1->Wrap( -1 );
+	bSizer1221->Add( minTrackWidthUnits1, 0, 0, 5 );
 
 	wxStaticText* stMinTrackWidthHint1;
 	stMinTrackWidthHint1 = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -356,15 +373,18 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 
 	bSizer1221->Add( stMinTrackWidthHint1, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText73 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText73->Wrap( -1 );
-	bSizer1221->Add( m_staticText73, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* staticText73;
+	staticText73 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	staticText73->Wrap( -1 );
+	bSizer1221->Add( staticText73, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer1->Add( bSizer1221, wxGBPosition( 0, 5 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_cbTeardropsUseNextTrack1 = new wxCheckBox( this, wxID_ANY, _("Allow teardrop to span two track segments"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_cbTeardropsUseNextTrack1->SetValue(true);
+	m_cbTeardropsUseNextTrack1->SetToolTip( _("Allows a teardrop to extend over the first 2 connected track segments if the first track segment is too short to accommodate the best length.") );
+
 	gbSizer1->Add( m_cbTeardropsUseNextTrack1, wxGBPosition( 6, 2 ), wxGBSpan( 1, 5 ), wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 
@@ -374,7 +394,7 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	m_gridSizer->Add( bSizerShapeColumns1, 1, wxEXPAND, 5 );
 
 
-	m_gridSizer->Add( 0, 30, 0, wxEXPAND, 5 );
+	m_gridSizer->Add( 0, 10, 0, wxEXPAND, 5 );
 
 	m_tracksLabel = new wxStaticText( this, wxID_ANY, _("Properties for track-to-track teardrops:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_tracksLabel->Wrap( -1 );
@@ -420,9 +440,9 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	gbSizer2->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 	gbSizer2->SetEmptyCellSize( wxSize( 10,7 ) );
 
-	m_stLenPercentLabel2 = new wxStaticText( this, wxID_ANY, _("Best length (L):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stLenPercentLabel2->Wrap( -1 );
-	gbSizer2->Add( m_stLenPercentLabel2, wxGBPosition( 0, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stLenPercent2Label = new wxStaticText( this, wxID_ANY, _("Best length (L):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stLenPercent2Label->Wrap( -1 );
+	gbSizer2->Add( m_stLenPercent2Label, wxGBPosition( 0, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_spLenPercent2 = new wxSpinCtrlDouble( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 20, 100, 40.000000, 10 );
 	m_spLenPercent2->SetDigits( 0 );
@@ -431,20 +451,22 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer1211;
 	bSizer1211 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_stLenPercentUnits2 = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stLenPercentUnits2->Wrap( -1 );
-	bSizer1211->Add( m_stLenPercentUnits2, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stLenPercent2Units;
+	stLenPercent2Units = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	stLenPercent2Units->Wrap( -1 );
+	bSizer1211->Add( stLenPercent2Units, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
-	wxStaticText* stLenPercentHint2;
-	stLenPercentHint2 = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
-	stLenPercentHint2->Wrap( -1 );
-	stLenPercentHint2->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
+	wxStaticText* stLenPercent2Hint;
+	stLenPercent2Hint = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
+	stLenPercent2Hint->Wrap( -1 );
+	stLenPercent2Hint->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
-	bSizer1211->Add( stLenPercentHint2, 0, wxALIGN_BOTTOM, 1 );
+	bSizer1211->Add( stLenPercent2Hint, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText70 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText70->Wrap( -1 );
-	bSizer1211->Add( m_staticText70, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stLenPercent2Suffix;
+	stLenPercent2Suffix = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	stLenPercent2Suffix->Wrap( -1 );
+	bSizer1211->Add( stLenPercent2Suffix, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer2->Add( bSizer1211, wxGBPosition( 0, 2 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
@@ -456,13 +478,13 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	m_tcTdMaxLen2 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	gbSizer2->Add( m_tcTdMaxLen2, wxGBPosition( 1, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
-	m_stMaxLenUnits2 = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stMaxLenUnits2->Wrap( -1 );
-	gbSizer2->Add( m_stMaxLenUnits2, wxGBPosition( 1, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stMaxLen2Units = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stMaxLen2Units->Wrap( -1 );
+	gbSizer2->Add( m_stMaxLen2Units, wxGBPosition( 1, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_stWidthLabel2 = new wxStaticText( this, wxID_ANY, _("Best width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stWidthLabel2->Wrap( -1 );
-	gbSizer2->Add( m_stWidthLabel2, wxGBPosition( 3, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stWidth2Label = new wxStaticText( this, wxID_ANY, _("Best width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stWidth2Label->Wrap( -1 );
+	gbSizer2->Add( m_stWidth2Label, wxGBPosition( 3, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_spWidthPercent2 = new wxSpinCtrlDouble( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 60, 100, 100.000000, 10 );
 	m_spWidthPercent2->SetDigits( 0 );
@@ -471,45 +493,47 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer121;
 	bSizer121 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_stWidthPercentUnits2 = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stWidthPercentUnits2->Wrap( -1 );
-	bSizer121->Add( m_stWidthPercentUnits2, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stWidthPercent2Units;
+	stWidthPercent2Units = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	stWidthPercent2Units->Wrap( -1 );
+	bSizer121->Add( stWidthPercent2Units, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
-	wxStaticText* stWidthPercentHint2;
-	stWidthPercentHint2 = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
-	stWidthPercentHint2->Wrap( -1 );
-	stWidthPercentHint2->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
+	wxStaticText* stWidthPercent2Hint;
+	stWidthPercent2Hint = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
+	stWidthPercent2Hint->Wrap( -1 );
+	stWidthPercent2Hint->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
-	bSizer121->Add( stWidthPercentHint2, 0, wxALIGN_BOTTOM, 1 );
+	bSizer121->Add( stWidthPercent2Hint, 0, wxALIGN_BOTTOM, 1 );
 
-	m_staticText72 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText72->Wrap( -1 );
-	bSizer121->Add( m_staticText72, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stWidthPercent2Suffix;
+	stWidthPercent2Suffix = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	stWidthPercent2Suffix->Wrap( -1 );
+	bSizer121->Add( stWidthPercent2Suffix, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
 	gbSizer2->Add( bSizer121, wxGBPosition( 3, 2 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_stMaxWidthLabel2 = new wxStaticText( this, wxID_ANY, _("Maximum width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stMaxWidthLabel2->Wrap( -1 );
-	gbSizer2->Add( m_stMaxWidthLabel2, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stMaxWidth2Label = new wxStaticText( this, wxID_ANY, _("Maximum width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stMaxWidth2Label->Wrap( -1 );
+	gbSizer2->Add( m_stMaxWidth2Label, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_tcMaxWidth2 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	gbSizer2->Add( m_tcMaxWidth2, wxGBPosition( 4, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
-	m_stMaxWidthUnits2 = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_stMaxWidthUnits2->Wrap( -1 );
-	gbSizer2->Add( m_stMaxWidthUnits2, wxGBPosition( 4, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_stMaxWidth2Units = new wxStaticText( this, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stMaxWidth2Units->Wrap( -1 );
+	gbSizer2->Add( m_stMaxWidth2Units, wxGBPosition( 4, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_curvePointsLabel2 = new wxStaticText( this, wxID_ANY, _("Curve points:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_curvePointsLabel2->Wrap( -1 );
-	gbSizer2->Add( m_curvePointsLabel2, wxGBPosition( 6, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	m_curvePoints2Label = new wxStaticText( this, wxID_ANY, _("Curve points:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_curvePoints2Label->Wrap( -1 );
+	gbSizer2->Add( m_curvePoints2Label, wxGBPosition( 6, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_curvePointsCtrl2 = new wxSpinCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 3, 10, 5 );
 	gbSizer2->Add( m_curvePointsCtrl2, wxGBPosition( 6, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_stHDRatio2 = new wxStaticText( this, wxID_ANY, _("Maximum track width"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stHDRatio2->Wrap( -1 );
-	m_stHDRatio2->SetToolTip( _("Max pad/via size to track width ratio to create a teardrop.\n100 always creates a teardrop.") );
+	m_stHDRatio2->SetToolTip( _("Max track width ratio to create a teardrop.\n100 always creates a teardrop.") );
 
 	gbSizer2->Add( m_stHDRatio2, wxGBPosition( 0, 3 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxLEFT, 40 );
 
@@ -522,26 +546,30 @@ PANEL_SETUP_TEARDROPS_BASE::PANEL_SETUP_TEARDROPS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizer12211;
 	bSizer12211 = new wxBoxSizer( wxHORIZONTAL );
 
-	m_minTrackWidthUnits2 = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
-	m_minTrackWidthUnits2->Wrap( -1 );
-	bSizer12211->Add( m_minTrackWidthUnits2, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	wxStaticText* stMinTrackWidth2Units;
+	stMinTrackWidth2Units = new wxStaticText( this, wxID_ANY, _("%("), wxDefaultPosition, wxDefaultSize, 0 );
+	stMinTrackWidth2Units->Wrap( -1 );
+	bSizer12211->Add( stMinTrackWidth2Units, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
-	wxStaticText* stMinTrackWidthHint2;
-	stMinTrackWidthHint2 = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
-	stMinTrackWidthHint2->Wrap( -1 );
-	stMinTrackWidthHint2->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
+	wxStaticText* stMinTrackWidth2Hint;
+	stMinTrackWidth2Hint = new wxStaticText( this, wxID_ANY, _("w"), wxDefaultPosition, wxDefaultSize, 0 );
+	stMinTrackWidth2Hint->Wrap( -1 );
+	stMinTrackWidth2Hint->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
 
-	bSizer12211->Add( stMinTrackWidthHint2, 0, wxALIGN_CENTER_VERTICAL, 5 );
+	bSizer12211->Add( stMinTrackWidth2Hint, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_staticText71 = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText71->Wrap( -1 );
-	bSizer12211->Add( m_staticText71, 0, wxALIGN_BOTTOM|wxBOTTOM, 1 );
+	wxStaticText* stMinTrackWidth2Suffix;
+	stMinTrackWidth2Suffix = new wxStaticText( this, wxID_ANY, _(" )"), wxDefaultPosition, wxDefaultSize, 0 );
+	stMinTrackWidth2Suffix->Wrap( -1 );
+	bSizer12211->Add( stMinTrackWidth2Suffix, 0, wxALIGN_BOTTOM|wxBOTTOM, 1 );
 
 
 	gbSizer2->Add( bSizer12211, wxGBPosition( 0, 5 ), wxGBSpan( 1, 1 ), wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_cbTeardropsUseNextTrack2 = new wxCheckBox( this, wxID_ANY, _("Allow teardrop to span two track segments"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_cbTeardropsUseNextTrack2->SetValue(true);
+	m_cbTeardropsUseNextTrack2->SetToolTip( _("Allows a teardrop to extend over the first 2 connected track segments if the first track segment is too short to accommodate the best length.") );
+
 	gbSizer2->Add( m_cbTeardropsUseNextTrack2, wxGBPosition( 6, 2 ), wxGBSpan( 1, 5 ), wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 

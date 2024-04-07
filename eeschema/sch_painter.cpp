@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014 CERN
- * Copyright (C) 2019-2023 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2024 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
@@ -32,7 +32,7 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <callback_gal.h>
 #include <geometry/shape_segment.h>
-#include <geometry/shape_simple.h>
+#include <geometry/shape_rect.h>
 #include <gr_text.h>
 #include <lib_shape.h>
 #include <lib_field.h>
@@ -55,6 +55,7 @@
 #include <sch_sheet_pin.h>
 #include <sch_text.h>
 #include <sch_textbox.h>
+#include <sch_table.h>
 #include <schematic.h>
 #include <settings/color_settings.h>
 #include <view/view.h>
@@ -97,55 +98,6 @@ std::vector<KICAD_T> SCH_PAINTER::g_ScaledSelectionTypes = {
     SCH_SHEET_T,
     LIB_PIN_T, SCH_PIN_T
 };
-
-
-SCH_RENDER_SETTINGS::SCH_RENDER_SETTINGS() :
-        m_IsSymbolEditor( false ),
-        m_ShowUnit( 0 ),
-        m_ShowConvert( 0 ),
-        m_ShowPinsElectricalType( true ),
-        m_ShowPinNumbers( false ),
-        m_ShowDisabled( false ),
-        m_ShowGraphicsDisabled( false ),
-        m_OverrideItemColors( false ),
-        m_LabelSizeRatio( DEFAULT_LABEL_SIZE_RATIO ),
-        m_TextOffsetRatio( DEFAULT_TEXT_OFFSET_RATIO ),
-        m_PinSymbolSize( DEFAULT_TEXT_SIZE * schIUScale.IU_PER_MILS / 2 )
-{
-    SetDefaultPenWidth( DEFAULT_LINE_WIDTH_MILS * schIUScale.IU_PER_MILS );
-    SetDashLengthRatio( 12 );       // From ISO 128-2
-    SetGapLengthRatio( 3 );         // From ISO 128-2
-
-    m_minPenWidth = ADVANCED_CFG::GetCfg().m_MinPlotPenWidth * schIUScale.IU_PER_MM;
-}
-
-
-void SCH_RENDER_SETTINGS::LoadColors( const COLOR_SETTINGS* aSettings )
-{
-    for( int layer = SCH_LAYER_ID_START; layer < SCH_LAYER_ID_END; layer ++)
-        m_layerColors[ layer ] = aSettings->GetColor( layer );
-
-    for( int layer = GAL_LAYER_ID_START; layer < GAL_LAYER_ID_END; layer ++)
-        m_layerColors[ layer ] = aSettings->GetColor( layer );
-
-    m_backgroundColor = aSettings->GetColor( LAYER_SCHEMATIC_BACKGROUND );
-
-    m_layerColors[LAYER_AUX_ITEMS] = m_layerColors[LAYER_SCHEMATIC_AUX_ITEMS];
-
-    m_OverrideItemColors = aSettings->GetOverrideSchItemColors();
-}
-
-
-COLOR4D SCH_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
-{
-    return m_layerColors[ aLayer ];
-}
-
-
-bool SCH_RENDER_SETTINGS::GetShowPageLimits() const
-{
-    return eeconfig() && eeconfig()->m_Appearance.show_page_limits && !IsPrinting();
-}
 
 
 /**
@@ -227,20 +179,8 @@ void SCH_PAINTER::draw( const EDA_ITEM* aItem, int aLayer, bool aDimmed )
 
 #endif
 
-    if( m_schSettings.GetDrawBoundingBoxes() )
-    {
-        BOX2I box = aItem->GetBoundingBox();
-
-        if( aItem->Type() == SCH_SYMBOL_T )
-            box = static_cast<const SCH_SYMBOL*>( aItem )->GetBodyBoundingBox();
-
-        m_gal->SetIsFill( false );
-        m_gal->SetIsStroke( true );
-        m_gal->SetStrokeColor( aItem->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 )
-                                                  : COLOR4D( 0.2, 0.2, 0.2, 1 ) );
-        m_gal->SetLineWidth( schIUScale.MilsToIU( 3 ) );
-        m_gal->DrawRectangle( box.GetOrigin(), box.GetEnd() );
-    }
+    // Enable draw bounding box on request. Some bboxes are handled locally.
+    bool drawBoundingBox = m_schSettings.GetDrawBoundingBoxes();
 
     switch( aItem->Type() )
     {
@@ -251,9 +191,11 @@ void SCH_PAINTER::draw( const EDA_ITEM* aItem, int aLayer, bool aDimmed )
             draw( static_cast<const LIB_SHAPE*>( aItem ), aLayer, aDimmed );
             break;
         case LIB_PIN_T:
+            drawBoundingBox = false;
             draw( static_cast<const LIB_PIN*>( aItem ), aLayer, aDimmed  );
             break;
         case LIB_FIELD_T:
+            drawBoundingBox = false;
             draw( static_cast<const LIB_FIELD*>( aItem ), aLayer, aDimmed  );
             break;
         case LIB_TEXT_T:
@@ -279,6 +221,9 @@ void SCH_PAINTER::draw( const EDA_ITEM* aItem, int aLayer, bool aDimmed )
             break;
         case SCH_TEXTBOX_T:
             draw( static_cast<const SCH_TEXTBOX*>( aItem ), aLayer );
+            break;
+        case SCH_TABLE_T:
+            draw( static_cast<const SCH_TABLE*>( aItem ), aLayer );
             break;
         case SCH_LABEL_T:
             draw( static_cast<const SCH_LABEL*>( aItem ), aLayer );
@@ -319,6 +264,25 @@ void SCH_PAINTER::draw( const EDA_ITEM* aItem, int aLayer, bool aDimmed )
 
         default: return;
     }
+
+    if( drawBoundingBox )
+        drawItemBoundingBox( aItem );
+}
+
+
+void SCH_PAINTER::drawItemBoundingBox( const EDA_ITEM* aItem )
+{
+    BOX2I box = aItem->GetBoundingBox();
+
+    if( aItem->Type() == SCH_SYMBOL_T )
+        box = static_cast<const SCH_SYMBOL*>( aItem )->GetBodyBoundingBox();
+
+    m_gal->SetIsFill( false );
+    m_gal->SetIsStroke( true );
+    m_gal->SetStrokeColor( aItem->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 )
+                                              : COLOR4D( 0.2, 0.2, 0.2, 1 ) );
+    m_gal->SetLineWidth( schIUScale.MilsToIU( 3 ) );
+    m_gal->DrawRectangle( box.GetOrigin(), box.GetEnd() );
 }
 
 
@@ -339,9 +303,9 @@ bool SCH_PAINTER::isUnitAndConversionShown( const LIB_ITEM* aItem ) const
         return false;
     }
 
-    if( m_schSettings.m_ShowConvert         // showing a specific conversion
-            && aItem->GetConvert()          // item is conversion-specific
-            && aItem->GetConvert() != m_schSettings.m_ShowConvert )
+    if( m_schSettings.m_ShowBodyStyle       // showing a specific body style
+            && aItem->GetBodyStyle()        // item is body-style-specific
+            && aItem->GetBodyStyle() != m_schSettings.m_ShowBodyStyle )
     {
         return false;
     }
@@ -432,9 +396,9 @@ COLOR4D SCH_PAINTER::getRenderColor( const EDA_ITEM* aItem, int aLayer, bool aDr
         {
             color = static_cast<const SCH_FIELD*>( aItem )->GetFieldColor();
         }
-        else if( aItem->Type() == SCH_TEXTBOX_T )
+        else if( aItem->Type() == SCH_TEXTBOX_T || aItem->Type() == SCH_TABLECELL_T )
         {
-            const SCH_TEXTBOX* textBox = static_cast<const SCH_TEXTBOX*>( aItem );
+            const SCH_TEXTBOX* textBox = dynamic_cast<const SCH_TEXTBOX*>( aItem );
 
             if( aLayer == LAYER_NOTES_BACKGROUND )
                 color = textBox->GetFillColor();
@@ -556,6 +520,7 @@ float SCH_PAINTER::getTextThickness( const EDA_ITEM* aItem ) const
         break;
 
     case SCH_TEXTBOX_T:
+    case SCH_TABLECELL_T:
         pen = static_cast<const SCH_TEXTBOX*>( aItem )->GetEffectiveTextPenWidth( pen );
         break;
 
@@ -704,16 +669,18 @@ void SCH_PAINTER::boxText( const wxString& aText, const VECTOR2D& aPosition,
 
     switch( aAttrs.m_Halign )
     {
-    case GR_TEXT_H_ALIGN_LEFT:                                                break;
-    case GR_TEXT_H_ALIGN_CENTER: box.SetX( box.GetX() - box.GetWidth() / 2 ); break;
-    case GR_TEXT_H_ALIGN_RIGHT:  box.SetX( box.GetX() - box.GetWidth() );     break;
+    case GR_TEXT_H_ALIGN_LEFT:                                                         break;
+    case GR_TEXT_H_ALIGN_CENTER:        box.SetX( box.GetX() - box.GetWidth() / 2 );   break;
+    case GR_TEXT_H_ALIGN_RIGHT:         box.SetX( box.GetX() - box.GetWidth() );       break;
+    case GR_TEXT_H_ALIGN_INDETERMINATE: wxFAIL_MSG( wxT( "Legal only in dialogs" ) );  break;
     }
 
     switch(  aAttrs.m_Valign )
     {
-    case GR_TEXT_V_ALIGN_TOP:                                                  break;
-    case GR_TEXT_V_ALIGN_CENTER: box.SetY( box.GetY() - box.GetHeight() / 2 ); break;
-    case GR_TEXT_V_ALIGN_BOTTOM: box.SetY( box.GetY() - box.GetHeight() );     break;
+    case GR_TEXT_V_ALIGN_TOP:                                                          break;
+    case GR_TEXT_V_ALIGN_CENTER:        box.SetY( box.GetY() - box.GetHeight() / 2 );  break;
+    case GR_TEXT_V_ALIGN_BOTTOM:        box.SetY( box.GetY() - box.GetHeight() );      break;
+    case GR_TEXT_V_ALIGN_INDETERMINATE: wxFAIL_MSG( wxT( "Legal only in dialogs" ) );  break;
     }
 
     // Give the highlight a bit of margin.
@@ -737,13 +704,13 @@ void SCH_PAINTER::triLine( const VECTOR2D &a, const VECTOR2D &b, const VECTOR2D 
 
 
 void SCH_PAINTER::draw( const LIB_SYMBOL* aSymbol, int aLayer, bool aDrawFields, int aUnit,
-                        int aConvert, bool aDimmed )
+                        int aBodyStyle, bool aDimmed )
 {
     if( !aUnit )
         aUnit = m_schSettings.m_ShowUnit;
 
-    if( !aConvert )
-        aConvert = m_schSettings.m_ShowConvert;
+    if( !aBodyStyle )
+        aBodyStyle = m_schSettings.m_ShowBodyStyle;
 
     std::unique_ptr< LIB_SYMBOL > tmpSymbol;
     const LIB_SYMBOL* drawnSymbol = aSymbol;
@@ -782,7 +749,7 @@ void SCH_PAINTER::draw( const LIB_SYMBOL* aSymbol, int aLayer, bool aDrawFields,
         if( aUnit && item.GetUnit() && aUnit != item.GetUnit() )
             continue;
 
-        if( aConvert && item.GetConvert() && aConvert != item.GetConvert() )
+        if( aBodyStyle && item.GetBodyStyle() && aBodyStyle != item.GetBodyStyle() )
             continue;
 
         draw( &item, aLayer, aDimmed );
@@ -792,6 +759,7 @@ void SCH_PAINTER::draw( const LIB_SYMBOL* aSymbol, int aLayer, bool aDrawFields,
 
 bool SCH_PAINTER::setDeviceColors( const LIB_ITEM* aItem, int aLayer, bool aDimmed )
 {
+    COLOR4D          bg = m_schSettings.GetLayerColor( LAYER_SCHEMATIC_BACKGROUND );
     const EDA_SHAPE* shape = dynamic_cast<const EDA_SHAPE*>( aItem );
 
     switch( aLayer )
@@ -840,6 +808,10 @@ bool SCH_PAINTER::setDeviceColors( const LIB_ITEM* aItem, int aLayer, bool aDimm
         else if( shape && shape->GetFillMode() == FILL_T::FILLED_WITH_COLOR )
         {
             COLOR4D fillColour = shape->GetFillColor();
+            double  transparency = aItem->GetForcedTransparency();
+
+            if( transparency > 0.0 )
+                fillColour = fillColour.WithAlpha( fillColour.a * ( 1.0 - transparency ) );
 
             if( m_schSettings.m_OverrideItemColors )
             {
@@ -847,9 +819,8 @@ bool SCH_PAINTER::setDeviceColors( const LIB_ITEM* aItem, int aLayer, bool aDimm
             }
             else if( aDimmed )
             {
-                fillColour = fillColour.Mix(
-                        m_schSettings.GetLayerColor( LAYER_SCHEMATIC_BACKGROUND ), 0.5f );
-                fillColour.Desaturate( );
+                fillColour = fillColour.Mix( bg, 0.5f );
+                fillColour.Desaturate();
             }
 
             m_gal->SetFillColor( fillColour );
@@ -1060,7 +1031,10 @@ void SCH_PAINTER::draw( const LIB_FIELD* aField, int aLayer, bool aDimmed )
 
     if( !( aField->IsVisible() || aField->IsForceVisible() ) )
     {
-        if( m_schSettings.m_IsSymbolEditor || eeconfig()->m_Appearance.show_hidden_fields )
+        bool force_show = m_schematic ? eeconfig()->m_Appearance.show_hidden_fields
+                                      : m_schSettings.m_ShowHiddenLibFields;
+
+        if( force_show )
             color = getRenderColor( aField, LAYER_HIDDEN, drawingShadows, aDimmed );
         else
             return;
@@ -1098,10 +1072,13 @@ void SCH_PAINTER::draw( const LIB_FIELD* aField, int aLayer, bool aDimmed )
     // Draw the umbilical line when in the schematic editor
     if( aField->IsMoving() && m_schematic )
     {
-        m_gal->SetLineWidth( m_schSettings.m_outlineWidth );
+        m_gal->SetLineWidth( m_schSettings.GetOutlineWidth() );
         m_gal->SetStrokeColor( getRenderColor( aField, LAYER_SCHEMATIC_ANCHOR, drawingShadows ) );
         m_gal->DrawLine( bbox.Centre(), VECTOR2I( 0, 0 ) );
     }
+
+    if( m_schSettings.GetDrawBoundingBoxes() )
+        drawItemBoundingBox( aField );
 }
 
 
@@ -1169,18 +1146,36 @@ void SCH_PAINTER::draw( const LIB_TEXT* aText, int aLayer, bool aDimmed )
         {
             switch( attrs.m_Halign )
             {
-            case GR_TEXT_H_ALIGN_LEFT:   pos.y = bBox.GetBottom() + shadowOffset;          break;
-            case GR_TEXT_H_ALIGN_CENTER: pos.y = ( bBox.GetTop() + bBox.GetBottom() ) / 2; break;
-            case GR_TEXT_H_ALIGN_RIGHT:  pos.y = bBox.GetTop() - shadowOffset;             break;
+            case GR_TEXT_H_ALIGN_LEFT:
+                pos.y = bBox.GetBottom() + shadowOffset;
+                break;
+            case GR_TEXT_H_ALIGN_CENTER:
+                pos.y = ( bBox.GetTop() + bBox.GetBottom() ) / 2.0;
+                break;
+            case GR_TEXT_H_ALIGN_RIGHT:
+                pos.y = bBox.GetTop() - shadowOffset;
+                break;
+            case GR_TEXT_H_ALIGN_INDETERMINATE:
+                wxFAIL_MSG( wxT( "Indeterminate state legal only in dialogs." ) );
+                break;
             }
         }
         else
         {
             switch( attrs.m_Halign )
             {
-            case GR_TEXT_H_ALIGN_LEFT:   pos.x = bBox.GetLeft() - shadowOffset;            break;
-            case GR_TEXT_H_ALIGN_CENTER: pos.x = ( bBox.GetLeft() + bBox.GetRight() ) / 2; break;
-            case GR_TEXT_H_ALIGN_RIGHT:  pos.x = bBox.GetRight() + shadowOffset;           break;
+            case GR_TEXT_H_ALIGN_LEFT:
+                pos.x = bBox.GetLeft() - shadowOffset;
+                break;
+            case GR_TEXT_H_ALIGN_CENTER:
+                pos.x = ( bBox.GetLeft() + bBox.GetRight() ) / 2.0;
+                break;
+            case GR_TEXT_H_ALIGN_RIGHT:
+                pos.x = bBox.GetRight() + shadowOffset;
+                break;
+            case GR_TEXT_H_ALIGN_INDETERMINATE:
+                wxFAIL_MSG( wxT( "Indeterminate state legal only in dialogs." ) );
+                break;
             }
         }
 
@@ -1254,6 +1249,7 @@ void SCH_PAINTER::draw( const LIB_TEXTBOX* aTextBox, int aLayer, bool aDimmed )
         {
             COLOR4D    borderColor = aTextBox->GetStroke().GetColor();
             LINE_STYLE borderStyle = aTextBox->GetStroke().GetLineStyle();
+            double     transparency = aTextBox->GetForcedTransparency();
 
             if( m_schSettings.m_OverrideItemColors || aTextBox->IsBrightened()
                     || borderColor == COLOR4D::UNSPECIFIED )
@@ -1261,10 +1257,13 @@ void SCH_PAINTER::draw( const LIB_TEXTBOX* aTextBox, int aLayer, bool aDimmed )
                 borderColor = m_schSettings.GetLayerColor( aLayer );
             }
 
+            if( transparency > 0.0 )
+                borderColor = borderColor.WithAlpha( borderColor.a * ( 1.0 - transparency ) );
+
             if( aDimmed )
             {
-                borderColor.Desaturate( );
                 borderColor = borderColor.Mix( bg, 0.5f );
+                borderColor.Desaturate( );
             }
 
             m_gal->SetIsFill( false );
@@ -1324,8 +1323,8 @@ int SCH_PAINTER::externalPinDecoSize( const LIB_PIN &aPin )
 
 
 // Draw the target (an open circle) for a pin which has no connection or is being moved.
-void SCH_PAINTER::drawPinDanglingSymbol( const VECTOR2I& aPos, const COLOR4D& aColor,
-                                         bool aDrawingShadows, bool aBrightened )
+void SCH_PAINTER::drawPinDanglingIndicator( const VECTOR2I& aPos, const COLOR4D& aColor,
+                                            bool aDrawingShadows, bool aBrightened )
 {
     // Dangling symbols must be drawn in a slightly different colour so they can be seen when
     // they overlap with a junction dot.
@@ -1334,7 +1333,7 @@ void SCH_PAINTER::drawPinDanglingSymbol( const VECTOR2I& aPos, const COLOR4D& aC
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetLineWidth( aDrawingShadows ? getShadowWidth( aBrightened )
-                                         : m_schSettings.GetDanglineSymbolThickness() );
+                                         : m_schSettings.GetDanglingIndicatorThickness() );
 
     m_gal->DrawCircle( aPos, TARGET_PIN_RADIUS );
 }
@@ -1346,6 +1345,10 @@ void SCH_PAINTER::draw( const LIB_PIN* aPin, int aLayer, bool aDimmed )
         return;
 
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     bool drawingDangling = aLayer == LAYER_DANGLING;
     bool drawingOP = aLayer == LAYER_OP_CURRENTS;
     bool isDangling = m_schSettings.m_IsSymbolEditor || aPin->HasFlag( IS_DANGLING );
@@ -1361,21 +1364,31 @@ void SCH_PAINTER::draw( const LIB_PIN* aPin, int aLayer, bool aDimmed )
         if( m_schSettings.IsPrinting() )
             return;
 
-        if( !m_schematic || eeconfig()->m_Appearance.show_hidden_pins )
+        bool force_show = m_schematic ? eeconfig()->m_Appearance.show_hidden_pins
+                                      : m_schSettings.m_ShowHiddenLibPins;
+        if( force_show )
         {
             color = getRenderColor( aPin, LAYER_HIDDEN, drawingShadows, aDimmed );
         }
         else
+        {
+            if( drawingDangling && isDangling && aPin->IsGlobalPower() )
+                drawPinDanglingIndicator( pos, color, drawingShadows, aPin->IsBrightened() );
+
             return;
+        }
     }
 
     if( drawingDangling )
     {
         if( isDangling )
-            drawPinDanglingSymbol( pos, color, drawingShadows, aPin->IsBrightened() );
+            drawPinDanglingIndicator( pos, color, drawingShadows, aPin->IsBrightened() );
 
         return;
     }
+
+    if( m_schSettings.GetDrawBoundingBoxes() )
+        drawItemBoundingBox( aPin );
 
     VECTOR2I p0;
     VECTOR2I dir;
@@ -1566,7 +1579,7 @@ void SCH_PAINTER::draw( const LIB_PIN* aPin, int aLayer, bool aDimmed )
         }
     }
 
-    LIB_SYMBOL* libEntry = aPin->GetParent();
+    const SYMBOL* libEntry = aPin->GetParentSymbol();
 
     // Draw the labels
 
@@ -1580,8 +1593,8 @@ void SCH_PAINTER::draw( const LIB_PIN* aPin, int aLayer, bool aDimmed )
     int   textOffset = libEntry->GetPinNameOffset();
     float nameStrokeWidth = getLineWidth( aPin, false );
     float numStrokeWidth = getLineWidth( aPin, false );
-    bool  showPinNames = libEntry->ShowPinNames();
-    bool  showPinNumbers = m_schSettings.m_ShowPinNumbers || libEntry->ShowPinNumbers();
+    bool  showPinNames = libEntry->GetShowPinNames();
+    bool  showPinNumbers = m_schSettings.m_ShowPinNumbers || libEntry->GetShowPinNumbers();
 
     nameStrokeWidth = Clamp_Text_PenSize( nameStrokeWidth, aPin->GetNameTextSize(), true );
     numStrokeWidth = Clamp_Text_PenSize( numStrokeWidth, aPin->GetNumberTextSize(), true );
@@ -1831,9 +1844,12 @@ void SCH_PAINTER::draw( const LIB_PIN* aPin, int aLayer, bool aDimmed )
 
 // Draw the target (an open square) for a wire or label which has no connection or is
 // being moved.
-void SCH_PAINTER::drawDanglingSymbol( const VECTOR2I& aPos, const COLOR4D& aColor, int aWidth,
-                                      bool aDangling, bool aDrawingShadows, bool aBrightened )
+void SCH_PAINTER::drawDanglingIndicator( const VECTOR2I& aPos, const COLOR4D& aColor, int aWidth,
+                                         bool aDangling, bool aDrawingShadows, bool aBrightened )
 {
+    if( m_schSettings.IsPrinting() )
+        return;
+
     int size = aDangling ? DANGLING_SYMBOL_SIZE : UNSELECTED_END_SIZE;
 
     if( !aDangling )
@@ -1848,7 +1864,7 @@ void SCH_PAINTER::drawDanglingSymbol( const VECTOR2I& aPos, const COLOR4D& aColo
     m_gal->SetIsStroke( true );
     m_gal->SetIsFill( false );
     m_gal->SetLineWidth( aDrawingShadows ? getShadowWidth( aBrightened )
-                                         : m_schSettings.GetDanglineSymbolThickness() );
+                                         : m_schSettings.GetDanglingIndicatorThickness() );
 
     m_gal->DrawRectangle( aPos - radius, aPos + radius );
 }
@@ -1857,6 +1873,9 @@ void SCH_PAINTER::drawDanglingSymbol( const VECTOR2I& aPos, const COLOR4D& aColo
 void SCH_PAINTER::draw( const SCH_JUNCTION* aJct, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
 
     if( drawingShadows && !( aJct->IsBrightened() || aJct->IsSelected() ) )
         return;
@@ -1880,6 +1899,10 @@ void SCH_PAINTER::draw( const SCH_JUNCTION* aJct, int aLayer )
 void SCH_PAINTER::draw( const SCH_LINE* aLine, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     bool drawingDangling = aLayer == LAYER_DANGLING;
     bool drawingOP = aLayer == LAYER_OP_VOLTAGES;
 
@@ -1902,10 +1925,10 @@ void SCH_PAINTER::draw( const SCH_LINE* aLine, int aLayer )
         {
             COLOR4D danglingColor =
                     ( drawingShadows && !aLine->HasFlag( STARTPOINT ) ) ? color.Inverted() : color;
-            drawDanglingSymbol( aLine->GetStartPoint(), danglingColor,
-                                KiROUND( getLineWidth( aLine, drawingShadows ) ),
-                                aLine->IsWire() && aLine->IsStartDangling(), drawingShadows,
-                                aLine->IsBrightened() );
+            drawDanglingIndicator( aLine->GetStartPoint(), danglingColor,
+                                   KiROUND( getLineWidth( aLine, drawingShadows ) ),
+                                   aLine->IsWire() && aLine->IsStartDangling(), drawingShadows,
+                                   aLine->IsBrightened() );
         }
 
         if( ( aLine->IsWire() && aLine->IsEndDangling() )
@@ -1913,10 +1936,10 @@ void SCH_PAINTER::draw( const SCH_LINE* aLine, int aLayer )
         {
             COLOR4D danglingColor =
                     ( drawingShadows && !aLine->HasFlag( ENDPOINT ) ) ? color.Inverted() : color;
-            drawDanglingSymbol( aLine->GetEndPoint(), danglingColor,
-                                KiROUND( getLineWidth( aLine, drawingShadows ) ),
-                                aLine->IsWire() && aLine->IsEndDangling(), drawingShadows,
-                                aLine->IsBrightened() );
+            drawDanglingIndicator( aLine->GetEndPoint(), danglingColor,
+                                   KiROUND( getLineWidth( aLine, drawingShadows ) ),
+                                   aLine->IsWire() && aLine->IsEndDangling(), drawingShadows,
+                                   aLine->IsBrightened() );
         }
     }
 
@@ -1983,6 +2006,10 @@ void SCH_PAINTER::draw( const SCH_LINE* aLine, int aLayer )
 void SCH_PAINTER::draw( const SCH_SHAPE* aShape, int aLayer )
 {
     bool       drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     LINE_STYLE lineStyle = aShape->GetEffectiveLineStyle();
     COLOR4D    color = getRenderColor( aShape, aLayer, drawingShadows );
 
@@ -2117,6 +2144,9 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     if( drawingShadows && !( aText->IsBrightened() || aText->IsSelected() ) )
         return;
 
@@ -2145,7 +2175,11 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
 
     if( !( aText->IsVisible() || aText->IsForceVisible() ) )
     {
-        if( !m_schematic || eeconfig()->m_Appearance.show_hidden_fields )
+        // Currently invisible texts are always shown in symbol editor
+        bool force_show = m_schematic ? eeconfig()->m_Appearance.show_hidden_fields
+                                      : true;
+
+        if( force_show )
             color = getRenderColor( aText, LAYER_HIDDEN, drawingShadows );
         else
             return;
@@ -2251,7 +2285,19 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
 
 void SCH_PAINTER::draw( const SCH_TEXTBOX* aTextBox, int aLayer )
 {
+    if( aTextBox->Type() == SCH_TABLECELL_T )
+    {
+        const SCH_TABLECELL* cell = static_cast<const SCH_TABLECELL*>( aTextBox );
+
+        if( cell->GetColSpan() == 0 || cell->GetRowSpan() == 0 )
+            return;
+    }
+
     bool          drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     COLOR4D       color = getRenderColor( aTextBox, aLayer, drawingShadows );
     float         borderWidth = getLineWidth( aTextBox, drawingShadows );
     KIFONT::FONT* font = getFont( aTextBox );
@@ -2319,7 +2365,7 @@ void SCH_PAINTER::draw( const SCH_TEXTBOX* aTextBox, int aLayer )
     {
         drawText();
 
-        if( borderWidth > 0 )
+        if( aTextBox->Type() != SCH_TABLECELL_T && borderWidth > 0 )
         {
             COLOR4D    borderColor = aTextBox->GetStroke().GetColor();
             LINE_STYLE borderStyle = aTextBox->GetEffectiveLineStyle();
@@ -2361,6 +2407,136 @@ void SCH_PAINTER::draw( const SCH_TEXTBOX* aTextBox, int aLayer )
                     delete shape;
             }
         }
+    }
+}
+
+
+void SCH_PAINTER::draw( const SCH_TABLE* aTable, int aLayer )
+{
+    for( SCH_TABLECELL* cell : aTable->GetCells() )
+        draw( static_cast<SCH_TEXTBOX*>( cell ), aLayer );
+
+    if( aLayer == LAYER_SELECTION_SHADOWS )
+        return;
+
+    VECTOR2I pos = aTable->GetPosition();
+    VECTOR2I end = aTable->GetEnd();
+
+    int        lineWidth;
+    COLOR4D    color;
+    LINE_STYLE lineStyle;
+
+    auto setupStroke =
+            [&]( const STROKE_PARAMS& stroke )
+            {
+                lineWidth = stroke.GetWidth();
+                color = stroke.GetColor();
+                lineStyle = stroke.GetLineStyle();
+
+                if( lineWidth == 0 )
+                    lineWidth = m_schSettings.GetDefaultPenWidth();
+
+                if( color == COLOR4D::UNSPECIFIED )
+                    color = m_schSettings.GetLayerColor( LAYER_NOTES );
+
+                if( lineStyle == LINE_STYLE::DEFAULT )
+                    lineStyle = LINE_STYLE::SOLID;
+
+                m_gal->SetIsFill( false );
+                m_gal->SetIsStroke( true );
+                m_gal->SetStrokeColor( color );
+                m_gal->SetLineWidth( lineWidth );
+            };
+
+    auto strokeShape =
+            [&]( const SHAPE& shape )
+            {
+                STROKE_PARAMS::Stroke( &shape, lineStyle, lineWidth, &m_schSettings,
+                        [&]( const VECTOR2I& a, const VECTOR2I& b )
+                        {
+                            // DrawLine has problem with 0 length lines so enforce minimum
+                            if( a == b )
+                                m_gal->DrawLine( a+1, b );
+                            else
+                                m_gal->DrawLine( a, b );
+                        } );
+            };
+
+    auto strokeLine =
+            [&]( const VECTOR2I& ptA, const VECTOR2I& ptB )
+            {
+                if( lineStyle <= LINE_STYLE::FIRST_TYPE )
+                {
+                    m_gal->DrawLine( ptA, ptB );
+                }
+                else
+                {
+                    SHAPE_SEGMENT seg( ptA, ptB );
+                    strokeShape( seg );
+                }
+            };
+
+    auto strokeRect =
+            [&]( const VECTOR2I& ptA, const VECTOR2I& ptB )
+            {
+                if( lineStyle <= LINE_STYLE::FIRST_TYPE )
+                {
+                    m_gal->DrawRectangle( ptA, ptB );
+                }
+                else
+                {
+                    SHAPE_RECT rect( BOX2I( ptA, ptB - ptA ) );
+                    strokeShape( rect );
+                }
+            };
+
+    if( aTable->GetSeparatorsStroke().GetWidth() >= 0 )
+    {
+        setupStroke( aTable->GetSeparatorsStroke() );
+
+        if( aTable->StrokeColumns() )
+        {
+            for( int col = 0; col < aTable->GetColCount() - 1; ++col )
+            {
+                for( int row = 0; row < aTable->GetRowCount(); ++row )
+                {
+                    SCH_TABLECELL* cell = aTable->GetCell( row, col );
+                    VECTOR2I       topRight( cell->GetEndX(), cell->GetStartY() );
+
+                    if( cell->GetColSpan() > 0 && cell->GetRowSpan() > 0 )
+                        strokeLine( topRight, cell->GetEnd() );
+                }
+            }
+        }
+
+        if( aTable->StrokeRows() )
+        {
+            for( int row = 0; row < aTable->GetRowCount() - 1; ++row )
+            {
+                for( int col = 0; col < aTable->GetColCount(); ++col )
+                {
+                    SCH_TABLECELL* cell = aTable->GetCell( row, col );
+                    VECTOR2I       botLeft( cell->GetStartX(), cell->GetEndY() );
+
+                    if( cell->GetColSpan() > 0 && cell->GetRowSpan() > 0 )
+                        strokeLine( botLeft, cell->GetEnd() );
+                }
+            }
+        }
+    }
+
+    if( aTable->GetBorderStroke().GetWidth() >= 0 )
+    {
+        setupStroke( aTable->GetBorderStroke() );
+
+        if( aTable->StrokeHeader() )
+        {
+            SCH_TABLECELL* cell = aTable->GetCell( 0, 0 );
+            strokeLine( VECTOR2I( pos.x, cell->GetEndY() ), VECTOR2I( end.x, cell->GetEndY() ) );
+        }
+
+        if( aTable->StrokeExternal() )
+            strokeRect( pos, end );
     }
 }
 
@@ -2407,10 +2583,10 @@ static void orientSymbol( LIB_SYMBOL* symbol, int orientation )
             item.Rotate( VECTOR2I(0, 0 ), true );
 
         if( o.mirror_x )
-            item.MirrorVertical( VECTOR2I( 0, 0 ) );
+            item.MirrorVertically( 0 );
 
         if( o.mirror_y )
-            item.MirrorHorizontal( VECTOR2I( 0, 0 ) );
+            item.MirrorHorizontally( 0 );
     }
 }
 
@@ -2432,6 +2608,9 @@ void SCH_PAINTER::draw( const SCH_SYMBOL* aSymbol, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     if( !drawingShadows || eeconfig()->m_Selection.draw_selected_children )
     {
         for( const SCH_FIELD& field : aSymbol->GetFields() )
@@ -2448,18 +2627,18 @@ void SCH_PAINTER::draw( const SCH_SYMBOL* aSymbol, int aLayer )
     }
 
     int unit = aSymbol->GetUnitSelection( &m_schematic->CurrentSheet() );
-    int convert = aSymbol->GetConvert();
+    int bodyStyle = aSymbol->GetBodyStyle();
 
     // Use dummy symbol if the actual couldn't be found (or couldn't be locked).
     LIB_SYMBOL* originalSymbol = aSymbol->GetLibSymbolRef() ?
                                  aSymbol->GetLibSymbolRef().get() : dummy();
     LIB_PINS  originalPins;
-    originalSymbol->GetPins( originalPins, unit, convert );
+    originalSymbol->GetPins( originalPins, unit, bodyStyle );
 
     // Copy the source so we can re-orient and translate it.
     LIB_SYMBOL tempSymbol( *originalSymbol );
     LIB_PINS tempPins;
-    tempSymbol.GetPins( tempPins, unit, convert );
+    tempSymbol.GetPins( tempPins, unit, bodyStyle );
 
     tempSymbol.SetFlags( aSymbol->GetFlags() );
 
@@ -2508,7 +2687,7 @@ void SCH_PAINTER::draw( const SCH_SYMBOL* aSymbol, int aLayer )
         tempPin->SetOperatingPoint( symbolPin->GetOperatingPoint() );
     }
 
-    draw( &tempSymbol, aLayer, false, aSymbol->GetUnit(), aSymbol->GetConvert(), aSymbol->GetDNP() );
+    draw( &tempSymbol, aLayer, false, aSymbol->GetUnit(), aSymbol->GetBodyStyle(), aSymbol->GetDNP() );
 
     for( unsigned i = 0; i < tempPins.size(); ++i )
     {
@@ -2554,6 +2733,9 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer, bool aDimmed )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     if( drawingShadows && !( aField->IsBrightened() || aField->IsSelected() ) )
         return;
 
@@ -2584,11 +2766,11 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer, bool aDimmed )
     {
         if( static_cast<SCH_SYMBOL*>( aField->GetParent() )->GetTransform().y1 )
         {
-        // Rotate symbol 90 degrees.
-        if( orient.IsHorizontal() )
-            orient = ANGLE_VERTICAL;
-        else
-            orient = ANGLE_HORIZONTAL;
+            // Rotate symbol 90 degrees.
+            if( orient.IsHorizontal() )
+                orient = ANGLE_VERTICAL;
+            else
+                orient = ANGLE_HORIZONTAL;
         }
     }
 
@@ -2611,14 +2793,7 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer, bool aDimmed )
     }
 
     if( m_schSettings.GetDrawBoundingBoxes() )
-    {
-        m_gal->SetIsFill( false );
-        m_gal->SetIsStroke( true );
-        m_gal->SetStrokeColor( aField->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 )
-                                                    : COLOR4D( 0.2, 0.2, 0.2, 1 ) );
-        m_gal->SetLineWidth( schIUScale.MilsToIU( 3 ) );
-        m_gal->DrawRectangle( bbox.GetOrigin(), bbox.GetEnd() );
-    }
+        drawItemBoundingBox( aField );
 
     m_gal->SetStrokeColor( color );
     m_gal->SetFillColor( color );
@@ -2684,7 +2859,7 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer, bool aDimmed )
     {
         VECTOR2I parentPos = aField->GetParentPosition();
 
-        m_gal->SetLineWidth( m_schSettings.m_outlineWidth );
+        m_gal->SetLineWidth( m_schSettings.GetOutlineWidth() );
         m_gal->SetStrokeColor( getRenderColor( aField, LAYER_SCHEMATIC_ANCHOR, drawingShadows ) );
         m_gal->DrawLine( bbox.Centre(), parentPos );
     }
@@ -2694,6 +2869,10 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer, bool aDimmed )
 void SCH_PAINTER::draw( const SCH_GLOBALLABEL* aLabel, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     bool drawingDangling = aLayer == LAYER_DANGLING;
 
     if( !drawingShadows || eeconfig()->m_Selection.draw_selected_children )
@@ -2714,9 +2893,9 @@ void SCH_PAINTER::draw( const SCH_GLOBALLABEL* aLabel, int aLayer )
     {
         if( aLabel->IsDangling() )
         {
-            drawDanglingSymbol( aLabel->GetTextPos(), color,
-                                schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
-                                drawingShadows, aLabel->IsBrightened() );
+            drawDanglingIndicator( aLabel->GetTextPos(), color,
+                                   schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
+                                   drawingShadows, aLabel->IsBrightened() );
         }
 
         return;
@@ -2753,6 +2932,10 @@ void SCH_PAINTER::draw( const SCH_GLOBALLABEL* aLabel, int aLayer )
 void SCH_PAINTER::draw( const SCH_LABEL* aLabel, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     bool drawingDangling = aLayer == LAYER_DANGLING;
 
     if( !drawingShadows || eeconfig()->m_Selection.draw_selected_children )
@@ -2773,9 +2956,9 @@ void SCH_PAINTER::draw( const SCH_LABEL* aLabel, int aLayer )
     {
         if( aLabel->IsDangling() )
         {
-            drawDanglingSymbol( aLabel->GetTextPos(), color,
-                                schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
-                                drawingShadows, aLabel->IsBrightened() );
+            drawDanglingIndicator( aLabel->GetTextPos(), color,
+                                   schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
+                                   drawingShadows, aLabel->IsBrightened() );
         }
 
         return;
@@ -2788,6 +2971,10 @@ void SCH_PAINTER::draw( const SCH_LABEL* aLabel, int aLayer )
 void SCH_PAINTER::draw( const SCH_HIERLABEL* aLabel, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     bool drawingDangling = aLayer == LAYER_DANGLING;
 
     if( !( drawingShadows || drawingDangling ) || eeconfig()->m_Selection.draw_selected_children )
@@ -2808,9 +2995,9 @@ void SCH_PAINTER::draw( const SCH_HIERLABEL* aLabel, int aLayer )
     {
         if( aLabel->IsDangling() )
         {
-            drawDanglingSymbol( aLabel->GetTextPos(), color,
-                                schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
-                                drawingShadows, aLabel->IsBrightened() );
+            drawDanglingIndicator( aLabel->GetTextPos(), color,
+                                   schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
+                                   drawingShadows, aLabel->IsBrightened() );
         }
 
         return;
@@ -2853,6 +3040,9 @@ void SCH_PAINTER::draw( const SCH_DIRECTIVE_LABEL* aLabel, int aLayer )
 
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     if( !drawingShadows || eeconfig()->m_Selection.draw_selected_children )
     {
         for( const SCH_FIELD& field : aLabel->GetFields() )
@@ -2871,9 +3061,9 @@ void SCH_PAINTER::draw( const SCH_DIRECTIVE_LABEL* aLabel, int aLayer )
     {
         if( aLabel->IsDangling() )
         {
-            drawDanglingSymbol( aLabel->GetTextPos(), color,
-                                schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
-                                drawingShadows, aLabel->IsBrightened() );
+            drawDanglingIndicator( aLabel->GetTextPos(), color,
+                                   schIUScale.MilsToIU( DANGLING_SYMBOL_SIZE / 2 ), true,
+                                   drawingShadows, aLabel->IsBrightened() );
         }
 
         return;
@@ -2914,6 +3104,9 @@ void SCH_PAINTER::draw( const SCH_DIRECTIVE_LABEL* aLabel, int aLayer )
 void SCH_PAINTER::draw( const SCH_SHEET* aSheet, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
 
     if( !drawingShadows || eeconfig()->m_Selection.draw_selected_children )
     {
@@ -2960,6 +3153,9 @@ void SCH_PAINTER::draw( const SCH_NO_CONNECT* aNC, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     if( drawingShadows && !( aNC->IsBrightened() || aNC->IsSelected() ) )
         return;
 
@@ -2981,6 +3177,10 @@ void SCH_PAINTER::draw( const SCH_BUS_ENTRY_BASE *aEntry, int aLayer )
     SCH_LAYER_ID layer = aEntry->Type() == SCH_BUS_WIRE_ENTRY_T ? LAYER_WIRE : LAYER_BUS;
     SCH_LINE     line( VECTOR2I(), layer );
     bool         drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
+
     bool         drawingDangling = aLayer == LAYER_DANGLING;
 
     if( drawingShadows && !( aEntry->IsBrightened() || aEntry->IsSelected() ) )
@@ -3010,8 +3210,7 @@ void SCH_PAINTER::draw( const SCH_BUS_ENTRY_BASE *aEntry, int aLayer )
         m_gal->SetIsFill( false );
         m_gal->SetIsStroke( true );
         m_gal->SetStrokeColor( color.Brightened( 0.3 ) );
-        m_gal->SetLineWidth( drawingShadows ? getShadowWidth( aEntry->IsBrightened() )
-                                            : m_schSettings.GetDanglineSymbolThickness() );
+        m_gal->SetLineWidth( m_schSettings.GetDanglingIndicatorThickness() );
 
         if( aEntry->IsDanglingStart() )
         {
@@ -3083,6 +3282,9 @@ void SCH_PAINTER::draw( const SCH_BITMAP* aBitmap, int aLayer )
 void SCH_PAINTER::draw( const SCH_MARKER* aMarker, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+
+    if( m_schSettings.IsPrinting() && drawingShadows )
+        return;
 
     if( drawingShadows && !( aMarker->IsBrightened() || aMarker->IsSelected() ) )
         return;

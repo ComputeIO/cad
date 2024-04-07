@@ -211,6 +211,7 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
     editMenu->Add( PCB_ACTIONS::editTeardrops );
     editMenu->Add( PCB_ACTIONS::changeFootprints );
     editMenu->Add( PCB_ACTIONS::swapLayers );
+    editMenu->Add( ACTIONS::gridOrigin );
 
     editMenu->AppendSeparator();
     editMenu->Add( PCB_ACTIONS::zoneFillAll );
@@ -279,6 +280,7 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
     viewMenu->Add( ACTIONS::showProperties,                 ACTION_MENU::CHECK );
     viewMenu->Add( PCB_ACTIONS::showSearch,                 ACTION_MENU::CHECK );
     viewMenu->Add( PCB_ACTIONS::showLayersManager,          ACTION_MENU::CHECK );
+    viewMenu->Add( PCB_ACTIONS::showNetInspector,           ACTION_MENU::CHECK );
 
 #ifdef __APPLE__
     viewMenu->AppendSeparator();
@@ -312,6 +314,7 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
     placeMenu->Add( PCB_ACTIONS::placeReferenceImage );
     placeMenu->Add( PCB_ACTIONS::placeText );
     placeMenu->Add( PCB_ACTIONS::drawTextBox );
+    placeMenu->Add( PCB_ACTIONS::drawTable );
 
     placeMenu->AppendSeparator();
     ACTION_MENU* dimensionSubmenu = new ACTION_MENU( false, selTool );
@@ -356,7 +359,8 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
     routeMenu->Add( PCB_ACTIONS::routeDiffPair );
 
     routeMenu->AppendSeparator();
-    routeMenu->Add( PCB_ACTIONS::tuneLength );
+    routeMenu->Add( PCB_ACTIONS::tuneSingleTrack );
+    routeMenu->Add( PCB_ACTIONS::tuneDiffPair );
     routeMenu->Add( PCB_ACTIONS::tuneSkew );
 
     routeMenu->AppendSeparator();
@@ -367,7 +371,6 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
     //
     ACTION_MENU* inspectMenu = new ACTION_MENU( false, selTool );
 
-    inspectMenu->Add( PCB_ACTIONS::listNets );
     inspectMenu->Add( PCB_ACTIONS::boardStatistics );
     inspectMenu->Add( ACTIONS::measureTool );
 
@@ -400,6 +403,10 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
     toolsMenu->Add( ACTIONS::showFootprintEditor );
     toolsMenu->Add( PCB_ACTIONS::updateFootprints );
 
+    //Zones management
+    toolsMenu->AppendSeparator();
+    toolsMenu->Add( PCB_ACTIONS::zonesManager );
+
     if( ADVANCED_CFG::GetCfg().m_EnableGenerators )
     {
         toolsMenu->AppendSeparator();
@@ -429,7 +436,7 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
     submenuActionPlugins->SetTitle( _( "External Plugins" ) );
     submenuActionPlugins->SetIcon( BITMAPS::puzzle_piece );
 
-    submenuActionPlugins->Add( PCB_ACTIONS::pluginsReload );
+    submenuActionPlugins->Add( ACTIONS::pluginsReload );
     submenuActionPlugins->Add( PCB_ACTIONS::pluginsShowFolder );
 
     // Populate the Action Plugin sub-menu: Must be done before Add

@@ -97,14 +97,17 @@ public:
 
     VECTOR2I GetPosition() const override { return EDA_TEXT::GetTextPos(); }
 
-    void MirrorHorizontal( const VECTOR2I& aCenter ) override;
-    void MirrorVertical( const VECTOR2I& aCenter ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
     void Rotate( const VECTOR2I& aCenter, bool aRotateCCW = true ) override;
 
     void NormalizeJustification( bool inverse );
 
-    void Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffset,
-               const TRANSFORM& aTransform, bool aDimmed ) const override;
+    void Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                const VECTOR2I& aOffset, bool aForceNoFill, bool aDimmed ) override;
+
+    void Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS& aPlotOpts,
+               int aUnit, int aBodyStyle, const VECTOR2I& aOffset, bool aDimmed ) override;
 
     wxString GetItemDescription( UNITS_PROVIDER* aUnitsProvider ) const override;
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) override;
@@ -129,9 +132,6 @@ private:
      *      - Text height.
      */
     int compare( const LIB_ITEM& aOther, int aCompareFlags = 0 ) const override;
-
-    void print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                const TRANSFORM& aTransform, bool aDimmed ) override;
 };
 
 

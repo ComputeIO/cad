@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2023 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2024 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,6 +33,9 @@
 #include <sch_symbol.h>
 #include <sch_sheet_path.h>
 #include <schematic.h>
+#include <sim/sim_model.h>
+#include <sim/spice_generator.h>
+#include <sim/sim_lib_mgr.h>
 #include <trace_helpers.h>
 #include <trigo.h>
 #include <refdes_utils.h>
@@ -97,7 +100,7 @@ static LIB_SYMBOL* dummy()
 
 
 SCH_SYMBOL::SCH_SYMBOL() :
-    SCH_ITEM( nullptr, SCH_SYMBOL_T )
+    SYMBOL( nullptr, SCH_SYMBOL_T )
 {
     m_DNP = false;
     Init( VECTOR2I( 0, 0 ) );
@@ -105,14 +108,14 @@ SCH_SYMBOL::SCH_SYMBOL() :
 
 
 SCH_SYMBOL::SCH_SYMBOL( const LIB_SYMBOL& aSymbol, const LIB_ID& aLibId,
-                        const SCH_SHEET_PATH* aSheet, int aUnit, int aConvert,
+                        const SCH_SHEET_PATH* aSheet, int aUnit, int aBodyStyle,
                         const VECTOR2I& aPosition, EDA_ITEM* aParent ) :
-    SCH_ITEM( aParent, SCH_SYMBOL_T )
+    SYMBOL( aParent, SCH_SYMBOL_T )
 {
     Init( aPosition );
 
     m_unit      = aUnit;
-    m_convert   = aConvert;
+    m_bodyStyle = aBodyStyle;
     m_lib_id    = aLibId;
 
     std::unique_ptr< LIB_SYMBOL > part;
@@ -161,17 +164,14 @@ SCH_SYMBOL::SCH_SYMBOL( const LIB_SYMBOL& aSymbol, const SCH_SHEET_PATH* aSheet,
 
 
 SCH_SYMBOL::SCH_SYMBOL( const SCH_SYMBOL& aSymbol ) :
-    SCH_ITEM( aSymbol )
+    SYMBOL( aSymbol )
 {
     m_parent      = aSymbol.m_parent;
     m_pos         = aSymbol.m_pos;
     m_unit        = aSymbol.m_unit;
-    m_convert     = aSymbol.m_convert;
+    m_bodyStyle   = aSymbol.m_bodyStyle;
     m_lib_id      = aSymbol.m_lib_id;
     m_isInNetlist = aSymbol.m_isInNetlist;
-    m_excludedFromSim = aSymbol.m_excludedFromSim;
-    m_excludedFromBOM = aSymbol.m_excludedFromBOM;
-    m_excludedFromBoard = aSymbol.m_excludedFromBoard;
     m_DNP         = aSymbol.m_DNP;
 
     const_cast<KIID&>( m_Uuid ) = aSymbol.m_Uuid;
@@ -204,10 +204,10 @@ SCH_SYMBOL::SCH_SYMBOL( const SCH_SYMBOL& aSymbol ) :
 
 void SCH_SYMBOL::Init( const VECTOR2I& pos )
 {
-    m_layer   = LAYER_DEVICE;
-    m_pos     = pos;
-    m_unit    = 1;  // In multi unit chip - which unit to draw.
-    m_convert = LIB_ITEM::LIB_CONVERT::BASE;  // De Morgan Handling
+    m_layer     = LAYER_DEVICE;
+    m_pos       = pos;
+    m_unit      = 1;  // In multi unit chip - which unit to draw.
+    m_bodyStyle = LIB_ITEM::BODY_STYLE::BASE;  // De Morgan Handling
 
     // The rotation/mirror transformation matrix. pos normal
     m_transform = TRANSFORM();
@@ -245,21 +245,6 @@ bool SCH_SYMBOL::IsMissingLibSymbol() const
         return true;
 
     return false;
-}
-
-
-void SCH_SYMBOL::ViewGetLayers( int aLayers[], int& aCount ) const
-{
-    aCount     = 8;
-    aLayers[0] = LAYER_DANGLING;       // Pins are drawn by their parent symbol, so the parent
-                                       // symbol needs to draw to LAYER_DANGLING
-    aLayers[1] = LAYER_OP_CURRENTS;    // Same for pin operating points
-    aLayers[2] = LAYER_DEVICE;
-    aLayers[3] = LAYER_REFERENCEPART;
-    aLayers[4] = LAYER_VALUEPART;
-    aLayers[5] = LAYER_FIELDS;
-    aLayers[6] = LAYER_DEVICE_BACKGROUND;
-    aLayers[7] = LAYER_SELECTION_SHADOWS;
 }
 
 
@@ -350,6 +335,8 @@ void SCH_SYMBOL::UpdatePins()
 
         if( !pin->GetAlt().IsEmpty() )
             altPinMap[ pin->GetNumber() ] = pin->GetAlt();
+
+        pin->SetLibPin( nullptr );
     }
 
     m_pinMap.clear();
@@ -363,7 +350,7 @@ void SCH_SYMBOL::UpdatePins()
     {
         // NW: Don't filter by unit: this data-structure is used for all instances,
         // some of which might have different units.
-        if( libPin->GetConvert() && m_convert && m_convert != libPin->GetConvert() )
+        if( libPin->GetBodyStyle() && m_bodyStyle && m_bodyStyle != libPin->GetBodyStyle() )
             continue;
 
         SCH_PIN* pin = nullptr;
@@ -436,30 +423,35 @@ void SCH_SYMBOL::UpdatePins()
             ++it1;
         }
     }
-}
 
-
-void SCH_SYMBOL::SetUnit( int aUnit )
-{
-    UpdateUnit( aUnit );
-}
-
-
-void SCH_SYMBOL::UpdateUnit( int aUnit )
-{
-    m_unit = aUnit;
-}
-
-
-void SCH_SYMBOL::SetConvert( int aConvert )
-{
-    if( m_convert != aConvert )
+    // If the symbol is selected, then its pins are selected.
+    if( IsSelected() )
     {
-        m_convert = aConvert;
+        for( std::unique_ptr<SCH_PIN>& pin : m_pins )
+            pin->SetSelected();
+    }
+
+}
+
+
+void SCH_SYMBOL::SetBodyStyle( int aBodyStyle )
+{
+    if( m_bodyStyle != aBodyStyle )
+    {
+        m_bodyStyle = aBodyStyle;
 
         // The convert may have a different pin layout so the update the pin map.
         UpdatePins();
     }
+}
+
+
+bool SCH_SYMBOL::HasAlternateBodyStyle() const
+{
+    if( m_part )
+        return m_part->HasAlternateBodyStyle();
+
+    return false;
 }
 
 
@@ -495,33 +487,41 @@ bool SCH_SYMBOL::HasUnitDisplayName( int aUnit )
 }
 
 
-void SCH_SYMBOL::PrintBackground( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset )
+void SCH_SYMBOL::PrintBackground( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                                  const VECTOR2I& aOffset, bool aDimmed )
 {
-    LIB_SYMBOL_OPTIONS opts;
-    opts.transform = m_transform;
-    opts.draw_visible_fields = false;
-    opts.draw_hidden_fields = false;
+    SCH_RENDER_SETTINGS cfg( *aSettings );
+    cfg.m_Transform = m_transform;
+    cfg.m_ShowVisibleLibFields = false;
+    cfg.m_ShowHiddenLibFields = false;
+
+    if( GetDNP() )
+        aDimmed = true;
 
     if( m_part )
-        m_part->PrintBackground( aSettings, m_pos + aOffset, m_unit, m_convert, opts, GetDNP() );
+        m_part->PrintBackground( &cfg, m_unit, m_bodyStyle, m_pos + aOffset, aDimmed );
 }
 
 
-void SCH_SYMBOL::Print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset )
+void SCH_SYMBOL::Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                        const VECTOR2I& aOffset, bool aForceNoFill, bool aDimmed )
 {
-    LIB_SYMBOL_OPTIONS opts;
-    opts.transform = m_transform;
-    opts.draw_visible_fields = false;
-    opts.draw_hidden_fields = false;
+    SCH_RENDER_SETTINGS cfg( *aSettings );
+    cfg.m_Transform = m_transform;
+    cfg.m_ShowVisibleLibFields = false;
+    cfg.m_ShowHiddenLibFields = false;
+
+    if( m_DNP )
+        aDimmed = true;
 
     if( m_part )
     {
         LIB_PINS  libPins;
-        m_part->GetPins( libPins, m_unit, m_convert );
+        m_part->GetPins( libPins, m_unit, m_bodyStyle );
 
         LIB_SYMBOL tempSymbol( *m_part );
         LIB_PINS tempPins;
-        tempSymbol.GetPins( tempPins, m_unit, m_convert );
+        tempSymbol.GetPins( tempPins, m_unit, m_bodyStyle );
 
         // Copy the pin info from the symbol to the temp pins
         for( unsigned i = 0; i < tempPins.size(); ++ i )
@@ -545,21 +545,21 @@ void SCH_SYMBOL::Print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffse
             }
         }
 
-        tempSymbol.Print( aSettings, m_pos + aOffset, m_unit, m_convert, opts, GetDNP() );
+        tempSymbol.Print( &cfg, m_unit, m_bodyStyle, m_pos + aOffset, false, aDimmed );
     }
     else    // Use dummy() part if the actual cannot be found.
     {
-        dummy()->Print( aSettings, m_pos + aOffset, 0, 0, opts, GetDNP() );
+        dummy()->Print( &cfg, 0, 0, m_pos + aOffset, aForceNoFill, aDimmed );
     }
 
     for( SCH_FIELD& field : m_fields )
-        field.Print( aSettings, aOffset );
+        field.Print( &cfg, m_unit, m_bodyStyle, aOffset, aForceNoFill, aDimmed );
 
     if( m_DNP )
     {
         BOX2I bbox = GetBodyAndPinsBoundingBox();
-        wxDC* DC = aSettings->GetPrintDC();
-        COLOR4D dnp_color = aSettings->GetLayerColor( LAYER_DNP_MARKER );
+        wxDC* DC = cfg.GetPrintDC();
+        COLOR4D dnp_color = cfg.GetLayerColor( LAYER_DNP_MARKER );
 
         GRFilledSegment( DC, bbox.GetOrigin(), bbox.GetEnd(),
                              3.0 * schIUScale.MilsToIU( DEFAULT_LINE_WIDTH_MILS ),
@@ -813,7 +813,7 @@ void SCH_SYMBOL::SetRef( const SCH_SHEET_PATH* sheet, const wxString& ref )
 }
 
 
-bool SCH_SYMBOL::IsAnnotated( const SCH_SHEET_PATH* aSheet )
+bool SCH_SYMBOL::IsAnnotated( const SCH_SHEET_PATH* aSheet ) const
 {
     KIID_PATH path = aSheet->Path();
 
@@ -905,7 +905,7 @@ void SCH_SYMBOL::SetUnitSelection( int aUnitSelection )
 }
 
 
-const wxString SCH_SYMBOL::GetValueFieldText( bool aResolve, const SCH_SHEET_PATH* aPath,
+const wxString SCH_SYMBOL::GetValue( bool aResolve, const SCH_SHEET_PATH* aPath,
                                               bool aAllowExtraText ) const
 {
     if( aResolve )
@@ -1137,7 +1137,7 @@ SCH_PIN* SCH_SYMBOL::GetPin( const wxString& aNumber ) const
 void SCH_SYMBOL::GetLibPins( std::vector<LIB_PIN*>& aPinsList ) const
 {
     if( m_part )
-        m_part->GetPins( aPinsList, m_unit, m_convert );
+        m_part->GetPins( aPinsList, m_unit, m_bodyStyle );
 }
 
 
@@ -1179,8 +1179,11 @@ std::vector<SCH_PIN*> SCH_SYMBOL::GetPins( const SCH_SHEET_PATH* aSheet ) const
 
     for( const std::unique_ptr<SCH_PIN>& p : m_pins )
     {
-        if( unit && p->GetLibPin()->GetUnit() && ( p->GetLibPin()->GetUnit() != unit ) )
+        if( unit && p->GetLibPin() && p->GetLibPin()->GetUnit()
+            && ( p->GetLibPin()->GetUnit() != unit ) )
+        {
             continue;
+        }
 
         pins.push_back( p.get() );
     }
@@ -1216,7 +1219,7 @@ void SCH_SYMBOL::SwapData( SCH_ITEM* aItem )
 
     std::swap( m_pos, symbol->m_pos );
     std::swap( m_unit, symbol->m_unit );
-    std::swap( m_convert, symbol->m_convert );
+    std::swap( m_bodyStyle, symbol->m_bodyStyle );
 
     m_fields.swap( symbol->m_fields );    // std::vector's swap()
 
@@ -1272,7 +1275,7 @@ bool SCH_SYMBOL::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* token, i
 {
     static wxRegEx operatingPoint( wxT( "^"
                                         "OP"
-                                        "(:[a-zA-Z]*)?"            // port
+                                        "(:[^.]*)?"                // pin
                                         "(.([0-9])?([a-zA-Z]*))?"  // format
                                         "$" ) );
 
@@ -1285,26 +1288,66 @@ bool SCH_SYMBOL::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* token, i
 
     if( operatingPoint.Matches( *token ) )
     {
-        wxString port( operatingPoint.GetMatch( *token, 1 ) );
+        wxString pin( operatingPoint.GetMatch( *token, 1 ).Lower() );
         wxString precisionStr( operatingPoint.GetMatch( *token, 3 ) );
         wxString range( operatingPoint.GetMatch( *token, 4 ) );
-
-        wxString signal = GetRef( aPath ) + port;
         int      precision = 3;
 
         if( !precisionStr.IsEmpty() )
             precision = precisionStr[0] - '0';
 
         if( range.IsEmpty() )
+            range = wxS( "~A" );
+
+        SIM_LIB_MGR   simLibMgr( &schematic->Prj() );
+        NULL_REPORTER devnull;
+        SIM_MODEL&    model = simLibMgr.CreateModel( aPath, const_cast<SCH_SYMBOL&>( *this ),
+                                                     devnull ).model;
+        SPICE_ITEM spiceItem;
+        spiceItem.refName = GetRef( aPath );
+
+        wxString spiceRef = model.SpiceGenerator().ItemName( spiceItem );
+        spiceRef = spiceRef.Lower();
+
+        if( pin.IsEmpty() )
         {
-            if( port == wxS( ":power" ) )
+            *token = schematic->GetOperatingPoint( spiceRef, precision, range );
+            return true;
+        }
+        else if( pin == wxS( ":power" ) )
+        {
+            if( range.IsEmpty() )
                 range = wxS( "~W" );
-            else
-                range = wxS( "~A" );
+
+            *token = schematic->GetOperatingPoint( spiceRef + wxS( ":power" ), precision, range );
+            return true;
+        }
+        else
+        {
+            pin = pin.SubString( 1, -1 );   // Strip ':' from front
+
+            for( const std::reference_wrapper<const SIM_MODEL::PIN>& modelPin : model.GetPins() )
+            {
+                SCH_PIN* symbolPin = GetPin( modelPin.get().symbolPinNumber );
+
+                if( pin == symbolPin->GetName().Lower() || pin == symbolPin->GetNumber().Lower() )
+                {
+                    if( model.GetPins().size() == 2 )
+                    {
+                        *token = schematic->GetOperatingPoint( spiceRef, precision, range );
+                    }
+                    else
+                    {
+                        wxString signalName = spiceRef + wxS( ":" ) + modelPin.get().name;
+                        *token = schematic->GetOperatingPoint( signalName, precision, range );
+                    }
+
+                    return true;
+                }
+            }
         }
 
-        *token = schematic->GetOperatingPoint( signal.Lower(), precision, range );
-
+        *token = wxS( "?" );
         return true;
     }
 
@@ -1335,6 +1378,18 @@ bool SCH_SYMBOL::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* token, i
             *token = m_fields[ i ].GetShownText( aPath, false, aDepth + 1 );
             return true;
         }
+    }
+
+    // Consider missing simulation fields as empty, not un-resolved
+    if( token->IsSameAs( wxT( "SIM.DEVICE" ) )
+            || token->IsSameAs( wxT( "SIM.TYPE" ) )
+            || token->IsSameAs( wxT( "SIM.PINS" ) )
+            || token->IsSameAs( wxT( "SIM.PARAMS" ) )
+            || token->IsSameAs( wxT( "SIM.LIBRARY" ) )
+            || token->IsSameAs( wxT( "SIM.NAME" ) ) )
+    {
+        *token = wxEmptyString;
+        return true;
     }
 
     for( const TEMPLATE_FIELDNAME& templateFieldname :
@@ -1596,6 +1651,12 @@ void SCH_SYMBOL::SetOrientation( int aOrientation )
         SetOrientation( SYM_MIRROR_Y );
         break;
 
+    case ( SYM_ORIENT_0 + SYM_MIRROR_X + SYM_MIRROR_Y ):
+        SetOrientation( SYM_ORIENT_0 );
+        SetOrientation( SYM_MIRROR_X );
+        SetOrientation( SYM_MIRROR_Y );
+        break;
+
     case ( SYM_ORIENT_90 + SYM_MIRROR_X ):
         SetOrientation( SYM_ORIENT_90 );
         SetOrientation( SYM_MIRROR_X );
@@ -1603,6 +1664,12 @@ void SCH_SYMBOL::SetOrientation( int aOrientation )
 
     case ( SYM_ORIENT_90 + SYM_MIRROR_Y ):
         SetOrientation( SYM_ORIENT_90 );
+        SetOrientation( SYM_MIRROR_Y );
+        break;
+
+    case ( SYM_ORIENT_90 + SYM_MIRROR_X + SYM_MIRROR_Y ):
+        SetOrientation( SYM_ORIENT_90 );
+        SetOrientation( SYM_MIRROR_X );
         SetOrientation( SYM_MIRROR_Y );
         break;
 
@@ -1616,6 +1683,12 @@ void SCH_SYMBOL::SetOrientation( int aOrientation )
         SetOrientation( SYM_MIRROR_Y );
         break;
 
+    case ( SYM_ORIENT_180 + SYM_MIRROR_X + SYM_MIRROR_Y ):
+        SetOrientation( SYM_ORIENT_180 );
+        SetOrientation( SYM_MIRROR_X );
+        SetOrientation( SYM_MIRROR_Y );
+        break;
+
     case ( SYM_ORIENT_270 + SYM_MIRROR_X ):
         SetOrientation( SYM_ORIENT_270 );
         SetOrientation( SYM_MIRROR_X );
@@ -1623,6 +1696,12 @@ void SCH_SYMBOL::SetOrientation( int aOrientation )
 
     case ( SYM_ORIENT_270 + SYM_MIRROR_Y ):
         SetOrientation( SYM_ORIENT_270 );
+        SetOrientation( SYM_MIRROR_Y );
+        break;
+
+    case ( SYM_ORIENT_270 + SYM_MIRROR_X + SYM_MIRROR_Y ):
+        SetOrientation( SYM_ORIENT_270 );
+        SetOrientation( SYM_MIRROR_X );
         SetOrientation( SYM_MIRROR_Y );
         break;
 
@@ -1710,7 +1789,7 @@ void SCH_SYMBOL::Show( int nestLevel, std::ostream& os ) const
     NestedSpace( nestLevel, os ) << '<' << GetClass().Lower().mb_str()
                                  << " ref=\"" << TO_UTF8( GetField( REFERENCE_FIELD )->GetName() )
                                  << '"' << " chipName=\""
-                                 << GetLibId().Format() << '"' << m_pos
+                                 << GetLibId().Format().wx_str() << '"' << m_pos
                                  << " layer=\"" << m_layer
                                  << '"' << ">\n";
 
@@ -1739,9 +1818,9 @@ BOX2I SCH_SYMBOL::doGetBoundingBox( bool aIncludePins, bool aIncludeFields ) con
     BOX2I    bBox;
 
     if( m_part )
-        bBox = m_part->GetBodyBoundingBox( m_unit, m_convert, aIncludePins, false );
+        bBox = m_part->GetBodyBoundingBox( m_unit, m_bodyStyle, aIncludePins, false );
     else
-        bBox = dummy()->GetBodyBoundingBox( m_unit, m_convert, aIncludePins, false );
+        bBox = dummy()->GetBodyBoundingBox( m_unit, m_bodyStyle, aIncludePins, false );
 
     int x0 = bBox.GetX();
     int xm = bBox.GetRight();
@@ -1965,13 +2044,13 @@ void SCH_SYMBOL::MirrorVertically( int aCenter )
 }
 
 
-void SCH_SYMBOL::Rotate( const VECTOR2I& aCenter )
+void SCH_SYMBOL::Rotate( const VECTOR2I& aCenter, bool aRotateCCW )
 {
     VECTOR2I prev = m_pos;
 
-    RotatePoint( m_pos, aCenter, ANGLE_90 );
+    RotatePoint( m_pos, aCenter, aRotateCCW ? ANGLE_270 : ANGLE_90 );
 
-    SetOrientation( SYM_ROTATE_COUNTERCLOCKWISE );
+    SetOrientation( aRotateCCW ? SYM_ROTATE_CLOCKWISE : SYM_ROTATE_COUNTERCLOCKWISE );
 
     for( SCH_FIELD& field : m_fields )
     {
@@ -1997,7 +2076,7 @@ void SCH_SYMBOL::GetEndPoints( std::vector <DANGLING_END_ITEM>& aItemList )
     {
         LIB_PIN* lib_pin = pin->GetLibPin();
 
-        if( lib_pin->GetUnit() && m_unit && ( m_unit != lib_pin->GetUnit() ) )
+        if( lib_pin && lib_pin->GetUnit() && m_unit && ( m_unit != lib_pin->GetUnit() ) )
             continue;
 
         DANGLING_END_ITEM item( PIN_END, lib_pin, GetPinPhysicalPosition( lib_pin ), this );
@@ -2006,8 +2085,9 @@ void SCH_SYMBOL::GetEndPoints( std::vector <DANGLING_END_ITEM>& aItemList )
 }
 
 
-bool SCH_SYMBOL::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
-                                      const SCH_SHEET_PATH* aPath )
+bool SCH_SYMBOL::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemListByType,
+                                      std::vector<DANGLING_END_ITEM>& aItemListByPos,
+                                      const SCH_SHEET_PATH*           aPath )
 {
     bool changed = false;
 
@@ -2018,8 +2098,12 @@ bool SCH_SYMBOL::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
 
         VECTOR2I pos = m_transform.TransformCoordinate( pin->GetLocalPosition() ) + m_pos;
 
-        for( DANGLING_END_ITEM& each_item : aItemList )
+        auto lower = DANGLING_END_ITEM_HELPER::get_lower_pos( aItemListByPos, pos );
+        bool do_break = false;
+
+        for( auto it = lower; it < aItemListByPos.end() && it->GetPosition() == pos; it++ )
         {
+            DANGLING_END_ITEM& each_item = *it;
             // Some people like to stack pins on top of each other in a symbol to indicate
             // internal connection. While technically connected, it is not particularly useful
             // to display them that way, so skip any pins that are in the same symbol as this
@@ -2035,17 +2119,15 @@ bool SCH_SYMBOL::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
             case WIRE_END:
             case NO_CONNECT_END:
             case JUNCTION_END:
-
-                if( pos == each_item.GetPosition() )
-                    pin->SetIsDangling( false );
-
+                pin->SetIsDangling( false );
+                do_break = true;
                 break;
 
             default:
                 break;
             }
 
-            if( !pin->IsDangling() )
+            if( do_break )
                 break;
         }
 
@@ -2065,6 +2147,48 @@ VECTOR2I SCH_SYMBOL::GetPinPhysicalPosition( const LIB_PIN* Pin ) const
 }
 
 
+bool SCH_SYMBOL::HasConnectivityChanges( const SCH_ITEM* aItem,
+                                         const SCH_SHEET_PATH* aInstance ) const
+{
+    // Do not compare to ourself.
+    if( aItem == this )
+        return false;
+
+    const SCH_SYMBOL* symbol = dynamic_cast<const SCH_SYMBOL*>( aItem );
+
+    // Don't compare against a different SCH_ITEM.
+    wxCHECK( symbol, false );
+
+    if( GetPosition() != symbol->GetPosition() )
+        return true;
+
+    if( GetLibId() != symbol->GetLibId() )
+        return true;
+
+    if( GetUnitSelection( aInstance ) != symbol->GetUnitSelection( aInstance ) )
+        return true;
+
+    if( GetRef( aInstance ) != symbol->GetRef( aInstance ) )
+        return true;
+
+    // Power symbol value field changes are connectivity changes.
+    if( IsPower()
+      && ( GetValue( true, aInstance, false ) != symbol->GetValue( true, aInstance, false ) ) )
+        return true;
+
+    if( m_pins.size() != symbol->m_pins.size() )
+        return true;
+
+    for( size_t i = 0; i < m_pins.size(); i++ )
+    {
+        if( m_pins[i]->HasConnectivityChanges( symbol->m_pins[i].get() ) )
+            return true;
+    }
+
+    return false;
+}
+
+
 std::vector<VECTOR2I> SCH_SYMBOL::GetConnectionPoints() const
 {
     std::vector<VECTOR2I> retval;
@@ -2073,13 +2197,15 @@ std::vector<VECTOR2I> SCH_SYMBOL::GetConnectionPoints() const
     {
         // Collect only pins attached to the current unit and convert.
         // others are not associated to this symbol instance
-        int pin_unit = pin->GetLibPin()->GetUnit();
-        int pin_convert = pin->GetLibPin()->GetConvert();
+        int pin_unit      = pin->GetLibPin() ? pin->GetLibPin()->GetUnit()
+                                             : GetUnit();
+        int pin_bodyStyle = pin->GetLibPin() ? pin->GetLibPin()->GetBodyStyle()
+                                             : GetBodyStyle();
 
         if( pin_unit > 0 && pin_unit != GetUnit() )
             continue;
 
-        if( pin_convert > 0 && pin_convert != GetConvert() )
+        if( pin_bodyStyle > 0 && pin_bodyStyle != GetBodyStyle() )
             continue;
 
         retval.push_back( m_transform.TransformCoordinate( pin->GetLocalPosition() ) + m_pos );
@@ -2096,7 +2222,7 @@ LIB_ITEM* SCH_SYMBOL::GetDrawItem( const VECTOR2I& aPosition, KICAD_T aType )
         // Calculate the position relative to the symbol.
         VECTOR2I libPosition = aPosition - m_pos;
 
-        return m_part->LocateDrawItem( m_unit, m_convert, aType, libPosition, m_transform );
+        return m_part->LocateDrawItem( m_unit, m_bodyStyle, aType, libPosition, m_transform );
     }
 
     return nullptr;
@@ -2164,13 +2290,15 @@ INSPECT_RESULT SCH_SYMBOL::Visit( INSPECTOR aInspector, void* aTestData,
             {
                 // Collect only pins attached to the current unit and convert.
                 // others are not associated to this symbol instance
-                int pin_unit = pin->GetLibPin()->GetUnit();
-                int pin_convert = pin->GetLibPin()->GetConvert();
+                int pin_unit      = pin->GetLibPin() ? pin->GetLibPin()->GetUnit()
+                                                     : GetUnit();
+                int pin_bodyStyle = pin->GetLibPin() ? pin->GetLibPin()->GetBodyStyle()
+                                                     : GetBodyStyle();
 
                 if( pin_unit > 0 && pin_unit != GetUnit() )
                     continue;
 
-                if( pin_convert > 0 && pin_convert != GetConvert() )
+                if( pin_bodyStyle > 0 && pin_bodyStyle != GetBodyStyle() )
                     continue;
 
                 if( INSPECT_RESULT::QUIT == aInspector( pin.get(), (void*) this ) )
@@ -2245,7 +2373,7 @@ SCH_SYMBOL& SCH_SYMBOL::operator=( const SCH_ITEM& aItem )
         m_part.reset( libSymbol );
         m_pos       = c->m_pos;
         m_unit      = c->m_unit;
-        m_convert   = c->m_convert;
+        m_bodyStyle = c->m_bodyStyle;
         m_transform = c->m_transform;
 
         m_instanceReferences = c->m_instanceReferences;
@@ -2302,13 +2430,15 @@ bool SCH_SYMBOL::doIsConnected( const VECTOR2I& aPosition ) const
 
         // Collect only pins attached to the current unit and convert.
         // others are not associated to this symbol instance
-        int pin_unit = pin->GetLibPin()->GetUnit();
-        int pin_convert = pin->GetLibPin()->GetConvert();
+        int pin_unit      = pin->GetLibPin() ? pin->GetLibPin()->GetUnit()
+                                             : GetUnit();
+        int pin_bodyStyle = pin->GetLibPin() ? pin->GetLibPin()->GetBodyStyle()
+                                             : GetBodyStyle();
 
         if( pin_unit > 0 && pin_unit != GetUnit() )
             continue;
 
-        if( pin_convert > 0 && pin_convert != GetConvert() )
+        if( pin_bodyStyle > 0 && pin_bodyStyle != GetBodyStyle() )
             continue;
 
         if( pin->GetLocalPosition() == new_pos )
@@ -2325,8 +2455,8 @@ bool SCH_SYMBOL::IsInNetlist() const
 }
 
 
-void SCH_SYMBOL::Plot( PLOTTER* aPlotter, bool aBackground,
-                       const SCH_PLOT_SETTINGS& aPlotSettings ) const
+void SCH_SYMBOL::Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS& aPlotOpts,
+                       int aUnit, int aBodyStyle, const VECTOR2I& aOffset, bool aDimmed )
 {
     if( aBackground )
         return;
@@ -2334,12 +2464,12 @@ void SCH_SYMBOL::Plot( PLOTTER* aPlotter, bool aBackground,
     if( m_part )
     {
         LIB_PINS  libPins;
-        m_part->GetPins( libPins, GetUnit(), GetConvert() );
+        m_part->GetPins( libPins, GetUnit(), GetBodyStyle() );
 
         // Copy the source so we can re-orient and translate it.
         LIB_SYMBOL tempSymbol( *m_part );
         LIB_PINS tempPins;
-        tempSymbol.GetPins( tempPins, GetUnit(), GetConvert() );
+        tempSymbol.GetPins( tempPins, GetUnit(), GetBodyStyle() );
 
         // Copy the pin info from the symbol to the temp pins
         for( unsigned i = 0; i < tempPins.size(); ++ i )
@@ -2366,18 +2496,19 @@ void SCH_SYMBOL::Plot( PLOTTER* aPlotter, bool aBackground,
             }
         }
 
-        TRANSFORM temp = GetTransform();
+        getRenderSettings( aPlotter )->m_Transform = GetTransform();
         aPlotter->StartBlock( nullptr );
 
         for( bool local_background : { true, false } )
         {
-            tempSymbol.Plot( aPlotter, GetUnit(), GetConvert(), local_background, m_pos, temp,
-                             GetDNP() );
+            tempSymbol.Plot( aPlotter, local_background, aPlotOpts, GetUnit(), GetBodyStyle(),
+                             m_pos, GetDNP() );
 
             for( SCH_FIELD field : m_fields )
             {
                 field.ClearRenderCache();
-                field.Plot( aPlotter, local_background, aPlotSettings );
+                field.Plot( aPlotter, local_background, aPlotOpts, GetUnit(), GetBodyStyle(),
+                            m_pos, GetDNP() );
             }
         }
 
@@ -2387,7 +2518,7 @@ void SCH_SYMBOL::Plot( PLOTTER* aPlotter, bool aBackground,
         SCH_SHEET_PATH* sheet = &Schematic()->CurrentSheet();
 
         // Plot attributes to a hypertext menu
-        if( aPlotSettings.m_PDFPropertyPopups )
+        if( aPlotOpts.m_PDFPropertyPopups )
         {
             std::vector<wxString> properties;
 
@@ -2413,6 +2544,7 @@ void SCH_SYMBOL::Plot( PLOTTER* aPlotter, bool aBackground,
         }
 
         aPlotter->EndBlock( nullptr );
+        getRenderSettings( aPlotter )->m_Transform = TRANSFORM();
 
         if( !m_part->IsPower() )
             aPlotter->Bookmark( GetBoundingBox(), GetRef( sheet ), _( "Symbols" ) );
@@ -2444,14 +2576,14 @@ void SCH_SYMBOL::PlotPins( PLOTTER* aPlotter ) const
     if( m_part )
     {
         LIB_PINS  libPins;
-        m_part->GetPins( libPins, GetUnit(), GetConvert() );
+        m_part->GetPins( libPins, GetUnit(), GetBodyStyle() );
 
         // Copy the source to stay const
         LIB_SYMBOL tempSymbol( *m_part );
         LIB_PINS tempPins;
-        tempSymbol.GetPins( tempPins, GetUnit(), GetConvert() );
+        tempSymbol.GetPins( tempPins, GetUnit(), GetBodyStyle() );
 
-        TRANSFORM transform = GetTransform();
+        SCH_PLOT_OPTS plotOpts;
 
         // Copy the pin info from the symbol to the temp pins
         for( unsigned i = 0; i < tempPins.size(); ++ i )
@@ -2462,7 +2594,7 @@ void SCH_SYMBOL::PlotPins( PLOTTER* aPlotter ) const
             tempPin->SetName( symbolPin->GetShownName() );
             tempPin->SetType( symbolPin->GetType() );
             tempPin->SetShape( symbolPin->GetShape() );
-            tempPin->Plot( aPlotter, false, m_pos, transform, GetDNP() );
+            tempPin->Plot( aPlotter, false, plotOpts, GetUnit(), GetBodyStyle(), m_pos, GetDNP() );
         }
     }
 }
@@ -2470,7 +2602,7 @@ void SCH_SYMBOL::PlotPins( PLOTTER* aPlotter ) const
 
 bool SCH_SYMBOL::HasBrightenedPins()
 {
-    for( const auto& pin : m_pins )
+    for( const std::unique_ptr<SCH_PIN>& pin : m_pins )
     {
         if( pin->IsBrightened() )
             return true;
@@ -2482,7 +2614,7 @@ bool SCH_SYMBOL::HasBrightenedPins()
 
 void SCH_SYMBOL::ClearBrightenedPins()
 {
-    for( auto& pin : m_pins )
+    for( std::unique_ptr<SCH_PIN>& pin : m_pins )
         pin->ClearBrightened();
 }
 
@@ -2491,13 +2623,15 @@ bool SCH_SYMBOL::IsPointClickableAnchor( const VECTOR2I& aPos ) const
 {
     for( const std::unique_ptr<SCH_PIN>& pin : m_pins )
     {
-        int pin_unit = pin->GetLibPin()->GetUnit();
-        int pin_convert = pin->GetLibPin()->GetConvert();
+        int pin_unit      = pin->GetLibPin() ? pin->GetLibPin()->GetUnit()
+                                             : GetUnit();
+        int pin_bodyStyle = pin->GetLibPin() ? pin->GetLibPin()->GetBodyStyle()
+                                             : GetBodyStyle();
 
         if( pin_unit > 0 && pin_unit != GetUnit() )
             continue;
 
-        if( pin_convert > 0 && pin_convert != GetConvert() )
+        if( pin_bodyStyle > 0 && pin_bodyStyle != GetBodyStyle() )
             continue;
 
         if( pin->IsPointClickableAnchor( aPos ) )
@@ -2534,6 +2668,14 @@ bool SCH_SYMBOL::IsPower() const
 }
 
 
+bool SCH_SYMBOL::IsNormal() const
+{
+    wxCHECK( m_part, false );
+
+    return m_part->IsNormal();
+}
+
+
 bool SCH_SYMBOL::operator==( const SCH_ITEM& aOther ) const
 {
     if( Type() != aOther.Type() )
@@ -2550,7 +2692,7 @@ bool SCH_SYMBOL::operator==( const SCH_ITEM& aOther ) const
     if( GetUnit() != symbol.GetUnit() )
         return false;
 
-    if( GetConvert() != symbol.GetConvert() )
+    if( GetBodyStyle() != symbol.GetBodyStyle() )
         return false;
 
     if( GetTransform() != symbol.GetTransform() )
@@ -2593,9 +2735,79 @@ static struct SCH_SYMBOL_DESC
 {
     SCH_SYMBOL_DESC()
     {
+        ENUM_MAP<SYMBOL_ORIENTATION_PROP>::Instance()
+                .Map( SYMBOL_ANGLE_0,   wxS( "0" ) )
+                .Map( SYMBOL_ANGLE_90,  wxS( "90" ) )
+                .Map( SYMBOL_ANGLE_180, wxS( "180" ) )
+                .Map( SYMBOL_ANGLE_270, wxS( "270" ) );
+
         PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
         REGISTER_TYPE( SCH_SYMBOL );
-        propMgr.InheritsAfter( TYPE_HASH( SCH_SYMBOL ), TYPE_HASH( SCH_ITEM ) );
+        propMgr.InheritsAfter( TYPE_HASH( SCH_SYMBOL ), TYPE_HASH( SYMBOL ) );
+
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, int>( _HKI( "Position X" ),
+                    &SCH_SYMBOL::SetX, &SCH_SYMBOL::GetX, PROPERTY_DISPLAY::PT_COORD,
+                    ORIGIN_TRANSFORMS::ABS_X_COORD ) );
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, int>( _HKI( "Position Y" ),
+                    &SCH_SYMBOL::SetY, &SCH_SYMBOL::GetY, PROPERTY_DISPLAY::PT_COORD,
+                    ORIGIN_TRANSFORMS::ABS_Y_COORD ) );
+
+        propMgr.AddProperty( new PROPERTY_ENUM<SCH_SYMBOL, SYMBOL_ORIENTATION_PROP>(
+                    _HKI( "Orientation" ),
+                    &SCH_SYMBOL::SetOrientationProp, &SCH_SYMBOL::GetOrientationProp ) );
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, bool>( _HKI( "Mirror X" ),
+                    &SCH_SYMBOL::SetMirrorX, &SCH_SYMBOL::GetMirrorX ) );
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, bool>( _HKI( "Mirror Y" ),
+                    &SCH_SYMBOL::SetMirrorY, &SCH_SYMBOL::GetMirrorY ) );
+
+        auto hasLibPart = []( INSPECTABLE* aItem ) -> bool
+        {
+            if( SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( aItem ) )
+                return symbol->GetLibSymbolRef() != nullptr;
+
+            return false;
+        };
+
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, bool>( _HKI( "Pin numbers" ),
+                                                             &SCH_SYMBOL::SetShowPinNumbers,
+                                                             &SCH_SYMBOL::GetShowPinNumbers ) )
+                .SetAvailableFunc( hasLibPart );
+
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, bool>( _HKI( "Pin names" ),
+                                                             &SCH_SYMBOL::SetShowPinNames,
+                                                             &SCH_SYMBOL::GetShowPinNames ) )
+                .SetAvailableFunc( hasLibPart );
+
+        auto isMultiUnitSymbol =
+                []( INSPECTABLE* aItem ) -> bool
+                {
+                    if( SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( aItem ) )
+                        return symbol->GetUnitCount() > 1;
+
+                    return false;
+                };
+
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, int>( _HKI( "Unit" ),
+                    &SCH_SYMBOL::SetUnit, &SCH_SYMBOL::GetUnit ) )
+                .SetAvailableFunc( isMultiUnitSymbol );
+
+        const wxString groupFields = _HKI( "Fields" );
+
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, wxString>( _HKI( "Reference" ),
+                    &SCH_SYMBOL::SetRefProp, &SCH_SYMBOL::GetRefProp ),
+                    groupFields );
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, wxString>( _HKI( "Value" ),
+                    &SCH_SYMBOL::SetValueProp, &SCH_SYMBOL::GetValueProp ),
+                    groupFields );
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, wxString>( _HKI( "Library Link" ),
+                    NO_SETTER( SCH_SYMBOL, wxString ), &SCH_SYMBOL::GetSymbolIDAsString ),
+                    groupFields );
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, wxString>( _HKI( "Library Description" ),
+                    NO_SETTER( SCH_SYMBOL, wxString ), &SCH_SYMBOL::GetDescription ),
+                    groupFields );
+        propMgr.AddProperty( new PROPERTY<SCH_SYMBOL, wxString>( _HKI( "Keywords" ),
+                    NO_SETTER( SCH_SYMBOL, wxString ), &SCH_SYMBOL::GetKeyWords ),
+                    groupFields );
 
         const wxString groupAttributes = _HKI( "Attributes" );
 
@@ -2613,3 +2825,5 @@ static struct SCH_SYMBOL_DESC
                 groupAttributes );
     }
 } _SCH_SYMBOL_DESC;
+
+ENUM_TO_WXANY( SYMBOL_ORIENTATION_PROP )

@@ -65,12 +65,15 @@ public:
         return false;
     }
 
+    void Serialize( google::protobuf::Any &aContainer ) const override;
+    bool Deserialize( const google::protobuf::Any &aContainer ) override;
+
     void StyleFromSettings( const BOARD_DESIGN_SETTINGS& settings ) override;
 
     /**
      * Called when rotating the parent footprint.
      */
-    void KeepUpright( const EDA_ANGLE& aOldOrientation, const EDA_ANGLE& aNewOrientation );
+    void KeepUpright( const EDA_ANGLE& aNewOrientation );
 
     wxString GetShownText( bool aAllowExtraText, int aDepth = 0 ) const override;
 

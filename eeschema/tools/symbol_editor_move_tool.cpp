@@ -200,7 +200,7 @@ bool SYMBOL_EDITOR_MOVE_TOOL::doMoveSelection( const TOOL_EVENT& aEvent, SCH_COM
                                 if( !got_unit[pin->GetUnit()]
                                         && pin->GetPosition() == cur_pin->GetPosition()
                                         && pin->GetOrientation() == cur_pin->GetOrientation()
-                                        && pin->GetConvert() == cur_pin->GetConvert()
+                                        && pin->GetBodyStyle() == cur_pin->GetBodyStyle()
                                         && pin->GetType() == cur_pin->GetType()
                                         && pin->GetName() == cur_pin->GetName()  )
                                 {
@@ -329,12 +329,18 @@ bool SYMBOL_EDITOR_MOVE_TOOL::doMoveSelection( const TOOL_EVENT& aEvent, SCH_COM
                 try
                 {
                     LIB_PIN* curr_pin = (LIB_PIN*) selection.Front();
-                    // PlacePin() will clear the current selection, so we need to reset
-                    // flags of the selected pin here:
-                    if( !pinTool->PlacePin( curr_pin ) )
-                        restore_state = true;
+
+                    if( pinTool->PlacePin( curr_pin ) )
+                    {
+                        // PlacePin() clears the current selection, which we don't want.  Not only
+                        // is it a poor user experience, but it also prevents us from doing the
+                        // proper cleanup at the end of this routine (ie: clearing the edit flags).
+                        m_selectionTool->AddItemToSel( curr_pin, true /*quiet mode*/ );
+                    }
                     else
-                        curr_pin->ClearEditFlags();
+                    {
+                        restore_state = true;
+                    }
                 }
                 catch( const boost::bad_pointer& e )
                 {
@@ -460,6 +466,10 @@ int SYMBOL_EDITOR_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
                 if( newStart != shape->GetStart() )
                     doMoveItem( shape, newStart - shape->GetStart() );
 
+                break;
+
+            case SHAPE_T::UNDEFINED:
+                wxASSERT_MSG( false, wxT( "Undefined shape in AlignElements" ) );
                 break;
             }
         }

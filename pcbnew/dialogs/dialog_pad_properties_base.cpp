@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.10.1-0-g8feb16b)
+// C++ code generated with wxFormBuilder (version 4.0.0-0-g0efcecf)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -568,7 +568,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	m_panelGeneral->SetSizer( bGeneralSizer );
 	m_panelGeneral->Layout();
 	bGeneralSizer->Fit( m_panelGeneral );
-	m_notebook->AddPage( m_panelGeneral, _("General"), false );
+	m_notebook->AddPage( m_panelGeneral, _("General"), true );
 	m_connectionsPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizerPanelConnections;
 	bSizerPanelConnections = new wxBoxSizer( wxVERTICAL );
@@ -612,6 +612,8 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 
 	m_cbPreferZoneConnection = new wxCheckBox( bSizerTeardrops->GetStaticBox(), wxID_ANY, _("Prefer zone connection"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_cbPreferZoneConnection->SetValue(true);
+	m_cbPreferZoneConnection->SetToolTip( _("Do not create teardrops on tracks connected to pads that are also connected to a copper zone.") );
+
 	bSizerLeftCol11->Add( m_cbPreferZoneConnection, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
 	m_cbTeardropsUseNextTrack = new wxCheckBox( bSizerTeardrops->GetStaticBox(), wxID_ANY, _("Allow teardrops to span 2 track segments"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -729,7 +731,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 
 	fgSizerRightCol->Add( bSizer131, 1, wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_stMaxLen = new wxStaticText( bSizerTeardrops->GetStaticBox(), wxID_ANY, _("Max length (L):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stMaxLen = new wxStaticText( bSizerTeardrops->GetStaticBox(), wxID_ANY, _("Maximum length (L):"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stMaxLen->Wrap( -1 );
 	fgSizerRightCol->Add( m_stMaxLen, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -777,7 +779,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 
 	fgSizerRightCol->Add( bSizer13, 1, wxEXPAND|wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_stTdMaxSize = new wxStaticText( bSizerTeardrops->GetStaticBox(), wxID_ANY, _("Max width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stTdMaxSize = new wxStaticText( bSizerTeardrops->GetStaticBox(), wxID_ANY, _("Maximum width (W):"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stTdMaxSize->Wrap( -1 );
 	fgSizerRightCol->Add( m_stTdMaxSize, 0, wxALIGN_CENTER_VERTICAL, 10 );
 
@@ -814,7 +816,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	bSizerShapeColumns->Add( bSizer43, 1, wxEXPAND, 5 );
 
 
-	bSizerTeardrops->Add( bSizerShapeColumns, 1, wxEXPAND|wxBOTTOM, 5 );
+	bSizerTeardrops->Add( bSizerShapeColumns, 1, wxBOTTOM|wxEXPAND|wxRIGHT, 5 );
 
 
 	bSizerConnectionsMargins->Add( bSizerTeardrops, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
@@ -914,7 +916,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	m_connectionsPanel->SetSizer( bSizerPanelConnections );
 	m_connectionsPanel->Layout();
 	bSizerPanelConnections->Fit( m_connectionsPanel );
-	m_notebook->AddPage( m_connectionsPanel, _("Connections"), true );
+	m_notebook->AddPage( m_connectionsPanel, _("Connections"), false );
 	m_localSettingsPanel = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizerPanelClearance;
 	bSizerPanelClearance = new wxBoxSizer( wxVERTICAL );
@@ -926,7 +928,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	sbClearancesSizer = new wxStaticBoxSizer( new wxStaticBox( m_localSettingsPanel, wxID_ANY, _("Clearance Overrides") ), wxVERTICAL );
 
 	wxStaticText* m_staticTextHint;
-	m_staticTextHint = new wxStaticText( sbClearancesSizer->GetStaticBox(), wxID_ANY, _("Set values to 0 to use parent footprint or netclass values."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextHint = new wxStaticText( sbClearancesSizer->GetStaticBox(), wxID_ANY, _("Leave values blank to use parent footprint or netclass values."), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextHint->Wrap( -1 );
 	sbClearancesSizer->Add( m_staticTextHint, 0, wxBOTTOM|wxLEFT|wxRIGHT, 5 );
 

@@ -31,7 +31,6 @@ class BOARD;
 class BOARD_COMMIT;
 class BOARD_ITEM_CONTAINER;
 class DIALOG_BOOK_REPORTER;
-class DIALOG_NET_INSPECTOR;
 class FOOTPRINT;
 class PCB_TRACK;
 class PCB_VIA;
@@ -58,6 +57,11 @@ class BOARD_NETLIST_UPDATER;
 class ACTION_MENU;
 class TOOL_ACTION;
 class STRING_UTF8_MAP;
+
+#ifdef KICAD_IPC_API
+class KICAD_API_SERVER;
+class API_HANDLER_PCB;
+#endif
 
 enum LAST_PATH_TYPE : unsigned int;
 
@@ -162,6 +166,7 @@ public:
 
     bool LayerManagerShown();
     bool PropertiesShown();
+    bool NetInspectorShown();
 
     void OnUpdateSelectViaSize( wxUpdateUIEvent& aEvent );
     void OnUpdateSelectTrackWidth( wxUpdateUIEvent& aEvent );
@@ -169,8 +174,9 @@ public:
 
     void RunEeschema();
 
-    void UpdateTrackWidthSelectBox( wxChoice* aTrackWidthSelectBox, bool aEdit = true );
-    void UpdateViaSizeSelectBox( wxChoice* aViaSizeSelectBox, bool aEdit = true );
+    void UpdateTrackWidthSelectBox( wxChoice* aTrackWidthSelectBox, bool aShowNetclass,
+                                    bool aShowEdit );
+    void UpdateViaSizeSelectBox( wxChoice* aViaSizeSelectBox, bool aShowNetclass, bool aShowEdit );
 
     /**
      * Return the angle used for rotate operations.
@@ -232,11 +238,6 @@ public:
      * @param aLastPath - The last file with full path successfully read.
      */
     void SetLastPath( LAST_PATH_TYPE aType, const wxString& aLastPath );
-
-    /**
-     * Scan existing markers and record data from any that are Excluded.
-     */
-    void RecordDRCExclusions();
 
     /**
      * If aCreateMarkers then create DRC exclusion markers from the serialized data.  If false,
@@ -305,6 +306,9 @@ public:
     void PrepareLayerIndicator( bool aForceRebuild = false );
 
     void ToggleLayersManager();
+
+    void ToggleNetInspector();
+
     void ToggleSearch();
 
     /**
@@ -499,6 +503,7 @@ public:
      * @return true if Ok.
      */
     bool ExportVRML_File( const wxString& aFullFileName, double aMMtoWRMLunit,
+                          bool aIncludeUnspecified, bool aIncludeDNP,
                           bool aExport3DFiles, bool aUseRelativePaths,
                           const wxString& a3D_Subdir, double aXRef, double aYRef );
 
@@ -694,6 +699,8 @@ public:
 
     void ProjectChanged() override;
 
+    bool CanAcceptApiCommands() override;
+
     wxString GetCurrentFileName() const override;
 
     SELECTION& GetCurrentSelection() override;
@@ -707,8 +714,6 @@ public:
     DIALOG_BOOK_REPORTER* GetInspectClearanceDialog();
 
     DIALOG_BOOK_REPORTER* GetFootprintDiffDialog();
-
-    DIALOG_NET_INSPECTOR* GetNetInspectorDialog();
 
     DECLARE_EVENT_TABLE()
 
@@ -778,6 +783,8 @@ protected:
      */
     void OnActionPluginButton( wxCommandEvent& aEvent );
 
+    PLUGIN_ACTION_SCOPE PluginActionScope() const override { return PLUGIN_ACTION_SCOPE::PCB; }
+
     /**
      * Update the state of the GUI after a new board is loaded or created.
      */
@@ -808,7 +815,7 @@ protected:
 
     void onSize( wxSizeEvent& aEvent );
 
-    int inferLegacyEdgeClearance( BOARD* aBoard );
+    int inferLegacyEdgeClearance( BOARD* aBoard, bool aShowUserMsg = true );
 
     void redrawNetnames( wxTimerEvent& aEvent );
 
@@ -816,9 +823,9 @@ protected:
 
     void onCloseModelessBookReporterDialogs( wxCommandEvent& aEvent );
 
-    void onCloseNetInspectorDialog( wxCommandEvent& aEvent );
-
-    void onUnitsChanged( wxCommandEvent& aEvent );
+#ifdef KICAD_IPC_API
+    void onPluginAvailabilityChanged( wxCommandEvent& aEvt );
+#endif
 
 public:
     PCB_LAYER_BOX_SELECTOR* m_SelLayerBox; // a combo box to display and select active layer
@@ -828,6 +835,7 @@ public:
 
     bool m_show_layer_manager_tools;
     bool m_show_search;
+    bool m_show_net_inspector;
 
     bool m_ZoneFillsDirty;          // Board has been modified since last zone fill.
 
@@ -851,7 +859,6 @@ private:
     DIALOG_BOOK_REPORTER* m_inspectClearanceDlg;
     DIALOG_BOOK_REPORTER* m_inspectConstraintsDlg;
     DIALOG_BOOK_REPORTER* m_footprintDiffDlg;
-    DIALOG_NET_INSPECTOR* m_netInspectorDlg;
 
     const STRING_UTF8_MAP* m_importProperties; // Properties used for non-KiCad import.
 
@@ -862,6 +869,10 @@ private:
     wxTimer      m_redrawNetnamesTimer;
 
     wxTimer*     m_eventCounterTimer;
+
+#ifdef KICAD_IPC_API
+    std::unique_ptr<API_HANDLER_PCB> m_apiHandler;
+#endif
 };
 
 #endif  // __PCB_EDIT_FRAME_H__

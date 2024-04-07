@@ -41,7 +41,8 @@
 #define ARG_MAP_FORMAT "--map-format"
 #define ARG_DRILL_ORIGIN "--drill-origin"
 
-CLI::PCB_EXPORT_DRILL_COMMAND::PCB_EXPORT_DRILL_COMMAND() : PCB_EXPORT_BASE_COMMAND( "drill", false, true )
+CLI::PCB_EXPORT_DRILL_COMMAND::PCB_EXPORT_DRILL_COMMAND() : PCB_EXPORT_BASE_COMMAND( "drill",
+                                                                                     false, true )
 {
     m_argParser.add_description( UTF8STDSTR( _( "Generate Drill Files" ) ) );
 
@@ -73,23 +74,19 @@ CLI::PCB_EXPORT_DRILL_COMMAND::PCB_EXPORT_DRILL_COMMAND() : PCB_EXPORT_BASE_COMM
 
     m_argParser.add_argument( ARG_EXCELLON_MIRRORY )
             .help( UTF8STDSTR( _( "Mirror Y axis" ) ) )
-            .implicit_value( true )
-            .default_value( false );
+            .flag();
 
     m_argParser.add_argument( ARG_EXCELLON_MINIMALHEAD )
             .help( UTF8STDSTR( _( "Minimal header" ) ) )
-            .implicit_value( true )
-            .default_value( false );
+            .flag();
 
     m_argParser.add_argument( ARG_EXCELLON_SEPARATE_TH )
             .help( UTF8STDSTR( _( "Generate independent files for NPTH and PTH holes" ) ) )
-            .implicit_value( true )
-            .default_value( false );
+            .flag();
 
     m_argParser.add_argument( ARG_GENERATE_MAP )
             .help( UTF8STDSTR( _( "Generate map / summary of drill hits" ) ) )
-            .implicit_value( true )
-            .default_value( false );
+            .flag();
 
     m_argParser.add_argument( ARG_MAP_FORMAT )
             .default_value( std::string( "pdf" ) )
@@ -98,7 +95,8 @@ CLI::PCB_EXPORT_DRILL_COMMAND::PCB_EXPORT_DRILL_COMMAND() : PCB_EXPORT_BASE_COMM
 
     m_argParser.add_argument( ARG_GERBER_PRECISION )
             .help( UTF8STDSTR( _( "Precision of Gerber coordinates (5 or 6)" ) ) )
-            .default_value( 6 );
+            .default_value( 6 )
+            .scan<'i', int>();
 }
 
 

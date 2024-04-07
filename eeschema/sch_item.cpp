@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2006 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 1992-2023 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2024 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,6 +33,7 @@
 #include <sch_draw_panel.h>
 #include <sch_edit_frame.h>
 #include <schematic.h>
+#include <symbol.h>
 #include <trace_helpers.h>
 #include <general.h>
 #include <netclass.h>
@@ -123,6 +124,22 @@ SCHEMATIC* SCH_ITEM::Schematic() const
     }
 
     return nullptr;
+}
+
+
+const SYMBOL* SCH_ITEM::GetParentSymbol() const
+{
+    wxCHECK( m_parent->Type() == SCH_SYMBOL_T, nullptr );
+
+    return static_cast<const SCH_SYMBOL*>( m_parent );
+}
+
+
+SYMBOL* SCH_ITEM::GetParentSymbol()
+{
+    wxCHECK( m_parent->Type() == SCH_SYMBOL_T, nullptr );
+
+    return static_cast<SCH_SYMBOL*>( m_parent );
 }
 
 
@@ -349,13 +366,6 @@ bool SCH_ITEM::RenderAsBitmap( double aWorldScale ) const
 }
 
 
-void SCH_ITEM::Plot( PLOTTER* aPlotter, bool aBackground,
-                     const SCH_PLOT_SETTINGS& aPlotSettings ) const
-{
-    wxFAIL_MSG( wxT( "Plot() method not implemented for class " ) + GetClass() );
-}
-
-
 static struct SCH_ITEM_DESC
 {
     SCH_ITEM_DESC()
@@ -376,15 +386,66 @@ static struct SCH_ITEM_DESC
         REGISTER_TYPE( SCH_ITEM );
         propMgr.InheritsAfter( TYPE_HASH( SCH_ITEM ), TYPE_HASH( EDA_ITEM ) );
 
+#ifdef NOTYET
         // Not sure if this will ever be needed
-//        propMgr.AddProperty( new PROPERTY_ENUM<SCH_ITEM, SCH_LAYER_ID>( _HKI( "Layer" ),
-//                &SCH_ITEM::SetLayer, &SCH_ITEM::GetLayer ) )
-//                .SetIsHiddenFromPropertiesManager();
+        propMgr.AddProperty( new PROPERTY_ENUM<SCH_ITEM, SCH_LAYER_ID>( _HKI( "Layer" ),
+                &SCH_ITEM::SetLayer, &SCH_ITEM::GetLayer ) )
+                .SetIsHiddenFromPropertiesManager();
+#endif
 
+#ifdef NOTYET
         // Not yet functional in UI
-//        propMgr.AddProperty( new PROPERTY<SCH_ITEM, bool>( _HKI( "Locked" ),
-//                &SCH_ITEM::SetLocked, &SCH_ITEM::IsLocked ) );
+        propMgr.AddProperty( new PROPERTY<SCH_ITEM, bool>( _HKI( "Locked" ),
+                &SCH_ITEM::SetLocked, &SCH_ITEM::IsLocked ) );
+#endif
     }
 } _SCH_ITEM_DESC;
 
 IMPLEMENT_ENUM_TO_WXANY( SCH_LAYER_ID )
+
+
+static bool lessYX( const DANGLING_END_ITEM& a, const DANGLING_END_ITEM& b )
+{
+    const auto aPos = a.GetPosition();
+    const auto bPos = b.GetPosition();
+    return aPos.y < bPos.y ? true : ( aPos.y > bPos.y ? false : aPos.x < bPos.x );
+};
+
+
+static bool lessType( const DANGLING_END_ITEM& a, const DANGLING_END_ITEM& b )
+{
+    return a.GetType() < b.GetType();
+};
+
+
+std::vector<DANGLING_END_ITEM>::iterator
+DANGLING_END_ITEM_HELPER::get_lower_pos( std::vector<DANGLING_END_ITEM>& aItemListByPos,
+                                         const VECTOR2I&                 aPos )
+{
+    DANGLING_END_ITEM needle = DANGLING_END_ITEM( PIN_END, nullptr, aPos );
+    auto              start = aItemListByPos.begin();
+    auto              end = aItemListByPos.end();
+    return std::lower_bound( start, end, needle, lessYX );
+}
+
+
+std::vector<DANGLING_END_ITEM>::iterator
+DANGLING_END_ITEM_HELPER::get_lower_type( std::vector<DANGLING_END_ITEM>& aItemListByType,
+                                          const DANGLING_END_T&           aType )
+{
+    DANGLING_END_ITEM needle = DANGLING_END_ITEM( aType, nullptr, VECTOR2I{} );
+    auto              start = aItemListByType.begin();
+    auto              end = aItemListByType.end();
+    return std::lower_bound( start, end, needle, lessType );
+}
+
+
+void DANGLING_END_ITEM_HELPER::sort_dangling_end_items(
+        std::vector<DANGLING_END_ITEM>& aItemListByType,
+        std::vector<DANGLING_END_ITEM>& aItemListByPos )
+{
+    // WIRE_END pairs must be kept together. Hence stable sort.
+    std::stable_sort( aItemListByType.begin(), aItemListByType.end(), lessType );
+    // Sort by y first, pins are more likely to share x than y.
+    std::sort( aItemListByPos.begin(), aItemListByPos.end(), lessYX );
+}

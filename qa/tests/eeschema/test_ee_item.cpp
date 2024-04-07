@@ -38,6 +38,8 @@
 #include <sch_bitmap.h>
 #include <sch_text.h>
 #include <sch_textbox.h>
+#include <sch_table.h>
+#include <sch_tablecell.h>
 #include <sch_field.h>
 #include <sch_symbol.h>
 #include <sch_sheet_pin.h>
@@ -88,6 +90,18 @@ public:
         case SCH_BITMAP_T:          return new SCH_BITMAP();
         case SCH_TEXT_T:            return new SCH_TEXT( VECTOR2I( 0, 0 ), "test text" );
         case SCH_TEXTBOX_T:         return new SCH_TEXTBOX( 0, FILL_T::NO_FILL, "test textbox" );
+        case SCH_TABLECELL_T:       return new SCH_TABLECELL();
+        case SCH_TABLE_T:
+        {
+            SCH_TABLE* table = new SCH_TABLE( schIUScale.mmToIU( 0.1 ) );
+
+            table->SetColCount( 2 );
+
+            for( int ii = 0; ii < 4; ++ii )
+                table->InsertCell( ii, new SCH_TABLECELL() );
+
+            return table;
+        }
         case SCH_LABEL_T:           return new SCH_LABEL( VECTOR2I( 0, 0 ), "test label" );
         case SCH_DIRECTIVE_LABEL_T: return new SCH_DIRECTIVE_LABEL( VECTOR2I( 0, 0 ) );
         case SCH_GLOBAL_LABEL_T:    return new SCH_GLOBALLABEL();
@@ -216,18 +230,18 @@ BOOST_AUTO_TEST_CASE( Rotate )
                 {
                     schItem->ClearFieldsAutoplaced();
                     // Only rotating pins around the center of parent sheet works.
-                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
-                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
-                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
-                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
+                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
+                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
+                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
+                    schItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
                 }
 
                 if( libItem != nullptr )
                 {
-                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
-                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
-                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
-                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter() );
+                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
+                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
+                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
+                    libItem->Rotate( m_sheet.GetBodyBoundingBox().GetCenter(), false );
                 }
 
                 CompareItems( newItem.get(), item.get() );
@@ -246,18 +260,18 @@ BOOST_AUTO_TEST_CASE( Rotate )
                             if( schItem != nullptr )
                             {
                                 schItem->ClearFieldsAutoplaced();
-                                schItem->Rotate( aRef );
-                                schItem->Rotate( aRef );
-                                schItem->Rotate( aRef );
-                                schItem->Rotate( aRef );
+                                schItem->Rotate( aRef, false );
+                                schItem->Rotate( aRef, false );
+                                schItem->Rotate( aRef, false );
+                                schItem->Rotate( aRef, false );
                             }
 
                             if( libItem != nullptr )
                             {
-                                libItem->Rotate( aRef );
-                                libItem->Rotate( aRef );
-                                libItem->Rotate( aRef );
-                                libItem->Rotate( aRef );
+                                libItem->Rotate( aRef, false );
+                                libItem->Rotate( aRef, false );
+                                libItem->Rotate( aRef, false );
+                                libItem->Rotate( aRef, false );
                             }
 
                             CompareItems( item.get(), aOriginalItem );
@@ -301,8 +315,8 @@ BOOST_AUTO_TEST_CASE( MirrorHorizontally )
 
                         if( libItem != nullptr )
                         {
-                            libItem->MirrorHorizontal( aRef );
-                            libItem->MirrorHorizontal( aRef );
+                            libItem->MirrorHorizontally( aRef.x );
+                            libItem->MirrorHorizontally( aRef.x );
                         }
 
                         CompareItems( item.get(), aOriginalItem );
@@ -346,8 +360,8 @@ BOOST_AUTO_TEST_CASE( MirrorVertically )
 
                         if( libItem != nullptr )
                         {
-                            libItem->MirrorVertical( aRef );
-                            libItem->MirrorVertical( aRef );
+                            libItem->MirrorVertically( aRef.y );
+                            libItem->MirrorVertically( aRef.y );
                         }
 
                         CompareItems( item.get(), aOriginalItem );

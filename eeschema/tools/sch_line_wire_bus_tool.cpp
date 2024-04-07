@@ -212,8 +212,6 @@ bool SCH_LINE_WIRE_BUS_TOOL::Init()
     ctxMenu.AddItem( EE_ACTIONS::clearHighlight,       haveHighlight && EE_CONDITIONS::Idle, 1 );
     ctxMenu.AddSeparator(                              haveHighlight && EE_CONDITIONS::Idle, 1 );
 
-    ctxMenu.AddItem( EE_ACTIONS::leaveSheet,           belowRootSheetCondition, 2 );
-
     ctxMenu.AddSeparator( 10 );
     ctxMenu.AddItem( EE_ACTIONS::drawWire,             wireOrBusTool && EE_CONDITIONS::Idle, 10 );
     ctxMenu.AddItem( EE_ACTIONS::drawBus,              wireOrBusTool && EE_CONDITIONS::Idle, 10 );
@@ -234,6 +232,8 @@ bool SCH_LINE_WIRE_BUS_TOOL::Init()
     ctxMenu.AddItem( EE_ACTIONS::breakWire,            wireOrBusTool && EE_CONDITIONS::Idle, 100 );
     ctxMenu.AddItem( EE_ACTIONS::slice,                ( wireOrBusTool || lineTool )
                                                                      && EE_CONDITIONS::Idle, 100 );
+    ctxMenu.AddItem( EE_ACTIONS::leaveSheet,           belowRootSheetCondition, 150 );
+
     ctxMenu.AddSeparator( 200 );
     ctxMenu.AddItem( EE_ACTIONS::selectNode,           wireOrBusTool && EE_CONDITIONS::Idle, 200 );
     ctxMenu.AddItem( EE_ACTIONS::selectConnection,     wireOrBusTool && EE_CONDITIONS::Idle, 200 );
@@ -271,11 +271,13 @@ int SCH_LINE_WIRE_BUS_TOOL::DrawSegments( const TOOL_EVENT& aEvent )
 
     if( aEvent.HasPosition() )
     {
-        EE_GRID_HELPER   grid( m_toolMgr );
+        EE_GRID_HELPER    grid( m_toolMgr );
+        GRID_HELPER_GRIDS gridType = ( params->layer == LAYER_NOTES ) ? GRID_GRAPHICS : GRID_WIRES;
+
         grid.SetSnap( !aEvent.Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !aEvent.DisableGridSnapping() );
 
-        VECTOR2D cursorPos = grid.BestSnapAnchor( aEvent.Position(), GRID_WIRES, nullptr );
+        VECTOR2D cursorPos = grid.BestSnapAnchor( aEvent.Position(), gridType, nullptr );
         startSegments( params->layer, cursorPos, params->sourceSegment );
     }
 
@@ -377,12 +379,14 @@ SCH_LINE* SCH_LINE_WIRE_BUS_TOOL::doUnfoldBus( const wxString& aNet, const VECTO
 
     getViewControls()->SetCrossHairCursorPosition( m_busUnfold.entry->GetEnd(), false );
 
-    std::vector<DANGLING_END_ITEM> endPoints;
+    std::vector<DANGLING_END_ITEM> endPointsByType;
 
     for( SCH_ITEM* item : screen->Items().Overlapping( m_busUnfold.entry->GetBoundingBox() ) )
-        item->GetEndPoints( endPoints );
+        item->GetEndPoints( endPointsByType );
 
-    m_busUnfold.entry->UpdateDanglingState( endPoints );
+    std::vector<DANGLING_END_ITEM> endPointsByPos = endPointsByType;
+    DANGLING_END_ITEM_HELPER::sort_dangling_end_items( endPointsByType, endPointsByPos );
+    m_busUnfold.entry->UpdateDanglingState( endPointsByType, endPointsByPos );
     m_busUnfold.entry->SetEndDangling( false );
     m_busUnfold.label->SetIsDangling( false );
 
@@ -551,6 +555,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const TOOL_EVENT& aTool, int aType, 
     SCH_SCREEN*           screen = m_frame->GetScreen();
     SCH_LINE*             segment = nullptr;
     EE_GRID_HELPER        grid( m_toolMgr );
+    GRID_HELPER_GRIDS     gridType = ( aType == LAYER_NOTES ) ? GRID_GRAPHICS : GRID_WIRES;
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
     int                   lastMode = m_frame->eeconfig()->m_Drawing.line_mode;
     static bool           posture = false;
@@ -639,7 +644,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const TOOL_EVENT& aTool, int aType, 
         VECTOR2D eventPosition = evt->HasPosition() ? evt->Position()
                                                     : controls->GetMousePosition();
 
-        VECTOR2I cursorPos = grid.BestSnapAnchor( eventPosition, GRID_WIRES, segment );
+        VECTOR2I cursorPos = grid.BestSnapAnchor( eventPosition, gridType, segment );
         controls->ForceCursorPosition( true, cursorPos );
 
         // Need to handle change in H/V mode while drawing
@@ -909,6 +914,11 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const TOOL_EVENT& aTool, int aType, 
                     if( !wire->IsNull() )
                         m_view->AddToPreview( wire->Clone() );
                 }
+            }
+            else if( evt->IsAction( &ACTIONS::undo ) )
+            {
+                // Dispatch as normal undo event
+                evt->SetPassEvent();
             }
             else
             {

@@ -51,14 +51,27 @@ public:
         return wxT( "LIB_TEXTBOX" );
     }
 
-    int GetTextMargin() const;
+    int GetLegacyTextMargin() const;
+
+    void SetMarginLeft( int aLeft )     { m_marginLeft = aLeft; }
+    void SetMarginTop( int aTop )       { m_marginTop = aTop; }
+    void SetMarginRight( int aRight )   { m_marginRight = aRight; }
+    void SetMarginBottom( int aBottom ) { m_marginBottom = aBottom; }
+
+    int GetMarginLeft() const           { return m_marginLeft; }
+    int GetMarginTop() const            { return m_marginTop; }
+    int GetMarginRight() const          { return m_marginRight; }
+    int GetMarginBottom() const         { return m_marginBottom; }
+
+    int GetLibTextSize() const { return GetTextWidth(); }
+    void SetLibTextSize( int aSize ) { SetTextSize( VECTOR2I( aSize, aSize ) ); }
 
     VECTOR2I GetDrawPos() const override;
 
     wxString GetShownText( bool aAllowExtraText, int aDepth = 0 ) const override;
 
-    void MirrorHorizontally( const VECTOR2I& center );
-    void MirrorVertically( const VECTOR2I& center );
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
     void Rotate( const VECTOR2I& aCenter, bool aRotateCCW ) override;
 
     bool HitTest( const VECTOR2I& aPosition, int aAccuracy = 0 ) const override;
@@ -81,8 +94,11 @@ public:
 
     BITMAPS GetMenuImage() const override;
 
-    void Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& offset,
-               const TRANSFORM& aTransform, bool aDimmed ) const override;
+    void Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                const VECTOR2I& aOffset, bool aForceNoFill, bool aDimmed ) override;
+
+    void Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS& aPlotOpts,
+               int aUnit, int aBodyStyle, const VECTOR2I& aOffset, bool aDimmed ) override;
 
     EDA_ITEM* Clone() const override
     {
@@ -103,8 +119,11 @@ protected:
 private:
     int compare( const LIB_ITEM& aOther, int aCompareFlags = 0 ) const override;
 
-    void print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                const TRANSFORM& aTransform, bool aDimmed ) override;
+private:
+    int  m_marginLeft;
+    int  m_marginTop;
+    int  m_marginRight;
+    int  m_marginBottom;
 };
 
 

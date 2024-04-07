@@ -36,36 +36,50 @@ PCB_GENERATOR::~PCB_GENERATOR()
 }
 
 
-void PCB_GENERATOR::EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                               BOARD_COMMIT* aCommit )
+PCB_GENERATOR* PCB_GENERATOR::DeepClone() const
+{
+    // Use copy constructor to get the same uuid and other fields
+    PCB_GENERATOR* newGenerator = static_cast<PCB_GENERATOR*>( Clone() );
+    newGenerator->m_items.clear();
+
+    for( BOARD_ITEM* member : m_items )
+    {
+        if( member->Type() == PCB_GROUP_T )
+            newGenerator->AddItem( static_cast<PCB_GROUP*>( member )->DeepClone() );
+        else
+            newGenerator->AddItem( static_cast<BOARD_ITEM*>( member->Clone() ) );
+    }
+
+    return newGenerator;
+}
+
+
+void PCB_GENERATOR::EditStart( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
     aCommit->Modify( this );
 }
 
 
-void PCB_GENERATOR::EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                              BOARD_COMMIT* aCommit, const wxString& aCommitMsg, int aCommitFlags )
+void PCB_GENERATOR::EditPush( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit,
+                              const wxString& aCommitMsg, int aCommitFlags )
 {
     aCommit->Push( aCommitMsg, aCommitFlags );
 }
 
 
-void PCB_GENERATOR::EditRevert( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                                BOARD_COMMIT* aCommit )
+void PCB_GENERATOR::EditRevert( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
     aCommit->Revert();
 }
 
 
-void PCB_GENERATOR::Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                            BOARD_COMMIT* aCommit )
+void PCB_GENERATOR::Remove( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
     aCommit->Remove( this );
 }
 
 
-bool PCB_GENERATOR::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, PCB_BASE_EDIT_FRAME* aFrame,
-                            BOARD_COMMIT* aCommit )
+bool PCB_GENERATOR::Update( GENERATOR_TOOL* aTool, BOARD* aBoard, BOARD_COMMIT* aCommit )
 {
     return true;
 }

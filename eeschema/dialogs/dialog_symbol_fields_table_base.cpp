@@ -208,7 +208,7 @@ DIALOG_SYMBOL_FIELDS_TABLE_BASE::DIALOG_SYMBOL_FIELDS_TABLE_BASE( wxWindow* pare
 	gbExportOptions->SetFlexibleDirection( wxBOTH );
 	gbExportOptions->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_labelFieldDelimiter = new wxStaticText( m_panelExport, wxID_ANY, _("Field delimeter:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_labelFieldDelimiter = new wxStaticText( m_panelExport, wxID_ANY, _("Field delimiter:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_labelFieldDelimiter->Wrap( -1 );
 	gbExportOptions->Add( m_labelFieldDelimiter, wxGBPosition( 0, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -217,7 +217,7 @@ DIALOG_SYMBOL_FIELDS_TABLE_BASE::DIALOG_SYMBOL_FIELDS_TABLE_BASE( wxWindow* pare
 
 	gbExportOptions->Add( m_textFieldDelimiter, wxGBPosition( 0, 1 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_labelStringDelimiter = new wxStaticText( m_panelExport, wxID_ANY, _("String delimeter:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_labelStringDelimiter = new wxStaticText( m_panelExport, wxID_ANY, _("String delimiter:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_labelStringDelimiter->Wrap( -1 );
 	gbExportOptions->Add( m_labelStringDelimiter, wxGBPosition( 1, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
@@ -326,10 +326,10 @@ DIALOG_SYMBOL_FIELDS_TABLE_BASE::DIALOG_SYMBOL_FIELDS_TABLE_BASE( wxWindow* pare
 	bButtonsSizer->Add( 0, 0, 9, wxEXPAND, 5 );
 
 	m_buttonExport = new wxButton( this, wxID_ANY, _("Export"), wxDefaultPosition, wxDefaultSize, 0 );
-	bButtonsSizer->Add( m_buttonExport, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	bButtonsSizer->Add( m_buttonExport, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 10 );
 
 	m_buttonApply = new wxButton( this, wxID_ANY, _("Apply, Save Schematic && Continue"), wxDefaultPosition, wxDefaultSize, 0 );
-	bButtonsSizer->Add( m_buttonApply, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	bButtonsSizer->Add( m_buttonApply, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 10 );
 
 	m_sdbSizer = new wxStdDialogButtonSizer();
 	m_sdbSizerOK = new wxButton( this, wxID_OK );

@@ -23,6 +23,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <i18n_utility.h>
 #include <pgm_base.h>
 #include <font/font.h>
 #include <settings/settings_manager.h>
@@ -35,11 +36,33 @@ const int fill_tab[3] = { 'N', 'F', 'f' };
 
 
 LIB_ITEM::LIB_ITEM( KICAD_T aType, LIB_SYMBOL* aSymbol, int aUnit, int aConvert ) :
-    EDA_ITEM( aSymbol, aType ),
-    m_unit( aUnit ),
-    m_convert( aConvert ),
-    m_private( false )
+        EDA_ITEM( aSymbol, aType ),
+        m_unit( aUnit ),
+        m_bodyStyle( aConvert ),
+        m_private( false )
 {
+}
+
+
+wxString LIB_ITEM::GetUnitDescription( int aUnit )
+{
+    if( aUnit == 0 )
+        return _( "All" );
+    else
+        return LIB_SYMBOL::LetterSubReference( aUnit, 'A' );
+}
+
+
+wxString LIB_ITEM::GetBodyStyleDescription( int aBodyStyle )
+{
+    if( aBodyStyle == 0 )
+        return _( "All" );
+    else if( aBodyStyle == LIB_ITEM::BODY_STYLE::DEMORGAN )
+        return _( "Alternate" );
+    else if( aBodyStyle == LIB_ITEM::BODY_STYLE::BASE )
+        return _( "Standard" );
+    else
+        return wxT( "?" );
 }
 
 
@@ -49,21 +72,14 @@ void LIB_ITEM::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_IT
 
     aList.emplace_back( _( "Type" ), GetTypeName() );
 
-    if( m_unit == 0 )
-        msg = _( "All" );
-    else
-        msg = LIB_SYMBOL::LetterSubReference( m_unit, 'A' );
+    if( const SYMBOL* parent = GetParentSymbol() )
+    {
+        if( parent->GetUnitCount() )
+            aList.emplace_back( _( "Unit" ), GetUnitDescription( m_unit ) );
 
-    aList.emplace_back( _( "Unit" ), msg );
-
-    if( m_convert == LIB_ITEM::LIB_CONVERT::BASE )
-        msg = _( "no" );
-    else if( m_convert == LIB_ITEM::LIB_CONVERT::DEMORGAN )
-        msg = _( "yes" );
-    else
-        msg = wxT( "?" );
-
-    aList.emplace_back( _( "Converted" ), msg );
+        if( parent->HasAlternateBodyStyle() )
+            aList.emplace_back( _( "Body Style" ), GetBodyStyleDescription( m_bodyStyle ) );
+    }
 
     if( IsPrivate() )
         aList.emplace_back( _( "Private" ), wxEmptyString );
@@ -79,8 +95,8 @@ int LIB_ITEM::compare( const LIB_ITEM& aOther, int aCompareFlags ) const
     if( !( aCompareFlags & COMPARE_FLAGS::UNIT ) && m_unit != aOther.m_unit )
         return m_unit - aOther.m_unit;
 
-    if( !( aCompareFlags & COMPARE_FLAGS::UNIT ) && m_convert != aOther.m_convert )
-        return m_convert - aOther.m_convert;
+    if( !( aCompareFlags & COMPARE_FLAGS::UNIT ) && m_bodyStyle != aOther.m_bodyStyle )
+        return m_bodyStyle - aOther.m_bodyStyle;
 
     if( IsPrivate() != aOther.IsPrivate() )
         return IsPrivate() < aOther.IsPrivate();
@@ -153,13 +169,6 @@ const KIFONT::METRICS& LIB_ITEM::GetFontMetrics() const
 }
 
 
-void LIB_ITEM::Print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                      const TRANSFORM& aTransform, bool aDimmed )
-{
-    print( aSettings, aOffset, aData, aTransform, aDimmed );
-}
-
-
 void LIB_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
 {
     // Basic fallback
@@ -168,3 +177,49 @@ void LIB_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
     aLayers[1]  = LAYER_DEVICE_BACKGROUND;
     aLayers[2]  = LAYER_SELECTION_SHADOWS;
 }
+
+
+static struct LIB_ITEM_DESC
+{
+    LIB_ITEM_DESC()
+    {
+        PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
+        REGISTER_TYPE( LIB_ITEM );
+        propMgr.AddTypeCast( new TYPE_CAST<LIB_ITEM, EDA_ITEM> );
+        propMgr.InheritsAfter( TYPE_HASH( LIB_ITEM ), TYPE_HASH( EDA_ITEM ) );
+
+        auto multiUnit =
+                [=]( INSPECTABLE* aItem ) -> bool
+                {
+                    if( LIB_ITEM* libItem = dynamic_cast<LIB_ITEM*>( aItem ) )
+                    {
+                        if( const SYMBOL* symbol = libItem->GetParentSymbol() )
+                            return symbol->IsMulti();
+                    }
+
+                    return false;
+                };
+
+        auto multiBodyStyle =
+                [=]( INSPECTABLE* aItem ) -> bool
+                {
+                    if( LIB_ITEM* libItem = dynamic_cast<LIB_ITEM*>( aItem ) )
+                    {
+                        if( const SYMBOL* symbol = libItem->GetParentSymbol() )
+                            return symbol->HasAlternateBodyStyle();
+                    }
+
+                    return false;
+                };
+
+        propMgr.AddProperty( new PROPERTY<LIB_ITEM, int>( _HKI( "Unit" ),
+                    &LIB_ITEM::SetUnit, &LIB_ITEM::GetUnit ) )
+                .SetAvailableFunc( multiUnit );
+        propMgr.AddProperty( new PROPERTY<LIB_ITEM, int>( _HKI( "Body Style" ),
+                    &LIB_ITEM::SetBodyStyle, &LIB_ITEM::GetBodyStyle ) )
+                .SetAvailableFunc( multiBodyStyle );
+
+        propMgr.AddProperty( new PROPERTY<LIB_ITEM, bool>( _HKI( "Private" ),
+                    &LIB_ITEM::SetPrivate, &LIB_ITEM::IsPrivate ) );
+    }
+} _LIB_ITEM_DESC;

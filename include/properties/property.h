@@ -37,11 +37,16 @@
 #include <wx/validate.h>    // required for propgrid
 #include <wx/propgrid/property.h>
 
+#ifdef DEBUG
+#include <wx/wxcrt.h>
+#endif
+
 #include <functional>
 #include <unordered_map>
 #include <memory>
 #include <typeindex>
 #include <type_traits>
+#include "std_optional_variants.h"
 
 class wxPGProperty;
 class INSPECTABLE;
@@ -55,9 +60,11 @@ enum PROPERTY_DISPLAY
 {
     PT_DEFAULT,    ///< Default property for a given type
     PT_SIZE,       ///< Size expressed in distance units (mm/inch)
+    PT_AREA,       ///< Area expressed in distance units-squared (mm/inch)
     PT_COORD,      ///< Coordinate expressed in distance units (mm/inch)
     PT_DEGREE,     ///< Angle expressed in degrees
-    PT_DECIDEGREE  ///< Angle expressed in decidegrees
+    PT_DECIDEGREE, ///< Angle expressed in decidegrees
+    PT_RATIO
 };
 
 ///< Macro to generate unique identifier for a type
@@ -248,7 +255,7 @@ PROPERTY_BASE( const wxString& aName, PROPERTY_DISPLAY aDisplay = PT_DEFAULT,
      */
     PROPERTY_BASE& SetAvailableFunc( std::function<bool(INSPECTABLE*)> aFunc )
     {
-        m_availFunc = aFunc;
+        m_availFunc = std::move( aFunc );
         return *this;
     }
 
@@ -259,7 +266,7 @@ PROPERTY_BASE( const wxString& aName, PROPERTY_DISPLAY aDisplay = PT_DEFAULT,
 
     PROPERTY_BASE& SetWriteableFunc( std::function<bool(INSPECTABLE*)> aFunc )
     {
-        m_writeableFunc = aFunc;
+        m_writeableFunc = std::move( aFunc );
         return *this;
     }
 
@@ -345,6 +352,16 @@ protected:
             if( pv.CheckType<unsigned>() )
             {
                 a = static_cast<unsigned>( var.GetLong() );
+            }
+            else if( pv.CheckType<std::optional<int>>() )
+            {
+                auto* data = static_cast<STD_OPTIONAL_INT_VARIANT_DATA*>( var.GetData() );
+                a = data->Value();
+            }
+            else if( pv.CheckType<std::optional<double>>() )
+            {
+                auto* data = static_cast<STD_OPTIONAL_DOUBLE_VARIANT_DATA*>( var.GetData() );
+                a = data->Value();
             }
             else if( pv.CheckType<EDA_ANGLE>() )
             {

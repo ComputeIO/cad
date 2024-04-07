@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2023 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2024 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,9 @@
 #include <qa_utils/wx_utils/unit_test_utils.h>
 #include <pcbnew_utils/board_test_utils.h>
 #include <pcbnew_utils/board_file_utils.h>
-#include <plugins/kicad/pcb_plugin.h>
+#include <pcb_io/kicad_sexpr/pcb_io_kicad_sexpr.h>
+#include <pcb_io/kicad_sexpr/pcb_io_kicad_sexpr_parser.h>
+#include <io/kicad/kicad_io_utils.h>
 #include <board.h>
 #include <footprint.h>
 #include <settings/settings_manager.h>
@@ -46,69 +48,95 @@ struct PRETTIFIER_TEST_FIXTURE
 };
 
 
-BOOST_FIXTURE_TEST_CASE( FootprintPrettifier, PRETTIFIER_TEST_FIXTURE )
+BOOST_FIXTURE_TEST_CASE( BoardAndFootprintPrettifier, PRETTIFIER_TEST_FIXTURE )
 {
-    std::vector<wxString> footprints = {
-        "Reverb_BTDR-1V",
-        "Samtec_HLE-133-02-xx-DV-PE-LC_2x33_P2.54mm_Horizontal"
+    std::vector<wxString> cases = {
+        "Reverb_BTDR-1V.kicad_mod",
+        "Samtec_HLE-133-02-xx-DV-PE-LC_2x33_P2.54mm_Horizontal.kicad_mod",
+        "group_and_image.kicad_pcb"
     };
 
-    std::unique_ptr<FOOTPRINT> original, converted;
-    PCB_PLUGIN plugin;
+    std::unique_ptr<BOARD_ITEM_CONTAINER> original, prettified, golden;
+    PCB_IO_KICAD_SEXPR plugin;
 
     std::string tempLibPath = fmt::format( "{}/prettifier.pretty",
                                            std::filesystem::temp_directory_path() );
     std::filesystem::remove_all( tempLibPath );
     std::filesystem::create_directory( tempLibPath );
 
-    for( const wxString& footprint : footprints )
+    for( const wxString& testCase : cases )
     {
-        BOOST_TEST_CONTEXT( footprint.ToStdString() )
+        std::string testCaseName = testCase.ToStdString();
+
+        BOOST_TEST_CONTEXT( testCaseName )
         {
-            std::string inPath = fmt::format( "{}prettifier/{}.kicad_mod",
-                                              KI_TEST::GetPcbnewTestDataDir(),
-                                              footprint.ToStdString() );
+            std::string inPath = fmt::format( "{}prettifier/{}", KI_TEST::GetPcbnewTestDataDir(),
+                                              testCaseName );
 
-            BOOST_CHECK_NO_THROW( original = KI_TEST::ReadFootprintFromFileOrStream( inPath ) );
-            BOOST_REQUIRE( original.get() );
+            std::ifstream inFp;
+            inFp.open( inPath );
+            BOOST_REQUIRE( inFp.is_open() );
 
-            BOOST_CHECK_NO_THROW( plugin.FootprintSave( tempLibPath, original.get() ) );
+            std::stringstream inBuf;
+            inBuf << inFp.rdbuf();
+            std::string inData = inBuf.str();
 
-            std::string newPath = fmt::format( "{}/{}.kicad_mod", tempLibPath,
-                                               original->GetFPIDAsString().ToStdString() );
+            {
+                STRING_LINE_READER        reader( inData, "input file" );
+                PCB_IO_KICAD_SEXPR_PARSER parser( &reader, nullptr, nullptr );
 
-            BOOST_CHECK_NO_THROW( converted = KI_TEST::ReadFootprintFromFileOrStream( newPath ) );
-            BOOST_REQUIRE( converted.get() );
+                BOOST_CHECK_NO_THROW(
+                        original.reset( dynamic_cast<BOARD_ITEM_CONTAINER*>( parser.Parse() ) ) );
+                BOOST_REQUIRE( original.get() );
+            }
+
+            KICAD_FORMAT::Prettify( inData );
+
+            // For diagnosis of test failures
+            std::string tempPath = fmt::format( "{}/{}", tempLibPath, testCaseName );
+            std::ofstream tempFp;
+            tempFp.open( tempPath );
+            BOOST_REQUIRE( tempFp.is_open() );
+            tempFp << inData;
+            tempFp.close();
+
+            {
+                STRING_LINE_READER        reader( inData, "prettified file" );
+                PCB_IO_KICAD_SEXPR_PARSER parser( &reader, nullptr, nullptr );
+
+                BOOST_CHECK_NO_THROW(
+                        prettified.reset( dynamic_cast<BOARD_ITEM_CONTAINER*>( parser.Parse() ) ) );
+                BOOST_REQUIRE( prettified.get() );
+            }
 
             // Hack around the fact that PAD::operator== compares footprint UUIDs, even though
             // these UUIDs cannot be preserved through a round-trip
-            const_cast<KIID&>( converted->m_Uuid ) = original->m_Uuid;
+            const_cast<KIID&>( prettified->m_Uuid ) = original->m_Uuid;
 
             // File should parse the same way
-            BOOST_REQUIRE( *original == *converted );
+            BOOST_REQUIRE_MESSAGE( *original == *prettified,
+                    "Formatted version of original board item does not parse the same way!" );
 
-            // And the formatting should match
-            std::string goldenPath = fmt::format( "{}prettifier/{}_formatted.kicad_mod",
-                                                  KI_TEST::GetPcbnewTestDataDir(),
-                                                  footprint.ToStdString() );
-            {
-            std::ifstream test( newPath );
-            std::ifstream golden( goldenPath );
+            // And the formatting should match the golden
+            std::string base = testCase.BeforeLast( '.' ).ToStdString();
+            std::string ext  = testCase.AfterLast( '.' ).ToStdString();
 
-            BOOST_REQUIRE( !test.fail() && !golden.fail() );
-            BOOST_REQUIRE_MESSAGE( test.tellg() == golden.tellg(), "File sizes didn't match!" );
+            std::string goldenPath = fmt::format( "{}prettifier/{}_formatted.{}",
+                                                  KI_TEST::GetPcbnewTestDataDir(), base, ext );
 
-            test.seekg( 0, std::ifstream::beg );
-            golden.seekg( 0, std::ifstream::beg );
+            std::ifstream goldFp;
+            goldFp.open( goldenPath );
+            BOOST_REQUIRE( goldFp.is_open() );
 
-            BOOST_REQUIRE_MESSAGE( std::equal( std::istreambuf_iterator<char>( test.rdbuf() ),
-                                               std::istreambuf_iterator<char>(),
-                                               std::istreambuf_iterator<char>( golden.rdbuf() ) ),
-                                   "Formatted footprints do not match!" );
-            }
+            std::stringstream goldenBuf;
+            goldenBuf << goldFp.rdbuf();
 
-            std::filesystem::remove( newPath );
+            BOOST_REQUIRE_MESSAGE( goldenBuf.str().compare( inData ) == 0,
+                                   "Formatting result doesn't match golden!" );
+
+             std::filesystem::remove( tempPath );
         }
     }
-}
 
+    std::filesystem::remove_all( tempLibPath );
+}

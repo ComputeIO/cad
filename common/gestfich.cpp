@@ -29,7 +29,6 @@
  */
 
 #include <wx/mimetype.h>
-#include <wx/filename.h>
 #include <wx/dir.h>
 
 #include <pgm_base.h>
@@ -63,6 +62,26 @@ wxString FindKicadFile( const wxString& shortname )
 #endif
     if( wxFileExists( fullFileName ) )
         return fullFileName;
+
+    if( wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
+    {
+        wxFileName buildDir( Pgm().GetExecutablePath(), shortname );
+        buildDir.RemoveLastDir();
+#ifndef __WXMSW__
+        buildDir.AppendDir( shortname );
+#else
+        buildDir.AppendDir( shortname.BeforeLast( '.' ) );
+#endif
+
+        if( buildDir.GetDirs().Last() == "pl_editor" )
+        {
+            buildDir.RemoveLastDir();
+            buildDir.AppendDir( "pagelayout_editor" );
+        }
+
+        if( wxFileExists( buildDir.GetFullPath() ) )
+            return buildDir.GetFullPath();
+    }
 
     // Test the presence of the file in the directory shortname
     // defined by the environment variable KiCad.
@@ -117,7 +136,8 @@ wxString FindKicadFile( const wxString& shortname )
 }
 
 
-int ExecuteFile( const wxString& aEditorName, const wxString& aFileName, wxProcess *aCallback )
+int ExecuteFile( const wxString& aEditorName, const wxString& aFileName, wxProcess* aCallback,
+                 bool aFileForKicad )
 {
     wxString              fullEditorName;
     std::vector<wxString> params;
@@ -186,10 +206,18 @@ int ExecuteFile( const wxString& aEditorName, const wxString& aFileName, wxProce
 
     pushParam();
 
-    fullEditorName = FindKicadFile( params[0] );
+    if( aFileForKicad )
+        fullEditorName = FindKicadFile( params[0] );
+    else
+        fullEditorName = params[0];
+
     params.erase( params.begin() );
 #else
-    fullEditorName = FindKicadFile( aEditorName );
+
+    if( aFileForKicad )
+        fullEditorName = FindKicadFile( aEditorName );
+    else
+        fullEditorName = aEditorName;
 #endif
 
     if( wxFileExists( fullEditorName ) )

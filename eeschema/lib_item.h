@@ -28,6 +28,7 @@
 
 #include <eda_item.h>
 #include <eda_shape.h>
+#include <symbol.h>
 #include <transform.h>
 #include <render_settings.h>
 
@@ -73,8 +74,12 @@ public:
 
     virtual ~LIB_ITEM() { }
 
-    // Define the enums for basic
-    enum LIB_CONVERT : int  { BASE = 1, DEMORGAN = 2 };
+    // Define the enums for basic body styles
+    enum BODY_STYLE : int
+    {
+        BASE = 1,
+        DEMORGAN = 2
+    };
 
     /**
      * The list of flags used by the #compare function.
@@ -118,6 +123,9 @@ public:
 
         return false;
     }
+
+    static wxString GetUnitDescription( int aUnit );
+    static wxString GetBodyStyleDescription( int aBodyStyle );
 
     /**
      * Create a copy of this #LIB_ITEM (with a new Uuid).
@@ -165,28 +173,13 @@ public:
      */
     virtual void CalcEdit( const VECTOR2I& aPosition ) {}
 
-    /**
-     * Draw an item
-     *
-     * @param aDC Device Context (can be null)
-     * @param aOffset Offset to draw
-     * @param aData Value or pointer used to pass others parameters, depending on body items.
-     *              Used for some items to force to force no fill mode ( has meaning only for
-     *              items what can be filled ). used in printing or moving objects mode or to
-     *              pass reference to the lib symbol for pins.
-     * @param aTransform Transform Matrix (rotation, mirror ..)
-     * @param aDimmed Dim the color on the printout
-     */
-    virtual void Print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                        const TRANSFORM& aTransform, bool aDimmed );
-
     virtual int GetPenWidth() const = 0;
 
     const wxString& GetDefaultFont() const;
 
     const KIFONT::METRICS& GetFontMetrics() const;
 
-    virtual int GetEffectivePenWidth( const RENDER_SETTINGS* aSettings ) const
+    virtual int GetEffectivePenWidth( const SCH_RENDER_SETTINGS* aSettings ) const
     {
         // For historical reasons, a stored value of 0 means "default width" and negative
         // numbers meant "don't stroke".
@@ -199,9 +192,16 @@ public:
             return std::max( GetPenWidth(), aSettings->GetMinPenWidth() );
     }
 
-    LIB_SYMBOL* GetParent() const  // Replace EDA_ITEM::GetParent() with a more useful return-type
+    const SYMBOL* GetParentSymbol() const
     {
-        return (LIB_SYMBOL*) m_parent;
+        wxCHECK( m_parent->Type() == LIB_SYMBOL_T, nullptr );
+        return static_cast<const SYMBOL*>( m_parent );
+    }
+
+    SYMBOL* GetParentSymbol()
+    {
+        wxCHECK( m_parent->Type() == LIB_SYMBOL_T, nullptr );
+        return static_cast<SYMBOL*>( m_parent );
     }
 
     /**
@@ -224,7 +224,7 @@ public:
         if( m_unit != aItem.m_unit )
             similarity *= 0.9;
 
-        if( m_convert != aItem.m_convert )
+        if( m_bodyStyle != aItem.m_bodyStyle )
             similarity *= 0.9;
 
         if( m_private != aItem.m_private )
@@ -301,14 +301,14 @@ public:
      *
      * @param aCenter Point to mirror around.
      */
-    virtual void MirrorHorizontal( const VECTOR2I& aCenter ) = 0;
+    virtual void MirrorHorizontally( int aCenter ) = 0;
 
     /**
      * Mirror the draw object along the MirrorVertical (Y) axis about \a aCenter point.
      *
      * @param aCenter Point to mirror around.
      */
-    virtual void MirrorVertical( const VECTOR2I& aCenter ) = 0;
+    virtual void MirrorVertically( int aCenter ) = 0;
 
     /**
      * Rotate the object about \a aCenter point.
@@ -319,24 +319,35 @@ public:
     virtual void Rotate( const VECTOR2I& aCenter, bool aRotateCCW = true ) = 0;
 
     /**
-     * Plot the draw item using the plot object.
+     * Print an item.
      *
-     * @param aPlotter The plot object to plot to.
+     * @param aUnit - which unit to print.
+     * @param aBodyStyle - which body style to print.
+     * @param aOffset - relative offset.
+     * @param aForceNoFill - disable printing of fills.
+     * @param aDimmed - reduce brightness of item.
+     */
+    virtual void Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBodyStyle,
+                        const VECTOR2I& aOffset, bool aForceNoFill, bool aDimmed ) = 0;
+
+    /**
+     * Plot the item to \a aPlotter.
+     *
      * @param aBackground a poor-man's Z-order.  The routine will get called twice, first with
      *                    aBackground true and then with aBackground false.
-     * @param aOffset Plot offset position.
-     * @param aFill Flag to indicate whether or not the object is filled.
-     * @param aTransform The plot transform.
-     * @param aDimmed if true, reduce color to background
+     * @param aUnit - which unit to print.
+     * @param aBodyStyle - which body style to print.
+     * @param aOffset relative offset.
+     * @param aDimmed reduce brightness of item.
      */
-    virtual void Plot( PLOTTER* aPlotter, bool aBackground, const VECTOR2I& aOffset,
-                       const TRANSFORM& aTransform, bool aDimmed ) const = 0;
+    virtual void Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS& aPlotOpts,
+                       int aUnit, int aBodyStyle, const VECTOR2I& aOffset, bool aDimmed ) = 0;
 
     void SetUnit( int aUnit ) { m_unit = aUnit; }
     int GetUnit() const { return m_unit; }
 
-    void SetConvert( int aConvert ) { m_convert = aConvert; }
-    int GetConvert() const { return m_convert; }
+    void SetBodyStyle( int aBodyStyle ) { m_bodyStyle = aBodyStyle; }
+    int  GetBodyStyle() const { return m_bodyStyle; }
 
     void SetPrivate( bool aPrivate ) { m_private = aPrivate; }
     bool IsPrivate() const { return m_private; }
@@ -351,6 +362,11 @@ public:
 #endif
 
 protected:
+    SCH_RENDER_SETTINGS* getRenderSettings( PLOTTER* aPlotter ) const
+    {
+        return static_cast<SCH_RENDER_SETTINGS*>( aPlotter->RenderSettings() );
+    }
+
     /**
      * Provide the draw object specific comparison called by the == and < operators.
      *
@@ -373,17 +389,6 @@ protected:
      */
     virtual int compare( const LIB_ITEM& aOther, int aCompareFlags = 0 ) const;
 
-    /**
-     * Print the item to \a aDC.
-     *
-     * @param aOffset A reference to a wxPoint object containing the offset where to draw
-     *                from the object's current position.
-     * @param aData A pointer to any object specific data required to perform the draw.
-     * @param aTransform A reference to a #TRANSFORM object containing drawing transform.
-     */
-    virtual void print( const RENDER_SETTINGS* aSettings, const VECTOR2I& aOffset, void* aData,
-                        const TRANSFORM& aTransform, bool aDimmed ) = 0;
-
 private:
     friend class LIB_SYMBOL;
 
@@ -398,7 +403,7 @@ protected:
      * Shape identification for alternate body styles.  Set 0 if the item is common to all
      * body styles.  This is typially used for representing DeMorgan variants in KiCad.
      */
-    int         m_convert;
+    int         m_bodyStyle;
 
     /**
      * Private items are shown only in the Symbol Editor.
