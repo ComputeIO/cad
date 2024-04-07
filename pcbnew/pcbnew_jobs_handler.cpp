@@ -39,7 +39,7 @@
 #include <jobs/job_export_pcb_3d.h>
 #include <jobs/job_pcb_render.h>
 #include <jobs/job_pcb_drc.h>
-#include <jobs/job_pcb_resave.h>
+#include <jobs/job_pcb_upgrade.h>
 #include <cli/exit_codes.h>
 #include <exporters/place_file_exporter.h>
 #include <exporters/step/exporter_step.h>
@@ -105,7 +105,7 @@ PCBNEW_JOBS_HANDLER::PCBNEW_JOBS_HANDLER( KIWAY* aKiway ) :
     Register( "fpsvg",
               std::bind( &PCBNEW_JOBS_HANDLER::JobExportFpSvg, this, std::placeholders::_1 ) );
     Register( "drc", std::bind( &PCBNEW_JOBS_HANDLER::JobExportDrc, this, std::placeholders::_1 ) );
-    Register( "resave", std::bind( &PCBNEW_JOBS_HANDLER::JobResave, this, std::placeholders::_1 ) );
+    Register( "upgrade", std::bind( &PCBNEW_JOBS_HANDLER::JobUpgrade, this, std::placeholders::_1 ) );
     Register( "ipc2581",
               std::bind( &PCBNEW_JOBS_HANDLER::JobExportIpc2581, this, std::placeholders::_1 ) );
 }
@@ -1332,25 +1332,25 @@ int PCBNEW_JOBS_HANDLER::JobExportDrc( JOB* aJob )
 }
 
 
-int PCBNEW_JOBS_HANDLER::JobResave( JOB* aJob )
+int PCBNEW_JOBS_HANDLER::JobUpgrade( JOB* aJob )
 {
-    JOB_PCB_RESAVE* aResaveJob = dynamic_cast<JOB_PCB_RESAVE*>( aJob );
+    JOB_PCB_UPGRADE* aUpgradeJob = dynamic_cast<JOB_PCB_UPGRADE*>( aJob );
 
-    if( aResaveJob == nullptr )
+    if( aUpgradeJob == nullptr )
         return CLI::EXIT_CODES::ERR_UNKNOWN;
 
-    if( aResaveJob->IsCli() )
+    if( aUpgradeJob->IsCli() )
         m_reporter->Report( _( "Loading board\n" ), RPT_SEVERITY_INFO );
 
     PCB_PLUGIN pcbIo;
     try
     {
-        BOARD* brd = LoadBoard( aResaveJob->m_filename );
+        BOARD* brd = LoadBoard( aUpgradeJob->m_filename );
         pcbIo.SaveBoard( brd->GetFileName(), brd );
     }
     catch( const IO_ERROR& ioe )
     {
-        if( aResaveJob->IsCli() )
+        if( aUpgradeJob->IsCli() )
         {
             wxString msg = wxString::Format( _( "Error saving PCB file.\n%s" ), ioe.What().GetData() );
             m_reporter->Report( msg, RPT_SEVERITY_ERROR );
@@ -1358,7 +1358,7 @@ int PCBNEW_JOBS_HANDLER::JobResave( JOB* aJob )
         return CLI::EXIT_CODES::ERR_UNKNOWN;
     }
 
-    if( aResaveJob->IsCli() )
+    if( aUpgradeJob->IsCli() )
         m_reporter->Report( _( "Successfully saved PCB file using the latest format\n" ), RPT_SEVERITY_INFO );
 
     return CLI::EXIT_CODES::SUCCESS;

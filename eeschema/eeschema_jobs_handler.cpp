@@ -31,7 +31,7 @@
 #include <jobs/job_sch_erc.h>
 #include <jobs/job_sym_export_svg.h>
 #include <jobs/job_sym_upgrade.h>
-#include <jobs/job_sch_resave.h>
+#include <jobs/job_sch_upgrade.h>
 #include <schematic.h>
 #include <wx/dir.h>
 #include <wx/file.h>
@@ -88,8 +88,8 @@ EESCHEMA_JOBS_HANDLER::EESCHEMA_JOBS_HANDLER( KIWAY* aKiway ) :
               std::bind( &EESCHEMA_JOBS_HANDLER::JobSymExportSvg, this, std::placeholders::_1 ) );
     Register( "erc",
               std::bind( &EESCHEMA_JOBS_HANDLER::JobSchErc, this, std::placeholders::_1 ) );
-    Register( "resave",
-              std::bind( &EESCHEMA_JOBS_HANDLER::JobResave, this, std::placeholders::_1 ) );
+    Register( "upgrade",
+              std::bind( &EESCHEMA_JOBS_HANDLER::JobUpgrade, this, std::placeholders::_1 ) );
 }
 
 
@@ -1050,17 +1050,17 @@ int EESCHEMA_JOBS_HANDLER::JobSchErc( JOB* aJob )
 }
 
 
-int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
+int EESCHEMA_JOBS_HANDLER::JobUpgrade( JOB* aJob )
 {
-    JOB_SCH_RESAVE* aResaveJob = dynamic_cast<JOB_SCH_RESAVE*>( aJob );
+    JOB_SCH_UPGRADE* aUpgradeJob = dynamic_cast<JOB_SCH_UPGRADE*>( aJob );
 
-    if( aResaveJob == nullptr )
+    if( aUpgradeJob == nullptr )
         return CLI::EXIT_CODES::ERR_UNKNOWN;
 
-    if( aResaveJob->IsCli() )
+    if( aUpgradeJob->IsCli() )
         m_reporter->Report( _( "Loading schematic\n" ), RPT_SEVERITY_INFO );
 
-    SCHEMATIC* loadedSch = EESCHEMA_HELPERS::LoadSchematic( aResaveJob->m_filename );
+    SCHEMATIC* loadedSch = EESCHEMA_HELPERS::LoadSchematic( aUpgradeJob->m_filename );
     if( loadedSch == nullptr )
     {
         m_reporter->Report( _( "Failed to load schematic file\n" ), RPT_SEVERITY_ERROR );
@@ -1068,7 +1068,7 @@ int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
     }
 
     // SCH_SEXPR_PLUGIN needs an absolute path
-    wxFileName schPath = aResaveJob->m_filename;
+    wxFileName schPath = aUpgradeJob->m_filename;
     schPath.MakeAbsolute();
     wxString schFullPath = schPath.GetFullPath();
 
@@ -1080,7 +1080,7 @@ int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
     }
     catch( const IO_ERROR& ioe )
     {
-        if( aResaveJob->IsCli() )
+        if( aUpgradeJob->IsCli() )
         {
             wxString msg = wxString::Format( _( "Error saving SCH file.\n%s" ), ioe.What().GetData() );
             m_reporter->Report( msg, RPT_SEVERITY_ERROR );
@@ -1088,7 +1088,7 @@ int EESCHEMA_JOBS_HANDLER::JobResave( JOB* aJob )
         return CLI::EXIT_CODES::ERR_UNKNOWN;
     }
 
-    if( aResaveJob->IsCli() )
+    if( aUpgradeJob->IsCli() )
         m_reporter->Report( _( "Successfully saved SCH file using the latest format\n" ), RPT_SEVERITY_INFO );
 
     return CLI::EXIT_CODES::SUCCESS;

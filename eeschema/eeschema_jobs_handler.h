@@ -45,7 +45,7 @@ public:
     int JobSchErc( JOB* aJob );
     int JobSymUpgrade( JOB* aJob );
     int JobSymExportSvg( JOB* aJob );
-    int JobResave( JOB* aJob );
+    int JobUpgrade( JOB* aJob );
 
     /**
      * Configure the SCH_RENDER_SETTINGS object with the correct data to be used with plotting.

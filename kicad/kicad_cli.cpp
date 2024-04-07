@@ -63,16 +63,15 @@
 #include "cli/command_sch_export_pythonbom.h"
 #include "cli/command_sch_export_netlist.h"
 #include "cli/command_sch_export_plot.h"
-#include "cli/command_pcb_resave.h"
 #include "cli/command_fp.h"
 #include "cli/command_fp_export.h"
 #include "cli/command_fp_export_svg.h"
 #include "cli/command_fp_upgrade.h"
 #include "cli/command_sch.h"
-#include "cli/command_pcb_resave.h"
+#include "cli/command_pcb_upgrade.h"
 #include "cli/command_sch_erc.h"
 #include "cli/command_sch_export.h"
-#include "cli/command_sch_resave.h"
+#include "cli/command_sch_upgrade.h"
 #include "cli/command_sym.h"
 #include "cli/command_sym_export.h"
 #include "cli/command_sym_export_svg.h"
@@ -110,7 +109,7 @@ struct COMMAND_ENTRY
 
 static CLI::PCB_COMMAND                  pcbCmd{};
 static CLI::PCB_DRC_COMMAND              pcbDrcCmd{};
-static CLI::PCB_RESAVE_COMMAND           pcbResaveCmd{};
+static CLI::PCB_UPGRADE_COMMAND          pcbUpgradeCmd{};
 static CLI::PCB_RENDER_COMMAND           pcbRenderCmd{};
 static CLI::PCB_EXPORT_DRILL_COMMAND     exportPcbDrillCmd{};
 static CLI::PCB_EXPORT_DXF_COMMAND       exportPcbDxfCmd{};
@@ -127,7 +126,7 @@ static CLI::PCB_EXPORT_COMMAND           exportPcbCmd{};
 static CLI::SCH_EXPORT_COMMAND           exportSchCmd{};
 static CLI::SCH_COMMAND                  schCmd{};
 static CLI::SCH_ERC_COMMAND              schErcCmd{};
-static CLI::SCH_RESAVE_COMMAND           schResaveCmd{};
+static CLI::SCH_UPGRADE_COMMAND          schUpgradeCmd{};
 static CLI::SCH_EXPORT_BOM_COMMAND       exportSchBomCmd{};
 static CLI::SCH_EXPORT_PYTHONBOM_COMMAND exportSchPythonBomCmd{};
 static CLI::SCH_EXPORT_NETLIST_COMMAND   exportSchNetlistCmd{};
@@ -188,7 +187,7 @@ static std::vector<COMMAND_ENTRY> commandStack = {
                 }
             },
             {
-                &pcbResaveCmd
+                &pcbUpgradeCmd
             }
         }
     },
@@ -212,7 +211,7 @@ static std::vector<COMMAND_ENTRY> commandStack = {
                 }
             },
             {
-                &schResaveCmd
+                &schUpgradeCmd
             }
         }
     },
