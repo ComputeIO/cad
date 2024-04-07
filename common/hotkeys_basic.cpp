@@ -31,6 +31,7 @@
 #include <eda_draw_frame.h>
 #include <wildcards_and_files_ext.h>
 #include <paths.h>
+#include <gecko_keys.h>
 
 #include <tool/tool_manager.h>
 #include "dialogs/dialog_hotkey_list.h"
@@ -93,6 +94,7 @@ static struct hotkey_name_descr hotkeyNameList[] =
     { wxT( "Tab" ),           WXK_TAB                },
     { wxT( "Back" ),          WXK_BACK               },
     { wxT( "Ins" ),           WXK_INSERT             },
+    { wxT( "Pause" ),         WXK_PAUSE              },
 
     { wxT( "Home" ),          WXK_HOME               },
     { wxT( "End" ),           WXK_END                },
