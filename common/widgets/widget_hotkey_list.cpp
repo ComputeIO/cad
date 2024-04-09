@@ -202,7 +202,7 @@ protected:
         if( keycode == WXK_NONE )
             return;
 
-        m_key_label_1->SetLabel( KeyNameFromKeyCode( keycode ) );
+        m_key_label_1->SetLabel( KeyNameFromKeyCode( keycode, true ) );
         m_event = aEvent;
     }
 
@@ -257,7 +257,7 @@ public:
         if( normedInfo.Contains( m_normalised_filter_str ) )
             return true;
 
-        const wxString keyName = KeyNameFromKeyCode( aHotkey.m_EditKeycode );
+        const wxString keyName = KeyNameFromKeyCode( aHotkey.m_EditKeycode, true );
 
         if( keyName.Upper().Contains( m_normalised_filter_str ) )
             return true;
@@ -307,8 +307,8 @@ void WIDGET_HOTKEY_LIST::updateFromClientData()
         {
             const HOTKEY& changed_hk = hkdata->GetChangedHotkey();
             wxString      label = changed_hk.m_Actions[ 0 ]->GetFriendlyName();
-            wxString      key_text = KeyNameFromKeyCode( changed_hk.m_EditKeycode );
-            wxString      alt_text = KeyNameFromKeyCode( changed_hk.m_EditKeycodeAlt );
+            wxString      key_text = KeyNameFromKeyCode( changed_hk.m_EditKeycode, true );
+            wxString      alt_text = KeyNameFromKeyCode( changed_hk.m_EditKeycodeAlt, true );
             wxString      description = changed_hk.m_Actions[ 0 ]->GetDescription();
 
             if( label.IsEmpty() )
@@ -479,7 +479,7 @@ bool WIDGET_HOTKEY_LIST::resolveKeyConflicts( TOOL_ACTION* aAction, long aKey )
     TOOL_ACTION* conflictingAction = conflictingHotKey->m_Actions[ 0 ];
     wxString msg = wxString::Format( _( "'%s' is already assigned to '%s' in section '%s'. "
                                         "Are you sure you want to change its assignment?" ),
-                                     KeyNameFromKeyCode( aKey ),
+                                     KeyNameFromKeyCode( aKey, true ),
                                      conflictingAction->GetFriendlyName(),
                                      HOTKEY_STORE::GetSectionName( conflictingAction ) );
 

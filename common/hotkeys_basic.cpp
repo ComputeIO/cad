@@ -169,10 +169,11 @@ static struct hotkey_name_descr hotkeyNameList[] =
  * Only some wxWidgets key values are handled for function key ( see hotkeyNameList[] )
  *
  * @param aKeycode key code (ASCII value, or wxWidgets value for function keys).
+ * @param aLocalized set to true to translate the key using current keyboard layout instead of US layout.
  * @param aIsFound a pointer to a bool to return true if found, or false. an be nullptr default).
  * @return the key name in a wxString.
  */
-wxString KeyNameFromKeyCode( int aKeycode, bool* aIsFound )
+wxString KeyNameFromKeyCode( int aKeycode, bool aLocalized, bool* aIsFound )
 {
     wxString keyname, modifier, fullkeyname;
     int      ii;
@@ -199,10 +200,26 @@ wxString KeyNameFromKeyCode( int aKeycode, bool* aIsFound )
 
     aKeycode &= ~( MD_CTRL | MD_ALT | MD_SHIFT );
 
-    if( (aKeycode > ' ') && (aKeycode < 0x7F ) )
+    if( ( aKeycode > ' ' ) && ( aKeycode < 0x7F ) )
     {
-        found   = true;
-        keyname.Append( (wxChar)aKeycode );
+        if( aLocalized )
+        {
+            GeckoKeys::CodeNameIndex idx = GeckoKeys::CodeNameIndexFromWXK( aKeycode );
+            uint32_t                 scancode = GeckoKeys::ScancodeFromCodeNameIndex( idx );
+            wchar_t                  ch = GeckoKeys::CharFromScancode( scancode );
+
+            if( ch )
+            {
+                found = true;
+                keyname.Append( ch );
+            }
+        }
+
+        if( !found )
+        {
+            found = true;
+            keyname.Append( (wxChar) aKeycode );
+        }
     }
     else
     {
@@ -240,7 +257,7 @@ wxString KeyNameFromKeyCode( int aKeycode, bool* aIsFound )
 wxString AddHotkeyName( const wxString& aText, int aHotKey, HOTKEY_ACTION_TYPE aStyle )
 {
     wxString msg = aText;
-    wxString keyname = KeyNameFromKeyCode( aHotKey );
+    wxString keyname = KeyNameFromKeyCode( aHotKey, true );
 
     if( !keyname.IsEmpty() )
     {
@@ -429,9 +446,10 @@ int WriteHotKeyConfig( const std::vector<TOOL_ACTION*>& aActions )
     wxTextOutputStream  txtStream( outStream, wxEOL_UNIX );
 
     for( const std::pair<const std::string, std::pair<int, int>>& entry : hotkeys )
-        txtStream << entry.first
-            << "\t" << KeyNameFromKeyCode( entry.second.first )
-            << "\t" << KeyNameFromKeyCode( entry.second.second ) << endl;
+    {
+        txtStream << entry.first << "\t" << KeyNameFromKeyCode( entry.second.first, false ) << "\t"
+                  << KeyNameFromKeyCode( entry.second.second, false ) << endl;
+    }
 
     txtStream.Flush();
     outStream.Close();

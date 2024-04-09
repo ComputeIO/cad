@@ -30,7 +30,9 @@ unsigned int  ScanCodeFromKeyEvent( uint32_t aRawKeyCode, uint32_t aRawKeyFlags 
 CodeNameIndex CodeNameIndexFromScanCode( unsigned int aScanCode );
 int           WXKFromCodeNameIndex( CodeNameIndex aCodeNameIndex );
 CodeNameIndex CodeNameIndexFromWXK( int aWXKey );
+uint32_t      ScancodeFromCodeNameIndex( CodeNameIndex aCodeNameIndex );
 int           WXKFromKeyEvent( uint32_t aRawKeyCode, uint32_t aRawKeyFlags );
+wchar_t       CharFromScancode( uint32_t aScancode );
 
 } // namespace GeckoKeys
 
