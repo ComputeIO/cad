@@ -175,6 +175,9 @@ static struct hotkey_name_descr hotkeyNameList[] =
  */
 wxString KeyNameFromKeyCode( int aKeycode, bool aLocalized, bool* aIsFound )
 {
+    printf( "%lu KeyNameFromKeyCode aKeycode %d, aLocalized %d\n", wxGetLocalTime(), aKeycode,
+            (int) aLocalized );
+
     wxString keyname, modifier, fullkeyname;
     int      ii;
     bool     found = false;
@@ -208,6 +211,9 @@ wxString KeyNameFromKeyCode( int aKeycode, bool aLocalized, bool* aIsFound )
             uint32_t                 scancode = GeckoKeys::ScancodeFromCodeNameIndex( idx );
             wchar_t                  ch = GeckoKeys::CharFromScancode( scancode );
 
+            printf( "%lu  KeyNameFromKeyCode localized idx %d scancode %08x ch %08x ",
+                    wxGetLocalTime(), idx, scancode, ch );
+
             if( ch )
             {
                 found = true;
@@ -217,6 +223,8 @@ wxString KeyNameFromKeyCode( int aKeycode, bool aLocalized, bool* aIsFound )
 
         if( !found )
         {
+            printf( "%lu  KeyNameFromKeyCode using default ch %08x ", wxGetLocalTime(), aKeycode );
+
             found = true;
             keyname.Append( (wxChar) aKeycode );
         }
@@ -238,12 +246,18 @@ wxString KeyNameFromKeyCode( int aKeycode, bool aLocalized, bool* aIsFound )
                 break;
             }
         }
+
+        if( found )
+            printf( "%lu  KeyNameFromKeyCode used special name ", wxGetLocalTime() );
     }
 
     if( aIsFound )
         *aIsFound = found;
 
     fullkeyname = modifier + keyname;
+
+    printf( "ret %s\n", fullkeyname.c_str().AsChar() );
+
     return fullkeyname;
 }
 

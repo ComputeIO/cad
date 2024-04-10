@@ -5,6 +5,7 @@
 
 #include <gecko_keys.h>
 #include <wx/defs.h>
+#include <wx/time.h>
 
 #if defined( _WIN32 )
 #include <Windows.h>
@@ -18,14 +19,20 @@ namespace GeckoKeys
 
 unsigned int ScanCodeFromKeyEvent( uint32_t aRawKeyCode, uint32_t aRawKeyFlags )
 {
+    printf( "\n" );
+    printf( "%lu ScanCodeFromKeyEvent rawKeyCode %08x rawKeyFlags %08x\n", wxGetLocalTime(), aRawKeyCode,
+            aRawKeyFlags );
+
 #if defined( _WIN32 )
 
     uint16_t scanCode = ( aRawKeyFlags >> 16 ) & 0xFF;
 
     if( ( aRawKeyFlags & 0x1000000 ) != 0 ) // Extended
     {
-        return ( 0xE000 | scanCode );
+        scanCode |= 0xE000;
     }
+
+    printf( "%lu  ScanCodeFromKeyEvent return scanCode %08x\n", wxGetLocalTime(), scanCode );
 
     return scanCode;
 #elif defined( __APPLE__ )
@@ -38,6 +45,8 @@ unsigned int ScanCodeFromKeyEvent( uint32_t aRawKeyCode, uint32_t aRawKeyFlags )
 
 CodeNameIndex CodeNameIndexFromScanCode( unsigned int aScanCode )
 {
+    printf( "%lu CodeNameIndexFromScanCode aScanCode %08x\n", wxGetLocalTime(), aScanCode );
+
     // clang-format off
     switch (aScanCode) {
 #define NS_NATIVE_KEY_TO_DOM_CODE_NAME_INDEX(aNativeKey, aCodeNameIndex) \
@@ -59,6 +68,9 @@ CodeNameIndex CodeNameIndexFromScanCode( unsigned int aScanCode )
 
 int WXKFromCodeNameIndex( CodeNameIndex aCodeNameIndex )
 {
+    printf( "%lu WXKFromCodeNameIndex aCodeNameIndex %d\n", wxGetLocalTime(),
+            (int) aCodeNameIndex );
+
     // clang-format off
     switch (aCodeNameIndex) {
 #define NS_WX_KEY_TO_DOM_CODE_NAME_INDEX(aWXKey, aCPPCodeName) \
@@ -80,6 +92,8 @@ int WXKFromCodeNameIndex( CodeNameIndex aCodeNameIndex )
 
 CodeNameIndex CodeNameIndexFromWXK( int aWXKey )
 {
+    printf( "%lu CodeNameIndexFromWXK aWXKey %d\n", wxGetLocalTime(), aWXKey );
+
     // clang-format off
     switch (aWXKey) {
 #define NS_WX_KEY_TO_DOM_CODE_NAME_INDEX(aWXKey, aCPPCodeName) \
@@ -101,6 +115,9 @@ CodeNameIndex CodeNameIndexFromWXK( int aWXKey )
 
 uint32_t ScancodeFromCodeNameIndex( CodeNameIndex aCodeNameIndex )
 {
+    printf( "%lu ScancodeFromCodeNameIndex aCodeNameIndex %d\n", wxGetLocalTime(),
+            (int) aCodeNameIndex );
+
     // clang-format off
 #define NS_NATIVE_KEY_TO_DOM_CODE_NAME_INDEX(aNativeKey, aCodeNameIndexIt) \
     if( aCodeNameIndex == aCodeNameIndexIt) return aNativeKey;
@@ -116,6 +133,10 @@ uint32_t ScancodeFromCodeNameIndex( CodeNameIndex aCodeNameIndex )
 
 int WXKFromKeyEvent( uint32_t aRawKeyCode, uint32_t aRawKeyFlags )
 {
+    printf( "\n" );
+    printf( "%lu WXKFromKeyEvent rawKeyCode %08x rawKeyFlags %08x\n", wxGetLocalTime(), aRawKeyCode,
+            aRawKeyFlags );
+
     return WXKFromCodeNameIndex(
             CodeNameIndexFromScanCode( ScanCodeFromKeyEvent( aRawKeyCode, aRawKeyFlags ) ) );
 }
@@ -123,16 +144,23 @@ int WXKFromKeyEvent( uint32_t aRawKeyCode, uint32_t aRawKeyFlags )
 
 int WXKFromScancode( int aScancode )
 {
+    printf( "%lu WXKFromScancode aScanCode %08x\n", wxGetLocalTime(), aScancode );
+
     return WXKFromCodeNameIndex( CodeNameIndexFromScanCode( aScancode ) );
 }
 
 
 wchar_t CharFromScancode( uint32_t aScancode )
 {
+    printf( "%lu CharFromScancode aScanCode %08x\n", wxGetLocalTime(), aScancode );
+
 #if defined( _WIN32 )
     HKL layout = ::GetKeyboardLayout( 0 );
     uint32_t vk = ::MapVirtualKeyExW( aScancode, MAPVK_VSC_TO_VK, layout );
     wchar_t ch = ::MapVirtualKeyExW( vk, MAPVK_VK_TO_CHAR, layout );
+
+    printf( "%lu  CharFromScancode layout %016x vk %08x ch %08x\n", wxGetLocalTime(), layout, vk,
+            ch );
 
     return ch;
 #elif defined( __APPLE__ )
