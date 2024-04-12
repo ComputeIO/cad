@@ -183,7 +183,7 @@ wchar_t CharFromScancode( uint32_t aScancode )
     GdkKeymapKey* keys = nullptr;
     gint          count = 0;
     gint          minGroup = -1;
-    if( gdk_keymap_get_entries_for_keyval( keymap, aScancode, &keys, &count ) )
+    if( gdk_keymap_get_entries_for_keyval( keymap, 0x061 /* GDK_a */, &keys, &count ) )
     {
         // find the minimum number group for latin inputtable layout
         for( gint i = 0; i < count && minGroup != 0; ++i )
@@ -216,6 +216,9 @@ wchar_t CharFromScancode( uint32_t aScancode )
     long ucs = keysym2ucs( keyval );
     if( ( ucs != -1 ) && ( ucs < MAX_UNICODE ) )
     {
+        printf( "%lu  CharFromScancode keymap %p keyval %08x ucs %08lx\n", wxGetLocalTime(), keymap,
+                keyval, ucs );
+
         return ucs;
     }
 
