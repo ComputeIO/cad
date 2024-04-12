@@ -214,6 +214,10 @@ wxString KeyNameFromKeyCode( int aKeycode, bool aLocalized, bool* aIsFound )
             printf( "%lu  KeyNameFromKeyCode localized idx %d scancode %08x ch %08x ",
                     wxGetLocalTime(), idx, scancode, ch );
 
+            // Convert ASCII letters to uppercase (needed on Linux)
+            if( ch >= 'a' && ch <= 'z' )
+                ch = ch - 'a' + 'A';
+
             if( ch )
             {
                 found = true;
