@@ -336,8 +336,8 @@ void WIDGET_HOTKEY_LIST::updateFromClientData()
 void WIDGET_HOTKEY_LIST::changeHotkey( HOTKEY& aHotkey, long aKey, bool alternate )
 {
     // See if this key code is handled in hotkeys names list
-    bool exists;
-    KeyNameFromKeyCode( aKey, &exists );
+    bool exists = false;
+    KeyNameFromKeyCode( aKey, false, &exists );
 
     if( exists && aHotkey.m_EditKeycode != aKey )
     {
