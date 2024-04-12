@@ -12,6 +12,12 @@
 #elif defined(__WXGTK__)
 #include <gdk/gdk.h>
 #include <x11/keysym2ucs.h>
+
+#if 0
+#include <gdk/gdkx.h>
+#include <X11/XKBlib.h>
+#endif
+
 #endif
 
 
@@ -209,6 +215,30 @@ wchar_t CharFromScancode( uint32_t aScancode )
 
     gdk_keymap_translate_keyboard_state( keymap, aScancode, GdkModifierType( state ), minGroup,
                                          &keyval, nullptr, nullptr, nullptr );
+
+#if 0
+    Display* display_x11 = gdk_x11_display_get_xdisplay( GDK_X11_DISPLAY( disp ) );
+
+    if( display_x11 )
+    {
+        const KeySym keysym = XkbKeycodeToKeysym( display_x11, aScancode, 0, 0 );
+
+        if( keysym == NoSymbol )
+            return 0;
+
+        static const long MAX_UNICODE = 0x10FFFF;
+
+        // we're supposedly printable, let's try to convert
+        long ucs = keysym2ucs( keysym );
+        if( ( ucs != -1 ) && ( ucs < MAX_UNICODE ) )
+        {
+            printf( "%lu  CharFromScancode keymap %p keysym %08x ucs %08lx\n", wxGetLocalTime(),
+                    keymap, keysym, ucs );
+
+            return ucs;
+        }
+    }
+#endif
 
     static const long MAX_UNICODE = 0x10FFFF;
 
