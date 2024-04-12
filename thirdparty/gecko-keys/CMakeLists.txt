@@ -7,9 +7,12 @@ elseif( UNIX )
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
+    find_package(X11 REQUIRED)
+
     # Detect GTK3 and configure it
     set( PLATFORM_LIBS
         ${GTK3_LIBRARIES}
+        ${X11_LIBRARIES}
     )
 
     include_directories( SYSTEM ${GTK3_INCLUDE_DIRS} )
