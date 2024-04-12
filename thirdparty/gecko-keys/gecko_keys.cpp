@@ -10,7 +10,8 @@
 #if defined( _WIN32 )
 #include <Windows.h>
 #elif defined(__WXGTK__)
-#include "x11/keysym2ucs.h"
+#include <gdk/gdk.h>
+#include <x11/keysym2ucs.h>
 #endif
 
 
@@ -74,7 +75,7 @@ int WXKFromCodeNameIndex( CodeNameIndex aCodeNameIndex )
     // clang-format off
     switch (aCodeNameIndex) {
 #define NS_WX_KEY_TO_DOM_CODE_NAME_INDEX(aWXKey, aCPPCodeName) \
-    case aCPPCodeName:                    \
+    case aCPPCodeName:                                         \
       return aWXKey;
 
 #include "NativeKeyToDOMCodeName.h"
@@ -97,7 +98,7 @@ CodeNameIndex CodeNameIndexFromWXK( int aWXKey )
     // clang-format off
     switch (aWXKey) {
 #define NS_WX_KEY_TO_DOM_CODE_NAME_INDEX(aWXKey, aCPPCodeName) \
-    case aWXKey:                          \
+    case aWXKey:                                               \
       return aCPPCodeName;
 
 #include "NativeKeyToDOMCodeName.h"
@@ -177,12 +178,12 @@ wchar_t CharFromScancode( uint32_t aScancode )
     return chars[0];
 #else
     GdkDisplay* disp = gdk_display_get_default();
-    keymap = gdk_keymap_get_for_display( disp );
+    GdkKeymap* keymap = gdk_keymap_get_for_display( disp );
 
     GdkKeymapKey* keys = nullptr;
     gint          count = 0;
     gint          minGroup = -1;
-    if( gdk_keymap_get_entries_for_keyval( mGdkKeymap, GDK_a, &keys, &count ) )
+    if( gdk_keymap_get_entries_for_keyval( keymap, aScancode, &keys, &count ) )
     {
         // find the minimum number group for latin inputtable layout
         for( gint i = 0; i < count && minGroup != 0; ++i )
@@ -212,7 +213,7 @@ wchar_t CharFromScancode( uint32_t aScancode )
     static const long MAX_UNICODE = 0x10FFFF;
 
     // we're supposedly printable, let's try to convert
-    long ucs = keysym2ucs( aGdkKeyEvent->keyval );
+    long ucs = keysym2ucs( keyval );
     if( ( ucs != -1 ) && ( ucs < MAX_UNICODE ) )
     {
         return ucs;

@@ -192,7 +192,7 @@ CODE_MAP_WIN(IntlYen, 0x007D)
 CODE_MAP_MAC(IntlYen, kVK_JIS_Yen)
 CODE_MAP_X11(IntlYen, 0x0084)
 CODE_MAP_ANDROID(IntlYen, 0x007C)
-CODE_MAP_WX( IntlYen, '\u00a5' ) // ¥
+CODE_MAP_WX( IntlYen, L'\u00a5' ) // ¥
 
 CODE_MAP_WIN(KeyA, 0x001E)
 CODE_MAP_MAC(KeyA, kVK_ANSI_A)
