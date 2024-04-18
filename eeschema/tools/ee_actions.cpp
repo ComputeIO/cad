@@ -1486,6 +1486,12 @@ TOOL_ACTION EE_ACTIONS::toggleDottedSecondary( TOOL_ACTION_ARGS()
         .FriendlyName( _( "Dotted Current/Phase" ) )
         .Tooltip( _( "Draw secondary signal trace (current or phase) with a dotted line" ) ) );
 
+TOOL_ACTION EE_ACTIONS::toggleLinearPlot( TOOL_ACTION_ARGS()
+        .Name( "eeschema.Simulator.toggleLinearPlot" )
+        .Scope( AS_GLOBAL )
+        .FriendlyName( _( "Linear Y Plot" ) )
+        .Tooltip( _( "Plot Y axis as a linear scale" ) ) );
+
 TOOL_ACTION EE_ACTIONS::toggleDarkModePlots( TOOL_ACTION_ARGS()
         .Name( "eeschema.Simulator.toggleDarkModePlots" )
         .Scope( AS_GLOBAL )

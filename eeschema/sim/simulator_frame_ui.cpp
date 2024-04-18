@@ -2001,6 +2001,7 @@ bool SIMULATOR_FRAME_UI::loadJsonWorkbook( const wxString& aPath )
                 }
 
                 plotTab->SetDottedSecondary( tab_js[ "dottedSecondary" ] );
+                plotTab->SetLinearPlot( tab_js[ "linearPlot" ] );
                 plotTab->ShowGrid( tab_js[ "showGrid" ] );
 
                 if( tab_js.contains( "fixedY1scale" ) )
@@ -2232,6 +2233,7 @@ bool SIMULATOR_FRAME_UI::SaveWorkbook( const wxString& aPath )
             tab_js[ "traces" ]          = traces_js;
             tab_js[ "measurements" ]    = measurements_js;
             tab_js[ "dottedSecondary" ] = plotTab->GetDottedSecondary();
+            tab_js[ "linearPlot" ]      = plotTab->GetLinearPlot();
             tab_js[ "showGrid" ]        = plotTab->IsGridShown();
 
             double min, max;

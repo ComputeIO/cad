@@ -185,6 +185,7 @@ class DIALOG_SIM_COMMAND_BASE : public DIALOG_SHIM
 		wxStaticText* m_y3Units;
 		wxCheckBox* m_grid;
 		wxCheckBox* m_legend;
+		wxCheckBox* m_linear_plot;
 		wxCheckBox* m_dottedSecondary;
 		wxStaticText* m_marginsLabel;
 		wxStaticText* m_marginLeftLabel;

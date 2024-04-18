@@ -102,6 +102,10 @@ void SIMULATOR_FRAME_UI::parseTraceParams( SIM_PLOT_TAB* aPlotTab, TRACE* aTrace
         {
             aPlotTab->SetDottedSecondary( true );
         }
+        else if( item == wxS( "linearPlot" ) )
+        {
+            aPlotTab->SetLinearPlot( true );
+        }
         else if( item == wxS( "hideGrid" ) )
         {
             aPlotTab->ShowGrid( false );

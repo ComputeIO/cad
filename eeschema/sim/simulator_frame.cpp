@@ -656,6 +656,13 @@ void SIMULATOR_FRAME::setupUIConditions()
                 return plotTab && plotTab->GetDottedSecondary();
             };
 
+    auto showLinearCondition =
+            [this]( const SELECTION& aSel )
+            {
+                SIM_PLOT_TAB* plotTab = dynamic_cast<SIM_PLOT_TAB*>( GetCurrentSimTab() );
+                return plotTab && plotTab->GetLinearPlot();
+            };
+
     auto darkModePlotCondition =
             [this]( const SELECTION& aSel )
             {
@@ -716,6 +723,7 @@ void SIMULATOR_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::zoomRedo,                 ENABLE( haveZoomRedo ) );
     mgr->SetConditions( EE_ACTIONS::toggleGrid,            CHECK( showGridCondition ) );
     mgr->SetConditions( EE_ACTIONS::toggleLegend,          CHECK( showLegendCondition ) );
+    mgr->SetConditions( EE_ACTIONS::toggleLinearPlot,      CHECK( showLinearCondition ) );
     mgr->SetConditions( EE_ACTIONS::toggleDottedSecondary, CHECK( showDottedCondition ) );
     mgr->SetConditions( EE_ACTIONS::toggleDarkModePlots,   CHECK( darkModePlotCondition ) );
 

@@ -278,6 +278,7 @@ public:
     static TOOL_ACTION simTune;
     static TOOL_ACTION toggleLegend;
     static TOOL_ACTION toggleDottedSecondary;
+    static TOOL_ACTION toggleLinearPlot;
     static TOOL_ACTION toggleDarkModePlots;
     static TOOL_ACTION simAnalysisProperties;
     static TOOL_ACTION runSimulation;

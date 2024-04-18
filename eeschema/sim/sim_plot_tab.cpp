@@ -140,6 +140,7 @@ public:
     {};
 
     wxString GetUnits() const { return m_unit; }
+    void     SetUnits( wxString suffix ) { m_unit = suffix; }
 
 private:
     void formatLabels() override
@@ -182,7 +183,7 @@ private:
     }
 
 private:
-    const wxString m_unit;
+    wxString       m_unit;
     wxString       m_base_axis_label;
 };
 
@@ -435,6 +436,7 @@ SIM_PLOT_TAB::SIM_PLOT_TAB( const wxString& aSimCommand, wxWindow* parent ) :
         m_axis_y1( nullptr ),
         m_axis_y2( nullptr ),
         m_axis_y3( nullptr ),
+        m_linear_plot( false ),
         m_dotted_cp( false )
 {
     m_sizer   = new wxBoxSizer( wxVERTICAL );
@@ -446,7 +448,7 @@ SIM_PLOT_TAB::SIM_PLOT_TAB( const wxString& aSimCommand, wxWindow* parent ) :
 
     updateAxes();
 
-    // a mpInfoLegend displays le name of traces on the left top panel corner:
+    // a mpInfoLegend displays the name of traces on the left top panel corner:
     m_legend = new mpInfoLegend( wxRect( 0, 0, 200, 40 ), wxTRANSPARENT_BRUSH );
     m_legend->SetVisible( false );
     m_plotWin->AddLayer( m_legend );
@@ -541,20 +543,35 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
         case ST_AC:
             if( !m_axis_x )
             {
+            wxString          sim_cmd = GetSimCommand().Lower();
+            wxStringTokenizer tokens( sim_cmd, wxS( " \t" ), wxTOKEN_STRTOK );
+            wxString          cmd = tokens.GetNextToken();
+            cmd = tokens.GetNextToken();
+            if( cmd == "lin" )
+                m_axis_x = new LIN_SCALE<mpScaleX>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
+            if( cmd == "dec" )
                 m_axis_x = new LOG_SCALE<mpScaleXLog>( wxEmptyString, wxT( "Hz" ), mpALIGN_BOTTOM );
-                m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
-                m_plotWin->AddLayer( m_axis_x );
+            m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
+            m_plotWin->AddLayer( m_axis_x );
 
+            if( GetLinearPlot() == true )
+                m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "V" ), mpALIGN_LEFT );
+            else
                 m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dBV" ), mpALIGN_LEFT );
-                m_axis_y1->SetNameAlign( mpALIGN_LEFT );
-                m_plotWin->AddLayer( m_axis_y1 );
+            m_axis_y1->SetNameAlign( mpALIGN_LEFT );
+            m_plotWin->AddLayer( m_axis_y1 );
 
-                m_axis_y2 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "°" ), mpALIGN_RIGHT );
-                m_axis_y2->SetNameAlign( mpALIGN_RIGHT );
-                m_axis_y2->SetMasterScale( m_axis_y1 );
-                m_plotWin->AddLayer( m_axis_y2 );
+            m_axis_y2 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "°" ), mpALIGN_RIGHT );
+            m_axis_y2->SetNameAlign( mpALIGN_RIGHT );
+            m_axis_y2->SetMasterScale( m_axis_y1 );
+            m_plotWin->AddLayer( m_axis_y2 );
             }
 
+            if( GetLinearPlot() == true )
+                dynamic_cast<LIN_SCALE<mpScaleY>*>( m_axis_y1 )->SetUnits( wxT("V") );
+            else
+                dynamic_cast<LIN_SCALE<mpScaleY>*>( m_axis_y1 )->SetUnits( wxT("dBV") );
+            m_axis_y1->SetNameAlign( mpALIGN_LEFT );
             m_axis_x->SetName( _( "Frequency" ) );
             m_axis_y1->SetName( _( "Gain" ) );
             m_axis_y2->SetName( _( "Phase" ) );
@@ -895,12 +912,13 @@ void SIM_PLOT_TAB::SetTraceData( TRACE* trace, std::vector<double>& aX, std::vec
         }
         else
         {
-            for( double& pt : aY )
-            {
-                // log( 0 ) is not valid.
-                if( pt != 0 )
-                    pt = 20 * log( pt ) / log( 10.0 );      // convert to dB
-            }
+            if( GetLinearPlot() == false )
+                for( double& pt : aY )
+                {
+                    // log( 0 ) is not valid.
+                    if( pt != 0 )
+                        pt = 20 * log( pt ) / log( 10.0 );      // convert to dB
+                }
         }
     }
 
@@ -918,6 +936,7 @@ void SIM_PLOT_TAB::SetTraceData( TRACE* trace, std::vector<double>& aX, std::vec
         if( cursor )
             cursor->SetCoordX( cursor->GetCoords().x );
     }
+    updateAxes(); // needed if linear/log scale was toggled
 }
 
 
