@@ -755,40 +755,40 @@ else()
     find_package( OpenGL REQUIRED )
 endif()
 
-#
-# Find GLEW library, required
-#
-# The EGL canvas on GTK requires the use of a GLEW version compiled with an EGL flag.
-# The one built in the thirdparty directory has the flag for EGL set, so we use it unless told
-# otherwise. Then we search for the system GLEW version and use that instead.
-#
-if( KICAD_USE_EGL AND KICAD_USE_BUNDLED_GLEW AND UNIX AND NOT APPLE )
-    if( OpenGL_EGL_FOUND )
-        message( STATUS "Found OpenGL EGL library: ${OPENGL_egl_LIBRARY}" )
-    else()
-        message( FATAL_ERROR "OpenGL EGL library not found" )
+
+# KICAD needs GLEW compiled with explicit EGL support
+# Set KICAD_USE_BUNDLED_GLEW to force this
+if(KICAD_USE_EGL)
+    message(CHECK_START "Checking for OpenGL with EGL")
+
+    # Note that EGL requires the use of GLVND -- defaulted in cmake > 3.11
+    find_package(OpenGL REQUIRED COMPONENTS EGL)
+
+    #
+    # The EGL canvas on GTK requires the use of a GLEW version compiled with an EGL flag.
+    # The one built in the thirdparty directory has the flag for EGL set, so we use it unless told
+    # otherwise. Then we search for the system GLEW version and use that instead.
+    #
+    if(KICAD_USE_BUNDLED_GLEW)
+        # Add the custom GLEW target
+        add_subdirectory(thirdparty/glew)
+
+        # Set the standard package variables to point to our custom target to mimic the system version.
+        set(GLEW_FOUND TRUE)
+        add_library(GLEW::GLEW ALIAS glew)
     endif()
-
-    # Add the custom GLEW target
-    add_subdirectory( thirdparty/glew )
-
-    # Set the standard package variables to point to our custom target to mimic the system version.
-    set( GLEW_LIBRARIES glew )
-    set( GLEW_FOUND TRUE )
-    include_directories( SYSTEM $<TARGET_PROPERTY:glew,INCLUDE_DIRECTORIES> )
 else()
-    find_package( GLEW REQUIRED )
-    check_find_package_result( GLEW_FOUND "GLEW" )
-    include_directories( SYSTEM ${GLEW_INCLUDE_DIR} )
+    # OpenGL::GL defaults to GLVND on cmake > 3.11
+    # Set OpenGL_GL_PREFERENCE to LEGACY to force GLX over GLVND
+    # EGL requires the use of GLVND
+    find_package(OpenGL REQUIRED)
+    find_package(GLEW REQUIRED)
 endif()
 
 #
 # Find GLM library, required
 #
-find_package( GLM 0.9.8 REQUIRED )
-add_compile_definitions( GLM_FORCE_CTOR_INIT )
-include_directories( SYSTEM ${GLM_INCLUDE_DIR} )
-
+find_package(GLM 0.9.8 REQUIRED)
 #
 # Find zlib library, required
 #

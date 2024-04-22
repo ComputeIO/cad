@@ -1,7 +1,6 @@
 include_directories(
     "${CMAKE_SOURCE_DIR}/include"
     "${CMAKE_SOURCE_DIR}/utils/idftools"
-    ${OPENGL_INCLUDE_DIR}
 )
 
 set( IDF3_FILES
@@ -31,14 +30,16 @@ target_link_libraries( dxf2idf
     dxflib_qcad
     idf3
     kimath
-    ${OPENGL_LIBRARIES}
+    OpenGL::GL
+    "$<$<BOOL:${KICAD_USE_EGL}>:OpenGL::EGL>"
     ${wxWidgets_LIBRARIES}
     )
 
 target_link_libraries( idf2vrml
     idf3
     kimath
-    ${OPENGL_LIBRARIES}
+    OpenGL::GL
+    "$<$<BOOL:${KICAD_USE_EGL}>:OpenGL::EGL>"
     ${wxWidgets_LIBRARIES}
     )
 
