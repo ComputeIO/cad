@@ -18,6 +18,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <map>
 #include <wx/dir.h>
 #include "pcbnew_jobs_handler.h"
 #include <board_commit.h>
@@ -39,6 +40,7 @@
 #include <jobs/job_export_pcb_3d.h>
 #include <jobs/job_pcb_render.h>
 #include <jobs/job_pcb_drc.h>
+#include <jobs/job_pcb_convert.h>
 #include <cli/exit_codes.h>
 #include <exporters/place_file_exporter.h>
 #include <exporters/step/exporter_step.h>
@@ -73,6 +75,9 @@
 #include <export_vrml.h>
 #include <wx/wfstream.h>
 #include <wx/zipstrm.h>
+#include <pcb_io/altium/pcb_io_altium_circuit_maker.h>
+#include <pcb_io/altium/pcb_io_altium_circuit_studio.h>
+#include <pcb_io/altium/pcb_io_altium_designer.h>
 
 #include "pcbnew_scripting_helpers.h"
 
@@ -106,6 +111,8 @@ PCBNEW_JOBS_HANDLER::PCBNEW_JOBS_HANDLER( KIWAY* aKiway ) :
     Register( "drc", std::bind( &PCBNEW_JOBS_HANDLER::JobExportDrc, this, std::placeholders::_1 ) );
     Register( "ipc2581",
               std::bind( &PCBNEW_JOBS_HANDLER::JobExportIpc2581, this, std::placeholders::_1 ) );
+    Register( "convert",
+              std::bind( &PCBNEW_JOBS_HANDLER::JobExportConvert, this, std::placeholders::_1 ) );
 }
 
 
@@ -1426,6 +1433,56 @@ int PCBNEW_JOBS_HANDLER::JobExportIpc2581( JOB* aJob )
     }
 
     return CLI::EXIT_CODES::SUCCESS;
+}
+
+int PCBNEW_JOBS_HANDLER::JobExportConvert( JOB* aJob )
+{
+    auto aConvertJob = dynamic_cast<JOB_PCB_CONVERT*>( aJob );
+
+    if( aConvertJob == nullptr )
+        return CLI::EXIT_CODES::ERR_UNKNOWN;
+
+    if( aJob->IsCli() )
+        m_reporter->Report( _( "Loading board\n" ), RPT_SEVERITY_INFO );
+
+    BOARD* brd{};
+
+    static const auto mapFromToPCBType = std::map<JOB_PCB_CONVERT::From, PCB_IO_MGR::PCB_FILE_T>{
+        { JOB_PCB_CONVERT::From::ALTIUM_CIRCUIT_MAKER,
+          PCB_IO_MGR::PCB_FILE_T::ALTIUM_CIRCUIT_MAKER },
+        { JOB_PCB_CONVERT::From::ALTIUM_CIRCUIT_STUDIO,
+          PCB_IO_MGR::PCB_FILE_T::ALTIUM_CIRCUIT_STUDIO },
+        { JOB_PCB_CONVERT::From::ALTIUM_DESIGNER, PCB_IO_MGR::PCB_FILE_T::ALTIUM_DESIGNER },
+    };
+
+    if( auto it = mapFromToPCBType.find( aConvertJob->m_from ); it == mapFromToPCBType.end() )
+    {
+        if( aConvertJob == nullptr )
+            return CLI::EXIT_CODES::ERR_UNKNOWN;
+    }
+    else
+    {
+    }
+
+    switch( aConvertJob->m_from )
+    {
+    case JOB_PCB_CONVERT::From::ALTIUM_CIRCUIT_MAKER:
+        brd = LoadBoard( aConvertJob->m_filename, PCB_IO_MGR::PCB_FILE_T::ALTIUM_CIRCUIT_MAKER,
+                         true );
+        break;
+    case JOB_PCB_CONVERT::From::ALTIUM_CIRCUIT_STUDIO: break;
+    case JOB_PCB_CONVERT::From::ALTIUM_DESIGNER: break;
+    }
+
+
+    bool success = true;
+
+    if( success )
+        m_reporter->Report( _( "Successfully convered board" ) + wxS( "\n" ), RPT_SEVERITY_INFO );
+    else
+        m_reporter->Report( _( "Error converting board" ) + wxS( "\n" ), RPT_SEVERITY_ERROR );
+
+    return CLI::EXIT_CODES::OK;
 }
 
 
