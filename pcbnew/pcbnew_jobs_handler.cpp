@@ -1488,7 +1488,8 @@ int PCBNEW_JOBS_HANDLER::JobExportConvert( JOB* aJob )
                 return CLI::EXIT_CODES::ERR_UNKNOWN;
             }
 
-            m_reporter->Report( _( "Successfully convered board" ) + wxS( "\n" ), RPT_SEVERITY_INFO );
+            m_reporter->Report( _( "Successfully converted board" ) + wxS( "\n" ),
+                                RPT_SEVERITY_INFO );
             return CLI::EXIT_CODES::OK;
         }
 
