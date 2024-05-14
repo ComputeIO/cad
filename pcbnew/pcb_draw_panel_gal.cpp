@@ -40,6 +40,7 @@
 #include <pcbnew_settings.h>
 #include <ratsnest/ratsnest_data.h>
 #include <ratsnest/ratsnest_view_item.h>
+#include <pcb_board_outline.h>
 
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
@@ -294,6 +295,9 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( BOARD* aBoard, PROGRESS_REPORTER* aReport
     for( PCB_GENERATOR* generator : aBoard->Generators() )
         m_view->Add( generator );
 
+    aBoard->UpdateBoardOutline();
+    m_view->Add( aBoard->BoardOutline() );
+
     // Ratsnest
     if( !aBoard->IsFootprintHolder() )
     {
@@ -517,6 +521,7 @@ void PCB_DRAW_PANEL_GAL::SyncLayersVisibility( const BOARD* aBoard )
     m_view->SetLayerVisible( LAYER_SELECT_OVERLAY, true );
     m_view->SetLayerVisible( LAYER_RATSNEST, true );
     m_view->SetLayerVisible( LAYER_MARKER_SHADOWS, true );
+    m_view->SetLayerVisible( LAYER_BOARD_OUTLINE, true );
 }
 
 

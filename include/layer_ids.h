@@ -244,6 +244,8 @@ enum GAL_LAYER_ID: int
 
     LAYER_CONFLICTS_SHADOW   = GAL_LAYER_ID_START + 40, ///< shadow layer for items flagged conficting
 
+    LAYER_BOARD_OUTLINE      = GAL_LAYER_ID_START + 41, ///< PCB board outline
+
     // Add layers below this point that do not have visibility controls, so don't need explicit
     // enum values
 

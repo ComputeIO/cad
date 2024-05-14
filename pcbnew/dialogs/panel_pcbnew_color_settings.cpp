@@ -713,6 +713,7 @@ PANEL_PCBNEW_COLOR_SETTINGS::PANEL_PCBNEW_COLOR_SETTINGS( wxWindow* aParent, BOA
     m_validLayers.push_back( LAYER_PAGE_LIMITS );
     m_validLayers.push_back( LAYER_DRC_WARNING );
     m_validLayers.push_back( LAYER_DRC_EXCLUSION );
+    m_validLayers.push_back( LAYER_BOARD_OUTLINE );
 
     // NOTE: Main board layers are added by createSwatches()
 

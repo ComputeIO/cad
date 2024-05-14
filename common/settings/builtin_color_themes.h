@@ -170,6 +170,7 @@ static const std::map<int, COLOR4D> s_defaultTheme =
             { LAYER_VIA_MICROVIA,           CSS_COLOR( 0,   132, 132, 1 ) },
             { LAYER_DRAWINGSHEET,           CSS_COLOR( 200, 114, 171, 1 ) },
             { LAYER_PAGE_LIMITS,            CSS_COLOR( 132, 132, 132, 1 ) },
+            { LAYER_BOARD_OUTLINE,          CSS_COLOR( 109, 106,  105,1 ) },
 
             { F_Cu,                         CSS_COLOR( 200, 52,  52,  1 ) },
             { In1_Cu,                       CSS_COLOR( 127, 200, 127, 1 ) },
@@ -388,6 +389,7 @@ static const std::map<int, COLOR4D> s_classicTheme =
             { LAYER_VIA_MICROVIA,           COLOR4D( CYAN ) },
             { LAYER_DRAWINGSHEET,           COLOR4D( DARKRED ) },
             { LAYER_PAGE_LIMITS,            COLOR4D( DARKGRAY) },
+            { LAYER_BOARD_OUTLINE,          COLOR4D( BLACK ) },
 
             { F_Cu,                         COLOR4D( RED ) },
             { In1_Cu,                       COLOR4D( YELLOW ) },

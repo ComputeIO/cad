@@ -37,6 +37,7 @@
 #include <tools/pcb_actions.h>
 #include <connectivity/connectivity_data.h>
 #include <teardrop/teardrop.h>
+#include <pcb_board_outline.h>
 
 #include <functional>
 using namespace std::placeholders;
@@ -171,6 +172,7 @@ void BOARD_COMMIT::Push( const wxString& aMessage, int aCommitFlags )
     // Dirty flags and lists
     bool                     solderMaskDirty = false;
     bool                     autofillZones = false;
+    bool                     updateBoardBoundingBox = false;
     std::vector<BOARD_ITEM*> staleTeardropPadsAndVias;
     std::set<PCB_TRACK*>     staleTeardropTracks;
     PCB_GROUP*               addedGroup = nullptr;
@@ -209,6 +211,11 @@ void BOARD_COMMIT::Push( const wxString& aMessage, int aCommitFlags )
                     || boardItem->IsOnLayer( F_Mask ) || boardItem->IsOnLayer( B_Mask ) )
             {
                 solderMaskDirty = true;
+            }
+
+            if( boardItem->GetLayer() == Edge_Cuts )
+            {
+                updateBoardBoundingBox = true;
             }
 
             if( !( aCommitFlags & SKIP_TEARDROPS ) )
@@ -511,6 +518,15 @@ void BOARD_COMMIT::Push( const wxString& aMessage, int aCommitFlags )
         {
             if( frame )
                 frame->HideSolderMask();
+        }
+
+        if( updateBoardBoundingBox && view )
+        {
+            if( PCB_BOARD_OUTLINE* outline = board->BoardOutline() )
+            {
+                board->UpdateBoardOutline();
+                view->Update( outline );
+            }
         }
 
         if( !staleTeardropPadsAndVias.empty() || !staleTeardropTracks.empty() )
