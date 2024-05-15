@@ -28,6 +28,8 @@
 #include <design_block_tree_model_adapter.h>
 #include <widgets/html_window.h>
 #include <wx/checkbox.h>
+#include <wx/filedlgcustomize.h>
+#include <eeschema_settings.h>
 
 
 class SCH_BASE_FRAME;
@@ -72,6 +74,28 @@ protected:
     wxCheckBox*                 m_repeatedPlacement;
     wxCheckBox*                 m_placeAsSheet;
     wxCheckBox*                 m_keepAnnotations;
+};
+
+
+// This is a helper class for the file dialog to allow the user to choose similar options
+// as the design block chooser when importing a sheet.
+class FILEDLG_IMPORT_SHEET_CONTENTS : public wxFileDialogCustomizeHook
+{
+public:
+    FILEDLG_IMPORT_SHEET_CONTENTS( EESCHEMA_SETTINGS* aSettings );
+
+    virtual void AddCustomControls( wxFileDialogCustomize& customizer ) override;
+
+    virtual void TransferDataFromCustomControls() override;
+
+private:
+    EESCHEMA_SETTINGS* m_settings;
+
+    wxFileDialogCheckBox* m_cbRepeatedPlacement;
+    wxFileDialogCheckBox* m_cbPlaceAsSheet;
+    wxFileDialogCheckBox* m_cbKeepAnnotations;
+
+    wxDECLARE_NO_COPY_CLASS( FILEDLG_IMPORT_SHEET_CONTENTS );
 };
 
 #endif /* DIALOG_DESIGN_BLOCK_CHOOSER_H */

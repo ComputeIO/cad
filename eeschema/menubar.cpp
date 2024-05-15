@@ -94,13 +94,6 @@ void SCH_EDIT_FRAME::doReCreateMenuBar()
 
     fileMenu->AppendSeparator();
 
-    fileMenu->Add( _( "Insert Schematic Sheet Content..." ),
-                   _( "Append schematic sheet content from another project to the current sheet" ),
-                   ID_APPEND_PROJECT,
-                   BITMAPS::add_document );
-
-    fileMenu->AppendSeparator();
-
     // Import submenu
     ACTION_MENU* submenuImport = new ACTION_MENU( false, selTool );
     submenuImport->SetTitle( _( "Import" ) );
@@ -259,6 +252,7 @@ void SCH_EDIT_FRAME::doReCreateMenuBar()
     placeMenu->Add( EE_ACTIONS::placeSheetPin );
     placeMenu->Add( EE_ACTIONS::syncAllSheetsPins );
     placeMenu->Add( EE_ACTIONS::importSheetCopy );
+    placeMenu->Add( EE_ACTIONS::importSheetContents );
 
     placeMenu->AppendSeparator();
     placeMenu->Add( EE_ACTIONS::placeSchematicText );

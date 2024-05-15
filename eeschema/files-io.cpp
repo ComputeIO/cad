@@ -603,29 +603,6 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 }
 
 
-bool SCH_EDIT_FRAME::AppendSchematic()
-{
-    SCH_SCREEN* screen = GetScreen();
-
-    if( !screen )
-    {
-        wxLogError( wxS( "Document not ready, cannot import" ) );
-        return false;
-    }
-
-    // open file chooser dialog
-    wxString path = wxPathOnly( Prj().GetProjectFullName() );
-
-    wxFileDialog dlg( this, _( "Insert Schematic" ), path, wxEmptyString,
-                      FILEEXT::KiCadSchematicFileWildcard(), wxFD_OPEN | wxFD_FILE_MUST_EXIST );
-
-    if( dlg.ShowModal() == wxID_CANCEL )
-        return false;
-
-    return AddSheetAndUpdateDisplay( dlg.GetPath() );
-}
-
-
 bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName, bool aKeepAnnotations,
                                                bool aIsDesignBlock )
 {
@@ -706,21 +683,6 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName, boo
     UpdateHierarchyNavigator();
 
     return placed;
-}
-
-
-void SCH_EDIT_FRAME::OnAppendProject( wxCommandEvent& event )
-{
-    if( GetScreen() && GetScreen()->IsModified() )
-    {
-        wxString msg = _( "This operation cannot be undone.\n\n"
-                          "Do you want to save the current document before proceeding?" );
-
-        if( IsOK( this, msg ) )
-            SaveProject();
-    }
-
-    AppendSchematic();
 }
 
 
