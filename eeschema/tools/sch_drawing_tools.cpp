@@ -687,15 +687,14 @@ int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
                 if( !designBlock )
                     continue;
 
-
                 sheetFileName = designBlock->GetSchematicFile();
-
-                // Update cursor now that we have a symbol
-                setCursor();
             }
 
             if( sheetFileName.IsEmpty() )
                 continue;
+
+            // Update cursor now that we have a symbol
+            setCursor();
 
             bool placed;
             do {
