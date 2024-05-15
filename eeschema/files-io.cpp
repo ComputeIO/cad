@@ -608,6 +608,7 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName, boo
     SCH_COMMIT         commit( m_toolManager );
     EE_SELECTION_TOOL* selectionTool = m_toolManager->GetTool<EE_SELECTION_TOOL>();
     SCH_SHEET_PATH*    sheetPath = &GetCurrentSheet();
+    EDA_ITEMS          newItems;
 
     selectionTool->ClearSelection();
 
@@ -634,7 +635,7 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName, boo
                 static_cast<SCH_SYMBOL*>( item )->ClearAnnotation( sheetPath, false );
 
             commit.Added( item, GetScreen() );
-            selectionTool->AddItemToSel( item );
+            newItems.emplace_back( item );
 
             if( item->Type() == SCH_LINE_T )
                 item->SetFlags( STARTPOINT | ENDPOINT );
@@ -643,11 +644,10 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName, boo
             item->ClearFlags( SKIP_STRUCT );
     }
 
+    selectionTool->AddItemsToSel( &newItems, true );
+
     if( !aKeepAnnotations )
     {
-        // Annotation will clear selection, so we need to save it
-        EE_SELECTION selection = selectionTool->GetSelection();
-
         EESCHEMA_SETTINGS::PANEL_ANNOTATE& annotate = eeconfig()->m_AnnotatePanel;
         SCHEMATIC_SETTINGS&                projSettings = Schematic().Settings();
         int                                annotateStartNum = projSettings.m_AnnotateStartNum;
@@ -660,14 +660,14 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName, boo
                              annotateStartNum, false, false, reporter );
         }
 
-        // Restore selection
-        for( EDA_ITEM* item : selection )
+        // Annotation will clear selection, so we need to restore it
+        for( EDA_ITEM* item : newItems )
         {
-            selectionTool->AddItemToSel( item );
-
             if( item->Type() == SCH_LINE_T )
                 item->SetFlags( STARTPOINT | ENDPOINT );
         }
+
+        selectionTool->AddItemsToSel( &newItems, true );
     }
 
     bool placed = m_toolManager->RunSynchronousAction( EE_ACTIONS::move, &commit );
