@@ -538,6 +538,7 @@ int SCH_DRAWING_TOOLS::PlaceDesignBlock( const TOOL_EVENT& aEvent )
     DESIGN_BLOCK*               designBlock = aEvent.Parameter<DESIGN_BLOCK*>();
     bool                        ignorePrimePosition = false;
     COMMON_SETTINGS*            common_settings = Pgm().GetCommonSettings();
+    EESCHEMA_SETTINGS*          cfg = m_frame->eeconfig();
     SCH_SCREEN*                 screen = m_frame->GetScreen();
 
     if( m_inDrawingTool )
@@ -681,11 +682,12 @@ int SCH_DRAWING_TOOLS::PlaceDesignBlock( const TOOL_EVENT& aEvent )
                 setCursor();
             }
 
-
             bool placed;
             do {
-                placed = m_frame->AddSheetAndUpdateDisplay( designBlock->GetSchematicFile() );
-            } while( placed && m_frame->eeconfig()->m_DesignBlockChooserPanel.repeated_placement );
+                placed = m_frame->AddSheetAndUpdateDisplay(
+                        designBlock->GetSchematicFile(),
+                        cfg->m_DesignBlockChooserPanel.keep_annotations, true );
+            } while( placed && cfg->m_DesignBlockChooserPanel.repeated_placement );
 
             // We need to push ourselves back on the stack as AddSheetAndUpdateDisplay will pop
             // our tool off the stack when the move completes

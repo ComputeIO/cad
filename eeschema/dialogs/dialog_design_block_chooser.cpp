@@ -69,8 +69,20 @@ DIALOG_DESIGN_BLOCK_CHOOSER::DIALOG_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME*      a
     m_placeAsSheet = new wxCheckBox( this, wxID_ANY, _( "Place as sheet" ) );
     m_placeAsSheet->SetToolTip( _( "Place the design block as a new sheet." ) );
 
+    m_keepAnnotations = new wxCheckBox( this, wxID_ANY, _( "Keep annotations" ) );
+    m_keepAnnotations->SetToolTip( _( "Preserve reference designators in the source schematic. "
+                                      "Otherwise, clear then reannotate according to settings." ) );
+
+    if( EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() ) )
+    {
+        m_repeatedPlacement->SetValue( cfg->m_DesignBlockChooserPanel.repeated_placement );
+        m_placeAsSheet->SetValue( cfg->m_DesignBlockChooserPanel.place_as_sheet );
+        m_keepAnnotations->SetValue( cfg->m_DesignBlockChooserPanel.keep_annotations );
+    }
+
     buttonsSizer->Add( m_repeatedPlacement, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 5 );
     buttonsSizer->Add( m_placeAsSheet, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 30 );
+    buttonsSizer->Add( m_keepAnnotations, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 30 );
 
     wxStdDialogButtonSizer* sdbSizer = new wxStdDialogButtonSizer();
     wxButton*               okButton = new wxButton( this, wxID_OK );
@@ -101,6 +113,7 @@ DIALOG_DESIGN_BLOCK_CHOOSER::~DIALOG_DESIGN_BLOCK_CHOOSER()
     {
         cfg->m_DesignBlockChooserPanel.repeated_placement = m_repeatedPlacement->GetValue();
         cfg->m_DesignBlockChooserPanel.place_as_sheet = m_placeAsSheet->GetValue();
+        cfg->m_DesignBlockChooserPanel.keep_annotations = m_keepAnnotations->GetValue();
     }
 }
 
