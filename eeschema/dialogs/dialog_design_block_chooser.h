@@ -71,6 +71,7 @@ protected:
     PANEL_DESIGN_BLOCK_CHOOSER* m_chooserPanel;
     wxCheckBox*                 m_repeatedPlacement;
     wxCheckBox*                 m_placeAsSheet;
+    wxCheckBox*                 m_keepAnnotations;
 };
 
 #endif /* DIALOG_DESIGN_BLOCK_CHOOSER_H */

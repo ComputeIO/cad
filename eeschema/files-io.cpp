@@ -626,10 +626,12 @@ bool SCH_EDIT_FRAME::AppendSchematic()
 }
 
 
-bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName )
+bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName, bool aKeepAnnotations,
+                                               bool aIsDesignBlock )
 {
     SCH_COMMIT         commit( m_toolManager );
     EE_SELECTION_TOOL* selectionTool = m_toolManager->GetTool<EE_SELECTION_TOOL>();
+    SCH_SHEET_PATH*    sheetPath = &GetCurrentSheet();
 
     selectionTool->ClearSelection();
 
@@ -652,6 +654,9 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName )
     {
         if( !item->HasFlag( SKIP_STRUCT ) )
         {
+            if( !aKeepAnnotations && item->Type() == SCH_SYMBOL_T )
+                static_cast<SCH_SYMBOL*>( item )->ClearAnnotation( sheetPath, false );
+
             commit.Added( item, GetScreen() );
             selectionTool->AddItemToSel( item );
 
@@ -662,19 +667,41 @@ bool SCH_EDIT_FRAME::AddSheetAndUpdateDisplay( const wxString aFullFileName )
             item->ClearFlags( SKIP_STRUCT );
     }
 
-    bool placed;
+    if( !aKeepAnnotations )
+    {
+        // Annotation will clear selection, so we need to save it
+        EE_SELECTION selection = selectionTool->GetSelection();
+
+        EESCHEMA_SETTINGS::PANEL_ANNOTATE& annotate = eeconfig()->m_AnnotatePanel;
+        SCHEMATIC_SETTINGS&                projSettings = Schematic().Settings();
+        int                                annotateStartNum = projSettings.m_AnnotateStartNum;
+
+        if( annotate.automatic )
+        {
+            NULL_REPORTER reporter;
+            AnnotateSymbols( &commit, ANNOTATE_SELECTION, (ANNOTATE_ORDER_T) annotate.sort_order,
+                             (ANNOTATE_ALGO_T) annotate.method, true /* recursive */,
+                             annotateStartNum, false, false, reporter );
+        }
+
+        // Restore selection
+        for( EDA_ITEM* item : selection )
+        {
+            selectionTool->AddItemToSel( item );
+
+            if( item->Type() == SCH_LINE_T )
+                item->SetFlags( STARTPOINT | ENDPOINT );
+        }
+    }
+
+    bool placed = m_toolManager->RunSynchronousAction( EE_ACTIONS::move, &commit );
 
     // Start moving selection, cancel undoes the insertion
-    if( !m_toolManager->RunSynchronousAction( EE_ACTIONS::move, &commit ) )
-    {
-        placed = false;
-        commit.Revert();
-    }
+    if( placed )
+        commit.Push( aIsDesignBlock ? _( "Add design block" )
+                                    : _( "Import Schematic Sheet Content..." ) );
     else
-    {
-        placed = true;
-        commit.Push( _( "Import Schematic Sheet Content..." ) );
-    }
+        commit.Revert();
 
     UpdateHierarchyNavigator();
 
