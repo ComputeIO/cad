@@ -33,6 +33,10 @@
 #include <wx/checkbox.h>
 #include <wx/sizer.h>
 
+static const wxString REPEATED_PLACEMENT = _( "Place repeated copies" );
+static const wxString PLACE_AS_SHEET = _( "Place as sheet" );
+static const wxString KEEP_ANNOTATIONS = _( "Keep annotations" );
+
 std::mutex DIALOG_DESIGN_BLOCK_CHOOSER::g_Mutex;
 
 DIALOG_DESIGN_BLOCK_CHOOSER::DIALOG_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME*      aParent,
@@ -63,13 +67,13 @@ DIALOG_DESIGN_BLOCK_CHOOSER::DIALOG_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME*      a
 
     wxBoxSizer* buttonsSizer = new wxBoxSizer( wxHORIZONTAL );
 
-    m_repeatedPlacement = new wxCheckBox( this, wxID_ANY, _( "Place repeated copies" ) );
+    m_repeatedPlacement = new wxCheckBox( this, wxID_ANY, REPEATED_PLACEMENT );
     m_repeatedPlacement->SetToolTip( _( "Place copies of the design block on subsequent clicks." ) );
 
-    m_placeAsSheet = new wxCheckBox( this, wxID_ANY, _( "Place as sheet" ) );
+    m_placeAsSheet = new wxCheckBox( this, wxID_ANY, PLACE_AS_SHEET );
     m_placeAsSheet->SetToolTip( _( "Place the design block as a new sheet." ) );
 
-    m_keepAnnotations = new wxCheckBox( this, wxID_ANY, _( "Keep annotations" ) );
+    m_keepAnnotations = new wxCheckBox( this, wxID_ANY, KEEP_ANNOTATIONS );
     m_keepAnnotations->SetToolTip( _( "Preserve reference designators in the source schematic. "
                                       "Otherwise, clear then reannotate according to settings." ) );
 
@@ -121,4 +125,30 @@ DIALOG_DESIGN_BLOCK_CHOOSER::~DIALOG_DESIGN_BLOCK_CHOOSER()
 LIB_ID DIALOG_DESIGN_BLOCK_CHOOSER::GetSelectedLibId( int* aUnit ) const
 {
     return m_chooserPanel->GetSelectedLibId( aUnit );
+}
+
+
+FILEDLG_IMPORT_SHEET_CONTENTS::FILEDLG_IMPORT_SHEET_CONTENTS( EESCHEMA_SETTINGS* aSettings )
+{
+    wxASSERT( aSettings );
+    m_settings = aSettings;
+};
+
+
+void FILEDLG_IMPORT_SHEET_CONTENTS::TransferDataFromCustomControls()
+{
+    m_settings->m_DesignBlockChooserPanel.repeated_placement = m_cbRepeatedPlacement->GetValue();
+    m_settings->m_DesignBlockChooserPanel.place_as_sheet = m_cbPlaceAsSheet->GetValue();
+    m_settings->m_DesignBlockChooserPanel.keep_annotations = m_cbKeepAnnotations->GetValue();
+}
+
+
+void FILEDLG_IMPORT_SHEET_CONTENTS::AddCustomControls( wxFileDialogCustomize& customizer )
+{
+    m_cbRepeatedPlacement = customizer.AddCheckBox( REPEATED_PLACEMENT );
+    m_cbRepeatedPlacement->SetValue( m_settings->m_DesignBlockChooserPanel.repeated_placement );
+    m_cbPlaceAsSheet = customizer.AddCheckBox( PLACE_AS_SHEET );
+    m_cbPlaceAsSheet->SetValue( m_settings->m_DesignBlockChooserPanel.place_as_sheet );
+    m_cbKeepAnnotations = customizer.AddCheckBox( KEEP_ANNOTATIONS );
+    m_cbKeepAnnotations->SetValue( m_settings->m_DesignBlockChooserPanel.keep_annotations );
 }

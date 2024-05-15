@@ -522,9 +522,18 @@ TOOL_ACTION EE_ACTIONS::importSheetCopy( TOOL_ACTION_ARGS()
         .Name( "eeschema.InteractiveDrawing.importSheetCopy" )
         .Scope( AS_GLOBAL )
         .FriendlyName( _( "Import Sheet Copy" ) )
-        .Tooltip( _( "Copy sheet into project and add to schematic" ) )
+        .Tooltip( _( "Copy sheet into project and place on current sheet" ) )
         .Icon( BITMAPS::add_hierarchical_subsheet )
         .Flags( AF_ACTIVATE ) );
+
+TOOL_ACTION EE_ACTIONS::importSheetContents( TOOL_ACTION_ARGS()
+        .Name( "eeschema.InteractiveDrawing.importSheetContents" )
+        .Scope( AS_GLOBAL )
+        .FriendlyName( _( "Import Sheet Contents" ) )
+        .Tooltip( _( "Copy sheet contents to place on current sheet" ) )
+        .Icon( BITMAPS::add_hierarchical_subsheet )
+        .Flags( AF_ACTIVATE )
+        .Parameter<wxString>( wxEmptyString ) );
 
 TOOL_ACTION EE_ACTIONS::placeGlobalLabel( TOOL_ACTION_ARGS()
         .Name( "eeschema.InteractiveDrawing.placeGlobalLabel" )

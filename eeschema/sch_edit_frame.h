@@ -478,13 +478,6 @@ public:
     wxString GetCurrentFileName() const override;
 
     /**
-     * Import a KiCad schematic into the current sheet.
-     *
-     * @return True if the schematic was imported properly.
-     */
-    bool AppendSchematic();
-
-    /**
      * Add a sheet file into the current sheet and updates display
      *
      * @note Used in AppendSchematic() and SCH_EDIT_TOOL::ddAppendFile() (so it is public)
@@ -929,7 +922,6 @@ private:
     void OnExit( wxCommandEvent& event );
 
     void OnLoadFile( wxCommandEvent& event );
-    void OnAppendProject( wxCommandEvent& event );
     void OnImportProject( wxCommandEvent& event );
 
     void OnClearFileHistory( wxCommandEvent& aEvent );

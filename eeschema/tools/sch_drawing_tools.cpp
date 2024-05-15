@@ -39,6 +39,7 @@
 #include <sch_edit_frame.h>
 #include <pgm_base.h>
 #include <design_block.h>
+#include <dialog_design_block_chooser.h>
 #include <eeschema_id.h>
 #include <confirm.h>
 #include <view/view_controls.h>
@@ -532,14 +533,22 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
 }
 
 
-int SCH_DRAWING_TOOLS::PlaceDesignBlock( const TOOL_EVENT& aEvent )
+int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
 {
+    bool placingDesignBlock = aEvent.IsAction( &EE_ACTIONS::placeDesignBlock );
+
+    DESIGN_BLOCK* designBlock = placingDesignBlock ? aEvent.Parameter<DESIGN_BLOCK*>() : nullptr;
+    wxString      sheetFileName = wxEmptyString;
+
+    if( !placingDesignBlock )
+        sheetFileName = aEvent.Parameter<wxString>();
+    else if( designBlock )
+        sheetFileName = designBlock->GetSchematicFile();
+
     DESIGN_BLOCK_LIB_TABLE*     dbtbl = m_frame->Prj().DesignBlockLibs();
-    DESIGN_BLOCK*               designBlock = aEvent.Parameter<DESIGN_BLOCK*>();
     bool                        ignorePrimePosition = false;
     COMMON_SETTINGS*            common_settings = Pgm().GetCommonSettings();
     EESCHEMA_SETTINGS*          cfg = m_frame->eeconfig();
-    SCH_SCREEN*                 screen = m_frame->GetScreen();
 
     if( m_inDrawingTool )
         return 0;
@@ -648,10 +657,25 @@ int SCH_DRAWING_TOOLS::PlaceDesignBlock( const TOOL_EVENT& aEvent )
         }
         else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) || isSyntheticClick )
         {
-            if( !designBlock )
+            if( !placingDesignBlock )
             {
-                m_toolMgr->RunAction( EE_ACTIONS::clearSelection );
+                // open file chooser dialog
+                wxString path = wxPathOnly( m_frame->Prj().GetProjectFullName() );
 
+                wxFileDialog dlg( m_frame, _( "Choose Schematic" ), path, wxEmptyString,
+                                  FILEEXT::KiCadSchematicFileWildcard(),
+                                  wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+
+                FILEDLG_IMPORT_SHEET_CONTENTS dlgHook( cfg );
+                dlg.SetCustomizeHook( dlgHook );
+
+                if( dlg.ShowModal() == wxID_CANCEL )
+                    continue;
+
+                sheetFileName = dlg.GetPath();
+            }
+            else
+            {
                 // Pick the symbol to be placed
                 LIB_ID sel = m_frame->PickDesignBlockFromLibrary( m_designBlockHistoryList );
 
@@ -663,30 +687,20 @@ int SCH_DRAWING_TOOLS::PlaceDesignBlock( const TOOL_EVENT& aEvent )
                 if( !designBlock )
                     continue;
 
-                // If we started with a hotkey which has a position then warp back to that.
-                // Otherwise update to the current mouse position pinned inside the autoscroll
-                // boundaries.
-                if( evt->IsPrime() && !ignorePrimePosition )
-                {
-                    cursorPos = grid.Align( evt->Position(), GRID_HELPER_GRIDS::GRID_CONNECTABLE );
-                    getViewControls()->WarpMouseCursor( cursorPos, true );
-                }
-                else
-                {
-                    getViewControls()->PinCursorInsideNonAutoscrollArea( true );
-                    cursorPos = grid.Align( getViewControls()->GetMousePosition(),
-                                            GRID_HELPER_GRIDS::GRID_CONNECTABLE );
-                }
+
+                sheetFileName = designBlock->GetSchematicFile();
 
                 // Update cursor now that we have a symbol
                 setCursor();
             }
 
+            if( sheetFileName.IsEmpty() )
+                continue;
+
             bool placed;
             do {
                 placed = m_frame->AddSheetAndUpdateDisplay(
-                        designBlock->GetSchematicFile(),
-                        cfg->m_DesignBlockChooserPanel.keep_annotations, true );
+                        sheetFileName, cfg->m_DesignBlockChooserPanel.keep_annotations, true );
             } while( placed && cfg->m_DesignBlockChooserPanel.repeated_placement );
 
             // We need to push ourselves back on the stack as AddSheetAndUpdateDisplay will pop
@@ -3066,7 +3080,7 @@ void SCH_DRAWING_TOOLS::setTransitions()
 {
     Go( &SCH_DRAWING_TOOLS::PlaceSymbol,         EE_ACTIONS::placeSymbol.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::PlaceSymbol,         EE_ACTIONS::placePower.MakeEvent() );
-    Go( &SCH_DRAWING_TOOLS::PlaceDesignBlock,    EE_ACTIONS::placeDesignBlock.MakeEvent() );
+    Go( &SCH_DRAWING_TOOLS::ImportSheetContents, EE_ACTIONS::placeDesignBlock.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::SingleClickPlace,    EE_ACTIONS::placeNoConnect.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::SingleClickPlace,    EE_ACTIONS::placeJunction.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::SingleClickPlace,    EE_ACTIONS::placeBusWireEntry.MakeEvent() );
@@ -3077,6 +3091,7 @@ void SCH_DRAWING_TOOLS::setTransitions()
     Go( &SCH_DRAWING_TOOLS::DrawSheet,           EE_ACTIONS::drawSheet.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::TwoClickPlace,       EE_ACTIONS::placeSheetPin.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::DrawSheet,           EE_ACTIONS::importSheetCopy.MakeEvent() );
+    Go( &SCH_DRAWING_TOOLS::ImportSheetContents, EE_ACTIONS::importSheetContents.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::TwoClickPlace,       EE_ACTIONS::placeSchematicText.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::DrawShape,           EE_ACTIONS::drawRectangle.MakeEvent() );
     Go( &SCH_DRAWING_TOOLS::DrawShape,           EE_ACTIONS::drawCircle.MakeEvent() );
