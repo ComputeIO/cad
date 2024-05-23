@@ -478,19 +478,6 @@ public:
     wxString GetCurrentFileName() const override;
 
     /**
-     * Add a sheet file into the current sheet and updates display
-     *
-     * @note Used in AppendSchematic() and SCH_EDIT_TOOL::ddAppendFile() (so it is public)
-     *
-     * @param aFullFileName Path and name of sheet
-     * @param aKeepAnnotations True if the annotations should be kept
-     * @param aIsDesignBlock True if the sheet is a design block
-     * @return True if the sheet was properly added
-     */
-    bool AddSheetAndUpdateDisplay( const wxString aFullFileName, bool aKeepAnnotations = false,
-                                   bool aIsDesignBlock = false );
-
-    /**
      * Check if any of the screens has unsaved changes and asks the user whether to save or
      * drop them.
      *
