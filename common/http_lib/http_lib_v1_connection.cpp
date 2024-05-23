@@ -58,7 +58,10 @@ bool HTTP_LIB_V1_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
         }
         else
         {
-            aPartNames.push_back( it->second.Name );
+            if( !powerSymbolsOnly || it->second.PowerSymbol )
+            {
+                aPartNames.push_back( it->second.Name );
+            }
             it->second.outdated = true;
         }
     }
@@ -96,7 +99,10 @@ bool HTTP_LIB_V1_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
         }
         else
         {
-            aParts.push_back( it->second );
+            if( !powerSymbolsOnly || it->second.PowerSymbol )
+            {
+                aParts.push_back( it->second );
+            }
             it->second.outdated = true;
         }
     }
