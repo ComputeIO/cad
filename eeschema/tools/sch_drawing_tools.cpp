@@ -535,11 +535,9 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
 
 int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
 {
-    bool placingDesignBlock = aEvent.IsAction( &EE_ACTIONS::placeDesignBlock );
-
+    bool          placingDesignBlock = aEvent.IsAction( &EE_ACTIONS::placeDesignBlock );
     DESIGN_BLOCK* designBlock = placingDesignBlock ? aEvent.Parameter<DESIGN_BLOCK*>() : nullptr;
     wxString*     importSourceFile = !placingDesignBlock ? aEvent.Parameter<wxString*>() : nullptr;
-
     wxString      sheetFileName = wxEmptyString;
 
     if( !placingDesignBlock )
@@ -554,6 +552,12 @@ int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
     bool                        ignorePrimePosition = false;
     COMMON_SETTINGS*            common_settings = Pgm().GetCommonSettings();
     EESCHEMA_SETTINGS*          cfg = m_frame->eeconfig();
+    SCHEMATIC_SETTINGS&         schSettings = m_frame->Schematic().Settings();
+    SCH_SCREEN*                 screen = m_frame->GetScreen();
+    SCH_SHEET_PATH&             sheetPath = m_frame->GetCurrentSheet();
+
+    if( !cfg || !common_settings )
+        return 0;
 
     if( m_inDrawingTool )
         return 0;
@@ -581,6 +585,99 @@ int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
                 delete designBlock;
                 designBlock = nullptr;
             };
+
+    auto placeSheetContents =
+            [&]()
+            {
+                SCH_COMMIT         commit( m_toolMgr );
+                EE_SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
+                EDA_ITEMS          newItems;
+                bool               keepAnnotations = cfg->m_DesignBlockChooserPanel.keep_annotations;
+
+                selectionTool->ClearSelection();
+
+                // Mark all existing items on the screen so we don't select them after appending
+                for( EDA_ITEM* item : screen->Items() )
+                    item->SetFlags( SKIP_STRUCT );
+
+                if( !m_frame->LoadSheetFromFile( sheetPath.Last(), &sheetPath, sheetFileName ) )
+                    return false;
+
+                m_frame->SetSheetNumberAndCount();
+
+                m_frame->SyncView();
+                m_frame->OnModify();
+                m_frame->HardRedraw(); // Full reinit of the current screen and the display.
+
+                // Select all new items
+                for( EDA_ITEM* item : screen->Items() )
+                {
+                    if( !item->HasFlag( SKIP_STRUCT ) )
+                    {
+                        if( item->Type() == SCH_SYMBOL_T && !keepAnnotations )
+                            static_cast<SCH_SYMBOL*>( item )->ClearAnnotation( &sheetPath, false );
+
+                        if( item->Type() == SCH_LINE_T )
+                            item->SetFlags( STARTPOINT | ENDPOINT );
+
+                        commit.Added( item, screen );
+                        newItems.emplace_back( item );
+                    }
+                    else
+                        item->ClearFlags( SKIP_STRUCT );
+                }
+
+                selectionTool->AddItemsToSel( &newItems, true );
+
+                // Move everything to our current mouse position now
+                // that we have a selection to get a reference point
+                VECTOR2I anchorPos = selectionTool->GetSelection().GetReferencePoint();
+                VECTOR2I delta = cursorPos - anchorPos;
+
+                // Will all be SCH_ITEMs as these were pulled from the screen->Items()
+                for( EDA_ITEM* item : newItems )
+                    static_cast<SCH_ITEM*>( item )->Move( delta );
+
+                if( !keepAnnotations )
+                {
+                    EESCHEMA_SETTINGS::PANEL_ANNOTATE& annotate = cfg->m_AnnotatePanel;
+
+                    if( annotate.automatic )
+                    {
+                        NULL_REPORTER reporter;
+                        m_frame->AnnotateSymbols( &commit, ANNOTATE_SELECTION,
+                                                  (ANNOTATE_ORDER_T) annotate.sort_order,
+                                                  (ANNOTATE_ALGO_T) annotate.method, true /* recursive */,
+                                                  schSettings.m_AnnotateStartNum, false, false, reporter );
+                    }
+
+                    // Annotation will clear selection, so we need to restore it
+                    for( EDA_ITEM* item : newItems )
+                    {
+                        if( item->Type() == SCH_LINE_T )
+                            item->SetFlags( STARTPOINT | ENDPOINT );
+                    }
+
+                    selectionTool->AddItemsToSel( &newItems, true );
+                }
+
+                // Start moving selection, cancel undoes the insertion
+                bool placed = m_toolMgr->RunSynchronousAction( EE_ACTIONS::move, &commit );
+
+                // Update our cursor position to the new location in case we're placing repeated copies
+                cursorPos = grid.Align( controls->GetMousePosition(), GRID_HELPER_GRIDS::GRID_CONNECTABLE );
+
+                if( placed )
+                    commit.Push( placingDesignBlock ? _( "Add design block" )
+                                                    : _( "Import Schematic Sheet Content..." ) );
+                else
+                    commit.Revert();
+
+                m_frame->UpdateHierarchyNavigator();
+
+                return placed;
+            };
+
 
     Activate();
 
@@ -714,11 +811,7 @@ int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
             // Update cursor now that we have a symbol
             setCursor();
 
-            bool placed;
-            do {
-                placed = m_frame->AddSheetAndUpdateDisplay(
-                        sheetFileName, cfg->m_DesignBlockChooserPanel.keep_annotations, true );
-            } while( placed && cfg->m_DesignBlockChooserPanel.repeated_placement );
+            while( placeSheetContents() && cfg->m_DesignBlockChooserPanel.repeated_placement );
 
             // We need to push ourselves back on the stack as AddSheetAndUpdateDisplay will pop
             // our tool off the stack when the move completes
