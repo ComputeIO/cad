@@ -37,39 +37,10 @@ struct HTTP_LIB_SOURCE
     std::string          root_url;
     std::string          api_version;
     std::string          token;
+    int                  timeout_cache;
     int                  timeout_parts;
     int                  timeout_categories;
 };
-
-
-struct HTTP_LIB_PART
-{
-    std::string id;
-    std::string name;
-    std::string symbolIdStr;
-
-    bool exclude_from_bom = false;
-    bool exclude_from_board = false;
-    bool exclude_from_sim = false;
-
-    std::time_t lastCached = 0;
-
-    std::vector<std::pair<std::string, std::tuple<std::string, bool>>>
-            fields; ///< additional generic fields
-};
-
-
-struct HTTP_LIB_CATEGORY
-{
-    std::string id;          ///< id of category
-    std::string name;        ///< name of category
-    std::string description; ///< description of category
-
-    std::time_t lastCached = 0;
-
-    std::vector<HTTP_LIB_PART> cachedParts;
-};
-
 
 class HTTP_LIB_SETTINGS : public JSON_SETTINGS
 {
