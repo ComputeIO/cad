@@ -533,7 +533,7 @@ TOOL_ACTION EE_ACTIONS::importSheetContents( TOOL_ACTION_ARGS()
         .Tooltip( _( "Copy sheet contents to place on current sheet" ) )
         .Icon( BITMAPS::add_hierarchical_subsheet )
         .Flags( AF_ACTIVATE )
-        .Parameter<wxString>( wxEmptyString ) );
+        .Parameter<wxString*>( nullptr ) );
 
 TOOL_ACTION EE_ACTIONS::placeGlobalLabel( TOOL_ACTION_ARGS()
         .Name( "eeschema.InteractiveDrawing.placeGlobalLabel" )

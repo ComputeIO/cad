@@ -538,10 +538,15 @@ int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
     bool placingDesignBlock = aEvent.IsAction( &EE_ACTIONS::placeDesignBlock );
 
     DESIGN_BLOCK* designBlock = placingDesignBlock ? aEvent.Parameter<DESIGN_BLOCK*>() : nullptr;
+    wxString*     importSourceFile = !placingDesignBlock ? aEvent.Parameter<wxString*>() : nullptr;
+
     wxString      sheetFileName = wxEmptyString;
 
     if( !placingDesignBlock )
-        sheetFileName = aEvent.Parameter<wxString>();
+    {
+        if( importSourceFile != nullptr )
+            sheetFileName = *importSourceFile;
+    }
     else if( designBlock )
         sheetFileName = designBlock->GetSchematicFile();
 
@@ -659,10 +664,23 @@ int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
         {
             if( !placingDesignBlock )
             {
-                // open file chooser dialog
-                wxString path = wxPathOnly( m_frame->Prj().GetProjectFullName() );
+                wxString path;
+                wxString file;
 
-                wxFileDialog dlg( m_frame, _( "Choose Schematic" ), path, wxEmptyString,
+                if( sheetFileName.IsEmpty() )
+                {
+                    path = wxPathOnly( m_frame->Prj().GetProjectFullName() );
+                    file = wxEmptyString;
+                }
+                else
+                {
+                    path = wxPathOnly( sheetFileName );
+                    file = wxFileName( sheetFileName ).GetFullName();
+                }
+
+                // Open file chooser dialog even if we have been provided a file so the user
+                // can select the options they want
+                wxFileDialog dlg( m_frame, _( "Choose Schematic" ), path, file,
                                   FILEEXT::KiCadSchematicFileWildcard(),
                                   wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
@@ -676,7 +694,7 @@ int SCH_DRAWING_TOOLS::ImportSheetContents( const TOOL_EVENT& aEvent )
             }
             else
             {
-                // Pick the symbol to be placed
+                // Pick the design block to be placed
                 LIB_ID sel = m_frame->PickDesignBlockFromLibrary( m_designBlockHistoryList );
 
                 if( !sel.IsValid() )
