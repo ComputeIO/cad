@@ -148,6 +148,10 @@ bool HTTP_LIB_V1_CONNECTION::GetPart( HTTP_LIB_PART& aPart, const std::string& a
             return false;
         }
     }
+    if( powerSymbolsOnly && !part.PowerSymbol )
+    {
+        return false;
+    }
     aPart = part;
     return true;
 }
