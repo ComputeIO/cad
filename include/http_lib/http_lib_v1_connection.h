@@ -84,12 +84,12 @@ private:
     const std::string http_endpoint_categories = "categories";
     const std::string http_endpoint_parts = "parts";
 
-    const wxString    footprint_field = "footprint";
-    const wxString    description_field = "description";
-    const wxString    keywords_field = "keywords";
-    const wxString    value_field = "value";
-    const wxString    datasheet_field = "datasheet";
-    const wxString    reference_field = "reference";
+    const std::string footprint_field = "footprint";
+    const std::string description_field = "description";
+    const std::string keywords_field = "keywords";
+    const std::string value_field = "value";
+    const std::string datasheet_field = "datasheet";
+    const std::string reference_field = "reference";
 };
 
 #endif //KICAD_HTTP_LIB_V1_CONNECTION_H
