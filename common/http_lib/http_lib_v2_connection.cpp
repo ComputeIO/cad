@@ -45,8 +45,17 @@ bool HTTP_LIB_V2_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
     {
         return false;
     }
-    m_lastError = "GetPartNames: not implemented!\n";
-    return false;
+
+    for( std::map<std::string, HTTP_LIB_PART>::iterator it = m_parts.begin();
+         it != m_parts.end(); ++it )
+    {
+        if( !powerSymbolsOnly || it->second.PowerSymbol )
+        {
+            aPartNames.push_back( it->second.Name );
+        }
+    }
+
+    return true;
 }
 bool HTTP_LIB_V2_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
                                        const bool                  powerSymbolsOnly )
@@ -55,8 +64,17 @@ bool HTTP_LIB_V2_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
     {
         return false;
     }
-    m_lastError = "GetParts: not implemented!\n";
-    return false;
+
+    for( std::map<std::string, HTTP_LIB_PART>::iterator it = m_parts.begin(); it != m_parts.end();
+         ++it )
+    {
+        if( !powerSymbolsOnly || it->second.PowerSymbol )
+        {
+            aParts.push_back( it->second );
+        }
+    }
+
+    return true;
 }
 
 bool HTTP_LIB_V2_CONNECTION::GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
@@ -67,7 +85,12 @@ bool HTTP_LIB_V2_CONNECTION::GetPart( HTTP_LIB_PART& aPart, const std::string& a
         return false;
     }
 
-    m_lastError = "GetPart: not implemented!\n";
+    aPart = m_parts.at( m_partNameIndex.at( aPartName ) );
+    if( !powerSymbolsOnly || aPart.PowerSymbol )
+    {
+        return true;
+    }
+
     return false;
 }
 
@@ -328,7 +351,7 @@ void HTTP_LIB_V2_CONNECTION::readCategory( const nlohmann::json& aCategory )
     m_categories[id] = category;
 }
 
-void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::json& aPart )
+void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::ordered_json& aPart )
 {
     std::string id = aPart.at( "id" );
     std::string categoryId = aPart.at( "category_id" );
@@ -373,7 +396,7 @@ void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::json& aPart )
 
     if( aPart.contains( "value" ) )
     {
-        readField( part.Reference, aPart.at( "value" ) );
+        readField( part.Value, aPart.at( "value" ) );
     }
 
     if( aPart.contains( "footprint" ) )
