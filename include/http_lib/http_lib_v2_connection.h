@@ -60,7 +60,7 @@ private:
     void validateEndpoints();
     bool syncCache();
     void readCategory( const nlohmann::json& aCategory );
-    void readPart( const nlohmann::json& aPart );
+    void readPart( const nlohmann::ordered_json& aPart );
     void readField( HTTP_LIB_FIELD& aField, const nlohmann::json& aJsonField );
 
     long long   m_timestamp = 0;
