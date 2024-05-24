@@ -40,33 +40,39 @@ HTTP_LIB_V2_CONNECTION::HTTP_LIB_V2_CONNECTION( const HTTP_LIB_SOURCE& aSource )
 bool HTTP_LIB_V2_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
                                            const bool                powerSymbolsOnly )
 {
+    m_lastError += "GetPartNames: not implemented!";
     return false;
 }
 bool HTTP_LIB_V2_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
                                        const bool                  powerSymbolsOnly )
 {
+    m_lastError += "GetParts: not implemented!";
     return false;
 }
 
 bool HTTP_LIB_V2_CONNECTION::GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
                                       const bool powerSymbolsOnly )
 {
+    m_lastError += "GetPart: not implemented!";
     return false;
 }
 
 bool HTTP_LIB_V2_CONNECTION::GetCategoryNames( std::vector<std::string>& aCategories )
 {
+    m_lastError += "GetCategoryNames: not implemented!";
     return false;
 }
 
 bool HTTP_LIB_V2_CONNECTION::GetCategoryName( std::string&       aCategoryName,
                                               const std::string& aCategoryId )
 {
+    m_lastError += "GetCategoryName: not implemented!";
     return false;
 }
 
 bool HTTP_LIB_V2_CONNECTION::GetCategoryDescription( std::string&       aCategoryDescription,
                                                      const std::string& aCategoryName )
 {
+    m_lastError += "GetCategoryDescription: not implemented!";
     return false;
 }
