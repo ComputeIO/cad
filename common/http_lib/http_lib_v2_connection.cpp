@@ -36,3 +36,37 @@ HTTP_LIB_V2_CONNECTION::HTTP_LIB_V2_CONNECTION( const HTTP_LIB_SOURCE& aSource )
         HTTP_LIB_CONNECTION( aSource )
 {
 }
+
+bool HTTP_LIB_V2_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
+                                           const bool                powerSymbolsOnly )
+{
+    return false;
+}
+bool HTTP_LIB_V2_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
+                                       const bool                  powerSymbolsOnly )
+{
+    return false;
+}
+
+bool HTTP_LIB_V2_CONNECTION::GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
+                                      const bool powerSymbolsOnly )
+{
+    return false;
+}
+
+bool HTTP_LIB_V2_CONNECTION::GetCategoryNames( std::vector<std::string>& aCategories )
+{
+    return false;
+}
+
+bool HTTP_LIB_V2_CONNECTION::GetCategoryName( std::string&       aCategoryName,
+                                              const std::string& aCategoryId )
+{
+    return false;
+}
+
+bool HTTP_LIB_V2_CONNECTION::GetCategoryDescription( std::string&       aCategoryDescription,
+                                                     const std::string& aCategoryName )
+{
+    return false;
+}

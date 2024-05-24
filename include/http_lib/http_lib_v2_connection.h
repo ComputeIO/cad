@@ -34,33 +34,18 @@ public:
 
     ~HTTP_LIB_V2_CONNECTION() {}
 
-    bool GetPartNames( std::vector<std::string>& aPartNames, const bool powerSymbolsOnly ) override
-    {
-        return false;
-    }
+    bool GetPartNames( std::vector<std::string>& aPartNames, const bool powerSymbolsOnly ) override;
 
-    bool GetParts( std::vector<HTTP_LIB_PART>& aParts, const bool powerSymbolsOnly ) override
-    {
-        return false;
-    }
+    bool GetParts( std::vector<HTTP_LIB_PART>& aParts, const bool powerSymbolsOnly ) override;
 
-    bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName, const bool powerSymbolsOnly )
-    {
-        return false;
-    }
+    bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName, const bool powerSymbolsOnly );
 
-    bool GetCategoryNames( std::vector<std::string>& aCategories ) override { return false; }
+    bool GetCategoryNames( std::vector<std::string>& aCategories ) override;
 
-    bool GetCategoryName( std::string& aCategoryName, const std::string& aCategoryId ) override
-    {
-        return false;
-    }
+    bool GetCategoryName( std::string& aCategoryName, const std::string& aCategoryId ) override;
 
     bool GetCategoryDescription( std::string&       aCategoryDescription,
-                                 const std::string& aCategoryName ) override
-    {
-        return false;
-    }
+                                 const std::string& aCategoryName ) override;
 
 private:
 };

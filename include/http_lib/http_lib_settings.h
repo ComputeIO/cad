@@ -68,7 +68,7 @@ protected:
 
 private:
     std::string sourceType;
-    std::string api_version = "v1";
+    std::string api_version = "v1, v2";
 };
 
 #endif //KICAD_HTTP_LIB_SETTINGS_H
