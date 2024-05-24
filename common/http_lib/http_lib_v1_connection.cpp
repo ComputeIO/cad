@@ -175,7 +175,7 @@ bool HTTP_LIB_V1_CONNECTION::GetCategoryName( std::string&       aCategoryName,
         return true;
     }
     m_lastError +=
-            wxString::Format( _( "GetCategoryName: Category found: '%s'" ) + "\n", aCategoryId );
+            wxString::Format( _( "GetCategoryName: Category not found: '%s'" ) + "\n", aCategoryId );
     return false;
 }
 
@@ -189,7 +189,7 @@ bool HTTP_LIB_V1_CONNECTION::GetCategoryDescription( std::string&       aCategor
         return true;
     }
 
-    m_lastError += wxString::Format( _( "GetCategoryDescription: Category found: '%s'" ) + "\n",
+    m_lastError += wxString::Format( _( "GetCategoryDescription: Category not found: '%s'" ) + "\n",
                                      aCategoryName );
     return false;
 }
@@ -311,6 +311,7 @@ bool HTTP_LIB_V1_CONNECTION::syncParts()
             {
                 return false;
             }
+            it->second.lastCached = std::time( nullptr );
             it->second.check_for_outdated = true;
         }
     }
@@ -349,10 +350,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory )
             part.CategoryId = aCategory.id;
             part.preloadedDescription = false;
 
-            if( m_partNameIndex.contains( part.Name ) )
-            {
-                m_partNameIndex.erase( part.Name );
-            }
+            m_partNameIndex.erase( part.Name );
 
             // API might not want to return an optional name.
             if( item.contains( "name" ) )

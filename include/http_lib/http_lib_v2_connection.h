@@ -48,6 +48,31 @@ public:
                                  const std::string& aCategoryName ) override;
 
 private:
+    struct HTTP_LIB_V2_CATEGORY
+    {
+        HTTP_LIB_V2_CATEGORY() {}
+        HTTP_LIB_V2_CATEGORY( std::string& id ) { Id = id; }
+        std::string Id;          ///< id of category
+        std::string Name;        ///< name of category
+        std::string Description; ///< description of category
+    };
+
+    void validateEndpoints();
+    bool syncCache();
+    void readCategory( const nlohmann::json& aCategory );
+    void readPart( const nlohmann::json& aPart );
+    void readField( HTTP_LIB_FIELD& aField, const nlohmann::json& aJsonField );
+
+    long long   m_timestamp = 0;
+    std::time_t m_lastCached = 0;
+    std::string m_supportedApiServerVersions = "{v2}";
+    std::string m_contentEndpoint = "{}";
+
+    std::map<std::string, HTTP_LIB_V2_CATEGORY> m_categories;
+    std::map<std::string, std::string>          m_categoryNameIndex;
+
+    std::map<std::string, HTTP_LIB_PART> m_parts;
+    std::map<std::string, std::string>   m_partNameIndex;
 };
 
 #endif //KICAD_HTTP_LIB_V2_CONNECTION_H
