@@ -53,6 +53,13 @@ struct HTTP_LIB_FIELD
 
 struct HTTP_LIB_PART
 {
+    HTTP_LIB_PART() {}
+    HTTP_LIB_PART( std::string& id, std::string& categoryId )
+    {
+        Id = id;
+        CategoryId = categoryId;
+    }
+
     std::string Id;
     std::string Name;
     std::string CategoryId;
