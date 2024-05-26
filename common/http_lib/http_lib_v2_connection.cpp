@@ -379,10 +379,7 @@ void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::ordered_json& aPart )
         part.Name = id;
     }
 
-    if( aPart.contains( "symbol" ) )
-    {
-        part.Symbol = aPart.at( "symbol" );
-    }
+    part.Symbol = aPart.at( "symbol" );
 
     if( aPart.contains( "keywords" ) )
     {
