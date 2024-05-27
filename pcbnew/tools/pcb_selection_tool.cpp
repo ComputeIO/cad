@@ -1476,9 +1476,13 @@ void PCB_SELECTION_TOOL::selectAllConnectedTracks(
 
     for( BOARD_CONNECTED_ITEM* startItem : aStartItems )
     {
-        // Track starting pads
+        // Register starting pads
         if( startItem->Type() == PCB_PAD_T )
             startPadSet.insert( static_cast<PAD*>( startItem ) );
+
+        // Select any starting track items
+        if( startItem->IsType( { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T } ) )
+            select( startItem );
     }
 
     for( BOARD_CONNECTED_ITEM* startItem : aStartItems )
@@ -1712,6 +1716,21 @@ void PCB_SELECTION_TOOL::selectAllConnectedTracks(
 
                 refreshTimer.Start();
             }
+        }
+    }
+
+    // Promote generated members to their PCB_GENERATOR parents
+    for( EDA_ITEM* item : m_selection )
+    {
+        BOARD_ITEM* boardItem = dynamic_cast<BOARD_ITEM*>( item );
+        PCB_GROUP*  parent = boardItem ? boardItem->GetParentGroup() : nullptr;
+
+        if( parent && parent->Type() == PCB_GENERATOR_T )
+        {
+            unselect( item );
+
+            if( !parent->IsSelected() )
+                select( parent );
         }
     }
 
@@ -2857,19 +2876,8 @@ bool PCB_SELECTION_TOOL::Selectable( const BOARD_ITEM* aItem, bool checkVisibili
     // Most footprint children can only be selected in the footprint editor.
     if( aItem->GetParentFootprint() && !m_isFootprintEditor && !checkVisibilityOnly )
     {
-        if( aItem->Type() == PCB_TEXT_T )
-        {
-            text = static_cast<const PCB_TEXT*>( aItem );
-
-            // Special case for version 8 until we have a consistent way to convert these text
-            // to fields
-            if( !text->GetText().Contains( wxT( "${REFERENCE}" ) )
-                && !text->GetText().Contains( wxT( "${VALUE}" ) ) )
-            {
-                return false;
-            }
-        }
-        else if( aItem->Type() != PCB_FIELD_T && aItem->Type() != PCB_PAD_T )
+        if( aItem->Type() != PCB_FIELD_T && aItem->Type() != PCB_PAD_T
+            && aItem->Type() != PCB_TEXT_T )
         {
             return false;
         }

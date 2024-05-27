@@ -194,7 +194,7 @@ void PCB_DIMENSION_BASE::ClearRenderCache()
     if( !m_inClearRenderCache )
     {
         m_inClearRenderCache = true;
-        updateText();
+        Update();
         m_inClearRenderCache = false;
     }
 }
@@ -313,7 +313,7 @@ void PCB_DIMENSION_BASE::SetUnitsMode( DIM_UNITS_MODE aMode )
 }
 
 
-void PCB_DIMENSION_BASE::SetTextAngleDegreesProp( const double aDegrees )
+void PCB_DIMENSION_BASE::ChangeTextAngleDegrees( double aDegrees )
 {
     SetTextAngleDegrees( aDegrees );
     // Create or repair any knockouts
@@ -321,7 +321,7 @@ void PCB_DIMENSION_BASE::SetTextAngleDegreesProp( const double aDegrees )
 }
 
 
-void PCB_DIMENSION_BASE::SetKeepTextAlignedProp( bool aKeepAligned )
+void PCB_DIMENSION_BASE::ChangeKeepTextAligned( bool aKeepAligned )
 {
     SetKeepTextAligned( aKeepAligned );
     // Re-align the text and repair any knockouts
@@ -1509,13 +1509,13 @@ static struct DIMENSION_DESC
                 };
 
         propMgr.AddProperty( new PROPERTY<PCB_DIMENSION_BASE, bool>( _HKI( "Keep Aligned with Dimension" ),
-                &PCB_DIM_ALIGNED::SetKeepTextAlignedProp,
-                &PCB_DIM_ALIGNED::GetKeepTextAligned ),
+                &PCB_DIMENSION_BASE::ChangeKeepTextAligned,
+                &PCB_DIMENSION_BASE::GetKeepTextAligned ),
                 groupText );
 
         propMgr.AddProperty( new PROPERTY<PCB_DIMENSION_BASE, double>( _HKI( "Orientation" ),
-                &PCB_DIM_ALIGNED::SetTextAngleDegreesProp,
-                &PCB_DIM_ALIGNED::GetTextAngleDegrees,
+                &PCB_DIMENSION_BASE::ChangeTextAngleDegrees,
+                &PCB_DIMENSION_BASE::GetTextAngleDegreesProp,
                 PROPERTY_DISPLAY::PT_DEGREE ),
                 groupText )
                 .SetWriteableFunc( isTextOrientationWriteable );
