@@ -46,8 +46,8 @@ bool HTTP_LIB_V2_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
         return false;
     }
 
-    for( std::map<std::string, HTTP_LIB_PART>::iterator it = m_parts.begin();
-         it != m_parts.end(); ++it )
+    for( std::map<std::string, HTTP_LIB_PART>::iterator it = m_parts.begin(); it != m_parts.end();
+         ++it )
     {
         if( !powerSymbolsOnly || it->second.PowerSymbol )
         {
@@ -237,7 +237,6 @@ bool HTTP_LIB_V2_CONNECTION::syncCache()
 
     if( std::difftime( std::time( nullptr ), m_lastCached ) > m_source.timeout_cache )
     {
-        m_timestamp = 0;
         m_lastCached = std::time( nullptr );
 
         std::unique_ptr<KICAD_CURL_EASY> curl = createCurlEasyObject();
@@ -245,6 +244,7 @@ bool HTTP_LIB_V2_CONNECTION::syncCache()
         curl->SetURL( m_source.root_url
                       + fmt::vformat( m_contentEndpoint, fmt::make_format_args( m_timestamp ) ) );
 
+        m_timestamp = 0;
         try
         {
             curl->Perform();
