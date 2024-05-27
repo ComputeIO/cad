@@ -284,6 +284,7 @@ bool HTTP_LIB_V2_CONNECTION::syncCache()
                     readPart( part.value() );
                 }
             }
+            return true;
         }
         catch( const std::exception& e )
         {
@@ -296,6 +297,7 @@ bool HTTP_LIB_V2_CONNECTION::syncCache()
             return false;
         }
     }
+    return true;
 }
 
 void HTTP_LIB_V2_CONNECTION::readCategory( const nlohmann::json& aCategory )
