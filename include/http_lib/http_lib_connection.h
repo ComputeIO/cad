@@ -79,6 +79,8 @@ struct HTTP_LIB_PART
     bool ExcludeFromBoard = false;
     bool ExcludeFromSim = false;
     bool PowerSymbol = false;
+
+    bool IsLoaded = false;
 };
 
 class HTTP_LIB_CONNECTION

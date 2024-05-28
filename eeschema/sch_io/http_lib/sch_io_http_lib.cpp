@@ -289,6 +289,12 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
     LIB_ID      symbolId;
     std::string categoryName;
 
+    symbol = m_partCache[aPart.Id];
+    if( aPart.IsLoaded && symbol )
+    {
+        return symbol;
+    }
+
     if( !m_conn->GetCategoryName( categoryName, aPart.CategoryId ) )
     {
         wxLogTrace( traceHTTPLib, wxT( "loadSymbolFromPart: category name not fount for id '%s'" ),
@@ -298,7 +304,7 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
     std::string symbolIdStr = aPart.Symbol;
 
     // Get or Create the symbol using the found symbol
-    if( !symbolIdStr.empty() )
+    if( !symbol && !symbolIdStr.empty() )
     {
         symbolId.Parse( symbolIdStr );
 
@@ -315,12 +321,6 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
 
             symbol = originalSymbol->Duplicate();
             symbol->SetSourceLibId( symbolId );
-
-            LIB_ID libId = symbol->GetLibId();
-
-
-            libId.SetSubLibraryName( categoryName );
-            symbol->SetLibId( libId );
         }
         else if( !symbolId.IsValid() )
         {
@@ -343,13 +343,13 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
         // Actual symbol not found: return metadata only; error will be
         // indicated in the symbol chooser
         symbol = new LIB_SYMBOL( aPart.Name );
-
-        LIB_ID libId = symbol->GetLibId();
-        libId.SetSubLibraryName( categoryName );
-        symbol->SetLibId( libId );
     }
 
     symbol->SetName( aPart.Name );
+
+    LIB_ID libId = symbol->GetLibId();
+    libId.SetSubLibraryName( categoryName );
+    symbol->SetLibId( libId );
 
     symbol->SetKeyWords( aPart.Keywords );
 
@@ -423,6 +423,6 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
             }
         }
     }
-
+    m_partCache[aPart.Id] = symbol;
     return symbol;
 }
