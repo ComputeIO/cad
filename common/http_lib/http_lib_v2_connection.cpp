@@ -31,7 +31,7 @@
 #include <curl/curl.h>
 
 #include <http_lib/http_lib_connection.h>
-#include <http_lib/HTTP_LIB_V2_CONNECTION.h>
+#include <http_lib/http_lib_v2_connection.h>
 
 HTTP_LIB_V2_CONNECTION::HTTP_LIB_V2_CONNECTION( const HTTP_LIB_SOURCE& aSource ) :
         HTTP_LIB_CONNECTION( aSource )
