@@ -71,6 +71,7 @@ bool HTTP_LIB_V2_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
         if( !powerSymbolsOnly || it->second.PowerSymbol )
         {
             aParts.push_back( it->second );
+            it->second.IsLoaded = true;
         }
     }
 

@@ -62,6 +62,7 @@ bool HTTP_LIB_V1_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
             {
                 aPartNames.push_back( it->second.Name );
             }
+            it->second.IsLoaded = true;
             it->second.outdated = true;
         }
     }
@@ -349,6 +350,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory )
             part.Id = id;
             part.CategoryId = aCategory.id;
             part.preloadedDescription = false;
+            part.IsLoaded = false;
 
             m_partNameIndex.erase( part.Name );
 
@@ -520,6 +522,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
                 aPart.Fields.push_back( std::make_pair( key, HTTP_LIB_FIELD( value, visible ) ) );
             }
         }
+        aPart.IsLoaded = false;
     }
     catch( const std::exception& e )
     {

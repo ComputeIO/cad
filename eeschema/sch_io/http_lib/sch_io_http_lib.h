@@ -85,6 +85,8 @@ private:
 
     SYMBOL_LIB_TABLE* m_libTable;
 
+    std::map<std::string, LIB_SYMBOL*> m_partCache;
+
     /// Generally will be null if no valid connection is established
     std::unique_ptr<HTTP_LIB_CONNECTION> m_conn;
 
