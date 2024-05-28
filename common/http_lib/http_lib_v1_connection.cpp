@@ -317,6 +317,7 @@ bool HTTP_LIB_V1_CONNECTION::syncParts()
             it->second.check_for_outdated = true;
         }
     }
+    return true;
 }
 
 bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory )

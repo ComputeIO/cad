@@ -39,7 +39,7 @@ public:
 
     bool GetParts( std::vector<HTTP_LIB_PART>& aParts, const bool powerSymbolsOnly ) override;
 
-    bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName, const bool powerSymbolsOnly );
+    bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName, const bool powerSymbolsOnly ) override;
 
     bool GetCategoryNames( std::vector<std::string>& aCategories ) override;
 
