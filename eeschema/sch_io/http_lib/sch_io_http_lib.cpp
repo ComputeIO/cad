@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2023 Andre F. K. Iwers <iwers11@gmail.com>
  * Copyright (C) 2024 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) redesign and expansion with version 2, 2024 Rosy <rosy@rosy-logic.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
