@@ -177,7 +177,8 @@ void SCH_IO_HTTP_LIB::ensureSettings( const wxString& aSettingsPath )
             THROW_IO_ERROR( msg );
         }
 
-        if( m_settings->getSupportedAPIVersion().find( "{" + m_settings->m_Source.api_version + "}" )
+        if( m_settings->getSupportedAPIVersion().find( "{" + m_settings->m_Source.api_version
+                                                       + "}" )
             == std::string::npos )
         {
             wxString msg = wxString::Format( _( "HTTP library settings file %s uses API version "

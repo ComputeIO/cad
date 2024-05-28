@@ -176,8 +176,8 @@ bool HTTP_LIB_V1_CONNECTION::GetCategoryName( std::string&       aCategoryName,
         aCategoryName = m_categories.at( aCategoryId ).name;
         return true;
     }
-    m_lastError +=
-            wxString::Format( _( "GetCategoryName: Category not found: '%s'" ) + "\n", aCategoryId );
+    m_lastError += wxString::Format( _( "GetCategoryName: Category not found: '%s'" ) + "\n",
+                                     aCategoryId );
     return false;
 }
 
