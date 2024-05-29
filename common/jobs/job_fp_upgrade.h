@@ -34,6 +34,7 @@ public:
     wxString m_outputLibraryPath;
 
     bool m_force;
+    bool m_no_uuid_gen;
 };
 
 #endif

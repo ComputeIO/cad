@@ -29,6 +29,7 @@
 #include <macros.h>
 
 #define ARG_FORCE "--force"
+#define ARG_NO_UUID_GEN "--no-uuid-gen"
 
 CLI::FP_UPGRADE_COMMAND::FP_UPGRADE_COMMAND() : PCB_EXPORT_BASE_COMMAND( "upgrade", true, true )
 {
@@ -38,6 +39,11 @@ CLI::FP_UPGRADE_COMMAND::FP_UPGRADE_COMMAND() : PCB_EXPORT_BASE_COMMAND( "upgrad
     m_argParser.add_argument( ARG_FORCE )
             .help( UTF8STDSTR(
                     _( "Forces the footprint library to be resaved regardless of versioning" ) ) )
+            .flag();
+
+    m_argParser.add_argument( ARG_NO_UUID_GEN )
+            .help( UTF8STDSTR(
+                    _( "Do not automatically generate UUIDs if they are not present" ) ) )
             .flag();
 }
 
@@ -49,6 +55,7 @@ int CLI::FP_UPGRADE_COMMAND::doPerform( KIWAY& aKiway )
     fpJob->m_libraryPath = m_argInput;
     fpJob->m_outputLibraryPath = m_argOutput;
     fpJob->m_force = m_argParser.get<bool>( ARG_FORCE );
+    fpJob->m_no_uuid_gen = m_argParser.get<bool>( ARG_NO_UUID_GEN );
 
     int exitCode = aKiway.ProcessJob( KIWAY::FACE_PCB, fpJob.get() );
 
