@@ -869,7 +869,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_DIMENSION_BASE* aDimension, int aNest
 
     formatLayer( aDimension->GetLayer() );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aDimension->m_Uuid );
     }
 
@@ -1031,7 +1031,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_SHAPE* aShape, int aNestLevel ) const
     if( aShape->GetNetCode() > 0 )
         m_out->Print( 0, " (net %d)", m_mapping->Translate( aShape->GetNetCode() ) );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aShape->m_Uuid, 0 );
     }
 
@@ -1079,7 +1079,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_REFERENCE_IMAGE* aBitmap, int aNestLe
     m_out->Print( 0, "\n" );
     m_out->Print( aNestLevel + 1, ")\n" );  // Closes data token.
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aBitmap->m_Uuid, 0 );
     }
 
@@ -1099,7 +1099,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_TARGET* aTarget, int aNestLevel ) con
 
     formatLayer( aTarget->GetLayer() );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aTarget->m_Uuid, 0 );
     }
 
@@ -1151,7 +1151,7 @@ void PCB_IO_KICAD_SEXPR::format( const FOOTPRINT* aFootprint, int aNestLevel ) c
 
     m_out->Print( 0, "\n" );
 
-    if( !( m_ctl & CTL_OMIT_UUIDS ) && !m_no_generate_uuid )
+    if( !( m_ctl & CTL_OMIT_UUIDS ) && !this->m_no_generate_uuid )
         KICAD_FORMAT::FormatUuid( m_out, aFootprint->m_Uuid );
 
     if( !( m_ctl & CTL_OMIT_AT ) )
@@ -1830,7 +1830,7 @@ void PCB_IO_KICAD_SEXPR::format( const PAD* aPad, int aNestLevel ) const
     }
 
     m_out->Print( 0, "\n" );
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aPad->m_Uuid );
     }
     m_out->Print( aNestLevel, ")\n" );
@@ -1887,7 +1887,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_TEXT* aText, int aNestLevel ) const
     if( parentFP && !aText->IsVisible() )
         KICAD_FORMAT::FormatBool( m_out, 0, "hide", !aText->IsVisible() );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aText->m_Uuid );
     }
 
@@ -1955,7 +1955,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_TEXTBOX* aTextBox, int aNestLevel ) c
     formatLayer( aTextBox->GetLayer() );
     m_out->Print( 0, "\n" );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aTextBox->m_Uuid );
     }
 
@@ -2044,7 +2044,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_GROUP* aGroup, int aNestLevel ) const
 
     m_out->Print( aNestLevel, "(group %s\n", m_out->Quotew( aGroup->GetName() ).c_str() );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aGroup->m_Uuid );
     }
 
@@ -2072,7 +2072,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_GENERATOR* aGenerator, int aNestLevel
 {
     m_out->Print( aNestLevel, "(generated\n" );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aGenerator->m_Uuid );
     }
 
@@ -2288,7 +2288,7 @@ void PCB_IO_KICAD_SEXPR::format( const PCB_TRACK* aTrack, int aNestLevel ) const
 
     m_out->Print( 0, " (net %d)", m_mapping->Translate( aTrack->GetNetCode() ) );
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aTrack->m_Uuid );
     }
 
@@ -2326,7 +2326,7 @@ void PCB_IO_KICAD_SEXPR::format( const ZONE* aZone, int aNestLevel ) const
         formatLayer( aZone->GetFirstLayer() );
     }
 
-    if(!m_no_generate_uuid) {
+    if(!this->m_no_generate_uuid) {
         KICAD_FORMAT::FormatUuid( m_out, aZone->m_Uuid );
     }
 

@@ -220,8 +220,6 @@ class FP_CACHE
                                  // m_cache_timestamp against all the files.
     long long m_cache_timestamp; // A hash of the timestamps for all the footprint
                                  // files.
-    
-    bool m_no_generate_uuid;     ///< Flag: Do not generate UUIDs for footprints
 
 public:
     FP_CACHE( PCB_IO_KICAD_SEXPR* aOwner, const wxString& aLibraryPath );
@@ -378,6 +376,8 @@ public:
         return ret;
     }
 
+    inline void SetUUIDDisabled( bool aDisabled ) { m_no_generate_uuid = aDisabled; }
+
     void SetOutputFormatter( OUTPUTFORMATTER* aFormatter ) { m_out = aFormatter; }
 
     BOARD_ITEM* Parse( const wxString& aClipboardSourceInput );
@@ -462,6 +462,8 @@ protected:
     int                    m_ctl;
     NETINFO_MAPPING*       m_mapping;    ///< mapping for net codes, so only not empty net codes
                                          ///< are stored with consecutive integers as net codes
+
+    bool m_no_generate_uuid;     ///< Flag: Do not generate UUIDs for footprints
 
     std::function<bool( wxString aTitle, int aIcon, wxString aMsg, wxString aAction )> m_queryUserCallback;
 };

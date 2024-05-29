@@ -1131,7 +1131,7 @@ int PCBNEW_JOBS_HANDLER::JobExportFpUpgrade( JOB* aJob )
     else
     {
         STRING_UTF8_MAP properties;
-        properties.insert("no_uuid_gen", upgradeJob->m_no_uuid_gen ? "true" : "false");
+        properties.emplace("no_uuid_gen", upgradeJob->m_no_uuid_gen ? UTF8("true") : UTF8("false"));
         if( !PCB_IO_MGR::ConvertLibrary( &properties, upgradeJob->m_libraryPath, upgradeJob->m_outputLibraryPath ) )
         {
             m_reporter->Report( ( "Unable to convert library\n" ), RPT_SEVERITY_ERROR );

@@ -29,6 +29,8 @@
 #include <kiway_player.h>
 #include <wildcards_and_files_ext.h>
 
+#include <string_utf8_map.h>
+
 #include <pcb_io/pcb_io_mgr.h>
 
 #include <pcb_io/eagle/pcb_io_eagle.h>
@@ -219,13 +221,13 @@ bool PCB_IO_MGR::ConvertLibrary( STRING_UTF8_MAP* aOldFileProps, const wxString&
             std::unique_ptr<const FOOTPRINT> fp( oldFilePI->GetEnumeratedFootprint( aOldFilePath, fpName, aOldFileProps ) );
             // Set options
             PCB_IO_KICAD_SEXPR* kicad_sexpr_parser = dynamic_cast<PCB_IO_KICAD_SEXPR*>( kicadPI.get() );
-            if(kicad_sexpr_parser !== nullptr) {
-                kicad_sexpr_parser->m_no_generate_uuid =
-                    aOldFileProps->Exists( "no_uuid_gen" ) &&
-                    aOldFileProps->at( "no_uuid_gen" ) == "true";
+            if(kicad_sexpr_parser != nullptr) {
+                UTF8 value;
+                bool exists = aOldFileProps->Value( "no_uuid_gen", &value );
+                kicad_sexpr_parser->SetUUIDDisabled(
+                    exists && value == "true"
+                );
             }
-
-
             kicadPI->FootprintSave( aNewFilePath, fp.get() );
         }
 
