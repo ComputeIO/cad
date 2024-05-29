@@ -220,6 +220,8 @@ class FP_CACHE
                                  // m_cache_timestamp against all the files.
     long long m_cache_timestamp; // A hash of the timestamps for all the footprint
                                  // files.
+    
+    bool m_no_generate_uuid;     ///< Flag: Do not generate UUIDs for footprints
 
 public:
     FP_CACHE( PCB_IO_KICAD_SEXPR* aOwner, const wxString& aLibraryPath );
