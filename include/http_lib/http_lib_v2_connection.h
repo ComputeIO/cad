@@ -69,11 +69,11 @@ private:
     std::string m_supportedApiServerVersions = "{v2}";
     std::string m_contentEndpoint = "{}";
 
-    std::map<std::string, HTTP_LIB_V2_CATEGORY> m_categories;
-    std::map<std::string, std::string>          m_categoryNameIndex;
+    std::map<std::string, HTTP_LIB_V2_CATEGORY*> m_categoriesById;
+    std::map<std::string, HTTP_LIB_V2_CATEGORY*> m_categoriesByName;
 
-    std::map<std::string, HTTP_LIB_PART> m_parts;
-    std::map<std::string, std::string>   m_partNameIndex;
+    std::map<std::string, HTTP_LIB_PART*> m_partsById;
+    std::map<std::string, HTTP_LIB_PART*> m_partsByName;
 };
 
 #endif //KICAD_HTTP_LIB_V2_CONNECTION_H
