@@ -55,10 +55,9 @@ struct HTTP_LIB_FIELD
 struct HTTP_LIB_PART
 {
     HTTP_LIB_PART() {}
-    HTTP_LIB_PART( std::string& id, std::string& categoryId )
+    HTTP_LIB_PART( const std::string& id )
     {
         Id = id;
-        CategoryId = categoryId;
     }
 
     std::string Id;

@@ -47,12 +47,11 @@ bool HTTP_LIB_V2_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
         return false;
     }
 
-    for( std::map<std::string, HTTP_LIB_PART*>::iterator it = m_partsById.begin(); it != m_partsById.end();
-         ++it )
+    for( HTTP_LIB_PART* part : m_parts )
     {
-        if( !powerSymbolsOnly || it->second->PowerSymbol )
+        if( !powerSymbolsOnly || part->PowerSymbol )
         {
-            aPartNames.push_back( it->second->Name );
+            aPartNames.push_back( part->Name );
         }
     }
 
@@ -66,13 +65,12 @@ bool HTTP_LIB_V2_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
         return false;
     }
 
-    for( std::map<std::string, HTTP_LIB_PART*>::iterator it = m_partsById.begin(); it != m_partsById.end();
-         ++it )
+    for( HTTP_LIB_PART* part : m_parts )
     {
-        if( !powerSymbolsOnly || it->second->PowerSymbol )
+        if( !powerSymbolsOnly || part->PowerSymbol )
         {
-            aParts.push_back( *it->second );
-            it->second->IsLoaded = true;
+            aParts.push_back( *part );
+            part->IsLoaded = true;
         }
     }
 
@@ -304,6 +302,7 @@ bool HTTP_LIB_V2_CONNECTION::syncCache()
 void HTTP_LIB_V2_CONNECTION::readCategory( const nlohmann::json& aCategory )
 {
     std::string id = aCategory.at( "id" );
+    std::string name;
 
     HTTP_LIB_V2_CATEGORY* category = m_categoriesById.at( id );
 
@@ -314,98 +313,67 @@ void HTTP_LIB_V2_CONNECTION::readCategory( const nlohmann::json& aCategory )
 
     if( aCategory.contains( "active" ) )
     {
-        bool active = aCategory.at( "active" );
-        if( !active )
+        if( !aCategory.at( "active" ) )
         {
-            if( category )
-            {
-                std::vector<std::string> obsoletParts;
-
-                for( std::map<std::string, HTTP_LIB_PART*>::iterator it = m_partsById.begin();
-                     it != m_partsById.end(); ++it )
-                {
-                    if( it->second->CategoryId == id )
-                    {
-                        obsoletParts.push_back( it->second->Id );
-                    }
-                }
-
-                for( auto& it : obsoletParts )
-                {
-                    m_partsByName.erase( m_partsById.at(it)->Name );
-                    delete m_partsById.at( it );
-                    m_partsById.erase( it );
-                }
-
-                delete m_categoriesById.at( id );
-                m_categoriesById.erase( id );
-            }
-            return;
+            deleteCategory( category );
         }
-    }
-
-    if( !category )
-    {
-        category = new HTTP_LIB_V2_CATEGORY( id );
     }
 
     if( aCategory.contains( "name" ) )
     {
-        category->Name = aCategory.at( "name" );
+        name = aCategory.at( "name" );
+    }
+
+    if( !category )
+    {
+        category = createCategory( id, name );
     }
     else
     {
-        category->Name = id;
+        updateCategory( category, name );
     }
 
     if( aCategory.contains( "description" ) )
     {
         category->Description = aCategory.at( "description" );
     }
-
-    m_categoriesByName[category->Name] = category;
-    m_categoriesById[id] = category;
 }
 
 void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::ordered_json& aPart )
 {
     std::string id = aPart.at( "id" );
+    std::string categoryId = aPart.at( "category_id" );
+    std::string name;
 
     HTTP_LIB_PART* part = m_partsById.at( id );
 
-    if( part )
+    if( !m_categoriesById.contains( categoryId ) )
     {
-        m_partsByName.erase( part->Name );
+        deletePart( part );
+        return;
     }
 
     if( aPart.contains( "active" ) )
     {
-        bool active = aPart.at( "active" );
-        if( !active )
+        if( !aPart.at( "active" ) )
         {
-            if( part )
-            {
-                delete m_partsById.at( id );
-                m_partsById.erase( id );
-            }
+            deletePart( part );
             return;
         }
     }
 
-    std::string   categoryId = aPart.at( "category_id" );
+    if( aPart.contains( "name" ) )
+    {
+        name = aPart.at( "name" );
+    }
 
     if( !part )
     {
-        part = new HTTP_LIB_PART( id, categoryId );
-    }
-
-    if( aPart.contains( "name" ) )
-    {
-        part->Name = aPart.at( "name" );
+        part = createPart( id, name, categoryId );
     }
     else
     {
-        part->Name = id;
+        updatePart( part, name, categoryId );
     }
 
     part->Symbol = aPart.at( "symbol" );
@@ -474,9 +442,6 @@ void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::ordered_json& aPart )
     {
         part->PowerSymbol = aPart.at( "power_symbol" );
     }
-
-    m_partsByName[part->Name] = part;
-    m_partsById[id] = part;
 }
 
 void HTTP_LIB_V2_CONNECTION::readField( HTTP_LIB_FIELD& aField, const nlohmann::json& aJsonField )
@@ -492,5 +457,132 @@ void HTTP_LIB_V2_CONNECTION::readField( HTTP_LIB_FIELD& aField, const nlohmann::
     if( aJsonField.contains( "show_name" ) )
     {
         aField.ShowName = aJsonField.at( "show_name" );
+    }
+}
+
+HTTP_LIB_V2_CONNECTION::HTTP_LIB_V2_CATEGORY* HTTP_LIB_V2_CONNECTION::createCategory( const std::string& aId,
+                                                              const std::string& aName )
+{
+    HTTP_LIB_V2_CATEGORY* category = new HTTP_LIB_V2_CATEGORY( aId );
+
+    if( aName.empty() )
+    {
+        category->Name = category->Id;
+    }
+    else
+    {
+        category->Name = aName;
+    }
+
+    m_categoriesByName[category->Name] = category;
+    m_categoriesById[category->Id] = category;
+    return category;
+}
+
+void HTTP_LIB_V2_CONNECTION::updateCategory( HTTP_LIB_V2_CATEGORY* aCategory,
+                                             const std::string&    aName )
+{
+    if( aCategory )
+    {
+        std::string oldName = aCategory->Name;
+
+        if( aName.empty() )
+        {
+            aCategory->Name = aCategory->Id;
+        }
+        else
+        {
+            aCategory->Name = aName;
+        }
+
+        if( aCategory->Name != oldName )
+        {
+            m_categoriesByName.erase( oldName );
+            m_categoriesByName[aCategory->Name] = aCategory;
+        }
+    }
+}
+
+void HTTP_LIB_V2_CONNECTION::deleteCategory( HTTP_LIB_V2_CATEGORY* aCategory )
+{
+    if( aCategory )
+    {
+        std::vector<HTTP_LIB_PART*> obsoletParts;
+
+        for( std::map<std::string, HTTP_LIB_PART*>::iterator it = m_partsById.begin();
+             it != m_partsById.end(); ++it )
+        {
+            if( it->second->CategoryId == aCategory->Id )
+            {
+                obsoletParts.push_back( it->second );
+            }
+        }
+
+        for( auto& it : obsoletParts )
+        {
+            deletePart( it );
+        }
+
+        m_categoriesByName.erase( aCategory->Name );
+        m_categoriesById.erase( aCategory->Id );
+        delete aCategory;
+    }
+}
+HTTP_LIB_PART* HTTP_LIB_V2_CONNECTION::createPart( const std::string& aId, const std::string& aName,
+                                                   const std::string& aCategoryId )
+{
+    HTTP_LIB_PART* part = new HTTP_LIB_PART( aId );
+
+    if( aName.empty() )
+    {
+        part->Name = part->Id;
+    }
+    else
+    {
+        part->Name = aName;
+    }
+
+    part->CategoryId = aCategoryId;
+    m_partsByName[part->Name] = part;
+    m_partsById[part->Id] = part;
+    m_parts.push_back( part );
+    return part;
+}
+
+void HTTP_LIB_V2_CONNECTION::updatePart( HTTP_LIB_PART* aPart, const std::string& aName,
+                                         const std::string& aCategoryId )
+{
+    if( aPart )
+    {
+        std::string oldName = aPart->Name;
+
+        if( aName.empty() )
+        {
+            aPart->Name = aPart->Id;
+        }
+        else
+        {
+            aPart->Name = aName;
+        }
+
+        if( aPart->Name != oldName )
+        {
+            m_partsByName.erase( oldName );
+            m_partsByName[aPart->Name] = aPart;
+        }
+
+        aPart->CategoryId = aCategoryId;
+        aPart->IsLoaded = false;
+    }
+}
+
+void HTTP_LIB_V2_CONNECTION::deletePart( HTTP_LIB_PART* aPart )
+{
+    if( aPart )
+    {
+        m_parts.erase( std::find( m_parts.begin(), m_parts.end(), aPart ) );
+        m_partsByName.erase( aPart->Name );
+        m_partsById.erase( aPart->Id );
+        delete aPart;
     }
 }
