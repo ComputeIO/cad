@@ -251,8 +251,7 @@ void SCH_EDIT_FRAME::doReCreateMenuBar()
     placeMenu->Add( EE_ACTIONS::drawSheet );
     placeMenu->Add( EE_ACTIONS::placeSheetPin );
     placeMenu->Add( EE_ACTIONS::syncAllSheetsPins );
-    placeMenu->Add( EE_ACTIONS::importSheetCopy );
-    placeMenu->Add( EE_ACTIONS::importSheetContents );
+    placeMenu->Add( EE_ACTIONS::importSheet );
 
     placeMenu->AppendSeparator();
     placeMenu->Add( EE_ACTIONS::placeSchematicText );

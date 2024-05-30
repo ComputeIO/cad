@@ -494,6 +494,15 @@ TOOL_ACTION EE_ACTIONS::drawSheet( TOOL_ACTION_ARGS()
         .Flags( AF_ACTIVATE )
         .Parameter( SCH_SHEET_T ) );
 
+TOOL_ACTION EE_ACTIONS::drawSheetCopy( TOOL_ACTION_ARGS()
+        .Name( "eeschema.InteractiveDrawing.drawSheetCopy" )
+        .Scope( AS_GLOBAL )
+        .FriendlyName( _( "Draw Sheet Copy" ) )
+        .Tooltip( _( "Copy sheet into project and draw on current sheet" ) )
+        .Icon( BITMAPS::add_hierarchical_subsheet )
+        .Flags( AF_ACTIVATE )
+        .Parameter<wxString*> ( nullptr ) );
+
 TOOL_ACTION EE_ACTIONS::placeSheetPin( TOOL_ACTION_ARGS()
         .Name( "eeschema.InteractiveDrawing.placeSheetPin" )
         .Scope( AS_GLOBAL )
@@ -518,22 +527,14 @@ TOOL_ACTION EE_ACTIONS::syncAllSheetsPins( TOOL_ACTION_ARGS()
         .Icon( BITMAPS::import_hierarchical_label )
         .Flags( AF_ACTIVATE ) );
 
-TOOL_ACTION EE_ACTIONS::importSheetCopy( TOOL_ACTION_ARGS()
-        .Name( "eeschema.InteractiveDrawing.importSheetCopy" )
+TOOL_ACTION EE_ACTIONS::importSheet( TOOL_ACTION_ARGS()
+        .Name( "eeschema.InteractiveDrawing.importSheet" )
         .Scope( AS_GLOBAL )
-        .FriendlyName( _( "Import Sheet Copy" ) )
-        .Tooltip( _( "Copy sheet into project and place on current sheet" ) )
-        .Icon( BITMAPS::add_hierarchical_subsheet )
-        .Flags( AF_ACTIVATE ) );
-
-TOOL_ACTION EE_ACTIONS::importSheetContents( TOOL_ACTION_ARGS()
-        .Name( "eeschema.InteractiveDrawing.importSheetContents" )
-        .Scope( AS_GLOBAL )
-        .FriendlyName( _( "Import Sheet Contents" ) )
-        .Tooltip( _( "Copy sheet contents to place on current sheet" ) )
+        .FriendlyName( _( "Import Sheet" ) )
+        .Tooltip( _( "Import sheet into project" ) )
         .Icon( BITMAPS::add_hierarchical_subsheet )
         .Flags( AF_ACTIVATE )
-        .Parameter<wxString*>( nullptr ) );
+        .Parameter<wxString*> ( nullptr ) );
 
 TOOL_ACTION EE_ACTIONS::placeGlobalLabel( TOOL_ACTION_ARGS()
         .Name( "eeschema.InteractiveDrawing.placeGlobalLabel" )

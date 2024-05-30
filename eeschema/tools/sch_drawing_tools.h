@@ -55,7 +55,7 @@ public:
     int PlaceSymbol( const TOOL_EVENT& aEvent );
     int SingleClickPlace( const TOOL_EVENT& aEvent );
     int TwoClickPlace( const TOOL_EVENT& aEvent );
-    int ImportSheetContents( const TOOL_EVENT& aEvent );
+    int ImportSheet( const TOOL_EVENT& aEvent );
     int DrawShape( const TOOL_EVENT& aEvent );
     int DrawRuleArea( const TOOL_EVENT& aEvent );
     int DrawTable( const TOOL_EVENT& aEvent );

@@ -2733,7 +2733,7 @@ int SCH_EDIT_TOOL::EditPageNumber( const TOOL_EVENT& aEvent )
 
 int SCH_EDIT_TOOL::DdAppendFile( const TOOL_EVENT& aEvent )
 {
-    return m_toolMgr->RunAction( EE_ACTIONS::importSheetContents, aEvent.Parameter<wxString*>() );
+    return m_toolMgr->RunAction( EE_ACTIONS::importSheet, aEvent.Parameter<wxString*>() );
 }
 
 
