@@ -48,122 +48,63 @@ bool HTTP_LIB_V1_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
         return false;
     }
 
-    std::vector<std::string> obsolet_parts;
-
-    for( std::map<std::string, HTTP_LIB_V1_PART>::iterator it = m_parts.begin();
-         it != m_parts.end(); ++it )
+    for( HTTP_LIB_PART* part : m_parts )
     {
-        if( it->second.outdated && m_categories.at( it->second.CategoryId ).check_for_outdated )
+        if( !powerSymbolsOnly || part->PowerSymbol )
         {
-            obsolet_parts.push_back( it->first );
-        }
-        else
-        {
-            if( !powerSymbolsOnly || it->second.PowerSymbol )
-            {
-                aPartNames.push_back( it->second.Name );
-            }
-            it->second.IsLoaded = true;
-            it->second.outdated = true;
+            aPartNames.push_back( part->Name );
         }
     }
-
-    for( auto& it : obsolet_parts )
-    {
-        m_parts.erase( it );
-    }
-
-    for( std::map<std::string, HTTP_LIB_V1_CATEGORY>::iterator it = m_categories.begin();
-         it != m_categories.end(); ++it )
-    {
-        it->second.check_for_outdated = false;
-    }
-
     return true;
 }
 
-bool HTTP_LIB_V1_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
-                                       const bool                  powerSymbolsOnly )
+std::vector<HTTP_LIB_PART*>* HTTP_LIB_V1_CONNECTION::GetParts( const bool powerSymbolsOnly )
 {
     if( !syncParts() )
     {
-        return false;
+        return nullptr;
     }
-
-    std::vector<std::string> obsolet_parts;
-
-    for( std::map<std::string, HTTP_LIB_V1_PART>::iterator it = m_parts.begin();
-         it != m_parts.end(); ++it )
-    {
-        if( it->second.outdated && m_categories.at( it->second.CategoryId ).check_for_outdated )
-        {
-            obsolet_parts.push_back( it->first );
-        }
-        else
-        {
-            if( !powerSymbolsOnly || it->second.PowerSymbol )
-            {
-                aParts.push_back( it->second );
-            }
-            it->second.outdated = true;
-        }
-    }
-
-    for( auto& it : obsolet_parts )
-    {
-        m_parts.erase( it );
-    }
-
-    for( std::map<std::string, HTTP_LIB_V1_CATEGORY>::iterator it = m_categories.begin();
-         it != m_categories.end(); ++it )
-    {
-        it->second.check_for_outdated = false;
-    }
-
-    return true;
+    return &m_parts;
 }
 
-bool HTTP_LIB_V1_CONNECTION::GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
-                                      const bool powerSymbolsOnly )
+HTTP_LIB_PART* HTTP_LIB_V1_CONNECTION::GetPart( const std::string& aPartName,
+                                                const bool         powerSymbolsOnly )
 {
     if( !syncParts() )
     {
-        return false;
+        return nullptr;
     }
 
-    if( !m_partNameIndex.contains( aPartName ) )
+    if( !m_partsByName.contains( aPartName ) )
     {
         m_lastError += wxString::Format( _( "GetPart: Part not found: '%s'" ) + "\n", aPartName );
-        return false;
+        return nullptr;
     }
 
-    HTTP_LIB_V1_PART part = m_parts.at( m_partNameIndex.at( aPartName ) );
+    HTTP_LIB_V1_PART* part = m_partsByName.at( aPartName );
 
-    if( std::difftime( std::time( nullptr ), part.lastCached ) > m_source.timeout_parts )
+    if( std::difftime( std::time( nullptr ), part->LastCached ) > m_source.timeout_parts )
     {
-        if( cacheUpdateOne( part ) )
+        if( !cacheUpdateOne( part ) )
         {
-            m_parts[m_partNameIndex.at( aPartName )] = part;
-        }
-        else
-        {
-            return false;
+            return nullptr;
         }
     }
-    if( powerSymbolsOnly && !part.PowerSymbol )
+
+    if( powerSymbolsOnly && !part->PowerSymbol )
     {
-        return false;
+        return nullptr;
     }
-    aPart = part;
-    return true;
+
+    return part;
 }
 
 bool HTTP_LIB_V1_CONNECTION::GetCategoryNames( std::vector<std::string>& aCategories )
 {
-    for( std::map<std::string, HTTP_LIB_V1_CATEGORY>::iterator it = m_categories.begin();
-         it != m_categories.end(); ++it )
+    for( std::map<std::string, HTTP_LIB_V1_CATEGORY*>::iterator it = m_categoriesByName.begin();
+         it != m_categoriesByName.end(); ++it )
     {
-        aCategories.push_back( it->second.name );
+        aCategories.push_back( it->first );
     }
     return true;
 }
@@ -171,9 +112,9 @@ bool HTTP_LIB_V1_CONNECTION::GetCategoryNames( std::vector<std::string>& aCatego
 bool HTTP_LIB_V1_CONNECTION::GetCategoryName( std::string&       aCategoryName,
                                               const std::string& aCategoryId )
 {
-    if( m_categories.contains( aCategoryId ) )
+    if( m_categoriesById.contains( aCategoryId ) )
     {
-        aCategoryName = m_categories.at( aCategoryId ).name;
+        aCategoryName = m_categoriesById.at( aCategoryId )->Name;
         return true;
     }
     m_lastError += wxString::Format( _( "GetCategoryName: Category not found: '%s'" ) + "\n",
@@ -184,10 +125,9 @@ bool HTTP_LIB_V1_CONNECTION::GetCategoryName( std::string&       aCategoryName,
 bool HTTP_LIB_V1_CONNECTION::GetCategoryDescription( std::string&       aCategoryDescription,
                                                      const std::string& aCategoryName )
 {
-    if( m_categoryNameIndex.contains( aCategoryName ) )
+    if( m_categoriesByName.contains( aCategoryName ) )
     {
-        aCategoryDescription =
-                m_categories.at( m_categoryNameIndex.at( aCategoryName ) ).description;
+        aCategoryDescription = m_categoriesByName.at( aCategoryName )->Description;
         return true;
     }
 
@@ -271,19 +211,27 @@ bool HTTP_LIB_V1_CONNECTION::syncCategories()
         // collect the categories in dictionary
         for( const auto& item : response.items() )
         {
-            HTTP_LIB_V1_CATEGORY category;
+            auto&       value = item.value();
+            std::string id = value["id"];
 
-            auto& value = item.value();
-            category.id = value["id"].get<std::string>();
-            category.name = value["name"].get<std::string>();
+            HTTP_LIB_V1_CATEGORY* category = new HTTP_LIB_V1_CATEGORY( id );
+
+            if( value.contains( "name" ) )
+            {
+                category->Name = value["name"];
+            }
+            else
+            {
+                category->Name = category->Id;
+            }
 
             if( value.contains( "description" ) )
             {
-                category.description = value["description"].get<std::string>();
+                category->Description = value["description"];
             }
 
-            m_categoryNameIndex[category.name] = category.id;
-            m_categories[category.id] = category;
+            m_categoriesByName[category->Name] = category;
+            m_categoriesById[category->Id] = category;
         }
     }
     catch( const std::exception& e )
@@ -295,7 +243,8 @@ bool HTTP_LIB_V1_CONNECTION::syncCategories()
                     wxT( "syncCategories: Exception occurred while syncing categories: %s" ),
                     m_lastError );
 
-        m_categories.clear();
+        m_categoriesByName.clear();
+        m_categoriesById.clear();
         return false;
     }
     return true;
@@ -303,24 +252,23 @@ bool HTTP_LIB_V1_CONNECTION::syncCategories()
 
 bool HTTP_LIB_V1_CONNECTION::syncParts()
 {
-    for( std::map<std::string, HTTP_LIB_V1_CATEGORY>::iterator it = m_categories.begin();
-         it != m_categories.end(); ++it )
+    for( std::map<std::string, HTTP_LIB_V1_CATEGORY*>::iterator it = m_categoriesById.begin();
+         it != m_categoriesById.end(); ++it )
     {
-        if( std::difftime( std::time( nullptr ), it->second.lastCached )
+        if( std::difftime( std::time( nullptr ), it->second->LastCached )
             > m_source.timeout_categories )
         {
             if( !cacheAll( it->second ) )
             {
                 return false;
             }
-            it->second.lastCached = std::time( nullptr );
-            it->second.check_for_outdated = true;
+            it->second->LastCached = std::time( nullptr );
         }
     }
     return true;
 }
 
-bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory )
+bool HTTP_LIB_V1_CONNECTION::cacheAll( HTTP_LIB_V1_CATEGORY* aCategory )
 {
     if( !m_endpointValid )
     {
@@ -333,7 +281,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory )
     std::unique_ptr<KICAD_CURL_EASY> curl = createCurlEasyObject();
 
     curl->SetURL( m_source.root_url
-                  + fmt::format( "{}/category/{}.json", http_endpoint_parts, aCategory.id ) );
+                  + fmt::format( "{}/category/{}.json", http_endpoint_parts, aCategory->Id ) );
 
     try
     {
@@ -341,49 +289,68 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory )
 
         res = curl->GetBuffer();
 
+        std::list<HTTP_LIB_V1_PART*> parts;
+
         nlohmann::json response = nlohmann::json::parse( res );
 
         for( nlohmann::json& item : response )
         {
             std::string id = item.at( "id" );
+            std::string name;
 
-            HTTP_LIB_V1_PART part = m_parts[id];
+            HTTP_LIB_V1_PART* part = m_partsById[id];
 
-            part.Id = id;
-            part.CategoryId = aCategory.id;
-            part.preloadedDescription = false;
-            part.IsLoaded = false;
+            if( !part )
+            {
+                part = new HTTP_LIB_V1_PART( id );
+                m_partsById[part->Id] = part;
+                m_parts.push_back( part );
+            }
 
-            m_partNameIndex.erase( part.Name );
+            part->CategoryId = aCategory->Id;
+            part->PreloadedDescription = false;
+            part->IsUpdated = true;
 
             // API might not want to return an optional name.
             if( item.contains( "name" ) )
             {
-                part.Name = item.at( "name" );
+                name = item.at( "name" );
             }
             else
             {
-                part.Name = id;
+                name = id;
+            }
+
+            if( name != part->Name )
+            {
+                m_partsByName.erase( part->Name );
+                part->Name = name;
+                m_partsByName[part->Name] = part;
             }
 
             // API might not want to return an optional description.
             if( item.contains( description_field ) )
             {
-                part.Description.Value = item.at( description_field );
-                part.preloadedDescription = true;
+                part->Description.Value = item.at( description_field );
+                part->PreloadedDescription = true;
             }
 
             if( item.contains( "power_symbol" ) )
             {
                 std::string pow = item.at( "power_symbol" );
-                part.PowerSymbol = boolFromString( pow, false );
+                part->PowerSymbol = boolFromString( pow, false );
             }
-
-            part.outdated = false;
-
-            m_partNameIndex[part.Name] = id;
-            m_parts[part.Id] = part;
+            aCategory->Parts.remove( part );
+            parts.push_back( part );
         }
+        for( HTTP_LIB_V1_PART* part : aCategory->Parts )
+        {
+            m_partsByName.erase( part->Name );
+            m_partsById.erase( part->Id );
+            m_parts.erase( std::find( m_parts.begin(), m_parts.end(), part ) );
+            delete part;
+        }
+        aCategory->Parts = parts;
     }
     catch( const std::exception& e )
     {
@@ -399,7 +366,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory )
     return true;
 }
 
-bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
+bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART* aPart )
 {
     if( !m_endpointValid )
     {
@@ -411,7 +378,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
 
     std::unique_ptr<KICAD_CURL_EASY> curl = createCurlEasyObject();
     std::string                      url =
-            m_source.root_url + fmt::format( "{}/{}.json", http_endpoint_parts, aPart.Id );
+            m_source.root_url + fmt::format( "{}/{}.json", http_endpoint_parts, aPart->Id );
     curl->SetURL( url );
 
     try
@@ -430,9 +397,15 @@ bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
         std::string            value = "";
 
         // get a timestamp for caching
-        aPart.lastCached = std::time( nullptr );
+        aPart->LastCached = std::time( nullptr );
 
-        aPart.Symbol = response.at( "symbolIdStr" );
+        std::string symbol = response.at( "symbolIdStr" );
+
+        if( aPart->Symbol != symbol )
+        {
+            aPart->Symbol = symbol;
+            aPart->IsSymbolUpdated = true;
+        }
 
         // initially assume no exclusion
         std::string exclude;
@@ -441,7 +414,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
         {
             // if key value doesn't exists default to false
             exclude = response.at( "exclude_from_bom" );
-            aPart.ExcludeFromBom = boolFromString( exclude, false );
+            aPart->ExcludeFromBom = boolFromString( exclude, false );
         }
 
         // initially assume no exclusion
@@ -449,7 +422,7 @@ bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
         {
             // if key value doesn't exists default to false
             exclude = response.at( "exclude_from_board" );
-            aPart.ExcludeFromBoard = boolFromString( exclude, false );
+            aPart->ExcludeFromBoard = boolFromString( exclude, false );
         }
 
         // initially assume no exclusion
@@ -457,13 +430,11 @@ bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
         {
             // if key value doesn't exists default to false
             exclude = response.at( "exclude_from_sim" );
-            aPart.ExcludeFromSim = boolFromString( exclude, false );
+            aPart->ExcludeFromSim = boolFromString( exclude, false );
         }
 
-        //        aPart.Fields[]
-
         // remove previously loaded fields
-        aPart.Fields.clear();
+        aPart->Fields.clear();
 
         // Extract available fields
         for( const auto& field : response.at( "fields" ).items() )
@@ -488,43 +459,43 @@ bool HTTP_LIB_V1_CONNECTION::cacheUpdateOne( HTTP_LIB_V1_PART& aPart )
 
             if( fieldName == footprint_field )
             {
-                aPart.Footprint.Value = value;
-                aPart.Footprint.Show = visible;
+                aPart->Footprint.Value = value;
+                aPart->Footprint.Show = visible;
             }
             else if( fieldName == description_field )
             {
-                if( !aPart.preloadedDescription )
+                if( !aPart->PreloadedDescription )
                 {
-                    aPart.Description.Value = value;
+                    aPart->Description.Value = value;
                 }
-                aPart.Description.Show = visible;
+                aPart->Description.Show = visible;
             }
             else if( fieldName == value_field )
             {
-                aPart.Value.Value = value;
-                aPart.Value.Show = visible;
+                aPart->Value.Value = value;
+                aPart->Value.Show = visible;
             }
             else if( fieldName == datasheet_field )
             {
-                aPart.Datasheet.Value = value;
-                aPart.Datasheet.Show = visible;
+                aPart->Datasheet.Value = value;
+                aPart->Datasheet.Show = visible;
             }
             else if( fieldName == reference_field )
             {
-                aPart.Reference.Value = value;
-                aPart.Reference.Show = visible;
+                aPart->Reference.Value = value;
+                aPart->Reference.Show = visible;
             }
             else if( fieldName == keywords_field )
             {
-                aPart.Keywords = value;
+                aPart->Keywords = value;
             }
             else
             {
                 // Add field to fields list
-                aPart.Fields.push_back( std::make_pair( key, HTTP_LIB_FIELD( value, visible ) ) );
+                aPart->Fields.push_back( std::make_pair( key, HTTP_LIB_FIELD( value, visible ) ) );
             }
         }
-        aPart.IsLoaded = false;
+        aPart->IsUpdated = true;
     }
     catch( const std::exception& e )
     {

@@ -55,11 +55,7 @@ struct HTTP_LIB_FIELD
 struct HTTP_LIB_PART
 {
     HTTP_LIB_PART() {}
-    HTTP_LIB_PART( std::string& id, std::string& categoryId )
-    {
-        Id = id;
-        CategoryId = categoryId;
-    }
+    HTTP_LIB_PART( const std::string& id ) { Id = id; }
 
     std::string Id;
     std::string Name;
@@ -81,7 +77,8 @@ struct HTTP_LIB_PART
     bool ExcludeFromSim = false;
     bool PowerSymbol = false;
 
-    bool IsLoaded = false;
+    bool IsUpdated = true;
+    bool IsSymbolUpdated = true;
 };
 
 class HTTP_LIB_CONNECTION
@@ -90,10 +87,9 @@ public:
     virtual bool GetPartNames( std::vector<std::string>& aPartNames,
                                const bool                powerSymbolsOnly ) = 0;
 
-    virtual bool GetParts( std::vector<HTTP_LIB_PART>& aParts, const bool powerSymbolsOnly ) = 0;
+    virtual std::vector<HTTP_LIB_PART*>* GetParts( const bool powerSymbolsOnly ) = 0;
 
-    virtual bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
-                          const bool powerSymbolsOnly ) = 0;
+    virtual HTTP_LIB_PART* GetPart( const std::string& aPartName, const bool powerSymbolsOnly ) = 0;
 
     virtual bool GetCategoryNames( std::vector<std::string>& aCategories ) = 0;
 

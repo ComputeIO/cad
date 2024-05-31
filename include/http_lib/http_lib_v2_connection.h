@@ -37,9 +37,9 @@ public:
 
     bool GetPartNames( std::vector<std::string>& aPartNames, const bool powerSymbolsOnly ) override;
 
-    bool GetParts( std::vector<HTTP_LIB_PART>& aParts, const bool powerSymbolsOnly ) override;
+    std::vector<HTTP_LIB_PART*>* GetParts( const bool powerSymbolsOnly ) override;
 
-    bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName, const bool powerSymbolsOnly ) override;
+    HTTP_LIB_PART* GetPart( const std::string& aPartName, const bool powerSymbolsOnly ) override;
 
     bool GetCategoryNames( std::vector<std::string>& aCategories ) override;
 
@@ -52,7 +52,7 @@ private:
     struct HTTP_LIB_V2_CATEGORY
     {
         HTTP_LIB_V2_CATEGORY() {}
-        HTTP_LIB_V2_CATEGORY( std::string& id ) { Id = id; }
+        HTTP_LIB_V2_CATEGORY( const std::string& id ) { Id = id; }
         std::string Id;          ///< id of category
         std::string Name;        ///< name of category
         std::string Description; ///< description of category
@@ -64,16 +64,27 @@ private:
     void readPart( const nlohmann::ordered_json& aPart );
     void readField( HTTP_LIB_FIELD& aField, const nlohmann::json& aJsonField );
 
+    HTTP_LIB_V2_CATEGORY* createCategory( const std::string& aId, const std::string& aName );
+    void updateCategory( HTTP_LIB_V2_CATEGORY* aCategory, const std::string& aName );
+    void deleteCategory( HTTP_LIB_V2_CATEGORY* aCategory );
+
+    HTTP_LIB_PART* createPart( const std::string& aId, const std::string& aName,
+                               const std::string& aCategoryId, const std::string& aSymbol );
+    void updatePart( HTTP_LIB_PART* aPart, const std::string& aName, const std::string& aCategoryId,
+                     const std::string& aSymbol );
+    void deletePart( HTTP_LIB_PART* aPart );
+
     long long   m_timestamp = 0;
     std::time_t m_lastCached = 0;
     std::string m_supportedApiServerVersions = "{v2}";
     std::string m_contentEndpoint = "{}";
 
-    std::map<std::string, HTTP_LIB_V2_CATEGORY> m_categories;
-    std::map<std::string, std::string>          m_categoryNameIndex;
+    std::map<std::string, HTTP_LIB_V2_CATEGORY*> m_categoriesById;
+    std::map<std::string, HTTP_LIB_V2_CATEGORY*> m_categoriesByName;
 
-    std::map<std::string, HTTP_LIB_PART> m_parts;
-    std::map<std::string, std::string>   m_partNameIndex;
+    std::vector<HTTP_LIB_PART*>           m_parts;
+    std::map<std::string, HTTP_LIB_PART*> m_partsById;
+    std::map<std::string, HTTP_LIB_PART*> m_partsByName;
 };
 
 #endif //KICAD_HTTP_LIB_V2_CONNECTION_H

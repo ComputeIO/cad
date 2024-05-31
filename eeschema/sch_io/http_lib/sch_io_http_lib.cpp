@@ -70,15 +70,15 @@ void SCH_IO_HTTP_LIB::EnumerateSymbolLib( std::vector<LIB_SYMBOL*>& aSymbolList,
             ( aProperties
               && aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
 
-    std::vector<HTTP_LIB_PART> parts;
+    std::vector<HTTP_LIB_PART*>* parts = m_conn->GetParts( powerSymbolsOnly );
 
-    if( !m_conn->GetParts( parts, powerSymbolsOnly ) )
+    if( !parts )
     {
         m_lastError = m_conn->GetLastError();
         THROW_IO_ERROR( m_lastError );
     }
 
-    for( const HTTP_LIB_PART& part : parts )
+    for( HTTP_LIB_PART* part : *parts )
     {
         LIB_SYMBOL* symbol = loadSymbolFromPart( part );
 
@@ -102,9 +102,9 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::LoadSymbol( const wxString& aLibraryPath, const wxS
             ( aProperties
               && aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
 
-    HTTP_LIB_PART part;
+    HTTP_LIB_PART* part = m_conn->GetPart( partName, powerSymbolsOnly );
 
-    if( !m_conn->GetPart( part, partName, powerSymbolsOnly ) )
+    if( !part )
     {
         m_lastError = m_conn->GetLastError();
         THROW_IO_ERROR( m_lastError );
@@ -284,37 +284,41 @@ void SCH_IO_HTTP_LIB::establishConnection()
     }
 }
 
-LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
+LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( HTTP_LIB_PART* aPart )
 {
     LIB_SYMBOL* symbol = nullptr;
     LIB_SYMBOL* originalSymbol = nullptr;
     LIB_ID      symbolId;
     std::string categoryName;
 
-    symbol = m_partCache[aPart.Id];
-    if( aPart.IsLoaded && symbol )
+    symbol = m_partCache[aPart->Id];
+    if( !aPart->IsUpdated && symbol )
     {
         return symbol;
     }
 
-    if( !m_conn->GetCategoryName( categoryName, aPart.CategoryId ) )
+    if( !m_conn->GetCategoryName( categoryName, aPart->CategoryId ) )
     {
         wxLogTrace( traceHTTPLib, wxT( "loadSymbolFromPart: category name not fount for id '%s'" ),
-                    aPart.CategoryId );
+                    aPart->CategoryId );
+    }
+    if( symbol && aPart->IsSymbolUpdated )
+    {
+        m_partCache.erase( aPart->Id );
+        delete symbol;
+        symbol = nullptr;
     }
 
-    std::string symbolIdStr = aPart.Symbol;
-
     // Get or Create the symbol using the found symbol
-    if( !symbol && !symbolIdStr.empty() )
+    if( !symbol )
     {
+        std::string symbolIdStr = aPart->Symbol;
         symbolId.Parse( symbolIdStr );
 
         if( symbolId.IsValid() )
         {
             originalSymbol = m_libTable->LoadSymbol( symbolId );
         }
-
 
         if( originalSymbol )
         {
@@ -344,22 +348,22 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
     {
         // Actual symbol not found: return metadata only; error will be
         // indicated in the symbol chooser
-        symbol = new LIB_SYMBOL( aPart.Name );
+        symbol = new LIB_SYMBOL( aPart->Name );
     }
 
-    symbol->SetName( aPart.Name );
+    symbol->SetName( aPart->Name );
 
     LIB_ID libId = symbol->GetLibId();
     libId.SetSubLibraryName( categoryName );
     symbol->SetLibId( libId );
 
-    symbol->SetKeyWords( aPart.Keywords );
+    symbol->SetKeyWords( aPart->Keywords );
 
-    symbol->SetExcludedFromBOM( aPart.ExcludeFromBom );
-    symbol->SetExcludedFromBoard( aPart.ExcludeFromBoard );
-    symbol->SetExcludedFromSim( aPart.ExcludeFromSim );
+    symbol->SetExcludedFromBOM( aPart->ExcludeFromBom );
+    symbol->SetExcludedFromBoard( aPart->ExcludeFromBoard );
+    symbol->SetExcludedFromSim( aPart->ExcludeFromSim );
 
-    if( aPart.PowerSymbol )
+    if( aPart->PowerSymbol )
     {
         symbol->SetPower();
     }
@@ -367,32 +371,32 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
     SCH_FIELD* field;
 
     field = &symbol->GetFootprintField();
-    field->SetText( aPart.Footprint.Value );
-    field->SetVisible( aPart.Footprint.Show );
-    field->SetNameShown( aPart.Footprint.ShowName );
+    field->SetText( aPart->Footprint.Value );
+    field->SetVisible( aPart->Footprint.Show );
+    field->SetNameShown( aPart->Footprint.ShowName );
 
     field = &symbol->GetDescriptionField();
-    field->SetText( aPart.Description.Value );
-    field->SetVisible( aPart.Description.Show );
-    field->SetNameShown( aPart.Description.ShowName );
+    field->SetText( aPart->Description.Value );
+    field->SetVisible( aPart->Description.Show );
+    field->SetNameShown( aPart->Description.ShowName );
 
     field = &symbol->GetValueField();
-    field->SetText( aPart.Value.Value );
-    field->SetVisible( aPart.Value.Show );
-    field->SetNameShown( aPart.Value.ShowName );
+    field->SetText( aPart->Value.Value );
+    field->SetVisible( aPart->Value.Show );
+    field->SetNameShown( aPart->Value.ShowName );
 
     field = &symbol->GetDatasheetField();
-    field->SetText( aPart.Datasheet.Value );
-    field->SetVisible( aPart.Datasheet.Show );
-    field->SetNameShown( aPart.Datasheet.ShowName );
+    field->SetText( aPart->Datasheet.Value );
+    field->SetVisible( aPart->Datasheet.Show );
+    field->SetNameShown( aPart->Datasheet.ShowName );
 
     field = &symbol->GetReferenceField();
-    field->SetText( aPart.Reference.Value );
-    field->SetVisible( aPart.Reference.Show );
-    field->SetNameShown( aPart.Reference.ShowName );
+    field->SetText( aPart->Reference.Value );
+    field->SetVisible( aPart->Reference.Show );
+    field->SetNameShown( aPart->Reference.ShowName );
 
 
-    for( auto& customField : aPart.Fields )
+    for( auto& customField : aPart->Fields )
     {
         wxString fieldName = wxString( customField.first );
         auto&    fieldProperties = customField.second;
@@ -425,6 +429,8 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const HTTP_LIB_PART& aPart )
             }
         }
     }
-    m_partCache[aPart.Id] = symbol;
+    aPart->IsUpdated = false;
+    aPart->IsSymbolUpdated = false;
+    m_partCache[aPart->Id] = symbol;
     return symbol;
 }

@@ -82,7 +82,7 @@ private:
 
     void establishConnection();
 
-    LIB_SYMBOL* loadSymbolFromPart( const HTTP_LIB_PART& aPart );
+    LIB_SYMBOL* loadSymbolFromPart( HTTP_LIB_PART* aPart );
 
     SYMBOL_LIB_TABLE* m_libTable;
 
