@@ -1001,20 +1001,12 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
         return 0;
     }
 
-    WX_UNIT_ENTRY_DIALOG dlg( frame(), _( "Fillet Tracks" ), _( "Enter fillet radius:" ),
-                              filletRadius );
+    WX_UNIT_ENTRY_DIALOG dlg( frame(), _( "Fillet Tracks" ), _( "Radius:" ), filletRadius );
 
-    if( dlg.ShowModal() == wxID_CANCEL )
+    if( dlg.ShowModal() == wxID_CANCEL || dlg.GetValue() == 0 )
         return 0;
 
     filletRadius = dlg.GetValue();
-
-    if( filletRadius == 0 )
-    {
-        frame()->ShowInfoBarMsg( _( "A radius of zero was entered.\n"
-                                    "The fillet operation was not performed." ) );
-        return 0;
-    }
 
     struct FILLET_OP
     {
@@ -1180,6 +1172,7 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
     return 0;
 }
 
+
 /**
  * Prompt the user for the fillet radius and return it.
  *
@@ -1188,28 +1181,21 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
  * @return std::optional<int> the fillet radius or std::nullopt if no
  * valid fillet specified
  */
-static std::optional<int> GetFilletParams( PCB_BASE_EDIT_FRAME& aFrame, wxString& aErrorMsg )
+static std::optional<int> GetFilletParams( PCB_BASE_EDIT_FRAME& aFrame )
 {
     // Store last used fillet radius to allow pressing "enter" if repeat fillet is required
     static int filletRadius = 0;
 
-    WX_UNIT_ENTRY_DIALOG dlg( &aFrame, _( "Fillet Lines" ), _( "Enter fillet radius:" ),
-                              filletRadius );
+    WX_UNIT_ENTRY_DIALOG dlg( &aFrame, _( "Fillet Lines" ), _( "Radius:" ), filletRadius );
 
-    if( dlg.ShowModal() == wxID_CANCEL )
+    if( dlg.ShowModal() == wxID_CANCEL || dlg.GetValue() == 0 )
         return std::nullopt;
 
     filletRadius = dlg.GetValue();
 
-    if( filletRadius == 0 )
-    {
-        aErrorMsg = _( "A radius of zero was entered.\n"
-                       "The fillet operation was not performed." );
-        return std::nullopt;
-    }
-
     return filletRadius;
 }
+
 
 /**
  * Prompt the user for chamfer parameters
@@ -1219,35 +1205,27 @@ static std::optional<int> GetFilletParams( PCB_BASE_EDIT_FRAME& aFrame, wxString
  * @return std::optional<int> the chamfer parameters or std::nullopt if no
  * valid fillet specified
  */
-static std::optional<CHAMFER_PARAMS> GetChamferParams( PCB_BASE_EDIT_FRAME& aFrame,
-                                                       wxString&            aErrorMsg )
+static std::optional<CHAMFER_PARAMS> GetChamferParams( PCB_BASE_EDIT_FRAME& aFrame )
 {
     // Non-zero and the KLC default for Fab layer chamfers
     const int default_setback = pcbIUScale.mmToIU( 1 );
     // Store last used setback to allow pressing "enter" if repeat chamfer is required
     static CHAMFER_PARAMS params{ default_setback, default_setback };
 
-    WX_UNIT_ENTRY_DIALOG dlg( &aFrame, _( "Chamfer Lines" ), _( "Enter chamfer setback:" ),
+    WX_UNIT_ENTRY_DIALOG dlg( &aFrame, _( "Chamfer Lines" ), _( "Chamfer setback:" ),
                               params.m_chamfer_setback_a );
 
-    if( dlg.ShowModal() == wxID_CANCEL )
+    if( dlg.ShowModal() == wxID_CANCEL || dlg.GetValue() == 0 )
         return std::nullopt;
 
     params.m_chamfer_setback_a = dlg.GetValue();
-    // It's hard to easily specify an asymmetric chamfer (which line gets the longer
-    // setbeck?), so we just use the same setback for each
+    // It's hard to easily specify an asymmetric chamfer (which line gets the longer setback?),
+    // so we just use the same setback for each
     params.m_chamfer_setback_b = params.m_chamfer_setback_a;
-
-    // Some technically-valid chamfers are not useful to actually do
-    if( params.m_chamfer_setback_a == 0 )
-    {
-        aErrorMsg = _( "A setback of zero was entered.\n"
-                       "The chamfer operation was not performed." );
-        return std::nullopt;
-    }
 
     return params;
 }
+
 
 int EDIT_TOOL::ModifyLines( const TOOL_EVENT& aEvent )
 {
@@ -1325,19 +1303,45 @@ int EDIT_TOOL::ModifyLines( const TOOL_EVENT& aEvent )
         }
     }
 
-    for( PCB_SHAPE* item : lines_to_add )
-        selection.Add( item );
+    int segmentCount = selection.CountType( PCB_SHAPE_LOCATE_SEGMENT_T ) + lines_to_add.size();
 
-    for( PCB_SHAPE* item : items_to_remove )
-        selection.Remove( item );
-
-    if( selection.CountType( PCB_SHAPE_LOCATE_SEGMENT_T ) < 2 )
+    if( aEvent.IsAction( &PCB_ACTIONS::extendLines ) && segmentCount != 2 )
     {
-        frame()->ShowInfoBarMsg( _( "A shape with least two lines must be selected." ) );
+        frame()->ShowInfoBarMsg( _( "Exactly two lines must be selected to extend them." ) );
+
+        for( PCB_SHAPE* line : lines_to_add )
+            delete line;
+
+        return 0;
+    }
+    else if( segmentCount < 2 )
+    {
+        frame()->ShowInfoBarMsg( _( "A shape with at least two lines must be selected." ) );
+
+        for( PCB_SHAPE* line : lines_to_add )
+            delete line;
+
         return 0;
     }
 
-    BOARD_COMMIT commit{ this };
+    BOARD_COMMIT commit( this );
+
+    // Items created like lines from a rectangle
+    for( PCB_SHAPE* item : lines_to_add )
+    {
+        commit.Add( item );
+        selection.Add( item );
+    }
+
+    // Remove items like rectangles that we decomposed into lines
+    for( PCB_SHAPE* item : items_to_remove )
+    {
+        selection.Remove( item );
+        commit.Remove( item );
+    }
+
+    for( EDA_ITEM* item : selection )
+        item->ClearFlags( STRUCT_DELETED );
 
     // List of thing to select at the end of the operation
     // (doing it as we go will invalidate the iterator)
@@ -1349,31 +1353,35 @@ int EDIT_TOOL::ModifyLines( const TOOL_EVENT& aEvent )
     // Handle modifications to existing items by the routine
     // How to deal with this depends on whether we're in the footprint editor or not
     // and whether the item was conjured up by decomposing a polygon or rectangle
-    const auto item_modification_handler = [&]( PCB_SHAPE& aItem )
-    {
-        // If the item was "conjured up" it will be added later separately
-        if( !alg::contains( lines_to_add, &aItem ) )
-        {
-            commit.Modify( &aItem );
-            items_to_select_on_success.push_back( &aItem );
-        }
-    };
+    auto item_modification_handler =
+            [&]( PCB_SHAPE& aItem )
+            {
+                // If the item was "conjured up" it will be added later separately
+                if( !alg::contains( lines_to_add, &aItem ) )
+                {
+                    commit.Modify( &aItem );
+                    items_to_select_on_success.push_back( &aItem );
+                }
+            };
 
-    bool       any_items_created = !lines_to_add.empty();
-    const auto item_creation_handler = [&]( std::unique_ptr<PCB_SHAPE> aItem )
-    {
-        any_items_created = true;
-        items_to_select_on_success.push_back( aItem.get() );
-        commit.Add( aItem.release() );
-    };
+    bool any_items_created = !lines_to_add.empty();
+    auto item_creation_handler =
+            [&]( std::unique_ptr<PCB_SHAPE> aItem )
+            {
+                any_items_created = true;
+                items_to_select_on_success.push_back( aItem.get() );
+                commit.Add( aItem.release() );
+            };
 
-    bool       any_items_removed = !items_to_remove.empty();
-    const auto item_removal_handler = [&]( PCB_SHAPE& aItem )
-    {
-        any_items_removed = true;
-        items_to_deselect_on_success.push_back( &aItem );
-        commit.Remove( &aItem );
-    };
+    bool any_items_removed = !items_to_remove.empty();
+    auto item_removal_handler =
+            [&]( PCB_SHAPE& aItem )
+            {
+                aItem.SetFlags( STRUCT_DELETED );
+                any_items_removed = true;
+                items_to_deselect_on_success.push_back( &aItem );
+                commit.Remove( &aItem );
+            };
 
     // Combine these callbacks into a CHANGE_HANDLER to inject in the ROUTINE
     ITEM_MODIFICATION_ROUTINE::CALLABLE_BASED_HANDLER change_handler(
@@ -1381,48 +1389,39 @@ int EDIT_TOOL::ModifyLines( const TOOL_EVENT& aEvent )
 
     // Construct an appropriate tool
     std::unique_ptr<PAIRWISE_LINE_ROUTINE> pairwise_line_routine;
-    wxString                               error_message;
 
     if( aEvent.IsAction( &PCB_ACTIONS::filletLines ) )
     {
-        const std::optional<int> filletRadiusIU = GetFilletParams( *frame(), error_message );
+        std::optional<int> filletRadiusIU = GetFilletParams( *frame() );
 
         if( filletRadiusIU.has_value() )
         {
-            pairwise_line_routine = std::make_unique<LINE_FILLET_ROUTINE>(
-                    frame()->GetModel(), change_handler, *filletRadiusIU );
+            pairwise_line_routine = std::make_unique<LINE_FILLET_ROUTINE>( frame()->GetModel(),
+                                                                           change_handler,
+                                                                           *filletRadiusIU );
         }
     }
     else if( aEvent.IsAction( &PCB_ACTIONS::chamferLines ) )
     {
-        const std::optional<CHAMFER_PARAMS> chamfer_params =
-                GetChamferParams( *frame(), error_message );
+        std::optional<CHAMFER_PARAMS> chamfer_params = GetChamferParams( *frame() );
 
         if( chamfer_params.has_value() )
         {
-            pairwise_line_routine = std::make_unique<LINE_CHAMFER_ROUTINE>(
-                    frame()->GetModel(), change_handler, *chamfer_params );
+            pairwise_line_routine = std::make_unique<LINE_CHAMFER_ROUTINE>( frame()->GetModel(),
+                                                                            change_handler,
+                                                                            *chamfer_params );
         }
     }
     else if( aEvent.IsAction( &PCB_ACTIONS::extendLines ) )
     {
-        if( selection.CountType( PCB_SHAPE_LOCATE_SEGMENT_T ) != 2 )
-        {
-            error_message = _( "Exactly two lines must be selected to extend them." );
-        }
-        else
-        {
-            pairwise_line_routine =
-                    std::make_unique<LINE_EXTENSION_ROUTINE>( frame()->GetModel(), change_handler );
-        }
+        pairwise_line_routine = std::make_unique<LINE_EXTENSION_ROUTINE>( frame()->GetModel(),
+                                                                          change_handler );
     }
 
     if( !pairwise_line_routine )
     {
-        // Didn't construct any mofication routine - could be an error or cancellation
-        if( !error_message.empty() )
-            frame()->ShowInfoBarMsg( error_message );
-
+        // Didn't construct any mofication routine - user must have cancelled
+        commit.Revert();
         return 0;
     }
 
@@ -1430,27 +1429,15 @@ int EDIT_TOOL::ModifyLines( const TOOL_EVENT& aEvent )
     alg::for_all_pairs( selection.begin(), selection.end(),
                         [&]( EDA_ITEM* a, EDA_ITEM* b )
                         {
-                            PCB_SHAPE* line_a = static_cast<PCB_SHAPE*>( a );
-                            PCB_SHAPE* line_b = static_cast<PCB_SHAPE*>( b );
+                            if( ( a->GetFlags() & STRUCT_DELETED ) == 0
+                                && ( b->GetFlags() & STRUCT_DELETED ) == 0 )
+                            {
+                                PCB_SHAPE* line_a = static_cast<PCB_SHAPE*>( a );
+                                PCB_SHAPE* line_b = static_cast<PCB_SHAPE*>( b );
 
-                            pairwise_line_routine->ProcessLinePair( *line_a, *line_b );
+                                pairwise_line_routine->ProcessLinePair( *line_a, *line_b );
+                            }
                         } );
-
-    // Items created like lines from a rectangle
-    // Some of these might have been changed by the tool, but we need to
-    // add *all* of them to the selection and commit them
-    for( PCB_SHAPE* item : lines_to_add )
-    {
-        m_selectionTool->AddItemToSel( item, true );
-        commit.Add( item );
-    }
-
-    // Remove items like rectangles that we decomposed into lines
-    for( PCB_SHAPE* item : items_to_remove )
-    {
-        commit.Remove( item );
-        m_selectionTool->RemoveItemFromSel( item, true );
-    }
 
     // Select added and modified items
     for( PCB_SHAPE* item : items_to_select_on_success )
@@ -1471,9 +1458,8 @@ int EDIT_TOOL::ModifyLines( const TOOL_EVENT& aEvent )
 
     commit.Push( pairwise_line_routine->GetCommitDescription() );
 
-    if (const std::optional<wxString> msg = pairwise_line_routine->GetStatusMessage()) {
+    if( const std::optional<wxString> msg = pairwise_line_routine->GetStatusMessage() )
         frame()->ShowInfoBarMsg( *msg );
-    }
 
     return 0;
 }
@@ -1653,6 +1639,7 @@ int EDIT_TOOL::BooleanPolygons( const TOOL_EVENT& aEvent )
 
     // Gather or construct polygon source shapes to merge
     std::vector<PCB_SHAPE*> items_to_process;
+
     for( EDA_ITEM* item : selection )
     {
         items_to_process.push_back( static_cast<PCB_SHAPE*>( item ) );
@@ -1661,30 +1648,32 @@ int EDIT_TOOL::BooleanPolygons( const TOOL_EVENT& aEvent )
         // so it can be used as the property donor and as the basis for the
         // boolean operation
         if( item == last_item )
-        {
             std::swap( items_to_process.back(), items_to_process.front() );
-        }
     }
 
     BOARD_COMMIT commit{ this };
 
     // Handle modifications to existing items by the routine
-    const auto item_modification_handler = [&]( PCB_SHAPE& aItem )
-    {
-        commit.Modify( &aItem );
-    };
+    auto item_modification_handler =
+            [&]( PCB_SHAPE& aItem )
+            {
+                commit.Modify( &aItem );
+            };
 
     std::vector<PCB_SHAPE*> items_to_select_on_success;
-    const auto              item_creation_handler = [&]( std::unique_ptr<PCB_SHAPE> aItem )
-    {
-        items_to_select_on_success.push_back( aItem.get() );
-        commit.Add( aItem.release() );
-    };
 
-    const auto item_removal_handler = [&]( PCB_SHAPE& aItem )
-    {
-        commit.Remove( &aItem );
-    };
+    auto item_creation_handler =
+            [&]( std::unique_ptr<PCB_SHAPE> aItem )
+            {
+                items_to_select_on_success.push_back( aItem.get() );
+                commit.Add( aItem.release() );
+            };
+
+    auto item_removal_handler =
+            [&]( PCB_SHAPE& aItem )
+            {
+                commit.Remove( &aItem );
+            };
 
     // Combine these callbacks into a CHANGE_HANDLER to inject in the ROUTINE
     ITEM_MODIFICATION_ROUTINE::CALLABLE_BASED_HANDLER change_handler(
@@ -1694,18 +1683,18 @@ int EDIT_TOOL::BooleanPolygons( const TOOL_EVENT& aEvent )
     std::unique_ptr<POLYGON_BOOLEAN_ROUTINE> boolean_routine;
     if( aEvent.IsAction( &PCB_ACTIONS::mergePolygons ) )
     {
-        boolean_routine =
-                std::make_unique<POLYGON_MERGE_ROUTINE>( frame()->GetModel(), change_handler );
+        boolean_routine = std::make_unique<POLYGON_MERGE_ROUTINE>( frame()->GetModel(),
+                                                                   change_handler );
     }
     else if( aEvent.IsAction( &PCB_ACTIONS::subtractPolygons ) )
     {
-        boolean_routine =
-                std::make_unique<POLYGON_SUBTRACT_ROUTINE>( frame()->GetModel(), change_handler );
+        boolean_routine = std::make_unique<POLYGON_SUBTRACT_ROUTINE>( frame()->GetModel(),
+                                                                      change_handler );
     }
     else if( aEvent.IsAction( &PCB_ACTIONS::intersectPolygons ) )
     {
-        boolean_routine =
-                std::make_unique<POLYGON_INTERSECT_ROUTINE>( frame()->GetModel(), change_handler );
+        boolean_routine = std::make_unique<POLYGON_INTERSECT_ROUTINE>( frame()->GetModel(),
+                                                                       change_handler );
     }
     else
     {
@@ -1715,15 +1704,11 @@ int EDIT_TOOL::BooleanPolygons( const TOOL_EVENT& aEvent )
 
     // Perform the operation on each polygon
     for( PCB_SHAPE* shape : items_to_process )
-    {
         boolean_routine->ProcessShape( *shape );
-    }
 
     // Select new items
     for( PCB_SHAPE* item : items_to_select_on_success )
-    {
         m_selectionTool->AddItemToSel( item, true );
-    }
 
     // Notify other tools of the changes
     m_toolMgr->ProcessEvent( EVENTS::SelectedItemsModified );
@@ -1731,9 +1716,7 @@ int EDIT_TOOL::BooleanPolygons( const TOOL_EVENT& aEvent )
     commit.Push( boolean_routine->GetCommitDescription() );
 
     if( const std::optional<wxString> msg = boolean_routine->GetStatusMessage() )
-    {
         frame()->ShowInfoBarMsg( *msg );
-    }
 
     return 0;
 }
