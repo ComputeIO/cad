@@ -525,6 +525,7 @@ void HTTP_LIB_V2_CONNECTION::deleteCategory( HTTP_LIB_V2_CATEGORY* aCategory )
         m_categoriesByName.erase( aCategory->Name );
         m_categoriesById.erase( aCategory->Id );
         delete aCategory;
+        aCategory = nullptr;
     }
 }
 HTTP_LIB_PART* HTTP_LIB_V2_CONNECTION::createPart( const std::string& aId, const std::string& aName,
@@ -591,5 +592,6 @@ void HTTP_LIB_V2_CONNECTION::deletePart( HTTP_LIB_PART* aPart )
         m_partsByName.erase( aPart->Name );
         m_partsById.erase( aPart->Id );
         delete aPart;
+        aPart = nullptr;
     }
 }

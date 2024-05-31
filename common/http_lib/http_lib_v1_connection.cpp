@@ -268,7 +268,7 @@ bool HTTP_LIB_V1_CONNECTION::syncParts()
     return true;
 }
 
-bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY* aCategory )
+bool HTTP_LIB_V1_CONNECTION::cacheAll( HTTP_LIB_V1_CATEGORY* aCategory )
 {
     if( !m_endpointValid )
     {
@@ -289,6 +289,8 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY* aCategory )
 
         res = curl->GetBuffer();
 
+        std::list<HTTP_LIB_V1_PART*> parts;
+
         nlohmann::json response = nlohmann::json::parse( res );
 
         for( nlohmann::json& item : response )
@@ -302,13 +304,12 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY* aCategory )
             {
                 part = new HTTP_LIB_V1_PART( id );
                 m_partsById[part->Id] = part;
+                m_parts.push_back( part );
             }
 
             part->CategoryId = aCategory->Id;
             part->PreloadedDescription = false;
             part->IsUpdated = true;
-
-            m_partsByName.erase( part->Name );
 
             // API might not want to return an optional name.
             if( item.contains( "name" ) )
@@ -339,7 +340,17 @@ bool HTTP_LIB_V1_CONNECTION::cacheAll( const HTTP_LIB_V1_CATEGORY* aCategory )
                 std::string pow = item.at( "power_symbol" );
                 part->PowerSymbol = boolFromString( pow, false );
             }
+            aCategory->Parts.remove( part );
+            parts.push_back( part );
         }
+        for( HTTP_LIB_V1_PART* part : aCategory->Parts )
+        {
+            m_partsByName.erase( part->Name );
+            m_partsById.erase( part->Id );
+            m_parts.erase( std::find( m_parts.begin(), m_parts.end(), part ) );
+            delete part;
+        }
+        aCategory->Parts = parts;
     }
     catch( const std::exception& e )
     {

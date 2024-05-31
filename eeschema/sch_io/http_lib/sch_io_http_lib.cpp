@@ -306,6 +306,7 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( HTTP_LIB_PART* aPart )
     {
         m_partCache.erase( aPart->Id );
         delete symbol;
+        symbol = nullptr;
     }
 
     // Get or Create the symbol using the found symbol

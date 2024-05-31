@@ -49,6 +49,13 @@ public:
                                  const std::string& aCategoryName ) override;
 
 private:
+    struct HTTP_LIB_V1_PART : HTTP_LIB_PART
+    {
+        HTTP_LIB_V1_PART( const std::string id ) : HTTP_LIB_PART( id ) {}
+        std::time_t LastCached = 0;
+        bool        PreloadedDescription = false;
+    };
+
     struct HTTP_LIB_V1_CATEGORY
     {
         HTTP_LIB_V1_CATEGORY() {}
@@ -58,20 +65,14 @@ private:
         std::string Description; ///< description of category
 
         std::time_t LastCached = 0;
-    };
-
-    struct HTTP_LIB_V1_PART : HTTP_LIB_PART
-    {
-        HTTP_LIB_V1_PART( const std::string id ) : HTTP_LIB_PART( id ) {}
-        std::time_t LastCached = 0;
-        bool        PreloadedDescription = false;
+        std::list<HTTP_LIB_V1_PART*> Parts;
     };
 
     bool validateHTTPLibraryEndpoints();
 
     bool syncCategories();
     bool syncParts();
-    bool cacheAll( const HTTP_LIB_V1_CATEGORY* aCategory );
+    bool cacheAll( HTTP_LIB_V1_CATEGORY* aCategory );
     bool cacheUpdateOne( HTTP_LIB_V1_PART* aPart );
 
     bool boolFromString( const std::any& aVal, bool aDefaultValue );
