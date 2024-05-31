@@ -37,10 +37,9 @@ public:
 
     bool GetPartNames( std::vector<std::string>& aPartNames, const bool powerSymbolsOnly ) override;
 
-    bool GetParts( std::vector<HTTP_LIB_PART>& aParts, const bool powerSymbolsOnly ) override;
+    std::vector<HTTP_LIB_PART*>* GetParts( const bool powerSymbolsOnly ) override;
 
-    bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
-                  const bool powerSymbolsOnly ) override;
+    HTTP_LIB_PART* GetPart( const std::string& aPartName, const bool powerSymbolsOnly ) override;
 
     bool GetCategoryNames( std::vector<std::string>& aCategories ) override;
 
@@ -70,10 +69,10 @@ private:
     void deleteCategory( HTTP_LIB_V2_CATEGORY* aCategory );
 
     HTTP_LIB_PART* createPart( const std::string& aId, const std::string& aName,
-                               const std::string& aCategoryId );
-    void           updatePart( HTTP_LIB_PART* aPart, const std::string& aName,
-                               const std::string& aCategoryId );
-    void           deletePart( HTTP_LIB_PART* aPart );
+                               const std::string& aCategoryId, const std::string& aSymbol );
+    void updatePart( HTTP_LIB_PART* aPart, const std::string& aName, const std::string& aCategoryId,
+                     const std::string& aSymbol );
+    void deletePart( HTTP_LIB_PART* aPart );
 
     long long   m_timestamp = 0;
     std::time_t m_lastCached = 0;

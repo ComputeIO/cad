@@ -37,10 +37,9 @@ public:
 
     bool GetPartNames( std::vector<std::string>& aPartNames, const bool powerSymbolsOnly ) override;
 
-    bool GetParts( std::vector<HTTP_LIB_PART>& aParts, const bool powerSymbolsOnly ) override;
+    std::vector<HTTP_LIB_PART*>* GetParts( const bool powerSymbolsOnly ) override;
 
-    bool GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
-                  const bool powerSymbolsOnly ) override;
+    HTTP_LIB_PART* GetPart( const std::string& aPartName, const bool powerSymbolsOnly ) override;
 
     bool GetCategoryNames( std::vector<std::string>& aCategories ) override;
 
@@ -52,35 +51,37 @@ public:
 private:
     struct HTTP_LIB_V1_CATEGORY
     {
-        std::string id;          ///< id of category
-        std::string name;        ///< name of category
-        std::string description; ///< description of category
+        HTTP_LIB_V1_CATEGORY() {}
+        HTTP_LIB_V1_CATEGORY( const std::string& id ) { Id = id; }
+        std::string Id;          ///< id of category
+        std::string Name;        ///< name of category
+        std::string Description; ///< description of category
 
-        std::time_t lastCached = 0;
-        bool        check_for_outdated = true;
+        std::time_t LastCached = 0;
     };
 
     struct HTTP_LIB_V1_PART : HTTP_LIB_PART
     {
-        std::time_t lastCached = 0;
-        bool        preloadedDescription = false;
-        bool        outdated = true;
+        HTTP_LIB_V1_PART( const std::string id ) : HTTP_LIB_PART( id ) {}
+        std::time_t LastCached = 0;
+        bool        PreloadedDescription = false;
     };
 
     bool validateHTTPLibraryEndpoints();
 
     bool syncCategories();
     bool syncParts();
-    bool cacheAll( const HTTP_LIB_V1_CATEGORY& aCategory );
-    bool cacheUpdateOne( HTTP_LIB_V1_PART& aPart );
+    bool cacheAll( const HTTP_LIB_V1_CATEGORY* aCategory );
+    bool cacheUpdateOne( HTTP_LIB_V1_PART* aPart );
 
     bool boolFromString( const std::any& aVal, bool aDefaultValue );
 
-    std::map<std::string, HTTP_LIB_V1_CATEGORY> m_categories;
-    std::map<std::string, std::string>          m_categoryNameIndex;
+    std::map<std::string, HTTP_LIB_V1_CATEGORY*> m_categoriesById;
+    std::map<std::string, HTTP_LIB_V1_CATEGORY*> m_categoriesByName;
 
-    std::map<std::string, HTTP_LIB_V1_PART> m_parts;
-    std::map<std::string, std::string>      m_partNameIndex;
+    std::vector<HTTP_LIB_PART*>              m_parts;
+    std::map<std::string, HTTP_LIB_V1_PART*> m_partsById;
+    std::map<std::string, HTTP_LIB_V1_PART*> m_partsByName;
 
     const std::string http_endpoint_categories = "categories";
     const std::string http_endpoint_parts = "parts";

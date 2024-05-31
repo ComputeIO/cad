@@ -57,41 +57,30 @@ bool HTTP_LIB_V2_CONNECTION::GetPartNames( std::vector<std::string>& aPartNames,
 
     return true;
 }
-bool HTTP_LIB_V2_CONNECTION::GetParts( std::vector<HTTP_LIB_PART>& aParts,
-                                       const bool                  powerSymbolsOnly )
+std::vector<HTTP_LIB_PART*>* HTTP_LIB_V2_CONNECTION::GetParts( const bool powerSymbolsOnly )
 {
     if( !syncCache() )
     {
-        return false;
+        return nullptr;
     }
-
-    for( HTTP_LIB_PART* part : m_parts )
-    {
-        if( !powerSymbolsOnly || part->PowerSymbol )
-        {
-            aParts.push_back( *part );
-            part->IsLoaded = true;
-        }
-    }
-
-    return true;
+    return &m_parts;
 }
 
-bool HTTP_LIB_V2_CONNECTION::GetPart( HTTP_LIB_PART& aPart, const std::string& aPartName,
-                                      const bool powerSymbolsOnly )
+HTTP_LIB_PART* HTTP_LIB_V2_CONNECTION::GetPart( const std::string& aPartName,
+                                                const bool         powerSymbolsOnly )
 {
     if( !syncCache() )
     {
-        return false;
+        return nullptr;
     }
 
-    aPart = *m_partsByName.at( aPartName );
-    if( !powerSymbolsOnly || aPart.PowerSymbol )
+    HTTP_LIB_PART* part = m_partsByName.at( aPartName );
+    if( powerSymbolsOnly && !part->PowerSymbol )
     {
-        return true;
+        return nullptr;
     }
 
-    return false;
+    return part;
 }
 
 bool HTTP_LIB_V2_CONNECTION::GetCategoryNames( std::vector<std::string>& aCategories )
@@ -101,10 +90,10 @@ bool HTTP_LIB_V2_CONNECTION::GetCategoryNames( std::vector<std::string>& aCatego
         return false;
     }
 
-    for( std::map<std::string, HTTP_LIB_V2_CATEGORY*>::iterator it = m_categoriesById.begin();
-         it != m_categoriesById.end(); ++it )
+    for( std::map<std::string, HTTP_LIB_V2_CATEGORY*>::iterator it = m_categoriesByName.begin();
+         it != m_categoriesByName.end(); ++it )
     {
-        aCategories.push_back( it->second->Name );
+        aCategories.push_back( it->first );
     }
 
     return true;
@@ -293,6 +282,11 @@ bool HTTP_LIB_V2_CONNECTION::syncCache()
                         wxT( "Exception occurred while syncing parts from REST API: %s" ),
                         m_lastError );
 
+            m_categoriesById.clear();
+            m_categoriesByName.clear();
+            m_parts.clear();
+            m_partsById.clear();
+            m_partsByName.clear();
             return false;
         }
     }
@@ -304,11 +298,11 @@ void HTTP_LIB_V2_CONNECTION::readCategory( const nlohmann::json& aCategory )
     std::string id = aCategory.at( "id" );
     std::string name;
 
-    HTTP_LIB_V2_CATEGORY* category = m_categoriesById.at( id );
+    HTTP_LIB_V2_CATEGORY* category = nullptr;
 
-    if( category )
+    if( m_categoriesById.contains( id ) )
     {
-        m_categoriesByName.erase( category->Name );
+        category = m_categoriesById.at( id );
     }
 
     if( aCategory.contains( "active" ) )
@@ -344,8 +338,14 @@ void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::ordered_json& aPart )
     std::string id = aPart.at( "id" );
     std::string categoryId = aPart.at( "category_id" );
     std::string name;
+    std::string symbol;
 
-    HTTP_LIB_PART* part = m_partsById.at( id );
+    HTTP_LIB_PART* part = nullptr;
+
+    if( m_partsById.contains( id ) )
+    {
+        part = m_partsById.at( id );
+    }
 
     if( !m_categoriesById.contains( categoryId ) )
     {
@@ -366,17 +366,16 @@ void HTTP_LIB_V2_CONNECTION::readPart( const nlohmann::ordered_json& aPart )
     {
         name = aPart.at( "name" );
     }
+    symbol = aPart.at( "symbol" );
 
     if( !part )
     {
-        part = createPart( id, name, categoryId );
+        part = createPart( id, name, categoryId, symbol );
     }
     else
     {
-        updatePart( part, name, categoryId );
+        updatePart( part, name, categoryId, symbol );
     }
-
-    part->Symbol = aPart.at( "symbol" );
 
     if( aPart.contains( "keywords" ) )
     {
@@ -460,8 +459,8 @@ void HTTP_LIB_V2_CONNECTION::readField( HTTP_LIB_FIELD& aField, const nlohmann::
     }
 }
 
-HTTP_LIB_V2_CONNECTION::HTTP_LIB_V2_CATEGORY* HTTP_LIB_V2_CONNECTION::createCategory( const std::string& aId,
-                                                              const std::string& aName )
+HTTP_LIB_V2_CONNECTION::HTTP_LIB_V2_CATEGORY*
+HTTP_LIB_V2_CONNECTION::createCategory( const std::string& aId, const std::string& aName )
 {
     HTTP_LIB_V2_CATEGORY* category = new HTTP_LIB_V2_CATEGORY( aId );
 
@@ -529,7 +528,8 @@ void HTTP_LIB_V2_CONNECTION::deleteCategory( HTTP_LIB_V2_CATEGORY* aCategory )
     }
 }
 HTTP_LIB_PART* HTTP_LIB_V2_CONNECTION::createPart( const std::string& aId, const std::string& aName,
-                                                   const std::string& aCategoryId )
+                                                   const std::string& aCategoryId,
+                                                   const std::string& aSymbol )
 {
     HTTP_LIB_PART* part = new HTTP_LIB_PART( aId );
 
@@ -543,6 +543,7 @@ HTTP_LIB_PART* HTTP_LIB_V2_CONNECTION::createPart( const std::string& aId, const
     }
 
     part->CategoryId = aCategoryId;
+    part->Symbol = aSymbol;
     m_partsByName[part->Name] = part;
     m_partsById[part->Id] = part;
     m_parts.push_back( part );
@@ -550,7 +551,8 @@ HTTP_LIB_PART* HTTP_LIB_V2_CONNECTION::createPart( const std::string& aId, const
 }
 
 void HTTP_LIB_V2_CONNECTION::updatePart( HTTP_LIB_PART* aPart, const std::string& aName,
-                                         const std::string& aCategoryId )
+                                         const std::string& aCategoryId,
+                                         const std::string& aSymbol )
 {
     if( aPart )
     {
@@ -572,7 +574,12 @@ void HTTP_LIB_V2_CONNECTION::updatePart( HTTP_LIB_PART* aPart, const std::string
         }
 
         aPart->CategoryId = aCategoryId;
-        aPart->IsLoaded = false;
+        if( aPart->Symbol != aSymbol )
+        {
+            aPart->Symbol = aSymbol;
+            aPart->IsSymbolUpdated = true;
+        }
+        aPart->IsUpdated = true;
     }
 }
 
