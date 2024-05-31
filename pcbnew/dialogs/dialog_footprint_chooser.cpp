@@ -135,20 +135,6 @@ DIALOG_FOOTPRINT_CHOOSER::DIALOG_FOOTPRINT_CHOOSER( PCB_BASE_FRAME* aParent,
                                wxCommandEventHandler( DIALOG_FOOTPRINT_CHOOSER::onFpViewReq ),
                                nullptr, this );
 
-    Bind( wxEVT_MOVE,
-          [this]( wxMoveEvent& aEvent )
-          {
-              COMMON_SETTINGS*         settings = Pgm().GetCommonSettings();
-              const DPI_SCALING_COMMON dpi( settings, this );
-
-              if( m_preview3DCanvas->GetScaleFactor() != dpi.GetScaleFactor() )
-              {
-                  m_preview3DCanvas->SetScaleFactor( dpi.GetScaleFactor() );
-                  m_preview3DCanvas->ReloadRequest();
-                  m_preview3DCanvas->Refresh();
-              }
-          } );
-
     Connect( FP_SELECTION_EVENT, wxCommandEventHandler( DIALOG_FOOTPRINT_CHOOSER::onFpChanged ),
              nullptr, this );
 }
@@ -193,9 +179,6 @@ void DIALOG_FOOTPRINT_CHOOSER::build3DCanvas()
                                            PROJECT_PCB::Get3DCacheManager( &m_parent->Prj() ) );
 
     COMMON_SETTINGS* settings = Pgm().GetCommonSettings();
-
-    const DPI_SCALING_COMMON dpi{ settings, this };
-    m_preview3DCanvas->SetScaleFactor( dpi.GetScaleFactor() );
 
     // TODO(JE) use all control options
     m_boardAdapter.m_MousewheelPanning = settings->m_Input.scroll_modifier_zoom != 0;
