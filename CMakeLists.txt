@@ -1040,10 +1040,7 @@ if( WXWIDGETS_REQUESTED_TOOLKIT
     message( WARNING "wxWidgets and wxPython must be based on the same toolkit.\n"
         "It will be fixed automatically if you skip the '--toolkit=xxx' "
         "wxWidgets_CONFIG_OPTIONS parameter.")
-elseif( UNIX AND NOT APPLE )
-    # Force the use of GTK3 on Linux
-    set( wxWidgets_CONFIG_OPTIONS ${wxWidgets_CONFIG_OPTIONS} "--toolkit=gtk3" )
-else()
+elseif( WXPYTHON_TOOLKIT )
     # Use the same toolkit as wxPython otherwise there will be a symbol conflict
     set( wxWidgets_CONFIG_OPTIONS ${wxWidgets_CONFIG_OPTIONS} "--toolkit=${WXPYTHON_TOOLKIT}" )
 endif()
