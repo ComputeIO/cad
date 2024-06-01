@@ -109,7 +109,7 @@ public:
             }
         }
 
-#elif defined( _WIN32 )
+#elif defined( _WIN32 ) and not defined( __WXQT__ )
 
         const GLubyte* vendor = glGetString( GL_VENDOR );
         //const GLubyte* renderer = glGetString( GL_RENDERER );
