@@ -1082,6 +1082,14 @@ else()
     message( FATAL_ERROR "Unable to detect wxWidgets port")
 endif()
 
+if( MSVC AND NOT ${wxWidgets_VERSION_STRING} VERSION_LESS 3.3 )
+    # wx 3.3 exports std::vector methods from the dll, causing multiple definition
+    # errors when linking kicommon. /FORCE:MULTIPLE works around this issue.
+    foreach( type EXE SHARED MODULE )
+        string( APPEND CMAKE_${type}_LINKER_FLAGS " /FORCE:MULTIPLE" )
+    endforeach()
+endif()
+
 if( NOT MSVC )
     if( ${wxWidgets_VERSION_STRING} VERSION_LESS 3.2 )
         message( FATAL_ERROR "wxWidgets 3.2.0 or greater is required" )
