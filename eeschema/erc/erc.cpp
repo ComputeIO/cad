@@ -761,6 +761,21 @@ int ERC_TESTER::TestPinToPin()
             }
         }
 
+        std::sort( pins.begin(), pins.end(),
+                   []( const ERC_SCH_PIN_CONTEXT& lhs, const ERC_SCH_PIN_CONTEXT& rhs )
+                   {
+                       int ret = StrNumCmp( lhs.Pin()->GetParentSymbol()->GetRef( &lhs.Sheet() ),
+                                            rhs.Pin()->GetParentSymbol()->GetRef( &rhs.Sheet() ) );
+
+                       if( ret == 0 )
+                           ret = StrNumCmp( lhs.Pin()->GetNumber(), rhs.Pin()->GetNumber() );
+
+                       if( ret == 0 )
+                           ret = lhs < rhs; // Fallback to hash to guarantee deterministic sort
+
+                       return ret < 0;
+                   } );
+
         ERC_SCH_PIN_CONTEXT needsDriver;
         bool                hasDriver = false;
 
@@ -1263,6 +1278,9 @@ int ERC_TESTER::TestSimModelIssues()
 
     for( SCH_SHEET_PATH& sheet : sheets )
     {
+        if( sheet.GetExcludedFromSim() )
+            continue;
+
         std::vector<SCH_MARKER*> markers;
 
         for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_SYMBOL_T ) )

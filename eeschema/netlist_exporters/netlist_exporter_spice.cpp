@@ -727,9 +727,19 @@ std::string NETLIST_EXPORTER_SPICE::GenerateItemPinNetName( const std::string& a
 
 SCH_SHEET_LIST NETLIST_EXPORTER_SPICE::GetSheets( unsigned aNetlistOptions ) const
 {
+    SCH_SHEET_LIST sheets;
+
     if( aNetlistOptions & OPTION_CUR_SHEET_AS_ROOT )
-        return SCH_SHEET_LIST( m_schematic->CurrentSheet().Last() );
+        sheets = SCH_SHEET_LIST( m_schematic->CurrentSheet().Last() );
     else
-        return m_schematic->GetSheets();
+        sheets = SCH_SHEET_LIST( m_schematic->GetSheets() );
+
+    alg::delete_if( sheets,
+                    [&]( const SCH_SHEET_PATH& sheet )
+                    {
+                        return sheet.GetExcludedFromSim();
+                    } );
+
+    return sheets;
 }
 

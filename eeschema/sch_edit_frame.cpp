@@ -670,6 +670,13 @@ void SCH_EDIT_FRAME::setupUIConditions()
                 return cfg && cfg->m_Appearance.show_erc_exclusions;
             };
 
+    auto markSimExclusionsCond =
+            [this]( const SELECTION& )
+            {
+                EESCHEMA_SETTINGS* cfg = eeconfig();
+                return cfg && cfg->m_Appearance.mark_sim_exclusions;
+            };
+
     auto showOPVoltagesCond =
             [this]( const SELECTION& )
             {
@@ -740,6 +747,7 @@ void SCH_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( EE_ACTIONS::toggleERCErrors,       CHECK( showERCErrorsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleERCWarnings,     CHECK( showERCWarningsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleERCExclusions,   CHECK( showERCExclusionsCond ) );
+    mgr->SetConditions( EE_ACTIONS::markSimExclusions,     CHECK( markSimExclusionsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleOPVoltages,      CHECK( showOPVoltagesCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleOPCurrents,      CHECK( showOPCurrentsCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleAnnotateAuto,    CHECK( showAnnotateAutomaticallyCond ) );
@@ -1489,30 +1497,29 @@ void SCH_EDIT_FRAME::RefreshOperatingPointDisplay()
             {
                 int flags = 0;
 
+                auto invalidateTextVars =
+                        [&flags]( EDA_TEXT* text )
+                        {
+                            if( text->HasTextVars() )
+                            {
+                                text->ClearRenderCache();
+                                text->ClearBoundingBoxCache();
+                                flags |= KIGFX::GEOMETRY | KIGFX::REPAINT;
+                            }
+                        };
+
                 if( SCH_ITEM* item = dynamic_cast<SCH_ITEM*>( aItem ) )
                 {
                     item->RunOnChildren(
-                            [&flags]( SCH_ITEM* aChild )
+                            [&invalidateTextVars]( SCH_ITEM* aChild )
                             {
-                                EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aChild );
-
-                                if( text && text->HasTextVars() )
-                                {
-                                    text->ClearRenderCache();
-                                    text->ClearBoundingBoxCache();
-                                    flags |= KIGFX::GEOMETRY | KIGFX::REPAINT;
-                                }
+                                if( EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aChild ) )
+                                    invalidateTextVars( text );
                             } );
-
-                    EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aItem );
-
-                    if( text && text->HasTextVars() )
-                    {
-                        text->ClearRenderCache();
-                        text->ClearBoundingBoxCache();
-                        flags |= KIGFX::GEOMETRY | KIGFX::REPAINT;
-                    }
                 }
+
+                if( EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aItem ) )
+                    invalidateTextVars( text );
 
                 return flags;
             } );
@@ -1521,6 +1528,9 @@ void SCH_EDIT_FRAME::RefreshOperatingPointDisplay()
     //
     for( SCH_ITEM* item : GetScreen()->Items() )
     {
+        if( GetCurrentSheet().GetExcludedFromSim() )
+            continue;
+
         if( item->Type() == SCH_LINE_T )
         {
             SCH_LINE* line = static_cast<SCH_LINE*>( item );
@@ -1599,6 +1609,9 @@ void SCH_EDIT_FRAME::RefreshOperatingPointDisplay()
             {
                 SCH_LINE* longestWire = nullptr;
                 double    length = 0.0;
+
+                if( subgraph->GetSheet().GetExcludedFromSim() )
+                    continue;
 
                 for( SCH_ITEM* item : subgraph->GetItems() )
                 {
@@ -1766,7 +1779,7 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_COMMIT* aCommit, SCH_CLEANUP_FL
             };
 
     if( !ADVANCED_CFG::GetCfg().m_IncrementalConnectivity || aCleanupFlags == GLOBAL_CLEANUP
-            || m_undoList.m_CommandsList.empty() )
+            || m_undoList.m_CommandsList.empty()|| Schematic().ConnectionGraph()->IsMinor() )
     {
         // Update all rule areas so we can cascade implied connectivity changes
         std::unordered_set<SCH_SCREEN*> all_screens;
@@ -1803,7 +1816,7 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_COMMIT* aCommit, SCH_CLEANUP_FL
         // Lambda to add an item to the connectivity update sets
         auto addItemToChangeSet = [&changed_items, &pts, &item_paths]( CHANGED_ITEM itemData )
         {
-            SCH_SHEET_PATHS& paths = itemData.screen->GetClientSheetPaths();
+            std::vector<SCH_SHEET_PATH>& paths = itemData.screen->GetClientSheetPaths();
 
             std::vector<VECTOR2I> tmp_pts = itemData.item->GetConnectionPoints();
             pts.insert( tmp_pts.begin(), tmp_pts.end() );
@@ -1976,6 +1989,17 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_COMMIT* aCommit, SCH_CLEANUP_FL
                 SCH_ITEM*       item = dynamic_cast<SCH_ITEM*>( aItem );
                 SCH_CONNECTION* connection = item ? item->Connection() : nullptr;
 
+                auto invalidateTextVars =
+                        [&flags]( EDA_TEXT* text )
+                        {
+                            if( text->HasTextVars() )
+                            {
+                                text->ClearRenderCache();
+                                text->ClearBoundingBoxCache();
+                                flags |= KIGFX::GEOMETRY | KIGFX::REPAINT;
+                            }
+                        };
+
                 if( connection && connection->HasDriverChanged() )
                 {
                     connection->ClearDriverChanged();
@@ -1985,30 +2009,18 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_COMMIT* aCommit, SCH_CLEANUP_FL
                 if( item )
                 {
                     item->RunOnChildren(
-                            [&flags]( SCH_ITEM* aChild )
+                            [&invalidateTextVars]( SCH_ITEM* aChild )
                             {
-                                EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aChild );
-
-                                if( text && text->HasTextVars() )
-                                {
-                                    text->ClearRenderCache();
-                                    text->ClearBoundingBoxCache();
-                                    flags |= KIGFX::GEOMETRY | KIGFX::REPAINT;
-                                }
+                                if( EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aChild ) )
+                                    invalidateTextVars( text );
                             } );
-
-                    EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aItem );
-
-                    if( text && text->HasTextVars() )
-                    {
-                        text->ClearRenderCache();
-                        text->ClearBoundingBoxCache();
-                        flags |= KIGFX::GEOMETRY | KIGFX::REPAINT;
-                    }
 
                     if( flags & KIGFX::GEOMETRY )
                         GetScreen()->Update( item, false );     // Refresh RTree
                 }
+
+                if( EDA_TEXT* text = dynamic_cast<EDA_TEXT*>( aItem ) )
+                    invalidateTextVars( text );
 
                 return flags;
             } );

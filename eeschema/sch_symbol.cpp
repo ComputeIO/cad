@@ -457,7 +457,7 @@ int SCH_SYMBOL::GetUnitCount() const
 }
 
 
-wxString SCH_SYMBOL::GetUnitDisplayName( int aUnit )
+wxString SCH_SYMBOL::GetUnitDisplayName( int aUnit ) const
 {
     wxCHECK( m_part, ( wxString::Format( _( "Unit %s" ), SubReference( aUnit ) ) ) );
 
@@ -465,7 +465,7 @@ wxString SCH_SYMBOL::GetUnitDisplayName( int aUnit )
 }
 
 
-bool SCH_SYMBOL::HasUnitDisplayName( int aUnit )
+bool SCH_SYMBOL::HasUnitDisplayName( int aUnit ) const
 {
     wxCHECK( m_part, false );
 
@@ -542,9 +542,16 @@ void SCH_SYMBOL::Print( const SCH_RENDER_SETTINGS* aSettings, int aUnit, int aBo
 
     if( m_DNP )
     {
-        BOX2I bbox = GetBodyAndPinsBoundingBox();
-        wxDC* DC = localRenderSettings.GetPrintDC();
-        COLOR4D dnp_color = localRenderSettings.GetLayerColor( LAYER_DNP_MARKER );
+        wxDC*    DC = localRenderSettings.GetPrintDC();
+        BOX2I    bbox = GetBodyBoundingBox();
+        BOX2I    pins = GetBodyAndPinsBoundingBox();
+        COLOR4D  dnp_color = localRenderSettings.GetLayerColor( LAYER_DNP_MARKER );
+        VECTOR2D margins( std::max( bbox.GetX() - pins.GetX(), pins.GetEnd().x - bbox.GetEnd().x ),
+                          std::max( bbox.GetY() - pins.GetY(), pins.GetEnd().y - bbox.GetEnd().y ) );
+
+        margins.x = std::max( margins.x * 0.6, margins.y * 0.3 );
+        margins.y = std::max( margins.y * 0.6, margins.x * 0.3 );
+        bbox.Inflate( KiROUND( margins.x ), KiROUND( margins.y ) );
 
         GRFilledSegment( DC, bbox.GetOrigin(), bbox.GetEnd(),
                              3.0 * schIUScale.MilsToIU( DEFAULT_LINE_WIDTH_MILS ),
@@ -1458,22 +1465,38 @@ bool SCH_SYMBOL::ResolveTextVar( const SCH_SHEET_PATH* aPath, wxString* token, i
     }
     else if( token->IsSameAs( wxT( "EXCLUDE_FROM_BOM" ) ) )
     {
-        *token = this->GetExcludedFromBOM() ? _( "Excluded from BOM" ) : wxString( "" );
+        *token = wxEmptyString;
+
+        if( aPath->GetExcludedFromBOM() || this->GetExcludedFromBOM() )
+            *token = _( "Excluded from BOM" );
+
         return true;
     }
     else if( token->IsSameAs( wxT( "EXCLUDE_FROM_BOARD" ) ) )
     {
-        *token = this->GetExcludedFromBoard() ? _( "Excluded from board" ) : wxString( "" );
+        *token = wxEmptyString;
+
+        if( aPath->GetExcludedFromBoard() || this->GetExcludedFromBoard() )
+            *token = _( "Excluded from board" );
+
         return true;
     }
     else if( token->IsSameAs( wxT( "EXCLUDE_FROM_SIM" ) ) )
     {
-        *token = this->GetExcludedFromSim() ? _( "Excluded from simulation" ) : wxString( "" );
+        *token = wxEmptyString;
+
+        if( aPath->GetExcludedFromSim() || this->GetExcludedFromSim() )
+            *token = _( "Excluded from simulation" );
+
         return true;
     }
     else if( token->IsSameAs( wxT( "DNP" ) ) )
     {
-        *token = this->GetDNP() ? _( "DNP" ) : wxString( "" );
+        *token = wxEmptyString;
+
+        if( aPath->GetDNP() || this->GetDNP() )
+            *token = _( "DNP" );
+
         return true;
     }
     else if( token->StartsWith( wxT( "SHORT_NET_NAME(" ) )
@@ -2531,8 +2554,17 @@ void SCH_SYMBOL::Plot( PLOTTER* aPlotter, bool aBackground, const SCH_PLOT_OPTS&
 void SCH_SYMBOL::PlotDNP( PLOTTER* aPlotter ) const
 {
     COLOR_SETTINGS* colors = Pgm().GetSettingsManager().GetColorSettings();
-    BOX2I           bbox = GetBodyAndPinsBoundingBox();
+    BOX2I           bbox = GetBodyBoundingBox();
+    BOX2I           pins = GetBodyAndPinsBoundingBox();
+    VECTOR2D        margins( std::max( bbox.GetX() - pins.GetX(),
+                                       pins.GetEnd().x - bbox.GetEnd().x ),
+                             std::max( bbox.GetY() - pins.GetY(),
+                                       pins.GetEnd().y - bbox.GetEnd().y ) );
     int             strokeWidth = 3.0 * schIUScale.MilsToIU( DEFAULT_LINE_WIDTH_MILS );
+
+    margins.x = std::max( margins.x * 0.6, margins.y * 0.3 );
+    margins.y = std::max( margins.y * 0.6, margins.x * 0.3 );
+    bbox.Inflate( KiROUND( margins.x ), KiROUND( margins.y ) );
 
     aPlotter->SetColor( colors->GetColor( LAYER_DNP_MARKER ) );
 
@@ -2712,7 +2744,7 @@ bool SCH_SYMBOL::operator==( const SCH_ITEM& aOther ) const
 
     for( unsigned i = 0; i < m_pins.size(); ++i )
     {
-        if( !( *m_pins[i] == *symbol.m_pins[i] ) )
+        if( *m_pins[i] != *symbol.m_pins[i] )
             return false;
     }
 

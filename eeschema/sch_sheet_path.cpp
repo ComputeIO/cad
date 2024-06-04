@@ -142,7 +142,7 @@ void SCH_SHEET_PATH::initFromOther( const SCH_SHEET_PATH& aOther )
     m_virtualPageNumber = aOther.m_virtualPageNumber;
     m_current_hash      = aOther.m_current_hash;
 
-    // Note: don't copy m_recursion_test_cache as it is slow and we want SCH_SHEET_PATHS to be
+    // Note: don't copy m_recursion_test_cache as it is slow and we want std::vector<SCH_SHEET_PATH> to be
     // very fast to construct for use in the connectivity algorithm.
 }
 
@@ -258,6 +258,54 @@ SCH_SCREEN* SCH_SHEET_PATH::LastScreen() const
         return lastSheet->GetScreen();
 
     return nullptr;
+}
+
+
+bool SCH_SHEET_PATH::GetExcludedFromSim() const
+{
+    for( SCH_SHEET* sheet : m_sheets )
+    {
+        if( sheet->GetExcludedFromSim() )
+            return true;
+    }
+
+    return false;
+}
+
+
+bool SCH_SHEET_PATH::GetExcludedFromBOM() const
+{
+    for( SCH_SHEET* sheet : m_sheets )
+    {
+        if( sheet->GetExcludedFromBOM() )
+            return true;
+    }
+
+    return false;
+}
+
+
+bool SCH_SHEET_PATH::GetExcludedFromBoard() const
+{
+    for( SCH_SHEET* sheet : m_sheets )
+    {
+        if( sheet->GetExcludedFromBoard() )
+            return true;
+    }
+
+    return false;
+}
+
+
+bool SCH_SHEET_PATH::GetDNP() const
+{
+    for( SCH_SHEET* sheet : m_sheets )
+    {
+        if( sheet->GetDNP() )
+            return true;
+    }
+
+    return false;
 }
 
 
@@ -970,7 +1018,7 @@ void SCH_SHEET_LIST::GetSymbolsWithinPath( SCH_REFERENCE_LIST&   aReferences,
 }
 
 
-void SCH_SHEET_LIST::GetSheetsWithinPath( SCH_SHEET_PATHS&      aSheets,
+void SCH_SHEET_LIST::GetSheetsWithinPath( std::vector<SCH_SHEET_PATH>& aSheets,
                                           const SCH_SHEET_PATH& aSheetPath ) const
 {
     for( const SCH_SHEET_PATH& sheet : *this )
@@ -1002,7 +1050,7 @@ std::optional<SCH_SHEET_PATH> SCH_SHEET_LIST::GetSheetPathByKIIDPath( const KIID
 void SCH_SHEET_LIST::GetMultiUnitSymbols( SCH_MULTI_UNIT_REFERENCE_MAP &aRefList,
                                           bool aIncludePowerSymbols ) const
 {
-    for( SCH_SHEET_PATHS::const_iterator it = begin(); it != end(); ++it )
+    for( auto it = begin(); it != end(); ++it )
     {
         SCH_MULTI_UNIT_REFERENCE_MAP tempMap;
         ( *it ).GetMultiUnitSymbols( tempMap, aIncludePowerSymbols );

@@ -30,6 +30,7 @@
 #include <sch_connection.h>
 #include <sch_item.h>
 #include <wx/treectrl.h>
+#include <advanced_config.h>
 
 
 #ifdef DEBUG
@@ -471,6 +472,19 @@ public:
      * Replace all references to #aOldItem with #aNewItem in the graph.
     */
     void ExchangeItem( SCH_ITEM* aOldItem, SCH_ITEM* aNewItem );
+
+    /**
+     * We modify how we handle the connectivity graph for small graphs vs large
+     * graphs.  Partially this is to avoid unneeded complexity for small graphs,
+     * where the performance of the graph is not a concern.  This is considered
+     * a temporary solution until the connectivity graph is refactored with an
+     * eye toward partial updates
+    */
+    bool IsMinor() const
+    {
+        return static_cast<ssize_t>( m_items.size() )
+               < ADVANCED_CFG::GetCfg().m_MinorSchematicGraphSize;
+    }
 
 private:
     /**
