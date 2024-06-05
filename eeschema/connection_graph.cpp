@@ -469,10 +469,10 @@ CONNECTION_SUBGRAPH::GetNetclassesForDriver( SCH_ITEM* aItem, bool returnAll ) c
 
                     if( field->GetCanonicalName() == wxT( "Netclass" ) )
                     {
-                        wxString netclass = field->GetText();
+                        wxString netclass = field->GetShownText( &m_sheet, false );
 
                         if( netclass != wxEmptyString )
-                            foundNetclasses.push_back( { field->GetText(), aItem } );
+                            foundNetclasses.push_back( { netclass, aItem } );
 
                         return returnAll;
                     }
@@ -1602,9 +1602,10 @@ void CONNECTION_GRAPH::generateBusAliasMembers()
 
             SCH_CONNECTION dummy( item, subgraph->m_sheet );
             dummy.SetGraph( this );
-            dummy.ConfigureFromLabel( label->GetText() );
+            dummy.ConfigureFromLabel( label->GetShownText( &subgraph->m_sheet, false ) );
 
-            wxLogTrace( ConnTrace, wxS( "new bus label (%s)" ), label->GetText() );
+            wxLogTrace( ConnTrace, wxS( "new bus label (%s)" ),
+                        label->GetShownText( &subgraph->m_sheet, false ) );
 
             for( const auto& conn : dummy.Members() )
             {
@@ -2317,14 +2318,14 @@ void CONNECTION_GRAPH::buildConnectionGraph( std::function<void( SCH_ITEM* )>* a
 
                     if( SCH_SHEET* sheet = pin->GetParent() )
                     {
-                        wxString    pinText = pin->GetText();
+                        wxString    pinText = pin->GetShownText( false );
                         SCH_SCREEN* screen  = sheet->GetScreen();
 
                         for( SCH_ITEM* item : screen->Items().OfType( SCH_HIER_LABEL_T ) )
                         {
                             SCH_HIERLABEL* label = static_cast<SCH_HIERLABEL*>( item );
 
-                            if( label->GetText() == pinText )
+                            if( label->GetShownText( &subgraph->m_sheet, false ) == pinText )
                             {
                                 SCH_SHEET_PATH path = subgraph->m_sheet;
                                 path.push_back( sheet );
@@ -3841,38 +3842,38 @@ bool CONNECTION_GRAPH::ercCheckLabels( const CONNECTION_SUBGRAPH* aSubgraph )
     if( aSubgraph->m_driver_connection->IsBus() )
         return true;
 
-    const SCH_SHEET_PATH& sheet = aSubgraph->m_sheet;
-    ERC_SETTINGS& settings = m_schematic->ErcSettings();
-    bool          ok       = true;
-    int           pinCount = 0;
-    bool          has_nc   = !!aSubgraph->m_no_connect;
+    const SCH_SHEET_PATH& sheet    = aSubgraph->m_sheet;
+    ERC_SETTINGS&         settings = m_schematic->ErcSettings();
+    bool                  ok       = true;
+    size_t                pinCount = 0;
+    bool                  has_nc   = !!aSubgraph->m_no_connect;
 
     std::map<KICAD_T, std::vector<SCH_TEXT*>> label_map;
 
 
     auto hasPins =
-            []( const CONNECTION_SUBGRAPH* aLocSubgraph ) -> int
+            []( const CONNECTION_SUBGRAPH* aLocSubgraph ) -> size_t
             {
-                return
-                std::count_if( aLocSubgraph->m_items.begin(), aLocSubgraph->m_items.end(),
-                               []( const SCH_ITEM* item )
-                               {
-                                   return item->Type() == SCH_PIN_T;
-                               } );
+                return std::count_if( aLocSubgraph->m_items.begin(), aLocSubgraph->m_items.end(),
+                                      []( const SCH_ITEM* item )
+                                      {
+                                          return item->Type() == SCH_PIN_T;
+                                      } );
             };
 
-    auto reportError = [&]( SCH_TEXT* aText, int errCode )
-    {
-        if( settings.IsTestEnabled( errCode ) )
-        {
-            std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( errCode );
-            ercItem->SetSheetSpecificPath( sheet );
-            ercItem->SetItems( aText );
+    auto reportError =
+            [&]( SCH_TEXT* aText, int errCode )
+            {
+                if( settings.IsTestEnabled( errCode ) )
+                {
+                    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( errCode );
+                    ercItem->SetSheetSpecificPath( sheet );
+                    ercItem->SetItems( aText );
 
-            SCH_MARKER* marker = new SCH_MARKER( ercItem, aText->GetPosition() );
-            aSubgraph->m_sheet.LastScreen()->Append( marker );
-        }
-    };
+                    SCH_MARKER* marker = new SCH_MARKER( ercItem, aText->GetPosition() );
+                    aSubgraph->m_sheet.LastScreen()->Append( marker );
+                }
+            };
 
     pinCount = hasPins( aSubgraph );
 
@@ -3910,9 +3911,9 @@ bool CONNECTION_GRAPH::ercCheckLabels( const CONNECTION_SUBGRAPH* aSubgraph )
 
     // No-connects on net neighbors will be noticed before, but to notice them on bus parents we
     // need to walk the graph
-    for( auto pair : aSubgraph->m_bus_parents )
+    for( auto& [ connection, subgraphs ] : aSubgraph->m_bus_parents )
     {
-        for( CONNECTION_SUBGRAPH* busParent : pair.second )
+        for( CONNECTION_SUBGRAPH* busParent : subgraphs )
         {
             if( busParent->m_no_connect )
             {
@@ -3946,7 +3947,6 @@ bool CONNECTION_GRAPH::ercCheckLabels( const CONNECTION_SUBGRAPH* aSubgraph )
 
     for( auto& [type, label_vec] : label_map )
     {
-
         switch( type )
         {
         case SCH_GLOBAL_LABEL_T:
@@ -3963,7 +3963,7 @@ bool CONNECTION_GRAPH::ercCheckLabels( const CONNECTION_SUBGRAPH* aSubgraph )
 
         for( SCH_TEXT* text : label_vec )
         {
-            int allPins = pinCount;
+            size_t allPins = pinCount;
 
             auto it = m_net_name_to_subgraphs_map.find( netName );
 
