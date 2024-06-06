@@ -1074,14 +1074,10 @@ bool SCH_EDIT_FRAME::SaveProject( bool aSaveAs )
         }
 
         // Attempt to make sheet file name paths relative to the new root schematic path.
-        SCH_SHEET_LIST sheets = Schematic().GetSheets();
-
-        for( SCH_SHEET_PATH& sheet : sheets )
+        for( SCH_SHEET_PATH& sheet : Schematic().GetUnorderedSheets() )
         {
-            if( sheet.Last()->IsRootSheet() )
-                continue;
-
-            sheet.MakeFilePathRelativeToParentSheet();
+            if( !sheet.Last()->IsRootSheet() )
+                sheet.MakeFilePathRelativeToParentSheet();
         }
     }
     else if( !fn.FileExists() )
@@ -1089,7 +1085,7 @@ bool SCH_EDIT_FRAME::SaveProject( bool aSaveAs )
         // File doesn't exist yet; true if we just imported something
         updateFileHistory = true;
     }
-    else if( !Schematic().GetSheets().IsModified() )
+    else if( !IsContentModified() )
     {
         return true;
     }
