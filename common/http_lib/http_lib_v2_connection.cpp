@@ -102,11 +102,6 @@ bool HTTP_LIB_V2_CONNECTION::GetCategoryNames( std::vector<std::string>& aCatego
 bool HTTP_LIB_V2_CONNECTION::GetCategoryName( std::string&       aCategoryName,
                                               const std::string& aCategoryId )
 {
-    if( !syncCache() )
-    {
-        return false;
-    }
-
     if( m_categoriesById.contains( aCategoryId ) )
     {
         aCategoryName = m_categoriesById.at( aCategoryId )->Name;
@@ -120,11 +115,6 @@ bool HTTP_LIB_V2_CONNECTION::GetCategoryName( std::string&       aCategoryName,
 bool HTTP_LIB_V2_CONNECTION::GetCategoryDescription( std::string&       aCategoryDescription,
                                                      const std::string& aCategoryName )
 {
-    if( !syncCache() )
-    {
-        return false;
-    }
-
     if( m_categoriesByName.contains( aCategoryName ) )
     {
         aCategoryDescription = m_categoriesByName.at( aCategoryName )->Description;
