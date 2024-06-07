@@ -858,7 +858,7 @@ void SCH_FIELD::OnScintillaCharAdded( SCINTILLA_TRICKS* aScintillaTricks,
                 SCH_REFERENCE_LIST refs;
                 SCH_SYMBOL*        refSymbol = nullptr;
 
-                schematic->GetUnorderedSheets().GetSymbols( refs );
+                schematic->BuildUnorderedSheetList().GetSymbols( refs );
 
                 for( size_t jj = 0; jj < refs.GetCount(); jj++ )
                 {
@@ -1154,7 +1154,11 @@ void SCH_FIELD::SetText( const wxString& aText )
     if( m_isNamedVariable )
         return;
 
-    EDA_TEXT::SetText( aText );
+    // Mandatory fields should not have leading or trailing whitespace.
+    if( IsMandatory() )
+        EDA_TEXT::SetText( aText.Strip( wxString::both ) );
+    else
+        EDA_TEXT::SetText( aText );
 }
 
 
