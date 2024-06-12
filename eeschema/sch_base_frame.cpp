@@ -40,9 +40,10 @@
 #include <preview_items/selection_area.h>
 #include <project_sch.h>
 #include <symbol_library.h>
+#include <symbol_lib_table.h>
 #include <sch_base_frame.h>
 #include <design_block.h>
-#include <symbol_lib_table.h>
+#include <design_block_lib_table.h>
 #include <tool/action_toolbar.h>
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
@@ -55,6 +56,32 @@
 #include <wx/msgdlg.h>
 
 #include <navlib/nl_schematic_plugin.h>
+
+
+DESIGN_BLOCK* SchGetDesignBlock( const LIB_ID& aLibId, DESIGN_BLOCK_LIB_TABLE* aLibTable, wxWindow* aParent, bool aShowErrorMsg )
+{
+    wxCHECK_MSG( aLibTable, nullptr, wxS( "Invalid design block library table." ) );
+
+    DESIGN_BLOCK* designBlock = nullptr;
+
+    try
+    {
+        designBlock = aLibTable->DesignBlockLoadWithOptionalNickname( aLibId, true );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        if( aShowErrorMsg )
+        {
+            wxString msg = wxString::Format( _( "Error loading designblock %s from library '%s'." ),
+                                             aLibId.GetLibItemName().wx_str(),
+                                             aLibId.GetLibNickname().wx_str() );
+            DisplayErrorMessage( aParent, msg, ioe.What() );
+        }
+    }
+
+    return designBlock;
+}
+
 
 LIB_SYMBOL* SchGetLibSymbol( const LIB_ID& aLibId, SYMBOL_LIB_TABLE* aLibTable,
                              SYMBOL_LIB* aCacheLib, wxWindow* aParent, bool aShowErrorMsg )
@@ -98,6 +125,7 @@ SCH_BASE_FRAME::SCH_BASE_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aWindo
                         aFrameName, schIUScale ),
         m_base_frame_defaults( nullptr, "base_Frame_defaults" ),
         m_selectionFilterPanel( nullptr ),
+        m_designBlocksPanel( nullptr ),
         m_spaceMouse( nullptr )
 {
     if( ( aStyle & wxFRAME_NO_TASKBAR ) == 0 )
@@ -210,12 +238,7 @@ void SCH_BASE_FRAME::UpdateStatusBar()
 DESIGN_BLOCK* SCH_BASE_FRAME::GetDesignBlock( const LIB_ID& aLibId, bool aUseCacheLib,
                                               bool aShowErrorMsg )
 {
-    //SYMBOL_LIB* cache =
-            //( aUseCacheLib ) ? PROJECT_SCH::SchLibs( &Prj() )->GetCacheLibrary() : nullptr;
-
-    //return SchGetLibSymbol( aLibId, PROJECT_SCH::SchSymbolLibTable( &Prj() ), cache, this,
-                            //aShowErrorMsg );
-    return nullptr;
+    return SchGetDesignBlock( aLibId, Prj().DesignBlockLibs(), this, aShowErrorMsg );
 }
 
 LIB_SYMBOL* SCH_BASE_FRAME::GetLibSymbol( const LIB_ID& aLibId, bool aUseCacheLib,

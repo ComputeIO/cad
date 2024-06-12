@@ -256,6 +256,11 @@ public:
     void OnFindDialogClose();
 
     /**
+     * Design block panel options have changed and the panel needs to be refreshed.
+     */
+    void UpdateDesignBlockOptions();
+
+    /**
      * Break a single segment into two at the specified point.
      * @param aCommit Transaction container used to record changes for undo/redo
      * @param aSegment Line segment to break
@@ -1018,6 +1023,9 @@ private:
     bool m_highlightedConnChanged;
 
     std::vector<wxEvtHandler*> m_schematicChangeListeners;
+
+    std::vector<LIB_ID> m_designBlockHistoryList;
+
 
 #ifdef KICAD_IPC_API
     std::unique_ptr<API_HANDLER_SCH> m_apiHandler;

@@ -22,7 +22,7 @@
  */
 
 #include <design_block.h>
-#include <dialog_design_block_chooser.h>
+#include <widgets/design_block_pane.h>
 #include <widgets/panel_design_block_chooser.h>
 #include <eeschema_settings.h>
 #include <kiface_base.h>
@@ -37,35 +37,27 @@ static const wxString REPEATED_PLACEMENT = _( "Place repeated copies" );
 static const wxString PLACE_AS_SHEET = _( "Place as sheet" );
 static const wxString KEEP_ANNOTATIONS = _( "Keep annotations" );
 
-std::mutex DIALOG_DESIGN_BLOCK_CHOOSER::g_Mutex;
+std::mutex DESIGN_BLOCK_PANE::g_Mutex;
 
-DIALOG_DESIGN_BLOCK_CHOOSER::DIALOG_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME*      aParent,
+DESIGN_BLOCK_PANE::DESIGN_BLOCK_PANE( SCH_BASE_FRAME*      aParent,
                                                           const LIB_ID*        aPreselect,
-                                                          std::vector<LIB_ID>& aHistoryList ) :
-        DIALOG_SHIM( aParent, wxID_ANY, _( "Choose Design Block" ), wxDefaultPosition, wxDefaultSize,
-                     wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
+                                                          std::vector<LIB_ID>& aHistoryList,
+                                                          std::function<void()> aSelectHandler
+                                                          ) :
+        WX_PANEL( aParent )
 {
     wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
     m_chooserPanel = new PANEL_DESIGN_BLOCK_CHOOSER(
             aParent, this, aHistoryList,
-            [this]()
-            {
-                EndModal( wxID_OK );
-            },
-            [this]()
-            {
-                EndModal( wxID_CANCEL );
-            } );
-
+            aSelectHandler );
     sizer->Add( m_chooserPanel, 1, wxEXPAND, 5 );
 
     if( aPreselect && aPreselect->IsValid() )
         m_chooserPanel->SetPreselect( *aPreselect );
 
-    SetTitle( GetTitle()
-              + wxString::Format( _( " (%d items loaded)" ), m_chooserPanel->GetItemCount() ) );
+    SetName( wxT( "Design Blocks" ) );
 
-    wxBoxSizer* buttonsSizer = new wxBoxSizer( wxHORIZONTAL );
+    wxBoxSizer* cbSizer = new wxBoxSizer( wxVERTICAL );
 
     m_repeatedPlacement = new wxCheckBox( this, wxID_ANY, REPEATED_PLACEMENT );
     m_repeatedPlacement->SetToolTip( _( "Place copies of the design block on subsequent clicks." ) );
@@ -76,33 +68,19 @@ DIALOG_DESIGN_BLOCK_CHOOSER::DIALOG_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME*      a
     m_keepAnnotations = new wxCheckBox( this, wxID_ANY, KEEP_ANNOTATIONS );
     m_keepAnnotations->SetToolTip( _( "Preserve reference designators in the source schematic. "
                                       "Otherwise, clear then reannotate according to settings." ) );
+    UpdateCheckboxes();
 
-    if( EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() ) )
-    {
-        m_repeatedPlacement->SetValue( cfg->m_DesignBlockChooserPanel.repeated_placement );
-        m_placeAsSheet->SetValue( cfg->m_DesignBlockChooserPanel.place_as_sheet );
-        m_keepAnnotations->SetValue( cfg->m_DesignBlockChooserPanel.keep_annotations );
-    }
+    // Set all checkbox handlers to the same function
+    m_repeatedPlacement->Bind( wxEVT_CHECKBOX, &DESIGN_BLOCK_PANE::OnCheckBox, this );
+    m_placeAsSheet->Bind( wxEVT_CHECKBOX, &DESIGN_BLOCK_PANE::OnCheckBox, this );
+    m_keepAnnotations->Bind( wxEVT_CHECKBOX, &DESIGN_BLOCK_PANE::OnCheckBox, this );
 
-    buttonsSizer->Add( m_repeatedPlacement, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 5 );
-    buttonsSizer->Add( m_placeAsSheet, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 30 );
-    buttonsSizer->Add( m_keepAnnotations, 0, wxLEFT | wxALIGN_CENTER_VERTICAL, 30 );
+    cbSizer->Add( m_repeatedPlacement, 0, wxLEFT, 5 );
+    cbSizer->Add( m_placeAsSheet, 0, wxLEFT, 5 );
+    cbSizer->Add( m_keepAnnotations, 0, wxLEFT, 5 );
 
-    wxStdDialogButtonSizer* sdbSizer = new wxStdDialogButtonSizer();
-    wxButton*               okButton = new wxButton( this, wxID_OK );
-    wxButton*               cancelButton = new wxButton( this, wxID_CANCEL );
-
-    sdbSizer->AddButton( okButton );
-    sdbSizer->AddButton( cancelButton );
-    sdbSizer->Realize();
-
-    buttonsSizer->Add( sdbSizer, 1, wxALL, 5 );
-
-    sizer->Add( buttonsSizer, 0, wxEXPAND | wxLEFT, 5 );
+    sizer->Add( cbSizer, 0, wxEXPAND | wxLEFT, 5 );
     SetSizer( sizer );
-
-    SetInitialFocus( m_chooserPanel->GetFocusTarget() );
-    SetupStandardButtons();
 
     m_chooserPanel->FinishSetup();
     Layout();
@@ -111,7 +89,7 @@ DIALOG_DESIGN_BLOCK_CHOOSER::DIALOG_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME*      a
 }
 
 
-DIALOG_DESIGN_BLOCK_CHOOSER::~DIALOG_DESIGN_BLOCK_CHOOSER()
+void DESIGN_BLOCK_PANE::OnCheckBox( wxCommandEvent& aEvent )
 {
     if( EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() ) )
     {
@@ -122,7 +100,18 @@ DIALOG_DESIGN_BLOCK_CHOOSER::~DIALOG_DESIGN_BLOCK_CHOOSER()
 }
 
 
-LIB_ID DIALOG_DESIGN_BLOCK_CHOOSER::GetSelectedLibId( int* aUnit ) const
+void DESIGN_BLOCK_PANE::UpdateCheckboxes()
+{
+    if( EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() ) )
+    {
+        m_repeatedPlacement->SetValue( cfg->m_DesignBlockChooserPanel.repeated_placement );
+        m_placeAsSheet->SetValue( cfg->m_DesignBlockChooserPanel.place_as_sheet );
+        m_keepAnnotations->SetValue( cfg->m_DesignBlockChooserPanel.keep_annotations );
+    }
+}
+
+
+LIB_ID DESIGN_BLOCK_PANE::GetSelectedLibId( int* aUnit ) const
 {
     return m_chooserPanel->GetSelectedLibId( aUnit );
 }

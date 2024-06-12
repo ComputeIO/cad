@@ -39,7 +39,7 @@
 #include <sch_edit_frame.h>
 #include <pgm_base.h>
 #include <design_block.h>
-#include <dialog_design_block_chooser.h>
+#include <design_block_pane.h>
 #include <eeschema_id.h>
 #include <confirm.h>
 #include <view/view_controls.h>
@@ -548,25 +548,21 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
     else if( designBlock )
         sheetFileName = designBlock->GetSchematicFile();
 
-    DESIGN_BLOCK_LIB_TABLE*     dbtbl = m_frame->Prj().DesignBlockLibs();
-    bool                        ignorePrimePosition = false;
     COMMON_SETTINGS*            common_settings = Pgm().GetCommonSettings();
     EESCHEMA_SETTINGS*          cfg = m_frame->eeconfig();
     SCHEMATIC_SETTINGS&         schSettings = m_frame->Schematic().Settings();
     SCH_SCREEN*                 screen = m_frame->GetScreen();
     SCH_SHEET_PATH&             sheetPath = m_frame->GetCurrentSheet();
 
+    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+    EE_GRID_HELPER        grid( m_toolMgr );
+    VECTOR2I              cursorPos;
+
     if( !cfg || !common_settings )
         return 0;
 
     if( m_inDrawingTool )
         return 0;
-
-    KIGFX::VIEW_CONTROLS* controls = getViewControls();
-    EE_GRID_HELPER        grid( m_toolMgr );
-    VECTOR2I              cursorPos;
-
-    m_frame->PushTool( aEvent );
 
     auto setCursor =
             [&]()
@@ -578,10 +574,6 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
     auto cleanup =
             [&]()
             {
-                m_toolMgr->RunAction( EE_ACTIONS::clearSelection );
-                m_view->ClearPreview();
-                delete designBlock;
-                designBlock = nullptr;
             };
 
     auto placeSheetContents =
@@ -676,91 +668,14 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
                 return placed;
             };
 
-
-    Activate();
-
-    // Must be done after Activate() so that it gets set into the correct context
-    getViewControls()->ShowCursor( true );
-
-    // Set initial cursor
-    setCursor();
-
-    // Prime the pump
-    if( designBlock )
+    // Whether we are placing the sheet as a sheet, or as its contents, we need to get a filename
+    // if we weren't provided one
+    if( sheetFileName.IsEmpty() )
     {
-        getViewControls()->WarpMouseCursor( getViewControls()->GetMousePosition( false ) );
-    }
-    else if( aEvent.HasPosition() )
-    {
-        m_toolMgr->PrimeTool( aEvent.Position() );
-    }
-    else if( common_settings->m_Input.immediate_actions && !aEvent.IsReactivate() )
-    {
-        m_toolMgr->PrimeTool( { 0, 0 } );
-        ignorePrimePosition = true;
-    }
+            wxString path;
+            wxString file;
 
-    // Main loop: keep receiving events
-    while( TOOL_EVENT* evt = Wait() )
-    {
-        setCursor();
-        grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
-
-        cursorPos = grid.Align( controls->GetMousePosition(), GRID_HELPER_GRIDS::GRID_CONNECTABLE );
-        controls->ForceCursorPosition( true, cursorPos );
-
-        // The tool hotkey is interpreted as a click when drawing
-        bool isSyntheticClick = designBlock && evt->IsActivate() && evt->HasPosition()
-                                && evt->Matches( aEvent );
-
-        if( evt->IsCancelInteractive() || ( designBlock && evt->IsAction( &ACTIONS::undo ) ) )
-        {
-            m_frame->GetInfoBar()->Dismiss();
-
-            if( designBlock )
-            {
-                cleanup();
-            }
-            else
-            {
-                m_frame->PopTool( aEvent );
-                break;
-            }
-        }
-        else if( evt->IsActivate() && !isSyntheticClick )
-        {
-            if( designBlock && evt->IsMoveTool() )
-            {
-                // we're already moving our own item; ignore the move tool
-                evt->SetPassEvent( false );
-                continue;
-            }
-
-            if( designBlock )
-            {
-                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel design block placement." ) );
-                evt->SetPassEvent( false );
-                continue;
-            }
-
-            if( evt->IsMoveTool() )
-            {
-                // leave ourselves on the stack so we come back after the move
-                break;
-            }
-            else
-            {
-                m_frame->PopTool( aEvent );
-                break;
-            }
-        }
-        else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) || isSyntheticClick )
-        {
-            if( !placingDesignBlock )
-            {
-                wxString path;
-                wxString file;
+            if (!placingDesignBlock) {
 
                 if( sheetFileName.IsEmpty() )
                 {
@@ -783,50 +698,76 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
                 dlg.SetCustomizeHook( dlgHook );
 
                 if( dlg.ShowModal() == wxID_CANCEL )
-                    continue;
+                    return 0;
 
                 sheetFileName = dlg.GetPath();
-            }
-            else
-            {
-                // Pick the design block to be placed
-                LIB_ID sel = m_frame->PickDesignBlockFromLibrary( m_designBlockHistoryList );
 
-                if( !sel.IsValid() )
-                    continue;
-
-                designBlock = dbtbl->DesignBlockLoadWithOptionalNickname( sel );
-
-                if( !designBlock )
-                    continue;
-
-                sheetFileName = designBlock->GetSchematicFile();
+                m_frame->UpdateDesignBlockOptions();
             }
 
             if( sheetFileName.IsEmpty() )
-                continue;
+                return 0;
+    }
 
-            if( cfg->m_DesignBlockChooserPanel.place_as_sheet )
-            {
-                wxString* tempFileName = new wxString( sheetFileName );
-                m_toolMgr->PostAction( EE_ACTIONS::drawSheetCopy, tempFileName );
-                m_frame->PopTool( aEvent );
-                break;
-            }
-            else
-            {
-                // Update cursor now that we have a symbol
-                setCursor();
+    // If we're placing sheet contents, we don't even want to run our tool loop, just add the items
+    // to the canvas and run the move tool
+    if( !cfg->m_DesignBlockChooserPanel.place_as_sheet )
+    {
+            while( placeSheetContents() && cfg->m_DesignBlockChooserPanel.repeated_placement )
+                ;
 
-                while( placeSheetContents() && cfg->m_DesignBlockChooserPanel.repeated_placement )
-                    ;
+            m_toolMgr->RunAction( EE_ACTIONS::clearSelection );
+            m_view->ClearPreview();
+            delete designBlock;
+            designBlock = nullptr;
 
-                // We need to push ourselves back on the stack as AddSheetAndUpdateDisplay will pop
-                // our tool off the stack when the move completes
-                m_frame->PushTool( aEvent );
-            }
+            return 0;
+    }
 
-            cleanup();
+    // We're placing a sheet as a sheet, we need to run a small tool loop to get the starting
+    // coordinate of the sheet drawing
+    m_frame->PushTool( aEvent );
+
+    Activate();
+
+    // Must be done after Activate() so that it gets set into the correct context
+    getViewControls()->ShowCursor( true );
+
+    // Set initial cursor
+    setCursor();
+
+    if( common_settings->m_Input.immediate_actions && !aEvent.IsReactivate() )
+    {
+        m_toolMgr->PrimeTool( { 0, 0 } );
+    }
+
+    // Main loop: keep receiving events
+    while( TOOL_EVENT* evt = Wait() )
+    {
+        setCursor();
+        grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
+
+        cursorPos = grid.Align( controls->GetMousePosition(), GRID_HELPER_GRIDS::GRID_CONNECTABLE );
+        controls->ForceCursorPosition( true, cursorPos );
+
+        // The tool hotkey is interpreted as a click when drawing
+        bool isSyntheticClick = designBlock && evt->IsActivate() && evt->HasPosition()
+                                && evt->Matches( aEvent );
+
+        if( evt->IsCancelInteractive() || ( designBlock && evt->IsAction( &ACTIONS::undo ) ) )
+        {
+            m_frame->GetInfoBar()->Dismiss();
+
+            m_frame->PopTool( aEvent );
+            break;
+        }
+        else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) || isSyntheticClick )
+        {
+            wxString* tempFileName = new wxString( sheetFileName );
+            m_toolMgr->PostAction( EE_ACTIONS::drawSheetCopy, tempFileName );
+            m_frame->PopTool( aEvent );
+            break;
         }
         else if( evt->IsClick( BUT_RIGHT ) )
         {
@@ -838,27 +779,6 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
         }
         else if( evt->IsAction( &ACTIONS::duplicate )
                  || evt->IsAction( &EE_ACTIONS::repeatDrawItem ) )
-        {
-            if( designBlock )
-            {
-                // This doesn't really make sense; we'll just end up dragging a stack of
-                // objects so we ignore the duplicate and just carry on.
-                wxBell();
-                continue;
-            }
-
-            // Exit.  The duplicate will run in its own loop.
-            m_frame->PopTool( aEvent );
-            break;
-        }
-        else if( designBlock && ( evt->IsAction( &ACTIONS::refreshPreview ) || evt->IsMotion() ) )
-        {
-        }
-        else if( designBlock && evt->IsAction( &ACTIONS::doDelete ) )
-        {
-            cleanup();
-        }
-        else if( designBlock && evt->IsAction( &ACTIONS::redo ) )
         {
             wxBell();
         }

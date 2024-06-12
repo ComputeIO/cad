@@ -58,6 +58,7 @@ class EESCHEMA_SETTINGS;
 class SYMBOL_EDITOR_SETTINGS;
 class NL_SCHEMATIC_PLUGIN;
 class PANEL_SCH_SELECTION_FILTER;
+class DESIGN_BLOCK_PANE;
 
 #ifdef wxHAS_INOTIFY
 #define wxFileSystemWatcher wxInotifyFileSystemWatcher
@@ -158,28 +159,6 @@ public:
      */
     DESIGN_BLOCK* GetDesignBlock( const LIB_ID& aLibId, bool aUseCacheLib = false,
                                   bool aShowErrorMsg = false );
-
-    /**
-     * Call the library viewer to select design block to import into schematic.
-     * If the library viewer is currently running, it is closed and reopened in modal mode.
-     *
-     * aAllowFields chooses whether or not features that permit the user to edit fields
-     * (e.g. footprint selection) should be enabled. This should be false when they would
-     * have no effect, for example loading a part into design block_editor.
-     *
-     * @param aFilter is an optional #DESIGN_BLOCK_LIBRARY_FILTER filter to pass the allowed library names
-     *                and/or the library name to load the design block from and/or some other filter
-     * @param aHistoryList is the list of previously loaded design blocks - will be edited
-     * @param aHighlight is the name of design block to highlight in the list.
-     *                   highlights none if there isn't one by that name.
-     * @param aShowFootprints is the whether to show footprints in the dialog.
-     * @param aAllowFields is whether to allow field editing in the dialog.
-     *
-     * @return the selected design block
-     */
-    LIB_ID PickDesignBlockFromLibrary( std::vector<LIB_ID>&  aHistoryList,
-                                       const LIB_ID* aHighlight = nullptr );
-
 
 
     /**
@@ -331,6 +310,8 @@ protected:
     SCHEMATIC_SETTINGS  m_base_frame_defaults;
 
     PANEL_SCH_SELECTION_FILTER* m_selectionFilterPanel;
+
+    DESIGN_BLOCK_PANE* m_designBlocksPanel;
 
 private:
 

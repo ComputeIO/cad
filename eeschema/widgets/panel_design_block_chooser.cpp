@@ -51,16 +51,13 @@ wxString PANEL_DESIGN_BLOCK_CHOOSER::g_powerSearchString;
 
 PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, wxWindow* aParent,
                                                         std::vector<LIB_ID>&  aHistoryList,
-                                                        std::function<void()> aAcceptHandler,
-                                                        std::function<void()> aEscapeHandler ) :
+                                                        std::function<void()> aSelectHandler ) :
         wxPanel( aParent, wxID_ANY, wxDefaultPosition, wxDefaultSize ),
-        m_hsplitter( nullptr ),
         m_vsplitter( nullptr ),
         m_tree( nullptr ),
         m_details( nullptr ),
         m_frame( aFrame ),
-        m_acceptHandler( std::move( aAcceptHandler ) ),
-        m_escapeHandler( std::move( aEscapeHandler ) )
+        m_selectHandler( std::move( aSelectHandler ) )
 {
     DESIGN_BLOCK_LIB_TABLE*   libs = m_frame->Prj().DesignBlockLibs();
     COMMON_SETTINGS::SESSION& session = Pgm().GetCommonSettings()->m_Session;
@@ -134,12 +131,13 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
     m_vsplitter = new wxSplitterWindow( this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                         wxSP_LIVE_UPDATE | wxSP_NOBORDER | wxSP_3DSASH );
 
-    m_hsplitter = new wxSplitterWindow( m_vsplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                        wxSP_LIVE_UPDATE | wxSP_NOBORDER | wxSP_3DSASH );
 
     // Avoid the splitter window being assigned as the parent to additional windows.
     m_vsplitter->SetExtraStyle( wxWS_EX_TRANSIENT );
-    m_hsplitter->SetExtraStyle( wxWS_EX_TRANSIENT );
+
+    wxPanel*    treePanel = new wxPanel( m_vsplitter );
+    wxBoxSizer* treeSizer = new wxBoxSizer( wxVERTICAL );
+    treePanel->SetSizer( treeSizer );
 
     wxPanel*    detailsPanel = new wxPanel( m_vsplitter );
     wxBoxSizer* detailsSizer = new wxBoxSizer( wxVERTICAL );
@@ -152,13 +150,10 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
 
     m_vsplitter->SetSashGravity( 0.5 );
     m_vsplitter->SetMinimumPaneSize( 20 );
-    m_vsplitter->SplitHorizontally( m_hsplitter, detailsPanel );
+    m_vsplitter->SplitHorizontally( treePanel, detailsPanel );
 
     sizer->Add( m_vsplitter, 1, wxEXPAND, 5 );
 
-    wxPanel*    treePanel = new wxPanel( m_hsplitter );
-    wxBoxSizer* treeSizer = new wxBoxSizer( wxVERTICAL );
-    treePanel->SetSizer( treeSizer );
 
     m_tree = new LIB_TREE( treePanel, wxT( "design_blocks" ), libs, m_adapter,
                            LIB_TREE::FLAGS::ALL_WIDGETS, m_details );
@@ -170,10 +165,6 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
     m_adapter->FinishTreeInitialization();
 
     m_tree->SetSearchString( g_design_blockSearchString );
-
-    m_hsplitter->SetSashGravity( 0.8 );
-    m_hsplitter->SetMinimumPaneSize( 20 );
-    m_hsplitter->SplitVertically( treePanel, constructRightPanel( m_hsplitter ) );
 
     m_dbl_click_timer = new wxTimer( this );
     m_open_libs_timer = new wxTimer( this );
@@ -235,8 +226,6 @@ PANEL_DESIGN_BLOCK_CHOOSER::~PANEL_DESIGN_BLOCK_CHOOSER()
         cfg->m_DesignBlockChooserPanel.width = GetParent()->GetSize().x;
         cfg->m_DesignBlockChooserPanel.height = GetParent()->GetSize().y;
 
-        cfg->m_DesignBlockChooserPanel.sash_pos_h = m_hsplitter->GetSashPosition();
-
         if( m_vsplitter )
             cfg->m_DesignBlockChooserPanel.sash_pos_v = m_vsplitter->GetSashPosition();
 
@@ -261,38 +250,11 @@ void PANEL_DESIGN_BLOCK_CHOOSER::OnChar( wxKeyEvent& aEvent )
                 return;
             }
         }
-
-        m_escapeHandler();
     }
     else
     {
         aEvent.Skip();
     }
-}
-
-
-wxPanel* PANEL_DESIGN_BLOCK_CHOOSER::constructRightPanel( wxWindow* aParent )
-{
-    EDA_DRAW_PANEL_GAL::GAL_TYPE backend;
-
-    if( m_frame->GetCanvas() )
-    {
-        backend = m_frame->GetCanvas()->GetBackend();
-    }
-    else
-    {
-        EESCHEMA_SETTINGS* cfg = Pgm().GetSettingsManager().GetAppSettings<EESCHEMA_SETTINGS>();
-        backend = (EDA_DRAW_PANEL_GAL::GAL_TYPE) cfg->m_Graphics.canvas_type;
-    }
-
-    wxPanel*    panel = new wxPanel( aParent );
-    wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
-
-    panel->SetSizer( sizer );
-    panel->Layout();
-    sizer->Fit( panel );
-
-    return panel;
 }
 
 
@@ -323,8 +285,6 @@ void PANEL_DESIGN_BLOCK_CHOOSER::FinishSetup()
 
         if( panelCfg.sash_pos_v < 0 )
             panelCfg.sash_pos_v = horizPixelsFromDU( 230 );
-
-        m_hsplitter->SetSashPosition( panelCfg.sash_pos_h );
 
         if( m_vsplitter )
             m_vsplitter->SetSashPosition( panelCfg.sash_pos_v );
@@ -383,7 +343,7 @@ void PANEL_DESIGN_BLOCK_CHOOSER::onCloseTimer( wxTimerEvent& aEvent )
     }
     else
     {
-        m_acceptHandler();
+        m_selectHandler();
     }
 }
 

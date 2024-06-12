@@ -34,6 +34,7 @@
 #include <dialogs/dialog_schematic_find.h>
 #include <dialogs/dialog_book_reporter.h>
 #include <dialogs/dialog_symbol_fields_table.h>
+#include <widgets/design_block_pane.h>
 #include <eeschema_id.h>
 #include <executable_names.h>
 #include <gal/graphics_abstraction_layer.h>
@@ -213,6 +214,12 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_propertiesPanel->SetSplitterProportion( eeconfig()->m_AuiPanels.properties_splitter );
 
     m_selectionFilterPanel = new PANEL_SCH_SELECTION_FILTER( this );
+    m_designBlocksPanel = new DESIGN_BLOCK_PANE( this, nullptr, m_designBlockHistoryList,
+            // Lambda that runs the placeDesignBlock tool
+            [this]()
+            {
+                m_toolManager->RunAction( EE_ACTIONS::placeDesignBlock, GetDesignBlock(m_designBlocksPanel->GetSelectedLibId(), true, true ) );
+            } );
 
     m_auimgr.SetManagedWindow( this );
 
@@ -240,6 +247,8 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     m_auimgr.AddPane( m_propertiesPanel, defaultPropertiesPaneInfo( this ) );
     m_auimgr.AddPane( m_selectionFilterPanel, defaultSchSelectionFilterPaneInfo( this ) );
+
+    m_auimgr.AddPane( m_designBlocksPanel, defaultDesignBlocksPaneInfo( this ) );
 
     m_auimgr.AddPane( createHighlightedNetNavigator(), defaultNetNavigatorPaneInfo() );
 
@@ -279,11 +288,14 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxAuiPaneInfo& netNavigatorPane = m_auimgr.GetPane( NetNavigatorPaneName() );
     wxAuiPaneInfo& propertiesPane = m_auimgr.GetPane( PropertiesPaneName() );
     wxAuiPaneInfo& selectionFilterPane = m_auimgr.GetPane( wxS( "SelectionFilter" ) );
+    wxAuiPaneInfo& designBlocksPane = m_auimgr.GetPane( DesignBlocksPaneName() );
     EESCHEMA_SETTINGS* cfg = eeconfig();
 
     hierarchy_pane.Show( cfg->m_AuiPanels.show_schematic_hierarchy );
     netNavigatorPane.Show( cfg->m_AuiPanels.show_net_nav_panel );
     propertiesPane.Show( cfg->m_AuiPanels.show_properties );
+    //designBlocksPane.Show( cfg->m_AuiPanels.design_blocks_show );
+    designBlocksPane.Show( true );
     updateSelectionFilterVisbility();
 
     // The selection filter doesn't need to grow in the vertical direction when docked
@@ -330,6 +342,10 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     if( cfg->m_AuiPanels.float_net_nav_panel )
         netNavigatorPane.Float();
+
+    //if( cfg->m_AuiPanels.design_blocks_show )
+        //SetAuiPaneSize( m_auimgr, designBlocksPane, cfg->m_AuiPanels.design_blocks_panel_docked_width, -1 );
+        SetAuiPaneSize( m_auimgr, designBlocksPane, 200, -1 );
 
     if( cfg->m_AuiPanels.hierarchy_panel_docked_width > 0 )
     {
@@ -1282,6 +1298,12 @@ void SCH_EDIT_FRAME::OnFindDialogClose()
     m_findReplaceDialog = nullptr;
 
     m_toolManager->RunAction( ACTIONS::updateFind );
+}
+
+
+void SCH_EDIT_FRAME::UpdateDesignBlockOptions()
+{
+    m_designBlocksPanel->UpdateCheckboxes();
 }
 
 

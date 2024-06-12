@@ -48,8 +48,7 @@ public:
  */
     PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, wxWindow* aParent,
                                 std::vector<LIB_ID>&  aHistoryList,
-                                std::function<void()> aAcceptHandler,
-                                std::function<void()> aEscapeHandler );
+                                std::function<void()> aSelectHandler );
 
     ~PANEL_DESIGN_BLOCK_CHOOSER();
 
@@ -79,8 +78,6 @@ public:
 protected:
     static constexpr int DBLCLICK_DELAY = 100; // milliseconds
 
-    wxPanel* constructRightPanel( wxWindow* aParent );
-
     void OnDetailsCharHook( wxKeyEvent& aEvt );
     void onCloseTimer( wxTimerEvent& aEvent );
     void onOpenLibsTimer( wxTimerEvent& aEvent );
@@ -104,7 +101,6 @@ protected:
 
     wxTimer*          m_dbl_click_timer;
     wxTimer*          m_open_libs_timer;
-    wxSplitterWindow* m_hsplitter;
     wxSplitterWindow* m_vsplitter;
 
     wxObjectDataPtr<LIB_TREE_MODEL_ADAPTER> m_adapter;
@@ -113,8 +109,7 @@ protected:
     HTML_WINDOW* m_details;
 
     SCH_BASE_FRAME*       m_frame;
-    std::function<void()> m_acceptHandler;
-    std::function<void()> m_escapeHandler;
+    std::function<void()> m_selectHandler;
 };
 
 #endif /* PANEL_DESIGN_BLOCK_CHOOSER_H */

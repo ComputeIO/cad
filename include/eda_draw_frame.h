@@ -414,6 +414,8 @@ public:
 
     static const wxString NetInspectorPanelName() { return wxS( "NetInspector" ); }
 
+    static const wxString DesignBlocksPaneName() { return wxS( "DesignBlocks" ); }
+
     /**
      * Fetch an item by KIID.  Frame-type-specific implementation.
      */

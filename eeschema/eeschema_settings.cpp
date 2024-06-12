@@ -126,6 +126,28 @@ const wxAuiPaneInfo& defaultSchSelectionFilterPaneInfo( wxWindow* aWindow )
 }
 
 
+const wxAuiPaneInfo& defaultDesignBlocksPaneInfo( wxWindow* aWindow )
+{
+    static wxAuiPaneInfo paneInfo;
+
+    paneInfo.Name( EDA_DRAW_FRAME::DesignBlocksPaneName() )
+            .Caption( _( "Design Blocks" ) )
+            .CaptionVisible( true )
+            .PaneBorder( true )
+            .Right().Layer( 3 ).Position( 2 )
+            .TopDockable( false )
+            .BottomDockable( false )
+            .CloseButton( false )
+            .MinSize( aWindow->FromDIP( wxSize( 240, 60 ) ) )
+            .BestSize( aWindow->FromDIP( wxSize( 300, 200 ) ) )
+            .FloatingSize( aWindow->FromDIP( wxSize( 300, 400 ) ) )
+            .FloatingPosition( aWindow->FromDIP( wxPoint( 50, 200 ) ) )
+            .Show( true );
+
+    return paneInfo;
+}
+
+
 EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
         APP_SETTINGS_BASE( "eeschema", eeschemaSchemaVersion ),
         m_Appearance(),
@@ -603,9 +625,6 @@ EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
 
     m_params.emplace_back( new PARAM<bool>( "symbol_chooser.place_all_units",
             &m_SymChooserPanel.place_all_units, true ) );
-
-    m_params.emplace_back( new PARAM<int>( "design_block_chooser.sash_pos_h",
-            &m_DesignBlockChooserPanel.sash_pos_h, -1 ) );
 
     m_params.emplace_back( new PARAM<int>( "design_block_chooser.sash_pos_v",
             &m_DesignBlockChooserPanel.sash_pos_v, -1 ) );

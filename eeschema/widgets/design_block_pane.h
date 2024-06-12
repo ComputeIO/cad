@@ -20,11 +20,11 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#ifndef DIALOG_DESIGN_BLOCK_CHOOSER_H
-#define DIALOG_DESIGN_BLOCK_CHOOSER_H
+#ifndef DESIGN_BLOCK_PANE_H
+#define DESIGN_BLOCK_PANE_H
 
 #include <mutex>
-#include "dialog_shim.h"
+#include "widgets/wx_panel.h"
 #include <design_block_tree_model_adapter.h>
 #include <widgets/html_window.h>
 #include <wx/checkbox.h>
@@ -36,7 +36,7 @@ class SCH_BASE_FRAME;
 class PANEL_DESIGN_BLOCK_CHOOSER;
 
 
-class DIALOG_DESIGN_BLOCK_CHOOSER : public DIALOG_SHIM
+class DESIGN_BLOCK_PANE : public WX_PANEL
 {
 public:
     /**
@@ -48,10 +48,8 @@ public:
      * @param aShowFootprints   if false, all footprint preview and selection features are
      *                          disabled. This forces aAllowFieldEdits false too.
      */
-    DIALOG_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aParent, const LIB_ID* aPreselect,
-                                 std::vector<LIB_ID>& aHistoryList );
-
-    ~DIALOG_DESIGN_BLOCK_CHOOSER();
+    DESIGN_BLOCK_PANE( SCH_BASE_FRAME* aParent, const LIB_ID* aPreselect,
+                                 std::vector<LIB_ID>& aHistoryList, std::function<void()> aSelectHandler );
 
     /**
      * To be called after this dialog returns from ShowModal().
@@ -65,6 +63,10 @@ public:
      * @return the #LIB_ID of the design_block that has been selected.
      */
     LIB_ID GetSelectedLibId( int* aUnit = nullptr ) const;
+
+    /* Handler for checkbox events */
+    void OnCheckBox( wxCommandEvent& aEvent );
+    void UpdateCheckboxes();
 
 public:
     static std::mutex g_Mutex;
@@ -98,4 +100,4 @@ private:
     wxDECLARE_NO_COPY_CLASS( FILEDLG_IMPORT_SHEET_CONTENTS );
 };
 
-#endif /* DIALOG_DESIGN_BLOCK_CHOOSER_H */
+#endif
