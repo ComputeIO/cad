@@ -133,6 +133,10 @@ public:
     static const std::string KiCadSchematicFileExtension;
     static const std::string SpiceFileExtension;
     static const std::string CadstarNetlistFileExtension;
+    static const std::string OrCadDesignFileExtension;
+    static const std::string OrCadDesignBackupFileExtension;
+    static const std::string OrCadLibraryFileExtension;
+    static const std::string OrCadLibraryBackupFileExtension;
     static const std::string OrCadPcb2NetlistFileExtension;
     static const std::string NetlistFileExtension;
     static const std::string AllegroNetlistFileExtension;

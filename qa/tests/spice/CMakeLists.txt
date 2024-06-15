@@ -93,6 +93,7 @@ PRIVATE
     ${GDI_PLUS_LIBRARIES}
     Boost::headers
     Boost::unit_test_framework
+    ${OPENORCADPARSER_PATH}/build/lib/libOpenOrCadParser.so
 )
 
 if( KICAD_SPICE_QA AND MSVC )

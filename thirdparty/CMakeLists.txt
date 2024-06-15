@@ -21,6 +21,8 @@
 #  51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 #
 
+include(FetchContent)
+
 # Disable shared library building for all thirdparty libraries
 set( BUILD_SHARED_LIBS OFF )
 
@@ -32,6 +34,13 @@ set( BUILD_SHARED_LIBS OFF )
 # instead of with cmake_policy will apply the change to the third-party CMakeLists files.
 set( CMAKE_POLICY_DEFAULT_CMP0077 NEW )
 
+FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt
+    GIT_TAG        10.2.1
+)
+FetchContent_MakeAvailable(fmt)
+
 set( ARGPARSE_INSTALL OFF )
 add_subdirectory( argparse )
 add_subdirectory( clipper )
@@ -40,8 +49,8 @@ add_subdirectory( compoundfilereader )
 add_subdirectory( delaunator )
 add_subdirectory( dxflib_qcad )
 add_subdirectory( expected )
-set( FMT_INSTALL OFF )
-add_subdirectory( fmt )
+# set( FMT_INSTALL OFF )
+# add_subdirectory( fmt )
 add_subdirectory( gzip-hpp )
 add_subdirectory( lemon )
 add_subdirectory( libcontext )

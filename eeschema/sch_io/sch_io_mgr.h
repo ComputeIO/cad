@@ -68,6 +68,7 @@ public:
         SCH_EASYEDA,          ///< EasyEDA Std schematic file
         SCH_EASYEDAPRO,       ///< EasyEDA Pro archive
         SCH_LTSPICE,          ///< LtSpice Schematic format
+        SCH_ORCAD,            ///< OrCAD file format
         SCH_HTTP,             ///< KiCad HTTP library
 
         // Add your schematic type here.

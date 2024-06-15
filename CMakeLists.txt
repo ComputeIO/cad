@@ -46,6 +46,10 @@ endif()
 
 project( kicad )
 
+if( NOT DEFINED OPENORCADPARSER_PATH )
+    set(OPENORCADPARSER_PATH "/YOUR/PATH/TO/OpenOrcadParser")
+endif()
+
 # Create a default build type for our QA that doesn't include `NDEBUG`
 set(CMAKE_CXX_FLAGS_QABUILD "-Os -g1 -ggdb1")
 
