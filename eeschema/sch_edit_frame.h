@@ -729,6 +729,24 @@ public:
     bool CreateArchiveLibrary( const wxString& aFileName );
 
     /**
+     * If a library name is given, creates a new footprint library in the project folder
+     * with the given name. If no library name is given it prompts user for a library path,
+     * then creates a new footprint library at that location.
+     * If library exists, user is warned about that, and is given a chance
+     * to abort the new creation, and in that case existing library is first deleted.
+     *
+     * @param aProposedName is the initial path and filename shown in the file chooser dialog.
+     * @return The newly created library path if library was successfully created, else
+     *         wxEmptyString because user aborted or error.
+     */
+    wxString CreateNewLibrary( const wxString& aLibName = wxEmptyString,
+                               const wxString& aProposedName = wxEmptyString );
+
+    wxString CreateNewProjectLibrary( const wxString& aLibName = wxEmptyString,
+                                      const wxString& aProposedName = wxEmptyString );
+
+
+    /**
      * Plot or print the current sheet to the clipboard.
      */
     virtual void PrintPage( const RENDER_SETTINGS* aSettings ) override;
@@ -910,6 +928,20 @@ protected:
     void unitsChangeRefresh() override;
 
     void updateSelectionFilterVisbility() override;
+
+    /**
+     * Prompts a user to select global or project library tables
+     *
+     * @return Pointer to library table selected or nullptr if none selected/canceled
+     */
+    DESIGN_BLOCK_LIB_TABLE* selectDesignBlockLibTable( bool aOptional = false );
+
+    /**
+     * Create a new library in the given table (presumed to be either the global or project
+     * library table).
+     */
+    wxString createNewDesignBlockLibrary( const wxString& aLibName, const wxString& aProposedName,
+                                          DESIGN_BLOCK_LIB_TABLE* aTable );
 
 private:
     // Called when resizing the Hierarchy Navigator panel

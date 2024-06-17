@@ -349,6 +349,7 @@ set( EESCHEMA_SRCS
     connection_graph.cpp
     cross-probing.cpp
     design_block_tree_model_adapter.cpp
+    design_block_utils.cpp
     ee_collectors.cpp
     eeschema_config.cpp
     eeschema_helpers.cpp

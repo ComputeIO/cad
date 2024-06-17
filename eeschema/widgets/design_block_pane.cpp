@@ -26,7 +26,7 @@
 #include <widgets/panel_design_block_chooser.h>
 #include <eeschema_settings.h>
 #include <kiface_base.h>
-#include <sch_base_frame.h>
+#include <sch_edit_frame.h>
 #include <core/kicad_algo.h>
 #include <template_fieldnames.h>
 #include <wx/button.h>
@@ -39,12 +39,10 @@ static const wxString KEEP_ANNOTATIONS = _( "Keep annotations" );
 
 std::mutex DESIGN_BLOCK_PANE::g_Mutex;
 
-DESIGN_BLOCK_PANE::DESIGN_BLOCK_PANE( SCH_BASE_FRAME*      aParent,
-                                                          const LIB_ID*        aPreselect,
-                                                          std::vector<LIB_ID>& aHistoryList,
-                                                          std::function<void()> aSelectHandler
-                                                          ) :
-        WX_PANEL( aParent )
+DESIGN_BLOCK_PANE::DESIGN_BLOCK_PANE( SCH_EDIT_FRAME* aParent, const LIB_ID* aPreselect,
+                                      std::vector<LIB_ID>&  aHistoryList,
+                                      std::function<void()> aSelectHandler ) :
+        WX_PANEL( aParent ), m_frame( aParent )
 {
     wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
     m_chooserPanel = new PANEL_DESIGN_BLOCK_CHOOSER(
@@ -56,6 +54,15 @@ DESIGN_BLOCK_PANE::DESIGN_BLOCK_PANE( SCH_BASE_FRAME*      aParent,
         m_chooserPanel->SetPreselect( *aPreselect );
 
     SetName( wxT( "Design Blocks" ) );
+
+    m_btnNewLibrary = new wxButton( this, wxID_ANY, _( "New Library" ) );
+    m_btnNewLibrary->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnNewLibrary, this );
+
+    m_btnSaveAsDesignBlock = new wxButton( this, wxID_ANY, _( "Save as Design Block" ) );
+    m_btnSaveAsDesignBlock->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnSaveAsDesignBlock, this );
+
+    sizer->Add( m_btnNewLibrary, 0, wxEXPAND | wxLEFT, 5 );
+    sizer->Add( m_btnSaveAsDesignBlock, 0, wxEXPAND | wxLEFT, 5 );
 
     wxBoxSizer* cbSizer = new wxBoxSizer( wxVERTICAL );
 
@@ -114,6 +121,12 @@ void DESIGN_BLOCK_PANE::UpdateCheckboxes()
 LIB_ID DESIGN_BLOCK_PANE::GetSelectedLibId( int* aUnit ) const
 {
     return m_chooserPanel->GetSelectedLibId( aUnit );
+}
+
+
+void DESIGN_BLOCK_PANE::OnNewLibrary( wxCommandEvent& aEvent )
+{
+    m_frame->CreateNewLibrary();
 }
 
 

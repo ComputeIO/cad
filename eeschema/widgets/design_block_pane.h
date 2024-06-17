@@ -32,7 +32,7 @@
 #include <eeschema_settings.h>
 
 
-class SCH_BASE_FRAME;
+class SCH_EDIT_FRAME;
 class PANEL_DESIGN_BLOCK_CHOOSER;
 
 
@@ -48,8 +48,8 @@ public:
      * @param aShowFootprints   if false, all footprint preview and selection features are
      *                          disabled. This forces aAllowFieldEdits false too.
      */
-    DESIGN_BLOCK_PANE( SCH_BASE_FRAME* aParent, const LIB_ID* aPreselect,
-                                 std::vector<LIB_ID>& aHistoryList, std::function<void()> aSelectHandler );
+    DESIGN_BLOCK_PANE( SCH_EDIT_FRAME* aParent, const LIB_ID* aPreselect,
+                       std::vector<LIB_ID>& aHistoryList, std::function<void()> aSelectHandler );
 
     /**
      * To be called after this dialog returns from ShowModal().
@@ -68,14 +68,23 @@ public:
     void OnCheckBox( wxCommandEvent& aEvent );
     void UpdateCheckboxes();
 
+    void OnNewLibrary( wxCommandEvent& aEvent );
+    void OnSaveAsDesignBlock( wxCommandEvent& aEvent ) {}
+
 public:
     static std::mutex g_Mutex;
 
 protected:
     PANEL_DESIGN_BLOCK_CHOOSER* m_chooserPanel;
+
+    wxButton*                   m_btnNewLibrary;
+    wxButton*                   m_btnSaveAsDesignBlock;
+
     wxCheckBox*                 m_repeatedPlacement;
     wxCheckBox*                 m_placeAsSheet;
     wxCheckBox*                 m_keepAnnotations;
+
+    SCH_EDIT_FRAME*             m_frame;
 };
 
 
