@@ -739,11 +739,16 @@ public:
      * @return The newly created library path if library was successfully created, else
      *         wxEmptyString because user aborted or error.
      */
-    wxString CreateNewLibrary( const wxString& aLibName = wxEmptyString,
-                               const wxString& aProposedName = wxEmptyString );
+    wxString CreateNewDesignBlockLibrary( const wxString& aLibName = wxEmptyString,
+                                          const wxString& aProposedName = wxEmptyString );
 
-    wxString CreateNewProjectLibrary( const wxString& aLibName = wxEmptyString,
-                                      const wxString& aProposedName = wxEmptyString );
+    /**
+     * Add an existing library to either the global or project library table.
+     *
+     * @param aFileName the library to add; a file open dialog will be displayed if empty.
+     * @return true if successfully added.
+     */
+    bool AddDesignBlockLibrary( const wxString& aFilename, DESIGN_BLOCK_LIB_TABLE* aTable );
 
 
     /**

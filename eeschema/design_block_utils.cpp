@@ -21,12 +21,17 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <pgm_base.h>
+#include <kiway.h>
 #include <design_block_lib_table.h>
+#include <design_block_pane.h>
 #include <sch_edit_frame.h>
 #include <wx/choicdlg.h>
 #include <wx/msgdlg.h>
+#include <wx/textdlg.h>
 #include <wildcards_and_files_ext.h>
 #include <paths.h>
+#include <env_paths.h>
 #include <common.h>
 #include <kidialog.h>
 #include <confirm.h>
@@ -75,14 +80,8 @@ DESIGN_BLOCK_LIB_TABLE* SCH_EDIT_FRAME::selectDesignBlockLibTable( bool aOptiona
 }
 
 
-wxString SCH_EDIT_FRAME::CreateNewProjectLibrary( const wxString& aLibName,
-                                                  const wxString& aProposedName )
-{
-    return createNewDesignBlockLibrary( aLibName, aProposedName, Prj().DesignBlockLibs() );
-}
-
-
-wxString SCH_EDIT_FRAME::CreateNewLibrary( const wxString& aLibName, const wxString& aProposedName )
+wxString SCH_EDIT_FRAME::CreateNewDesignBlockLibrary( const wxString& aLibName,
+                                                      const wxString& aProposedName )
 {
     return createNewDesignBlockLibrary( aLibName, aProposedName, selectDesignBlockLibTable() );
 }
@@ -138,7 +137,7 @@ wxString SCH_EDIT_FRAME::createNewDesignBlockLibrary( const wxString&         aL
         try
         {
             writable = pi->IsLibraryWritable( libPath );
-            exists   = true;    // no exception was thrown, lib must exist.
+            exists   = fn.Exists();
         }
         catch( const IO_ERROR& )
         {
@@ -175,8 +174,83 @@ wxString SCH_EDIT_FRAME::createNewDesignBlockLibrary( const wxString&         aL
         return wxEmptyString;
     }
 
-    //if( doAdd )
-        //AddLibrary( libPath, aTable );
+    if( doAdd )
+        AddDesignBlockLibrary( libPath, aTable );
 
     return libPath;
+}
+
+
+bool SCH_EDIT_FRAME::AddDesignBlockLibrary( const wxString&         aFilename,
+                                            DESIGN_BLOCK_LIB_TABLE* aTable )
+{
+    if( aTable == nullptr )
+        aTable = selectDesignBlockLibTable();
+
+    if( aTable == nullptr )
+        return wxEmptyString;
+
+    bool isGlobal = ( aTable == &GDesignBlockTable );
+
+    wxFileName fn( aFilename );
+
+    if( aFilename.IsEmpty() )
+    {
+        if( !LibraryFileBrowser( true, fn, FILEEXT::KiCadFootprintLibPathWildcard(),
+                                 FILEEXT::KiCadFootprintLibPathExtension, true, isGlobal,
+                                 PATHS::GetDefaultUserFootprintsPath() ) )
+        {
+            return false;
+        }
+    }
+
+    wxString libPath = fn.GetFullPath();
+    wxString libName = fn.GetName();
+
+    if( libName.IsEmpty() )
+        return false;
+
+    // Open a dialog to ask for a description
+    wxString description = wxGetTextFromUser( _( "Enter a description for the library:" ),
+                                              _( "Library Description" ), wxEmptyString, this );
+
+    DESIGN_BLOCK_IO_MGR::DESIGN_BLOCK_FILE_T lib_type =
+            DESIGN_BLOCK_IO_MGR::GuessPluginTypeFromLibPath( libPath );
+
+    if( lib_type == DESIGN_BLOCK_IO_MGR::FILE_TYPE_NONE )
+        lib_type = DESIGN_BLOCK_IO_MGR::KICAD_SEXP;
+
+    wxString type = DESIGN_BLOCK_IO_MGR::ShowType( lib_type );
+
+    // KiCad lib is our default guess.  So it might not have the .blocks extension
+    // In this case, the extension is part of the library name
+    if( lib_type == DESIGN_BLOCK_IO_MGR::KICAD_SEXP
+        && fn.GetExt() != FILEEXT::KiCadDesignBlockLibPathExtension )
+        libName = fn.GetFullName();
+
+    // try to use path normalized to an environmental variable or project path
+    wxString normalizedPath = NormalizePath( libPath, &Pgm().GetLocalEnvVariables(), &Prj() );
+
+    try
+    {
+        DESIGN_BLOCK_LIB_TABLE_ROW* row = new DESIGN_BLOCK_LIB_TABLE_ROW(
+                libName, normalizedPath, type, wxEmptyString, description );
+        aTable->InsertRow( row );
+
+        if( isGlobal )
+            GDesignBlockTable.Save( DESIGN_BLOCK_LIB_TABLE::GetGlobalTableFileName() );
+        else
+            Prj().DesignBlockLibs()->Save( Prj().DesignBlockLibTblName() );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        DisplayError( this, ioe.What() );
+        return false;
+    }
+
+    LIB_ID libID( libName, wxEmptyString );
+    m_designBlocksPanel->RefreshLibs();
+    m_designBlocksPanel->SelectLibId( libID );
+
+    return true;
 }

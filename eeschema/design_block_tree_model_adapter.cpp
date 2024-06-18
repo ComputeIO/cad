@@ -76,6 +76,12 @@ void DESIGN_BLOCK_TREE_MODEL_ADAPTER::AddLibraries( EDA_BASE_FRAME* aParent )
 }
 
 
+void DESIGN_BLOCK_TREE_MODEL_ADAPTER::ClearLibraries()
+{
+    m_tree.Clear();
+}
+
+
 std::vector<LIB_TREE_ITEM*>
 DESIGN_BLOCK_TREE_MODEL_ADAPTER::getDesignBlocks( EDA_BASE_FRAME* aParent,
                                                   const wxString& aLibName )

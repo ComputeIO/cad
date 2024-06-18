@@ -63,6 +63,9 @@ public:
      * @return the #LIB_ID of the design_block that has been selected.
      */
     LIB_ID GetSelectedLibId( int* aUnit = nullptr ) const;
+    void   SelectLibId( const LIB_ID& aLibId );
+
+    void RefreshLibs();
 
     /* Handler for checkbox events */
     void OnCheckBox( wxCommandEvent& aEvent );

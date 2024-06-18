@@ -61,8 +61,8 @@ DESIGN_BLOCK_PANE::DESIGN_BLOCK_PANE( SCH_EDIT_FRAME* aParent, const LIB_ID* aPr
     m_btnSaveAsDesignBlock = new wxButton( this, wxID_ANY, _( "Save as Design Block" ) );
     m_btnSaveAsDesignBlock->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnSaveAsDesignBlock, this );
 
-    sizer->Add( m_btnNewLibrary, 0, wxEXPAND | wxLEFT, 5 );
-    sizer->Add( m_btnSaveAsDesignBlock, 0, wxEXPAND | wxLEFT, 5 );
+    sizer->Add( m_btnNewLibrary, 0, wxEXPAND, 5 );
+    sizer->Add( m_btnSaveAsDesignBlock, 0, wxEXPAND, 5 );
 
     wxBoxSizer* cbSizer = new wxBoxSizer( wxVERTICAL );
 
@@ -124,9 +124,21 @@ LIB_ID DESIGN_BLOCK_PANE::GetSelectedLibId( int* aUnit ) const
 }
 
 
+void DESIGN_BLOCK_PANE::SelectLibId( const LIB_ID& aLibId )
+{
+    m_chooserPanel->SelectLibId( aLibId );
+}
+
+
+void DESIGN_BLOCK_PANE::RefreshLibs()
+{
+    m_chooserPanel->RefreshLibs();
+}
+
+
 void DESIGN_BLOCK_PANE::OnNewLibrary( wxCommandEvent& aEvent )
 {
-    m_frame->CreateNewLibrary();
+    m_frame->CreateNewDesignBlockLibrary();
 }
 
 

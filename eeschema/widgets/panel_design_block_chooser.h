@@ -58,6 +58,8 @@ public:
 
     void SetPreselect( const LIB_ID& aPreselect );
 
+    void RefreshLibs();
+
     /**
      * To be called after this dialog returns from ShowModal().
      *
@@ -70,6 +72,8 @@ public:
      * @return the #LIB_ID of the design_block that has been selected.
      */
     LIB_ID GetSelectedLibId( int* aUnit = nullptr ) const;
+    void   SelectLibId( const LIB_ID& aLibId );
+    void   AppendNewLibrary( const wxString& aLibName );
 
     int GetItemCount() const { return m_adapter->GetItemCount(); }
 
@@ -110,6 +114,8 @@ protected:
 
     SCH_BASE_FRAME*       m_frame;
     std::function<void()> m_selectHandler;
+
+    std::vector<LIB_ID> m_historyList;
 };
 
 #endif /* PANEL_DESIGN_BLOCK_CHOOSER_H */

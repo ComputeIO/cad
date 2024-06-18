@@ -285,6 +285,11 @@ public:
      */
     LIB_TREE_NODE_LIBRARY& AddLib( wxString const& aName, wxString const& aDesc );
 
+    /**
+     * Clear the tree
+     */
+    void Clear();
+
     void UpdateScore( EDA_COMBINED_MATCHER* aMatcher, const wxString& aLib,
                       std::function<bool( LIB_TREE_NODE& aNode )>* aFilter ) override;
 };

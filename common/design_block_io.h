@@ -86,6 +86,15 @@ public:
         return nullptr;
     }
 
+    void CreateLibrary( const wxString&        aLibraryPath,
+                        const STRING_UTF8_MAP* aProperties = nullptr ) override;
+
+    virtual bool DeleteLibrary( const wxString&        aLibraryPath,
+                                const STRING_UTF8_MAP* aProperties = nullptr ) override;
+
+
+    bool IsLibraryWritable( const wxString& aLibraryPath ) override;
+
     DESIGN_BLOCK* DesignBlockLoad( const wxString& aLibraryPath, const wxString& aDesignBlockName,
                                    bool                   aKeepUUID = false,
                                    const STRING_UTF8_MAP* aProperties = nullptr );

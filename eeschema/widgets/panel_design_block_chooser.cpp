@@ -57,7 +57,8 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
         m_tree( nullptr ),
         m_details( nullptr ),
         m_frame( aFrame ),
-        m_selectHandler( std::move( aSelectHandler ) )
+        m_selectHandler( std::move( aSelectHandler ) ),
+        m_historyList( aHistoryList )
 {
     DESIGN_BLOCK_LIB_TABLE*   libs = m_frame->Prj().DesignBlockLibs();
     COMMON_SETTINGS::SESSION& session = Pgm().GetCommonSettings()->m_Session;
@@ -83,44 +84,6 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
         //GDesignBlockList.DisplayErrors( aParent );
 
     m_adapter = DESIGN_BLOCK_TREE_MODEL_ADAPTER::Create( m_frame, libs );
-    DESIGN_BLOCK_TREE_MODEL_ADAPTER* adapter =
-            static_cast<DESIGN_BLOCK_TREE_MODEL_ADAPTER*>( m_adapter.get() );
-    bool loaded = false;
-
-    std::vector<DESIGN_BLOCK>   history_list_storage;
-    std::vector<LIB_TREE_ITEM*> history_list;
-
-    // Lambda to encapsulate the common logic
-    auto processList =
-            [&]( const std::vector<LIB_ID>& inputList,
-                 std::vector<DESIGN_BLOCK>&          storageList,
-                 std::vector<LIB_TREE_ITEM*>&      resultList )
-            {
-                storageList.reserve( inputList.size() );
-
-                for( const LIB_ID& i : inputList )
-                {
-                    DESIGN_BLOCK* design_block = m_frame->GetDesignBlock( i );
-
-                    if( design_block )
-                    {
-                        storageList.emplace_back( *design_block );
-                    }
-                }
-            };
-
-    processList( aHistoryList, history_list_storage, history_list );
-
-    adapter->DoAddLibrary( wxT( "-- " ) + _( "Recently Used" ) + wxT( " --" ), wxEmptyString,
-                           history_list, false, true );
-
-    if( !aHistoryList.empty() )
-        adapter->SetPreselectNode( aHistoryList[0], 0 );
-
-    if( !loaded )
-    {
-        adapter->AddLibraries( m_frame );
-    }
 
     // -------------------------------------------------------------------------------------
     // Construct the actual panel
@@ -162,6 +125,7 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
     treePanel->Layout();
     treeSizer->Fit( treePanel );
 
+    RefreshLibs();
     m_adapter->FinishTreeInitialization();
 
     m_tree->SetSearchString( g_design_blockSearchString );
@@ -316,6 +280,55 @@ void PANEL_DESIGN_BLOCK_CHOOSER::OnDetailsCharHook( wxKeyEvent& e )
 }
 
 
+void PANEL_DESIGN_BLOCK_CHOOSER::RefreshLibs()
+{
+    // Unselect before syncing to avoid null reference in the adapter
+    // if a selected item is removed during the sync
+    m_tree->Unselect();
+
+    DESIGN_BLOCK_TREE_MODEL_ADAPTER* adapter =
+            static_cast<DESIGN_BLOCK_TREE_MODEL_ADAPTER*>( m_adapter.get() );
+
+    // Clear all existing libraries then re-add
+    adapter->ClearLibraries();
+
+    std::vector<DESIGN_BLOCK>   history_list_storage;
+    std::vector<LIB_TREE_ITEM*> history_list;
+
+    // Lambda to encapsulate the common logic
+    auto processList =
+            [&]( const std::vector<LIB_ID>& inputList,
+                 std::vector<DESIGN_BLOCK>&          storageList,
+                 std::vector<LIB_TREE_ITEM*>&      resultList )
+            {
+                storageList.reserve( inputList.size() );
+
+                for( const LIB_ID& i : inputList )
+                {
+                    DESIGN_BLOCK* design_block = m_frame->GetDesignBlock( i );
+
+                    if( design_block )
+                    {
+                        storageList.emplace_back( *design_block );
+                    }
+                }
+            };
+
+    processList( m_historyList, history_list_storage, history_list );
+
+    adapter->DoAddLibrary( wxT( "-- " ) + _( "Recently Used" ) + wxT( " --" ), wxEmptyString,
+                           history_list, false, true );
+
+    if( !m_historyList.empty() )
+        adapter->SetPreselectNode( m_historyList[0], 0 );
+
+    adapter->AddLibraries( m_frame );
+
+
+    m_tree->Regenerate( true );
+}
+
+
 void PANEL_DESIGN_BLOCK_CHOOSER::SetPreselect( const LIB_ID& aPreselect )
 {
     m_adapter->SetPreselectNode( aPreselect, 0 );
@@ -325,6 +338,13 @@ void PANEL_DESIGN_BLOCK_CHOOSER::SetPreselect( const LIB_ID& aPreselect )
 LIB_ID PANEL_DESIGN_BLOCK_CHOOSER::GetSelectedLibId( int* aUnit ) const
 {
     return m_tree->GetSelectedLibId( aUnit );
+}
+
+
+void PANEL_DESIGN_BLOCK_CHOOSER::SelectLibId( const LIB_ID& aLibId )
+{
+    m_tree->CenterLibId( aLibId );
+    m_tree->SelectLibId( aLibId );
 }
 
 

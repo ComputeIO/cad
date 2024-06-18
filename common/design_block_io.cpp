@@ -25,6 +25,7 @@
 #include <i18n_utility.h>
 #include <wx/dir.h>
 #include <wx/filename.h>
+#include <wx/log.h>
 #include <wx/translation.h>
 #include <wx/string.h>
 #include <wx/arrstr.h>
@@ -33,6 +34,8 @@
 #include <kiway_player.h>
 #include <design_block_io.h>
 #include <design_block.h>
+#include <ki_exception.h>
+#include <trace_helpers.h>
 
 const wxString DESIGN_BLOCK_IO_MGR::ShowType( DESIGN_BLOCK_FILE_T aFileType )
 {
@@ -141,6 +144,99 @@ long long DESIGN_BLOCK_IO::GetLibraryTimestamp( const wxString& aLibraryPath ) c
 }
 
 
+void DESIGN_BLOCK_IO::CreateLibrary( const wxString&        aLibraryPath,
+                                     const STRING_UTF8_MAP* aProperties )
+{
+    if( wxDir::Exists( aLibraryPath ) )
+    {
+        THROW_IO_ERROR( wxString::Format( _( "Cannot overwrite library path '%s'." ),
+                                          aLibraryPath.GetData() ) );
+    }
+
+    wxFileName dir;
+    dir.SetPath( aLibraryPath );
+
+    if( !dir.Mkdir() )
+    {
+        THROW_IO_ERROR(
+                wxString::Format( _( "Library path '%s' could not be created.\n\n"
+                                     "Make sure you have write permissions and try again." ),
+                                  dir.GetPath() ) );
+    }
+}
+
+
+bool DESIGN_BLOCK_IO::DeleteLibrary( const wxString&        aLibraryPath,
+                                     const STRING_UTF8_MAP* aProperties )
+{
+    wxFileName fn;
+    fn.SetPath( aLibraryPath );
+
+    // Return if there is no library path to delete.
+    if( !fn.DirExists() )
+        return false;
+
+    if( !fn.IsDirWritable() )
+    {
+        THROW_IO_ERROR( wxString::Format( _( "Insufficient permissions to delete folder '%s'." ),
+                                          aLibraryPath.GetData() ) );
+    }
+
+    wxDir dir( aLibraryPath );
+
+    // Design block folders should only contain sub-folders for each design block
+    if( dir.HasFiles() )
+    {
+        THROW_IO_ERROR( wxString::Format( _( "Library folder '%s' has unexpected files." ),
+                                          aLibraryPath.GetData() ) );
+    }
+
+    // Must delete all sub-directories before deleting the library directory
+    if( dir.HasSubDirs() )
+    {
+        wxArrayString dirs;
+
+        // Get all sub-directories in the library path
+        dir.GetAllFiles( aLibraryPath, &dirs, wxEmptyString, wxDIR_DIRS );
+
+        for( size_t i = 0; i < dirs.GetCount(); i++ )
+        {
+            wxFileName tmp = dirs[i];
+
+            if( tmp.GetExt() != FILEEXT::KiCadDesignBlockLibPathExtension )
+            {
+                THROW_IO_ERROR( wxString::Format( _( "Unexpected folder '%s' found in library "
+                                                     "path '%s'." ),
+                                                  dirs[i].GetData(), aLibraryPath.GetData() ) );
+            }
+        }
+
+        for( size_t i = 0; i < dirs.GetCount(); i++ )
+            wxRemoveFile( dirs[i] );
+    }
+
+    wxLogTrace( traceDesignBlocks, wxT( "Removing footprint library '%s'." ),
+                aLibraryPath.GetData() );
+
+    // Some of the more elaborate wxRemoveFile() crap puts up its own wxLog dialog
+    // we don't want that.  we want bare metal portability with no UI here.
+    if( !wxRmdir( aLibraryPath ) )
+    {
+        THROW_IO_ERROR( wxString::Format( _( "Footprint library '%s' cannot be deleted." ),
+                                          aLibraryPath.GetData() ) );
+    }
+
+    // For some reason removing a directory in Windows is not immediately updated.  This delay
+    // prevents an error when attempting to immediately recreate the same directory when over
+    // writing an existing library.
+#ifdef __WINDOWS__
+    wxMilliSleep( 250L );
+#endif
+
+    return true;
+}
+
+
 void DESIGN_BLOCK_IO::DesignBlockEnumerate( wxArrayString&  aDesignBlockNames,
                                             const wxString& aLibraryPath, bool aBestEfforts,
                                             const STRING_UTF8_MAP* aProperties )
@@ -180,4 +276,11 @@ DESIGN_BLOCK* DESIGN_BLOCK_IO::DesignBlockLoad( const wxString& aLibraryPath,
             aDesignBlockName + wxT( "." ) + FILEEXT::KiCadSchematicFileExtension );
 
     return newDB;
+}
+
+
+bool DESIGN_BLOCK_IO::IsLibraryWritable( const wxString& aLibraryPath )
+{
+    wxFileName path( aLibraryPath );
+    return path.IsOk() && path.IsDirWritable();
 }

@@ -39,6 +39,7 @@ public:
                                                            LIB_TABLE*      aLibs );
 
     void AddLibraries( EDA_BASE_FRAME* aParent );
+    void ClearLibraries();
 
     wxString GenerateInfo( LIB_ID const& aLibId, int aUnit ) override;
 

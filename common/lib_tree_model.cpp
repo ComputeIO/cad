@@ -355,6 +355,12 @@ LIB_TREE_NODE_LIBRARY& LIB_TREE_NODE_ROOT::AddLib( wxString const& aName, wxStri
 }
 
 
+void LIB_TREE_NODE_ROOT::Clear()
+{
+    m_Children.clear();
+}
+
+
 void LIB_TREE_NODE_ROOT::UpdateScore( EDA_COMBINED_MATCHER* aMatcher, const wxString& aLib,
                                       std::function<bool( LIB_TREE_NODE& aNode )>* aFilter )
 {
