@@ -42,6 +42,7 @@ elseif( KICAD_WX_PORT STREQUAL gtk )
 elseif( KICAD_WX_PORT STREQUAL qt )
     set( PLATFORM_SRCS
         port/wxqt/ui.cpp
+        port/wxqt/opengl_qt.cpp
         )
 
     set( QT_COMPONENTS Core Widgets Gui )
