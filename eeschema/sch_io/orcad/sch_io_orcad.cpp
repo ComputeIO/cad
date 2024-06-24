@@ -214,6 +214,7 @@ LIB_SYMBOL* SCH_IO_ORCAD::LoadSymbol( const wxString&        aLibraryPath,
         }
     }
 
+
     LIB_SYMBOL* ksymbol = new LIB_SYMBOL( wxEmptyString );
 
     if(package)
