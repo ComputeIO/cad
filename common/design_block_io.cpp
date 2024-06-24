@@ -220,7 +220,7 @@ bool DESIGN_BLOCK_IO::DeleteLibrary( const wxString&        aLibraryPath,
 
     // Some of the more elaborate wxRemoveFile() crap puts up its own wxLog dialog
     // we don't want that.  we want bare metal portability with no UI here.
-    if( !wxRmdir( aLibraryPath ) )
+    if( !wxFileName::Rmdir( aLibraryPath, wxPATH_RMDIR_RECURSIVE ) )
     {
         THROW_IO_ERROR( wxString::Format( _( "Footprint library '%s' cannot be deleted." ),
                                           aLibraryPath.GetData() ) );
@@ -320,6 +320,28 @@ void DESIGN_BLOCK_IO::DesignBlockSave( const wxString&        aLibraryPath,
         THROW_IO_ERROR( wxString::Format(
                 _( "Schematic file '%s' could not be saved as design block at '%s'." ),
                 aDesignBlock->GetSchematicFile().GetData(), dbSchematicFile ) );
+    }
+}
+
+
+void DESIGN_BLOCK_IO::DesignBlockDelete( const wxString& aLibPath, const wxString& aDesignBlockName,
+                                         const STRING_UTF8_MAP* aProperties )
+{
+    wxFileName dbDir = wxFileName( aLibPath + wxFileName::GetPathSeparator() + aDesignBlockName
+                                   + wxT( "." ) + FILEEXT::KiCadDesignBlockPathExtension );
+
+
+    if( !dbDir.DirExists() )
+    {
+        THROW_IO_ERROR(
+                wxString::Format( _( "Design block '%s' does not exist." ), dbDir.GetFullName() ) );
+    }
+
+    // Delete the whole design block folder
+    if( !wxFileName::Rmdir( dbDir.GetFullPath(), wxPATH_RMDIR_RECURSIVE ) )
+    {
+        THROW_IO_ERROR( wxString::Format( _( "Design block folder '%s' could not be deleted." ),
+                                          dbDir.GetFullPath().GetData() ) );
     }
 }
 

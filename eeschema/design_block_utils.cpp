@@ -36,6 +36,8 @@
 #include <common.h>
 #include <kidialog.h>
 #include <confirm.h>
+#include <tool/tool_manager.h>
+#include <ee_selection_tool.h>
 
 DESIGN_BLOCK_LIB_TABLE* SCH_EDIT_FRAME::selectDesignBlockLibTable( bool aOptional )
 {
@@ -313,4 +315,169 @@ void SCH_EDIT_FRAME::SaveSheetAsDesignBlock( const wxString& aLibraryName )
 
     m_designBlocksPanel->RefreshLibs();
     m_designBlocksPanel->SelectLibId( blk.GetLibId() );
+}
+
+
+void SCH_EDIT_FRAME::SaveSelectionAsDesignBlock( const wxString& aLibraryName )
+{
+    // Make sure the user has selected a library to save into
+    if( m_designBlocksPanel->GetSelectedLibId().GetLibNickname().empty() )
+    {
+        DisplayError( this, _( "Please select a library to save the design block to." ) );
+        return;
+    }
+
+    // Get all selected items
+    EE_SELECTION selection = m_toolManager->GetTool<EE_SELECTION_TOOL>()->GetSelection();
+
+    if( selection.Empty() )
+    {
+        DisplayError( this, _( "Please select some items to save as a design block." ) );
+        return;
+    }
+
+    // Just block all attempts to create design blocks with nested sheets at this point
+    if( selection.HasType( SCH_SHEET_T ) )
+    {
+        DisplayError( this, _( "Design blocks with nested sheets are not supported." ) );
+        return;
+    }
+
+    // Ask the user for the design block name
+    wxString name = wxGetTextFromUser( _( "Enter a name for the design block:" ),
+                                       _( "Design Block Name" ), wxEmptyString, this );
+
+    if( name.IsEmpty() )
+        return;
+
+    // Create a temperorary screen
+    SCH_SCREEN* tempScreen = new SCH_SCREEN( m_schematic );
+
+    // Copy the selected items to the temporary screen
+    for( EDA_ITEM* item : selection )
+    {
+        EDA_ITEM* copy = item->Clone();
+        tempScreen->Append( static_cast<SCH_ITEM*>( copy ) );
+    }
+
+    // Create a sheet for the temporary screen
+    SCH_SHEET* tempSheet = new SCH_SHEET( m_schematic );
+    tempSheet->SetScreen( tempScreen );
+
+    // Save a temporary copy of the schematic file, as the plugin is just going to move it
+    wxString tempFile = wxFileName::CreateTempFileName( "design_block" );
+    if( !saveSchematicFile( tempSheet, tempFile ) )
+    {
+        DisplayError( this, _( "Error saving temporary schematic file to create design block." ) );
+        wxRemoveFile( tempFile );
+        return;
+    }
+
+    // Create a design block
+    DESIGN_BLOCK blk;
+    blk.SetSchematicFile( tempFile );
+    blk.SetLibId( LIB_ID( aLibraryName, name ) );
+
+    try
+    {
+        // Actually save it to disk
+        Prj().DesignBlockLibs()->DesignBlockSave( aLibraryName, &blk );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        DisplayError( this, ioe.What() );
+    }
+
+    // Clean up the temporaries
+    wxRemoveFile( tempFile );
+    // This will also delete the screen
+    delete tempSheet;
+
+    m_designBlocksPanel->RefreshLibs();
+    m_designBlocksPanel->SelectLibId( blk.GetLibId() );
+}
+
+
+bool SCH_EDIT_FRAME::DeleteDesignBlockLibrary( const wxString& aLibName, bool aConfirm )
+{
+    if( aLibName.IsEmpty() )
+    {
+        DisplayError( this, _( "Please select a library to delete." ) );
+        return false;
+    }
+
+    if( !Prj().DesignBlockLibs()->IsDesignBlockLibWritable( aLibName ) )
+    {
+        wxString msg = wxString::Format( _( "Library '%s' is read only." ), aLibName );
+        ShowInfoBarError( msg );
+        return false;
+    }
+
+    // Confirmation
+    wxString msg = wxString::Format( _( "Delete design block library '%s' from disk? This will "
+                                        "delete all design blocks within the library." ),
+                                     aLibName.GetData() );
+
+    if( aConfirm && !IsOK( this, msg ) )
+        return false;
+
+    try
+    {
+        Prj().DesignBlockLibs()->DesignBlockLibDelete( aLibName );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        DisplayError( this, ioe.What() );
+        return false;
+    }
+
+    msg.Printf( _( "Design block library '%s' deleted" ), aLibName.GetData() );
+    SetStatusText( msg );
+
+    m_designBlocksPanel->RefreshLibs();
+
+    return true;
+}
+
+
+bool SCH_EDIT_FRAME::DeleteDesignBlockFromLibrary( const LIB_ID& aLibId, bool aConfirm )
+{
+    if( !aLibId.IsValid() )
+        return false;
+
+    wxString libname = aLibId.GetLibNickname();
+    wxString dbname = aLibId.GetLibItemName();
+
+    if( !Prj().DesignBlockLibs()->IsDesignBlockLibWritable( libname ) )
+    {
+        wxString msg = wxString::Format( _( "Library '%s' is read only." ), libname );
+        ShowInfoBarError( msg );
+        return false;
+    }
+
+    // Confirmation
+    wxString msg = wxString::Format( _( "Delete design block '%s' in library '%s' from disk?" ),
+                                     dbname.GetData(), libname.GetData() );
+
+    if( aConfirm && !IsOK( this, msg ) )
+        return false;
+
+    try
+    {
+        Prj().DesignBlockLibs()->DesignBlockDelete( libname, dbname );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        DisplayError( this, ioe.What() );
+        return false;
+    }
+
+    msg.Printf( _( "Design block '%s' deleted from library '%s'" ), dbname.GetData(),
+                libname.GetData() );
+
+    SetStatusText( msg );
+
+    m_designBlocksPanel->RefreshLibs();
+
+    return true;
 }

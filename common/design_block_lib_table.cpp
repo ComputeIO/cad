@@ -448,6 +448,7 @@ DESIGN_BLOCK_LIB_TABLE::DesignBlockSave( const wxString&     aNickname,
 
 void DESIGN_BLOCK_LIB_TABLE::DesignBlockDelete( const wxString& aNickname,
                                                 const wxString& aDesignBlockName )
+
 {
     const DESIGN_BLOCK_LIB_TABLE_ROW* row = FindRow( aNickname, true );
     wxASSERT( row->plugin );

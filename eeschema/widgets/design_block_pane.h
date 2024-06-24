@@ -72,7 +72,11 @@ public:
     void UpdateCheckboxes();
 
     void OnNewLibrary( wxCommandEvent& aEvent );
-    void OnSaveAsDesignBlock( wxCommandEvent& aEvent );
+    void OnSaveSheetAsDesignBlock( wxCommandEvent& aEvent );
+    void OnSaveSelectionAsDesignBlock( wxCommandEvent& aEvent );
+
+    void OnDeleteLibrary( wxCommandEvent& aEvent );
+    void OnDeleteDesignBlock( wxCommandEvent& aEvent );
 
 public:
     static std::mutex g_Mutex;
@@ -81,7 +85,10 @@ protected:
     PANEL_DESIGN_BLOCK_CHOOSER* m_chooserPanel;
 
     wxButton*                   m_btnNewLibrary;
-    wxButton*                   m_btnSaveAsDesignBlock;
+    wxButton*                   m_btnSaveSheetAsDesignBlock;
+    wxButton*                   m_btnSaveSelectionAsDesignBlock;
+    wxButton*                   m_btnDeleteLibrary;
+    wxButton*                   m_btnDeleteDesignBlock;
 
     wxCheckBox*                 m_repeatedPlacement;
     wxCheckBox*                 m_placeAsSheet;

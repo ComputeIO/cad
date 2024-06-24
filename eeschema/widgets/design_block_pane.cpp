@@ -60,11 +60,26 @@ DESIGN_BLOCK_PANE::DESIGN_BLOCK_PANE( SCH_EDIT_FRAME* aParent, const LIB_ID* aPr
     m_btnNewLibrary = new wxButton( this, wxID_ANY, _( "New Library" ) );
     m_btnNewLibrary->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnNewLibrary, this );
 
-    m_btnSaveAsDesignBlock = new wxButton( this, wxID_ANY, _( "Save as Design Block" ) );
-    m_btnSaveAsDesignBlock->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnSaveAsDesignBlock, this );
+    m_btnSaveSheetAsDesignBlock = new wxButton( this, wxID_ANY, _( "Save Sheet as Design Block" ) );
+    m_btnSaveSheetAsDesignBlock->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnSaveSheetAsDesignBlock,
+                                       this );
+
+    m_btnSaveSelectionAsDesignBlock =
+            new wxButton( this, wxID_ANY, _( "Save Selection as Design Block" ) );
+    m_btnSaveSelectionAsDesignBlock->Bind( wxEVT_BUTTON,
+                                           &DESIGN_BLOCK_PANE::OnSaveSelectionAsDesignBlock, this );
+
+    m_btnDeleteLibrary = new wxButton( this, wxID_ANY, _( "Delete Library" ) );
+    m_btnDeleteLibrary->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnDeleteLibrary, this );
+
+    m_btnDeleteDesignBlock = new wxButton( this, wxID_ANY, _( "Delete Design Block" ) );
+    m_btnDeleteDesignBlock->Bind( wxEVT_BUTTON, &DESIGN_BLOCK_PANE::OnDeleteDesignBlock, this );
 
     sizer->Add( m_btnNewLibrary, 0, wxEXPAND, 5 );
-    sizer->Add( m_btnSaveAsDesignBlock, 0, wxEXPAND, 5 );
+    sizer->Add( m_btnSaveSheetAsDesignBlock, 0, wxEXPAND, 5 );
+    sizer->Add( m_btnSaveSelectionAsDesignBlock, 0, wxEXPAND, 5 );
+    sizer->Add( m_btnDeleteLibrary, 0, wxEXPAND, 5 );
+    sizer->Add( m_btnDeleteDesignBlock, 0, wxEXPAND, 5 );
 
     wxBoxSizer* cbSizer = new wxBoxSizer( wxVERTICAL );
 
@@ -144,9 +159,27 @@ void DESIGN_BLOCK_PANE::OnNewLibrary( wxCommandEvent& aEvent )
 }
 
 
-void DESIGN_BLOCK_PANE::OnSaveAsDesignBlock( wxCommandEvent& aEvent )
+void DESIGN_BLOCK_PANE::OnSaveSheetAsDesignBlock( wxCommandEvent& aEvent )
 {
     m_frame->SaveSheetAsDesignBlock( GetSelectedLibId().GetFullLibraryName() );
+}
+
+
+void DESIGN_BLOCK_PANE::OnSaveSelectionAsDesignBlock( wxCommandEvent& aEvent )
+{
+    m_frame->SaveSelectionAsDesignBlock( GetSelectedLibId().GetFullLibraryName() );
+}
+
+
+void DESIGN_BLOCK_PANE::OnDeleteLibrary( wxCommandEvent& aEvent )
+{
+    m_frame->DeleteDesignBlockLibrary( GetSelectedLibId().GetLibNickname(), true );
+}
+
+
+void DESIGN_BLOCK_PANE::OnDeleteDesignBlock( wxCommandEvent& aEvent )
+{
+    m_frame->DeleteDesignBlockFromLibrary( GetSelectedLibId(), true );
 }
 
 

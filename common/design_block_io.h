@@ -103,9 +103,7 @@ public:
                           const STRING_UTF8_MAP* aProperties = nullptr );
 
     void DesignBlockDelete( const wxString& aLibraryPath, const wxString& aDesignBlockName,
-                            const STRING_UTF8_MAP* aProperties = nullptr )
-    {
-    }
+                            const STRING_UTF8_MAP* aProperties = nullptr );
 
     virtual void PrefetchLib( const wxString&        aLibraryPath,
                               const STRING_UTF8_MAP* aProperties = nullptr )

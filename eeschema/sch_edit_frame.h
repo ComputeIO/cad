@@ -754,6 +754,12 @@ public:
 
     void SaveSheetAsDesignBlock( const wxString& aLibraryName );
 
+    void SaveSelectionAsDesignBlock( const wxString& aLibraryName );
+
+    bool DeleteDesignBlockLibrary( const wxString& aLibName, bool aConfirm );
+
+    bool DeleteDesignBlockFromLibrary( const LIB_ID& aLibId, bool aConfirm );
+
     /**
      * Plot or print the current sheet to the clipboard.
      */

@@ -73,11 +73,6 @@ public:
      */
     LIB_ID GetSelectedLibId( int* aUnit = nullptr ) const;
     void   SelectLibId( const LIB_ID& aLibId );
-    void   AppendNewLibrary( const wxString& aLibName );
-
-    int GetItemCount() const { return m_adapter->GetItemCount(); }
-
-    wxWindow* GetFocusTarget() const { return m_tree->GetFocusTarget(); }
 
 protected:
     static constexpr int DBLCLICK_DELAY = 100; // milliseconds
