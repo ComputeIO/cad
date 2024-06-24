@@ -91,9 +91,9 @@ PRIVATE
     markdown_lib
     ${NGSPICE_LIBRARY}
     ${GDI_PLUS_LIBRARIES}
+    ${LIBOPENORCADPARSER_LIBRARY}
     Boost::headers
     Boost::unit_test_framework
-    ${OPENORCADPARSER_PATH}/build/lib/libOpenOrCadParser.so
 )
 
 if( KICAD_SPICE_QA AND MSVC )

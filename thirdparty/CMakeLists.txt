@@ -34,6 +34,9 @@ set( BUILD_SHARED_LIBS OFF )
 # instead of with cmake_policy will apply the change to the third-party CMakeLists files.
 set( CMAKE_POLICY_DEFAULT_CMP0077 NEW )
 
+find_path(LIBOPENORCADPARSER_INCLUDE_DIR OpenOrCadParser/CfbfStreamLocation.hpp)
+find_library(LIBOPENORCADPARSER_LIBRARY libOpenOrCadParser.so)
+
 FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt
@@ -49,6 +52,7 @@ add_subdirectory( compoundfilereader )
 add_subdirectory( delaunator )
 add_subdirectory( dxflib_qcad )
 add_subdirectory( expected )
+# add_subdirectory( OpenOrCadParser )
 # set( FMT_INSTALL OFF )
 # add_subdirectory( fmt )
 add_subdirectory( gzip-hpp )

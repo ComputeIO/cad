@@ -28,24 +28,6 @@ set_property( SOURCE sim/ngspice.cpp
     NGSPICE_DLL_FILE="${NGSPICE_DLL_FILE}"
     )
 
-set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "Use external fmt library" FORCE)
-set(SPDLOG_FMT_EXTERNAL_HO OFF CACHE BOOL "Use external fmt library" FORCE)
-
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog
-    GIT_TAG        v1.14.1
-)
-FetchContent_MakeAvailable(spdlog)
-
-FetchContent_Declare(
-    nameof
-    GIT_REPOSITORY https://github.com/Neargye/nameof
-    GIT_TAG        v0.10.4
-)
-FetchContent_MakeAvailable(nameof)
-
-
 include_directories( BEFORE ${INC_BEFORE} )
 include_directories(
     ${CMAKE_SOURCE_DIR}/common
@@ -59,7 +41,7 @@ include_directories(
     ./widgets
     ${CMAKE_BINARY_DIR}/_deps/spdlog-src/include
     ${CMAKE_BINARY_DIR}/_deps/nameof-src/include
-    ${OPENORCADPARSER_PATH}/src
+    ${LIBOPENORCADPARSER_INCLUDE_DIRS}
     )
 
 set( EESCHEMA_SCH_IO
@@ -576,9 +558,8 @@ set_source_files_properties( ${CMAKE_SOURCE_DIR}/common/single_top.cpp PROPERTIE
 
 target_link_libraries( eeschema
     kicommon
+    ${LIBOPENORCADPARSER_LIBRARY}
     ${wxWidgets_LIBRARIES}
-    spdlog::spdlog
-    ${OPENORCADPARSER_PATH}/build/lib/libOpenOrCadParser.so
     )
 
 # the main Eeschema program, in DSO form.
@@ -597,7 +578,7 @@ target_include_directories( eeschema_kiface_objects
 target_link_libraries( eeschema_kiface_objects
     PUBLIC
         common
-        ${OPENORCADPARSER_PATH}/build/lib/libOpenOrCadParser.so
+        ${LIBOPENORCADPARSER_LIBRARY}
     )
 
 # Since we're not using target_link_libraries, we need to explicitly
