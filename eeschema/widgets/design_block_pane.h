@@ -72,7 +72,7 @@ public:
     void UpdateCheckboxes();
 
     void OnNewLibrary( wxCommandEvent& aEvent );
-    void OnSaveAsDesignBlock( wxCommandEvent& aEvent ) {}
+    void OnSaveAsDesignBlock( wxCommandEvent& aEvent );
 
 public:
     static std::mutex g_Mutex;

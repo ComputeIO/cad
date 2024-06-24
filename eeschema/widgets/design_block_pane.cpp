@@ -32,6 +32,8 @@
 #include <wx/button.h>
 #include <wx/checkbox.h>
 #include <wx/sizer.h>
+#include <confirm.h>
+#include <wildcards_and_files_ext.h>
 
 static const wxString REPEATED_PLACEMENT = _( "Place repeated copies" );
 static const wxString PLACE_AS_SHEET = _( "Place as sheet" );
@@ -139,6 +141,12 @@ void DESIGN_BLOCK_PANE::RefreshLibs()
 void DESIGN_BLOCK_PANE::OnNewLibrary( wxCommandEvent& aEvent )
 {
     m_frame->CreateNewDesignBlockLibrary();
+}
+
+
+void DESIGN_BLOCK_PANE::OnSaveAsDesignBlock( wxCommandEvent& aEvent )
+{
+    m_frame->SaveSheetAsDesignBlock( GetSelectedLibId().GetFullLibraryName() );
 }
 
 

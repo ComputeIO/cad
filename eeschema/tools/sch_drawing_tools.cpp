@@ -590,7 +590,7 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
                 for( EDA_ITEM* item : screen->Items() )
                     item->SetFlags( SKIP_STRUCT );
 
-                if( !m_frame->LoadSheetFromFile( sheetPath.Last(), &sheetPath, sheetFileName ) )
+                if( !m_frame->LoadSheetFromFile( sheetPath.Last(), &sheetPath, sheetFileName, true ) )
                     return false;
 
                 m_frame->SetSheetNumberAndCount();

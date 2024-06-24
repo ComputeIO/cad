@@ -617,11 +617,13 @@ public:
      *                      possible file recursion issues.
      * @param aFileName is the file name to load.  The file name is expected to have an absolute
      *                  path.
-     *
+     * @param aSkipRecursionCheck is true to skip the recursion check. This is used when loading
+     *                  a schematic sheet that is not part of the current project. If we are placing
+     *                  sheet contents instead of a sheet, then we do not need to check for recursion.
      * @return True if the schematic was imported properly.
      */
     bool LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurrentSheet,
-                            const wxString& aFileName );
+                            const wxString& aFileName, bool aSkipRecursionCheck = false );
 
     /**
      * Removes a given junction and heals any wire segments under the junction
@@ -750,6 +752,7 @@ public:
      */
     bool AddDesignBlockLibrary( const wxString& aFilename, DESIGN_BLOCK_LIB_TABLE* aTable );
 
+    void SaveSheetAsDesignBlock( const wxString& aLibraryName );
 
     /**
      * Plot or print the current sheet to the clipboard.

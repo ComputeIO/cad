@@ -23,6 +23,7 @@
 
 #include <pgm_base.h>
 #include <kiway.h>
+#include <design_block.h>
 #include <design_block_lib_table.h>
 #include <design_block_pane.h>
 #include <sch_edit_frame.h>
@@ -123,7 +124,7 @@ wxString SCH_EDIT_FRAME::createNewDesignBlockLibrary( const wxString&         aL
         }
     }
 
-    // We can save db libs only using PCB_IO_MGR::KICAD_SEXP format (.pretty libraries)
+    // We can save libs only using DESIGN_BLOCK_IO_MGR::KICAD_SEXP format (.pretty libraries)
     DESIGN_BLOCK_IO_MGR::DESIGN_BLOCK_FILE_T piType = DESIGN_BLOCK_IO_MGR::KICAD_SEXP;
     wxString                                 libPath = fn.GetFullPath();
 
@@ -253,4 +254,63 @@ bool SCH_EDIT_FRAME::AddDesignBlockLibrary( const wxString&         aFilename,
     m_designBlocksPanel->SelectLibId( libID );
 
     return true;
+}
+
+
+void SCH_EDIT_FRAME::SaveSheetAsDesignBlock( const wxString& aLibraryName )
+{
+    // Make sure the user has selected a library to save into
+    if( m_designBlocksPanel->GetSelectedLibId().GetLibNickname().empty() )
+    {
+        DisplayError( this, _( "Please select a library to save the design block to." ) );
+        return;
+    }
+
+    // Just block all attempts to create design blocks with nested sheets at this point
+    std::vector<SCH_ITEM*> sheets;
+    GetScreen()->GetSheets( &sheets );
+
+    if( !sheets.empty() )
+    {
+        DisplayError( this, _( "Design blocks with nested sheets are not supported." ) );
+        return;
+    }
+
+    // Ask the user for the design block name
+    wxFileName fn = wxFileNameFromPath( GetScreen()->GetFileName() );
+
+    wxString name = wxGetTextFromUser( _( "Enter a name for the design block:" ),
+                                       _( "Design Block Name" ), fn.GetName(), this );
+
+    if( name.IsEmpty() )
+        return;
+
+    // Save a temporary copy of the schematic file, as the plugin is just going to move it
+    wxString tempFile = wxFileName::CreateTempFileName( "design_block" );
+    if( !saveSchematicFile( GetCurrentSheet().Last(), tempFile ) )
+    {
+        DisplayError( this, _( "Error saving temporary schematic file to create design block." ) );
+        wxRemoveFile( tempFile );
+        return;
+    }
+
+
+    DESIGN_BLOCK blk;
+    blk.SetSchematicFile( tempFile );
+    blk.SetLibId( LIB_ID( aLibraryName, name ) );
+
+    try
+    {
+        Prj().DesignBlockLibs()->DesignBlockSave( aLibraryName, &blk );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        DisplayError( this, ioe.What() );
+    }
+
+    // Clean up the temporary file
+    wxRemoveFile( tempFile );
+
+    m_designBlocksPanel->RefreshLibs();
+    m_designBlocksPanel->SelectLibId( blk.GetLibId() );
 }

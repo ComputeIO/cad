@@ -100,9 +100,7 @@ public:
                                    const STRING_UTF8_MAP* aProperties = nullptr );
 
     void DesignBlockSave( const wxString& aLibraryPath, const DESIGN_BLOCK* aDesignBlock,
-                          const STRING_UTF8_MAP* aProperties = nullptr )
-    {
-    }
+                          const STRING_UTF8_MAP* aProperties = nullptr );
 
     void DesignBlockDelete( const wxString& aLibraryPath, const wxString& aDesignBlockName,
                             const STRING_UTF8_MAP* aProperties = nullptr )

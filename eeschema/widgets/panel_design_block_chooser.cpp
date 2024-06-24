@@ -280,7 +280,7 @@ void PANEL_DESIGN_BLOCK_CHOOSER::OnDetailsCharHook( wxKeyEvent& e )
 }
 
 
-void PANEL_DESIGN_BLOCK_CHOOSER::RefreshLibs()
+void PANEL_DESIGN_BLOCK_CHOOSER::RefreshLibs( bool aProgress )
 {
     // Unselect before syncing to avoid null reference in the adapter
     // if a selected item is removed during the sync
@@ -292,6 +292,22 @@ void PANEL_DESIGN_BLOCK_CHOOSER::RefreshLibs()
     // Clear all existing libraries then re-add
     adapter->ClearLibraries();
 
+    // Read the libraries from disk if they've changed
+    DESIGN_BLOCK_LIB_TABLE* fpTable = m_frame->Prj().DesignBlockLibs();
+
+    // Sync FOOTPRINT_INFO list to the libraries on disk
+    if( aProgress )
+    {
+        WX_PROGRESS_REPORTER progressReporter( this, _( "Updating Footprint Libraries" ), 2 );
+        GDesignBlockList.ReadDesignBlockFiles( fpTable, nullptr, &progressReporter );
+        progressReporter.Show( false );
+    }
+    else
+    {
+        GDesignBlockList.ReadDesignBlockFiles( fpTable, nullptr, nullptr );
+    }
+
+    // Build the history list
     std::vector<DESIGN_BLOCK>   history_list_storage;
     std::vector<LIB_TREE_ITEM*> history_list;
 

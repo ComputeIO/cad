@@ -279,6 +279,51 @@ DESIGN_BLOCK* DESIGN_BLOCK_IO::DesignBlockLoad( const wxString& aLibraryPath,
 }
 
 
+void DESIGN_BLOCK_IO::DesignBlockSave( const wxString&        aLibraryPath,
+                                       const DESIGN_BLOCK*    aDesignBlock,
+                                       const STRING_UTF8_MAP* aProperties )
+{
+    // Make sure we have a valid LIB_ID or we can't save the design block
+    if( !aDesignBlock->GetLibId().IsValid() )
+    {
+        THROW_IO_ERROR( _( "Design block does not have a valid library ID." ) );
+    }
+
+    if( !wxFileExists( aDesignBlock->GetSchematicFile() ) )
+    {
+        THROW_IO_ERROR( wxString::Format( _( "Schematic source file '%s' does not exist." ),
+                                          aDesignBlock->GetSchematicFile() ) );
+    }
+
+    // Create the design block folder
+    wxFileName dbFolder( aLibraryPath + wxFileName::GetPathSeparator()
+                         + aDesignBlock->GetLibId().GetLibItemName() + wxT( "." )
+                         + FILEEXT::KiCadDesignBlockPathExtension
+                         + wxFileName::GetPathSeparator() );
+
+    if( !dbFolder.DirExists() )
+    {
+        if( !dbFolder.Mkdir() )
+        {
+            THROW_IO_ERROR( wxString::Format( _( "Design block folder '%s' could not be created." ),
+                                              dbFolder.GetFullPath().GetData() ) );
+        }
+    }
+
+    // The new schematic file name is based on the design block name, not the source sheet name
+    wxString dbSchematicFile = dbFolder.GetFullPath() + aDesignBlock->GetLibId().GetLibItemName()
+                               + wxT( "." ) + FILEEXT::KiCadSchematicFileExtension;
+
+    // Copy the source sheet file to the design block folder, under the design block name
+    if( !wxCopyFile( aDesignBlock->GetSchematicFile(), dbSchematicFile ) )
+    {
+        THROW_IO_ERROR( wxString::Format(
+                _( "Schematic file '%s' could not be saved as design block at '%s'." ),
+                aDesignBlock->GetSchematicFile().GetData(), dbSchematicFile ) );
+    }
+}
+
+
 bool DESIGN_BLOCK_IO::IsLibraryWritable( const wxString& aLibraryPath )
 {
     wxFileName path( aLibraryPath );

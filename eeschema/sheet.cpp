@@ -164,7 +164,7 @@ void SCH_EDIT_FRAME::InitSheet( SCH_SHEET* aSheet, const wxString& aNewFilename 
 
 
 bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurrentSheet,
-                                        const wxString& aFileName )
+                                        const wxString& aFileName, bool aSkipRecursionCheck )
 {
     wxASSERT( aSheet && aCurrentSheet );
 
@@ -284,11 +284,11 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
     SCH_SHEET_LIST schematicSheets = Schematic().BuildUnorderedSheetList();
 
     // Make sure any new sheet changes do not cause any recursion issues.
-    if( CheckSheetForRecursion( tmpSheet.get(), aCurrentSheet )
-          || checkForNoFullyDefinedLibIds( tmpSheet.get() ) )
-    {
+    if( !aSkipRecursionCheck && CheckSheetForRecursion( tmpSheet.get(), aCurrentSheet ) )
         return false;
-    }
+
+    if( checkForNoFullyDefinedLibIds( tmpSheet.get() ) )
+        return false;
 
     // Make a valiant attempt to warn the user of all possible scenarios where there could
     // be broken symbol library links.

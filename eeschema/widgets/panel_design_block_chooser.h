@@ -58,7 +58,7 @@ public:
 
     void SetPreselect( const LIB_ID& aPreselect );
 
-    void RefreshLibs();
+    void RefreshLibs( bool aProgress = false );
 
     /**
      * To be called after this dialog returns from ShowModal().
