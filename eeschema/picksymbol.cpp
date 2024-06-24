@@ -45,6 +45,7 @@
 #include <project_sch.h>
 
 #include <dialog_symbol_chooser.h>
+#include <dialog_design_block_chooser.h>
 
 PICKED_SYMBOL SCH_BASE_FRAME::PickSymbolFromLibrary( const SYMBOL_LIBRARY_FILTER* aFilter,
                                                      std::vector<PICKED_SYMBOL>&  aHistoryList,
@@ -85,6 +86,36 @@ PICKED_SYMBOL SCH_BASE_FRAME::PickSymbolFromLibrary( const SYMBOL_LIBRARY_FILTER
 
         aHistoryList.insert( aHistoryList.begin(), sel );
     }
+
+    return sel;
+}
+
+
+LIB_ID SCH_BASE_FRAME::PickDesignBlockFromLibrary( std::vector<LIB_ID>&  aHistoryList,
+                                                     const LIB_ID* aHighlight )
+{
+    std::unique_lock<std::mutex> dialogLock( DIALOG_DESIGN_BLOCK_CHOOSER::g_Mutex, std::defer_lock );
+
+    // One DIALOG_SYMBOL_CHOOSER dialog at a time.  User probably can't handle more anyway.
+    if( !dialogLock.try_lock() )
+        return LIB_ID();
+
+    DIALOG_DESIGN_BLOCK_CHOOSER dlg( this, aHighlight, aHistoryList );
+
+    if( dlg.ShowModal() == wxID_CANCEL )
+        return LIB_ID();
+
+    LIB_ID sel = dlg.GetSelectedLibId();
+
+    if( !sel.IsValid() )
+        return LIB_ID();
+
+    alg::delete_if( aHistoryList, [&sel]( LIB_ID const& i )
+                                  {
+                                      return i == sel;
+                                  } );
+
+    aHistoryList.insert( aHistoryList.begin(), sel );
 
     return sel;
 }

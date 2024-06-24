@@ -46,6 +46,7 @@
 class SCH_RENDER_SETTINGS;
 class PAGE_INFO;
 class TITLE_BLOCK;
+class DESIGN_BLOCK;
 class SYMBOL_VIEWER_FRAME;
 class SYMBOL_EDIT_FRAME;
 class LIB_SYMBOL;
@@ -145,6 +146,41 @@ public:
     void SetTitleBlock( const TITLE_BLOCK& aTitleBlock ) override;
 
     void UpdateStatusBar() override;
+
+    /**
+     * Load design block from design block library table.
+     *
+     * @param aLibId is the design block library identifier to load.
+     * @param aUseCacheLib set to true to fall back to cache library if design block is not found in
+     *                     design block library table.
+     * @param aShowErrorMessage set to true to show any error messages.
+     * @return The design block found in the library or NULL if the design block was not found.
+     */
+    DESIGN_BLOCK* GetDesignBlock( const LIB_ID& aLibId, bool aUseCacheLib = false,
+                                  bool aShowErrorMsg = false );
+
+    /**
+     * Call the library viewer to select design block to import into schematic.
+     * If the library viewer is currently running, it is closed and reopened in modal mode.
+     *
+     * aAllowFields chooses whether or not features that permit the user to edit fields
+     * (e.g. footprint selection) should be enabled. This should be false when they would
+     * have no effect, for example loading a part into design block_editor.
+     *
+     * @param aFilter is an optional #DESIGN_BLOCK_LIBRARY_FILTER filter to pass the allowed library names
+     *                and/or the library name to load the design block from and/or some other filter
+     * @param aHistoryList is the list of previously loaded design blocks - will be edited
+     * @param aHighlight is the name of design block to highlight in the list.
+     *                   highlights none if there isn't one by that name.
+     * @param aShowFootprints is the whether to show footprints in the dialog.
+     * @param aAllowFields is whether to allow field editing in the dialog.
+     *
+     * @return the selected design block
+     */
+    LIB_ID PickDesignBlockFromLibrary( std::vector<LIB_ID>&  aHistoryList,
+                                       const LIB_ID* aHighlight = nullptr );
+
+
 
     /**
      * Call the library viewer to select symbol to import into schematic.

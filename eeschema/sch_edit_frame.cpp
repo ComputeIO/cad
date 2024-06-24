@@ -120,7 +120,6 @@ BEGIN_EVENT_TABLE( SCH_EDIT_FRAME, SCH_BASE_FRAME )
     EVT_MENU_RANGE( ID_FILE1, ID_FILEMAX, SCH_EDIT_FRAME::OnLoadFile )
     EVT_MENU( ID_FILE_LIST_CLEAR, SCH_EDIT_FRAME::OnClearFileHistory )
 
-    EVT_MENU( ID_APPEND_PROJECT, SCH_EDIT_FRAME::OnAppendProject )
     EVT_MENU( ID_IMPORT_NON_KICAD_SCH, SCH_EDIT_FRAME::OnImportProject )
 
     EVT_MENU( wxID_EXIT, SCH_EDIT_FRAME::OnExit )
@@ -751,6 +750,7 @@ void SCH_EDIT_FRAME::setupUIConditions()
     CURRENT_TOOL( EE_ACTIONS::highlightNetTool );
     CURRENT_TOOL( EE_ACTIONS::placeSymbol );
     CURRENT_TOOL( EE_ACTIONS::placePower );
+    CURRENT_TOOL( EE_ACTIONS::placeDesignBlock );
     CURRENT_TOOL( EE_ACTIONS::drawWire );
     CURRENT_TOOL( EE_ACTIONS::drawBus );
     CURRENT_TOOL( EE_ACTIONS::placeBusWireEntry );
@@ -764,6 +764,7 @@ void SCH_EDIT_FRAME::setupUIConditions()
     CURRENT_TOOL( EE_ACTIONS::drawSheet );
     CURRENT_TOOL( EE_ACTIONS::placeSheetPin );
     CURRENT_TOOL( EE_ACTIONS::syncSheetPins );
+    CURRENT_TOOL( EE_ACTIONS::drawSheetCopy );
     CURRENT_TOOL( EE_ACTIONS::drawRectangle );
     CURRENT_TOOL( EE_ACTIONS::drawCircle );
     CURRENT_TOOL( EE_ACTIONS::drawArc );

@@ -235,26 +235,32 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
 
     // If the loaded schematic is in a different folder from the current project and
     // it contains hierarchical sheets, the hierarchical sheet paths need to be updated.
-    if( fileName.GetPathWithSep() != Prj().GetProjectPath() && tmpSheet->CountSheets() )
+    //
+    // Additionally, we need to make all backing screens absolute paths be in the current project
+    // path not the source path.
+    if( fileName.GetPathWithSep() != Prj().GetProjectPath() )
     {
         SCH_SHEET_LIST loadedSheets( tmpSheet.get() );
 
         for( const SCH_SHEET_PATH& sheetPath : loadedSheets )
         {
-            // Skip the loaded sheet since the user already determined if the file path should
-            // be relative or absolute.
-            if( sheetPath.size() == 1 )
-                continue;
+            wxString lastSheetPath = Prj().GetProjectPath();
 
-            wxString lastSheetPath = fileName.GetPathWithSep();
-
-            for( unsigned i = 1; i < sheetPath.size(); i++ )
+            for( unsigned i = 0; i < sheetPath.size(); i++ )
             {
                 SCH_SHEET* sheet = sheetPath.at( i );
                 wxCHECK2( sheet, continue );
 
                 SCH_SCREEN* screen = sheet->GetScreen();
                 wxCHECK2( screen, continue );
+
+                // Fix screen path to be based on the current project path.
+                // Basically, make an absolute screen path relative to the schematic file
+                // we started with, then make it absolute again using the current project path.
+                wxFileName screenFileName = screen->GetFileName();
+                screenFileName.MakeRelativeTo( fileName.GetPath() );
+                screenFileName.MakeAbsolute( Prj().GetProjectPath() );
+                screen->SetFileName( screenFileName.GetFullPath() );
 
                 // Use the screen file name which should always be absolute.
                 wxFileName loadedSheetFileName = screen->GetFileName();
@@ -268,7 +274,6 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
                 else
                     sheetFileName = loadedSheetFileName.GetFullPath();
 
-                sheetFileName.Replace( wxT( "\\" ), wxT( "/" ) );
                 sheet->SetFileName( sheetFileName );
                 lastSheetPath = loadedSheetFileName.GetPath();
             }
@@ -376,17 +381,17 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aCurr
             {
                 if( !symLibTableFn.Exists() || !symLibTableFn.IsFileReadable() )
                 {
-                    msg = _( "The selected file was created as part of a different project.  "
-                             "Linking the file to this project may result in missing or "
-                             "incorrect symbol library references.\n\n"
-                             "Do you wish to continue?" );
-                    wxMessageDialog msgDlg4( this, msg, _( "Continue Load Schematic" ),
-                                             wxOK | wxCANCEL | wxCANCEL_DEFAULT |
-                                             wxCENTER | wxICON_QUESTION );
-                    msgDlg4.SetOKCancelLabels( okButtonLabel, cancelButtonLabel );
+                    //msg = _( "The selected file was created as part of a different project.  "
+                             //"Linking the file to this project may result in missing or "
+                             //"incorrect symbol library references.\n\n"
+                             //"Do you wish to continue?" );
+                    //wxMessageDialog msgDlg4( this, msg, _( "Continue Load Schematic" ),
+                                             //wxOK | wxCANCEL | wxCANCEL_DEFAULT |
+                                             //wxCENTER | wxICON_QUESTION );
+                    //msgDlg4.SetOKCancelLabels( okButtonLabel, cancelButtonLabel );
 
-                    if( msgDlg4.ShowModal() == wxID_CANCEL )
-                        return false;
+                    //if( msgDlg4.ShowModal() == wxID_CANCEL )
+                        //return false;
                 }
                 else
                 {
