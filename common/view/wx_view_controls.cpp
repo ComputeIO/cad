@@ -133,6 +133,7 @@ WX_VIEW_CONTROLS::WX_VIEW_CONTROLS( VIEW* aView, EDA_DRAW_PANEL_GAL* aParentPane
                             wxMouseEventHandler( WX_VIEW_CONTROLS::onCaptureLost ), nullptr, this );
 #endif
 
+#ifdef __WXMSW__
     if( m_parentPanel->EnableTouchEvents( wxTOUCH_ZOOM_GESTURE | wxTOUCH_PAN_GESTURES ) )
     {
         m_parentPanel->Connect( wxEVT_GESTURE_ZOOM,
@@ -143,6 +144,7 @@ WX_VIEW_CONTROLS::WX_VIEW_CONTROLS( VIEW* aView, EDA_DRAW_PANEL_GAL* aParentPane
                                 wxPanGestureEventHandler( WX_VIEW_CONTROLS::onPanGesture ), nullptr,
                                 this );
     }
+#endif
 
     m_cursorWarped = false;
 
@@ -640,7 +642,7 @@ void WX_VIEW_CONTROLS::onZoomGesture( wxZoomGestureEvent& aEvent )
     m_gestureLastZoomFactor = aEvent.GetZoomFactor();
     m_gestureLastPos = evtPos;
 
-    m_parentPanel->Refresh();
+    refreshMouse( true );
 }
 
 
@@ -650,7 +652,8 @@ void WX_VIEW_CONTROLS::onPanGesture( wxPanGestureEvent& aEvent )
     VECTOR2D deltaWorld = m_view->ToWorld( screenDelta, false );
 
     m_view->SetCenter( m_view->GetCenter() - deltaWorld );
-    m_parentPanel->Refresh();
+
+    refreshMouse( true );
 }
 
 

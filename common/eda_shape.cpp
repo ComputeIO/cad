@@ -154,7 +154,8 @@ int EDA_SHAPE::GetRectangleHeight() const
 {
     switch( m_shape )
     {
-    case SHAPE_T::RECTANGLE: return GetEndY() - GetStartY();
+    case SHAPE_T::RECTANGLE:
+        return GetEndY() - GetStartY();
 
     default:
         UNIMPLEMENTED_FOR( SHAPE_T_asString() );
@@ -166,7 +167,8 @@ int EDA_SHAPE::GetRectangleWidth() const
 {
     switch( m_shape )
     {
-    case SHAPE_T::RECTANGLE: return GetEndX() - GetStartX();
+    case SHAPE_T::RECTANGLE:
+        return GetEndX() - GetStartX();
 
     default:
         UNIMPLEMENTED_FOR( SHAPE_T_asString() );
@@ -178,7 +180,8 @@ void EDA_SHAPE::SetLength( const double& aLength )
 {
     switch( m_shape )
     {
-    case SHAPE_T::SEGMENT: m_segmentLength = aLength; break;
+    case SHAPE_T::SEGMENT:
+        m_segmentLength = aLength; break;
 
     default:
         UNIMPLEMENTED_FOR( SHAPE_T_asString() );
@@ -194,7 +197,8 @@ void EDA_SHAPE::SetRectangleHeight( const int& aHeight )
         SetEndY( GetStartY() + m_rectangleHeight );
         break;
 
-    default: UNIMPLEMENTED_FOR( SHAPE_T_asString() );
+    default:
+        UNIMPLEMENTED_FOR( SHAPE_T_asString() );
     }
 }
 
@@ -207,7 +211,8 @@ void EDA_SHAPE::SetRectangleWidth( const int& aWidth )
         SetEndX( GetStartX() + m_rectangleWidth );
         break;
 
-    default: UNIMPLEMENTED_FOR( SHAPE_T_asString() );
+    default:
+        UNIMPLEMENTED_FOR( SHAPE_T_asString() );
     }
 }
 
@@ -220,7 +225,8 @@ void EDA_SHAPE::SetRectangle( const long long int& aHeight, const long long int&
         m_rectangleWidth = aWidth;
         break;
 
-    default: UNIMPLEMENTED_FOR( SHAPE_T_asString() );
+    default:
+        UNIMPLEMENTED_FOR( SHAPE_T_asString() );
     }
 }
 
@@ -229,9 +235,12 @@ void EDA_SHAPE::SetSegmentAngle( const EDA_ANGLE& aAngle )
 {
     switch( m_shape )
     {
-    case SHAPE_T::SEGMENT: m_segmentAngle = aAngle; break;
+    case SHAPE_T::SEGMENT:
+        m_segmentAngle = aAngle;
+        break;
 
-    default: UNIMPLEMENTED_FOR( SHAPE_T_asString() );
+    default:
+        UNIMPLEMENTED_FOR( SHAPE_T_asString() );
     }
 }
 
@@ -352,6 +361,7 @@ void EDA_SHAPE::scale( double aScale )
         scalePt( m_end );
         scalePt( m_bezierC1 );
         scalePt( m_bezierC2 );
+        RebuildBezierToSegmentsPointsList( m_stroke.GetWidth() / 2 );
         break;
 
     default:
@@ -488,12 +498,7 @@ void EDA_SHAPE::flip( const VECTOR2I& aCentre, bool aFlipLeftRight )
             m_bezierC2.y = aCentre.y - ( m_bezierC2.y - aCentre.y );
         }
 
-        // Rebuild the poly points shape
-        {
-            std::vector<VECTOR2I> ctrlPoints = { m_start, m_bezierC1, m_bezierC2, m_end };
-            BEZIER_POLY converter( ctrlPoints );
-            converter.GetPoly( m_bezierPoints, m_stroke.GetWidth() );
-        }
+        RebuildBezierToSegmentsPointsList( m_stroke.GetWidth() / 2 );
         break;
 
     default:
@@ -503,7 +508,7 @@ void EDA_SHAPE::flip( const VECTOR2I& aCentre, bool aFlipLeftRight )
 }
 
 
-void EDA_SHAPE::RebuildBezierToSegmentsPointsList( int aMinSegLen )
+void EDA_SHAPE::RebuildBezierToSegmentsPointsList( int aMaxError )
 {
     // Has meaning only for SHAPE_T::BEZIER
     if( m_shape != SHAPE_T::BEZIER )
@@ -513,30 +518,18 @@ void EDA_SHAPE::RebuildBezierToSegmentsPointsList( int aMinSegLen )
     }
 
     // Rebuild the m_BezierPoints vertex list that approximate the Bezier curve
-    m_bezierPoints = buildBezierToSegmentsPointsList( aMinSegLen );
-
-    // Ensure last point respects aMinSegLen parameter
-    if( m_bezierPoints.size() > 2 )
-    {
-        int idx = m_bezierPoints.size() - 1;
-
-        if( VECTOR2I( m_bezierPoints[idx] - m_bezierPoints[idx] - 1 ).EuclideanNorm() < aMinSegLen )
-        {
-            m_bezierPoints[idx - 1] = m_bezierPoints[idx];
-            m_bezierPoints.pop_back();
-        }
-    }
+    m_bezierPoints = buildBezierToSegmentsPointsList( aMaxError );
 }
 
 
-const std::vector<VECTOR2I> EDA_SHAPE::buildBezierToSegmentsPointsList( int aMinSegLen ) const
+const std::vector<VECTOR2I> EDA_SHAPE::buildBezierToSegmentsPointsList( int aMaxError ) const
 {
     std::vector<VECTOR2I> bezierPoints;
 
     // Rebuild the m_BezierPoints vertex list that approximate the Bezier curve
     std::vector<VECTOR2I> ctrlPoints = { m_start, m_bezierC1, m_bezierC2, m_end };
     BEZIER_POLY converter( ctrlPoints );
-    converter.GetPoly( bezierPoints, aMinSegLen );
+    converter.GetPoly( bezierPoints, aMaxError );
 
     return bezierPoints;
 }
@@ -930,16 +923,25 @@ bool EDA_SHAPE::hitTest( const VECTOR2I& aPosition, int aAccuracy ) const
     }
 
     case SHAPE_T::BEZIER:
-        const_cast<EDA_SHAPE*>( this )->RebuildBezierToSegmentsPointsList( GetWidth() );
+    {
+        const std::vector<VECTOR2I>* pts = &m_bezierPoints;
+        std::vector<VECTOR2I> updatedBezierPoints;
 
-        for( unsigned int i= 1; i < m_bezierPoints.size(); i++)
+        if( m_bezierPoints.empty() )
         {
-            if( TestSegmentHit( aPosition, m_bezierPoints[ i - 1], m_bezierPoints[i], maxdist ) )
+            BEZIER_POLY converter( m_start, m_bezierC1, m_bezierC2, m_end );
+            converter.GetPoly( updatedBezierPoints, aAccuracy / 2 );
+            pts = &updatedBezierPoints;
+        }
+
+        for( unsigned int i = 1; i < pts->size(); i++ )
+        {
+            if( TestSegmentHit( aPosition, ( *pts )[i - 1], ( *pts )[i], maxdist ) )
                 return true;
         }
 
         return false;
-
+    }
     case SHAPE_T::SEGMENT:
         return TestSegmentHit( aPosition, GetStart(), GetEnd(), maxdist );
 
@@ -1132,12 +1134,20 @@ bool EDA_SHAPE::hitTest( const BOX2I& aRect, bool aContained, int aAccuracy ) co
 
             // Account for the width of the line
             arect.Inflate( GetWidth() / 2 );
-            unsigned count = m_bezierPoints.size();
+            const std::vector<VECTOR2I>* pts = &m_bezierPoints;
+            std::vector<VECTOR2I> updatedBezierPoints;
 
-            for( unsigned ii = 1; ii < count; ii++ )
+            if( m_bezierPoints.empty() )
             {
-                VECTOR2I vertex = m_bezierPoints[ii - 1];
-                VECTOR2I vertexNext = m_bezierPoints[ii];
+                BEZIER_POLY converter( m_start, m_bezierC1, m_bezierC2, m_end );
+                converter.GetPoly( updatedBezierPoints, aAccuracy / 2 );
+                pts = &updatedBezierPoints;
+            }
+
+            for( unsigned ii = 1; ii < pts->size(); ii++ )
+            {
+                VECTOR2I vertex = ( *pts )[ii - 1];
+                VECTOR2I vertexNext = ( *pts )[ii];
 
                 // Test if the point is within aRect
                 if( arect.Contains( vertex ) )
@@ -1278,7 +1288,7 @@ std::vector<SHAPE*> EDA_SHAPE::makeEffectiveShapes( bool aEdgeOnly, bool aLineCh
 
     case SHAPE_T::BEZIER:
     {
-        std::vector<VECTOR2I> bezierPoints = buildBezierToSegmentsPointsList( width );
+        std::vector<VECTOR2I> bezierPoints = buildBezierToSegmentsPointsList( width / 2 );
         VECTOR2I              start_pt = bezierPoints[0];
 
         for( unsigned int jj = 1; jj < bezierPoints.size(); jj++ )
@@ -1381,7 +1391,7 @@ void EDA_SHAPE::beginEdit( const VECTOR2I& aPosition )
         SetBezierC2( aPosition );
         m_editState = 1;
 
-        RebuildBezierToSegmentsPointsList( GetWidth() );
+        RebuildBezierToSegmentsPointsList( GetWidth() / 2 );
         break;
 
     case SHAPE_T::POLY:
@@ -1463,7 +1473,7 @@ void EDA_SHAPE::calcEdit( const VECTOR2I& aPosition )
         case 3: SetBezierC2( aPosition ); break;
         }
 
-        RebuildBezierToSegmentsPointsList( GetWidth() );
+        RebuildBezierToSegmentsPointsList( GetWidth() / 2 );
     }
     break;
 
@@ -1792,7 +1802,7 @@ void EDA_SHAPE::TransformShapeToPolygon( SHAPE_POLY_SET& aBuffer, int aClearance
         std::vector<VECTOR2I> ctrlPts = { GetStart(), GetBezierC1(), GetBezierC2(), GetEnd() };
         BEZIER_POLY converter( ctrlPts );
         std::vector<VECTOR2I> poly;
-        converter.GetPoly( poly, GetWidth() );
+        converter.GetPoly( poly, aError );
 
         for( unsigned ii = 1; ii < poly.size(); ii++ )
             TransformOvalToPolygon( aBuffer, poly[ii - 1], poly[ii], width, aError, aErrorLoc );
@@ -2051,14 +2061,14 @@ static struct EDA_SHAPE_DESC
                 .SetAvailableFunc( isNotPolygonOrCircle );
 
         propMgr.AddProperty( new PROPERTY<EDA_SHAPE, int>( _HKI( "Width" ),
-                    &EDA_SHAPE::SetRectangleWidth, &EDA_SHAPE::GetRectangleWidth, PROPERTY_DISPLAY::PT_COORD,
-                    ORIGIN_TRANSFORMS::ABS_Y_COORD ),
+                    &EDA_SHAPE::SetRectangleWidth, &EDA_SHAPE::GetRectangleWidth,
+                    PROPERTY_DISPLAY::PT_COORD, ORIGIN_TRANSFORMS::ABS_Y_COORD ),
                     shapeProps )
                 .SetAvailableFunc( isRectangle );
 
         propMgr.AddProperty( new PROPERTY<EDA_SHAPE, int>( _HKI( "Height" ),
-                    &EDA_SHAPE::SetRectangleHeight, &EDA_SHAPE::GetRectangleHeight, PROPERTY_DISPLAY::PT_COORD,
-                    ORIGIN_TRANSFORMS::ABS_Y_COORD ),
+                    &EDA_SHAPE::SetRectangleHeight, &EDA_SHAPE::GetRectangleHeight,
+                    PROPERTY_DISPLAY::PT_COORD, ORIGIN_TRANSFORMS::ABS_Y_COORD ),
                     shapeProps )
                 .SetAvailableFunc( isRectangle );
 

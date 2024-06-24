@@ -56,8 +56,6 @@ PCB_TRACK::PCB_TRACK( BOARD_ITEM* aParent, KICAD_T idtype ) :
     BOARD_CONNECTED_ITEM( aParent, idtype )
 {
     m_Width = pcbIUScale.mmToIU( 0.2 );     // Gives a reasonable default width
-    m_CachedScale = -1.0;                   // Set invalid to force update
-    m_CachedLOD = 0.0;                      // Set to always display
 }
 
 
@@ -123,8 +121,6 @@ PCB_VIA& PCB_VIA::operator=( const PCB_VIA &aOther )
     m_Width = aOther.m_Width;
     m_Start = aOther.m_Start;
     m_End = aOther.m_End;
-    m_CachedLOD = aOther.m_CachedLOD;
-    m_CachedScale = aOther.m_CachedScale;
 
     m_viaType = aOther.m_viaType;
     m_padStack = aOther.m_padStack;
@@ -772,12 +768,72 @@ std::shared_ptr<SHAPE_SEGMENT> PCB_VIA::GetEffectiveHoleShape() const
 }
 
 
-bool PCB_VIA::IsTented() const
+void PCB_VIA::SetFrontTentingMode( TENTING_MODE aMode )
 {
+    switch( aMode )
+    {
+    case TENTING_MODE::FROM_RULES: m_padStack.FrontOuterLayers().has_solder_mask.reset();  break;
+    case TENTING_MODE::TENTED:     m_padStack.FrontOuterLayers().has_solder_mask = true;   break;
+    case TENTING_MODE::NOT_TENTED: m_padStack.FrontOuterLayers().has_solder_mask = false;  break;
+    }
+}
+
+
+TENTING_MODE PCB_VIA::GetFrontTentingMode() const
+{
+    if( m_padStack.FrontOuterLayers().has_solder_mask.has_value() )
+    {
+        return *m_padStack.FrontOuterLayers().has_solder_mask ?
+            TENTING_MODE::TENTED : TENTING_MODE::NOT_TENTED;
+    }
+
+    return TENTING_MODE::FROM_RULES;
+}
+
+
+void PCB_VIA::SetBackTentingMode( TENTING_MODE aMode )
+{
+    switch( aMode )
+    {
+    case TENTING_MODE::FROM_RULES: m_padStack.BackOuterLayers().has_solder_mask.reset();  break;
+    case TENTING_MODE::TENTED:     m_padStack.BackOuterLayers().has_solder_mask = true;   break;
+    case TENTING_MODE::NOT_TENTED: m_padStack.BackOuterLayers().has_solder_mask = false;  break;
+    }
+}
+
+
+TENTING_MODE PCB_VIA::GetBackTentingMode() const
+{
+    if( m_padStack.BackOuterLayers().has_solder_mask.has_value() )
+    {
+        return *m_padStack.BackOuterLayers().has_solder_mask ?
+            TENTING_MODE::TENTED : TENTING_MODE::NOT_TENTED;
+    }
+
+    return TENTING_MODE::FROM_RULES;
+}
+
+
+bool PCB_VIA::IsTented( PCB_LAYER_ID aLayer ) const
+{
+    wxCHECK_MSG( IsFrontLayer( aLayer ) || IsBackLayer( aLayer ), true,
+                 "Invalid layer passed to IsTented" );
+
+    bool front = IsFrontLayer( aLayer );
+
+    if( front && m_padStack.FrontOuterLayers().has_solder_mask.has_value() )
+        return *m_padStack.FrontOuterLayers().has_solder_mask;
+
+    if( !front && m_padStack.BackOuterLayers().has_solder_mask.has_value() )
+        return *m_padStack.BackOuterLayers().has_solder_mask;
+
     if( const BOARD* board = GetBoard() )
-        return board->GetTentVias();
-    else
-        return true;
+    {
+        return front ? board->GetDesignSettings().m_TentViasFront
+                     : board->GetDesignSettings().m_TentViasBack;
+    }
+
+    return true;
 }
 
 
@@ -800,13 +856,10 @@ bool PCB_VIA::IsOnLayer( PCB_LAYER_ID aLayer ) const
     if( aLayer >= Padstack().Drill().start && aLayer <= Padstack().Drill().end )
         return true;
 
-    if( !IsTented() )
-    {
-        if( aLayer == F_Mask )
-            return IsOnLayer( F_Cu );
-        else if( aLayer == B_Mask )
-            return IsOnLayer( B_Cu );
-    }
+    if( aLayer == F_Mask )
+        return !IsTented( F_Mask );
+    else if( aLayer == B_Mask )
+        return !IsTented( B_Mask );
 
     return false;
 }
@@ -840,14 +893,11 @@ LSET PCB_VIA::GetLayerSet() const
     for( int id = Padstack().Drill().start; id <= Padstack().Drill().end; ++id )
         layermask.set( id );
 
-    if( !IsTented() )
-    {
-        if( layermask.test( F_Cu ) )
-            layermask.set( F_Mask );
+    if( !IsTented( F_Mask ) && layermask.test( F_Cu ) )
+        layermask.set( F_Mask );
 
-        if( layermask.test( B_Cu ) )
-            layermask.set( B_Mask );
-    }
+    if( !IsTented( B_Mask ) && layermask.test( B_Cu ) )
+        layermask.set( B_Mask );
 
     return layermask;
 }
@@ -857,20 +907,21 @@ void PCB_VIA::SetLayerSet( LSET aLayerSet )
 {
     bool first = true;
 
-    for( PCB_LAYER_ID layer : aLayerSet.Seq() )
-    {
-        // m_layer and m_bottomLayer are copper layers, so consider only copper layers in aLayerSet
-        if( !IsCopperLayer( layer ) )
-            continue;
+    aLayerSet.RunOnLayers(
+            [&]( PCB_LAYER_ID layer )
+            {
+                // m_layer and m_bottomLayer are copper layers, so consider only copper layers
+                if( IsCopperLayer( layer ) )
+                {
+                    if( first )
+                    {
+                        Padstack().Drill().start = layer;
+                        first = false;
+                    }
 
-        if( first )
-        {
-            Padstack().Drill().start = layer;
-            first = false;
-        }
-
-        Padstack().Drill().end = layer;
-    }
+                    Padstack().Drill().end = layer;
+                }
+            } );
 }
 
 
@@ -944,10 +995,15 @@ void PCB_VIA::SanitizeLayers()
 
 bool PCB_VIA::FlashLayer( LSET aLayers ) const
 {
-    for( PCB_LAYER_ID layer : aLayers.Seq() )
+    for( size_t ii = 0; ii < aLayers.size(); ++ii )
     {
-        if( FlashLayer( layer ) )
-            return true;
+        if( aLayers.test( ii ) )
+        {
+            PCB_LAYER_ID layer = PCB_LAYER_ID( ii );
+
+            if( FlashLayer( layer ) )
+                return true;
+        }
     }
 
     return false;
@@ -1065,24 +1121,20 @@ double PCB_TRACK::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
                 return HIDE;
         }
 
-        // Pick the approximate size of the netname (square chars)
-        wxString netName = GetUnescapedShortNetname();
-        size_t  num_chars = netName.size();
-
-        if( GetLength() < num_chars * GetWidth() )
-            return HIDE;
-
-        // When drawing netnames, clip the track to the viewport
         VECTOR2I start( GetStart() );
         VECTOR2I end( GetEnd() );
-        BOX2D    viewport = aView->GetViewport();
-        BOX2I    clipBox = BOX2ISafe( viewport );
+
+        // Calc the approximate size of the netname (assume square chars)
+        SEG::ecoord nameSize = GetDisplayNetname().size() * GetWidth();
+
+        if( VECTOR2I( end - start ).SquaredEuclideanNorm() < nameSize * nameSize )
+            return HIDE;
+
+        BOX2I clipBox = BOX2ISafe( aView->GetViewport() );
 
         ClipLine( &clipBox, start.x, start.y, end.x, end.y );
 
-        VECTOR2I line = ( end - start );
-
-        if( line.EuclideanNorm() == 0 )
+        if( VECTOR2I( end - start ).SquaredEuclideanNorm() == 0 )
             return HIDE;
 
         // Netnames will be shown only if zoom is appropriate
@@ -1177,8 +1229,17 @@ double PCB_VIA::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
         else if( LSET::BackTechMask().Contains( highContrastLayer ) )
             highContrastLayer = B_Cu;
 
-        if( !GetLayerSet().Contains( highContrastLayer ) )
+        if( !IsCopperLayer( highContrastLayer ) )
             return HIDE;
+
+        if( GetViaType() != VIATYPE::THROUGH )
+        {
+            if( highContrastLayer < Padstack().Drill().start
+                || highContrastLayer > Padstack().Drill().end )
+            {
+                return HIDE;
+            }
+        }
     }
 
     if( IsHoleLayer( aLayer ) )
@@ -1195,6 +1256,9 @@ double PCB_VIA::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
             if( !( visible & LSET::PhysicalLayersMask() ).any() )
                 return HIDE;
         }
+
+        // The hole won't be visible anyway at this scale
+        return (double) pcbIUScale.mmToIU( 0.25 ) / GetDrillValue();
     }
     else if( IsNetnameLayer( aLayer ) )
     {
@@ -1215,8 +1279,10 @@ double PCB_VIA::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
         return m_Width == 0 ? HIDE : ( (double)pcbIUScale.mmToIU( 10 ) / m_Width );
     }
 
-    // Passed all tests; show.
-    return 0.0;
+    if( IsCopperLayer( aLayer ) )
+        return (double) pcbIUScale.mmToIU( 1 ) / m_Width;
+    else
+        return (double) pcbIUScale.mmToIU( 0.6 ) / m_Width;
 }
 
 
@@ -1645,6 +1711,12 @@ static struct TRACK_VIA_DESC
             .Map( VIATYPE::BLIND_BURIED, _HKI( "Blind/buried" ) )
             .Map( VIATYPE::MICROVIA,     _HKI( "Micro" ) );
 
+        ENUM_MAP<TENTING_MODE>::Instance()
+            .Undefined( TENTING_MODE::FROM_RULES )
+            .Map( TENTING_MODE::FROM_RULES, _HKI( "From design rules" ) )
+            .Map( TENTING_MODE::TENTED,     _HKI( "Tented" ) )
+            .Map( TENTING_MODE::NOT_TENTED, _HKI( "Not tented" ) );
+
         ENUM_MAP<PCB_LAYER_ID>& layerEnum = ENUM_MAP<PCB_LAYER_ID>::Instance();
 
         if( layerEnum.Choices().GetCount() == 0 )
@@ -1702,7 +1774,12 @@ static struct TRACK_VIA_DESC
             &PCB_VIA::SetBottomLayer, &PCB_VIA::BottomLayer ), groupVia );
         propMgr.AddProperty( new PROPERTY_ENUM<PCB_VIA, VIATYPE>( _HKI( "Via Type" ),
             &PCB_VIA::SetViaType, &PCB_VIA::GetViaType ), groupVia );
+        propMgr.AddProperty( new PROPERTY_ENUM<PCB_VIA, TENTING_MODE>( _HKI( "Front tenting" ),
+            &PCB_VIA::SetFrontTentingMode, &PCB_VIA::GetFrontTentingMode ), groupVia );
+        propMgr.AddProperty( new PROPERTY_ENUM<PCB_VIA, TENTING_MODE>( _HKI( "Back tenting" ),
+            &PCB_VIA::SetBackTentingMode, &PCB_VIA::GetBackTentingMode ), groupVia );
     }
 } _TRACK_VIA_DESC;
 
 ENUM_TO_WXANY( VIATYPE );
+ENUM_TO_WXANY( TENTING_MODE );

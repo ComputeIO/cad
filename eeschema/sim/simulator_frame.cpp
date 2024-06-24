@@ -160,7 +160,7 @@ SIMULATOR_FRAME::SIMULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_reporter = new SIM_THREAD_REPORTER( this );
     m_simulator->SetReporter( m_reporter );
 
-    m_circuitModel = std::make_shared<SPICE_CIRCUIT_MODEL>( &m_schematicFrame->Schematic(), this );
+    m_circuitModel = std::make_shared<SPICE_CIRCUIT_MODEL>( &m_schematicFrame->Schematic() );
 
     setupTools();
     setupUIConditions();
@@ -344,7 +344,7 @@ void SIMULATOR_FRAME::UpdateTitle()
     if( unsaved )
         title += wxS( " " ) + _( "[Unsaved]" );
 
-    title += wxT( " \u2014 " ) + _( "Spice Simulator" );
+    title += wxT( " \u2014 " ) + _( "SPICE Simulator" );
 
     SetTitle( title );
 }

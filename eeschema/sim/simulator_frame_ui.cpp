@@ -884,10 +884,11 @@ void SIMULATOR_FRAME_UI::rebuildSignalsList()
     if( ( options & NETLIST_EXPORTER_SPICE::OPTION_SAVE_ALL_VOLTAGES )
             && ( simType == ST_TRAN || simType == ST_DC || simType == ST_AC || simType == ST_FFT) )
     {
-        for( const std::string& net : circuitModel()->GetNets() )
+        for( const wxString& net : circuitModel()->GetNets() )
         {
             // netnames are escaped (can contain "{slash}" for '/') Unscape them:
             wxString netname = UnescapeString( net );
+            NETLIST_EXPORTER_SPICE::ConvertToSpiceMarkup( &netname );
 
             if( netname == "GND" || netname == "0" || netname.StartsWith( unconnected ) )
                 continue;
@@ -1425,7 +1426,7 @@ void SIMULATOR_FRAME_UI::AddTuner( const SCH_SHEET_PATH& aSheetPath, SCH_SYMBOL*
             return;
     }
 
-    const SPICE_ITEM* item = GetExporter()->FindItem( std::string( ref.ToUTF8() ) );
+    const SPICE_ITEM* item = GetExporter()->FindItem( ref );
 
     // Do nothing if the symbol is not tunable.
     if( !item || !item->model->GetTunerParam() )
@@ -1874,7 +1875,7 @@ void SIMULATOR_FRAME_UI::applyTuners()
             continue;
         }
 
-        const SPICE_ITEM* item = GetExporter()->FindItem( tuner->GetSymbolRef().ToStdString() );
+        const SPICE_ITEM* item = GetExporter()->FindItem( tuner->GetSymbolRef() );
 
         if( !item || !item->model->GetTunerParam() )
         {
@@ -2170,10 +2171,20 @@ bool SIMULATOR_FRAME_UI::SaveWorkbook( const wxString& aPath )
             auto findSignalName =
                     [&]( const wxString& aVectorName ) -> wxString
                     {
+                        wxString vectorName;
+                        wxString suffix;
+
+                        if( aVectorName.EndsWith( _( " (phase)" ) ) )
+                            suffix = _( " (phase)" );
+                        else if( aVectorName.EndsWith( _( " (gain)" ) ) )
+                            suffix = _( " (gain)" );
+
+                        vectorName = aVectorName.Left( aVectorName.Length() - suffix.Length() );
+
                         for( const auto& [ id, signal ] : m_userDefinedSignals )
                         {
-                            if( aVectorName == vectorNameFromSignalId( id ) )
-                                return signal;
+                            if( vectorName == vectorNameFromSignalId( id ) )
+                                return signal + suffix;
                         }
 
                         return aVectorName;
@@ -2183,7 +2194,7 @@ bool SIMULATOR_FRAME_UI::SaveWorkbook( const wxString& aPath )
             {
                 nlohmann::json trace_js = nlohmann::json(
                             { { "trace_type", (int) trace->GetType() },
-                              { "signal",     findSignalName( trace->GetName() ) },
+                              { "signal",     findSignalName( trace->GetDisplayName() ) },
                               { "color",      COLOR4D( trace->GetTraceColour() ).ToCSSString() } } );
 
                 if( CURSOR* cursor = trace->GetCursor( 1 ) )
@@ -2488,23 +2499,43 @@ void SIMULATOR_FRAME_UI::updatePlotCursors()
     auto getUnitsY =
             [&]( TRACE* aTrace ) -> wxString
             {
-                if( ( aTrace->GetType() & SPT_AC_PHASE ) || ( aTrace->GetType() & SPT_CURRENT ) )
-                    return plotTab->GetUnitsY2();
-                else if( aTrace->GetType() & SPT_POWER )
-                    return plotTab->GetUnitsY3();
+                if( plotTab->GetSimType() == ST_AC )
+                {
+                    if( aTrace->GetType() & SPT_AC_PHASE )
+                        return plotTab->GetUnitsY2();
+                    else
+                        return plotTab->GetUnitsY1();
+                }
                 else
-                    return plotTab->GetUnitsY1();
+                {
+                    if( aTrace->GetType() & SPT_POWER )
+                        return plotTab->GetUnitsY3();
+                    else if( aTrace->GetType() & SPT_CURRENT )
+                        return plotTab->GetUnitsY2();
+                    else
+                        return plotTab->GetUnitsY1();
+                }
             };
 
     auto getNameY =
             [&]( TRACE* aTrace ) -> wxString
             {
-                if( ( aTrace->GetType() & SPT_AC_PHASE ) || ( aTrace->GetType() & SPT_CURRENT ) )
-                    return plotTab->GetLabelY2();
-                else if( aTrace->GetType() & SPT_POWER )
-                    return plotTab->GetLabelY3();
+                if( plotTab->GetSimType() == ST_AC )
+                {
+                    if( aTrace->GetType() & SPT_AC_PHASE )
+                        return plotTab->GetLabelY2();
+                    else
+                        return plotTab->GetLabelY1();
+                }
                 else
-                    return plotTab->GetLabelY1();
+                {
+                    if( aTrace->GetType() & SPT_POWER )
+                        return plotTab->GetLabelY3();
+                    else if( aTrace->GetType() & SPT_CURRENT )
+                        return plotTab->GetLabelY2();
+                    else
+                        return plotTab->GetLabelY1();
+                }
             };
 
     auto formatValue =
@@ -2670,7 +2701,10 @@ void SIMULATOR_FRAME_UI::OnSimRefresh( bool aFinal )
     wxString msg;
 
     if( aFinal )
+    {
         applyUserDefinedSignals();
+        updateSignalsGrid();
+    }
 
     // If there are any signals plotted, update them
     if( SIM_TAB::IsPlottable( simType ) )

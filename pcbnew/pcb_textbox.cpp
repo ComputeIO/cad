@@ -244,12 +244,18 @@ std::vector<VECTOR2I> PCB_TEXTBOX::GetAnchorAndOppositeCorner() const
 
 VECTOR2I PCB_TEXTBOX::GetDrawPos() const
 {
+    return GetDrawPos( false );
+}
+
+
+VECTOR2I PCB_TEXTBOX::GetDrawPos( bool aIsFlipped ) const
+{
     std::vector<VECTOR2I> corners = GetAnchorAndOppositeCorner();
     GR_TEXT_H_ALIGN_T     effectiveAlignment = GetHorizJustify();
     VECTOR2I              textAnchor;
     VECTOR2I              offset;
 
-    if( IsMirrored() )
+    if( IsMirrored() != aIsFlipped )
     {
         switch( GetHorizJustify() )
         {
@@ -699,8 +705,11 @@ static struct PCB_TEXTBOX_DESC
         propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "Start Y" ) );
         propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "End X" ) );
         propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "End Y" ) );
+        propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "Width" ) );
+        propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "Height" ) );
         propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "Line Width" ) );
         propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "Line Style" ) );
+        propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_SHAPE ), _HKI( "Filled" ) );
         propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_TEXT ), _HKI( "Visible" ) );
         propMgr.Mask( TYPE_HASH( PCB_TEXTBOX ), TYPE_HASH( EDA_TEXT ), _HKI( "Color" ) );
 

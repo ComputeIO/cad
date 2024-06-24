@@ -545,7 +545,7 @@ void SIM_PLOT_TAB::updateAxes( int aNewTraceType )
                 m_axis_x->SetNameAlign( mpALIGN_BOTTOM );
                 m_plotWin->AddLayer( m_axis_x );
 
-                m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dBV" ), mpALIGN_LEFT );
+                m_axis_y1 = new LIN_SCALE<mpScaleY>( wxEmptyString, wxT( "dB" ), mpALIGN_LEFT );
                 m_axis_y1->SetNameAlign( mpALIGN_LEFT );
                 m_plotWin->AddLayer( m_axis_y1 );
 
@@ -817,11 +817,18 @@ void SIM_PLOT_TAB::OnLanguageChanged()
 void SIM_PLOT_TAB::UpdateTraceStyle( TRACE* trace )
 {
     int        type = trace->GetType();
-    wxPenStyle penStyle = ( ( ( type & SPT_AC_PHASE ) || ( type & SPT_CURRENT ) ) && m_dotted_cp )
-                                  ? wxPENSTYLE_DOT
-                                  : wxPENSTYLE_SOLID;
-    trace->SetPen( wxPen( trace->GetTraceColour(), 2, penStyle ) );
+    wxPenStyle penStyle;
 
+    if( ( type & SPT_AC_GAIN ) > 0 )
+        penStyle = wxPENSTYLE_SOLID;
+    else if( ( type & SPT_AC_PHASE ) > 0 )
+        penStyle = m_dotted_cp ? wxPENSTYLE_DOT : wxPENSTYLE_SOLID;
+    else if( ( type & SPT_CURRENT ) > 0 )
+        penStyle = m_dotted_cp ? wxPENSTYLE_DOT : wxPENSTYLE_SOLID;
+    else
+        penStyle = wxPENSTYLE_SOLID;
+
+    trace->SetPen( wxPen( trace->GetTraceColour(), 2, penStyle ) );
     m_sessionTraceColors[ trace->GetName() ] = trace->GetTraceColour();
 }
 

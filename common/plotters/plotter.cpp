@@ -231,7 +231,6 @@ void PLOTTER::BezierCurve( const VECTOR2I& aStart, const VECTOR2I& aControl1,
                            int aTolerance, int aLineThickness )
 {
     // Generic fallback: Quadratic Bezier curve plotted as a polyline
-    int minSegLen = aLineThickness;  // The segment min length to approximate a bezier curve
 
     std::vector<VECTOR2I> ctrlPoints;
     ctrlPoints.reserve( 4 );
@@ -244,7 +243,7 @@ void PLOTTER::BezierCurve( const VECTOR2I& aStart, const VECTOR2I& aControl1,
     BEZIER_POLY bezier_converter( ctrlPoints );
 
     std::vector<VECTOR2I> approxPoints;
-    bezier_converter.GetPoly( approxPoints, minSegLen );
+    bezier_converter.GetPoly( approxPoints, aTolerance );
 
     SetCurrentLineWidth( aLineThickness );
     MoveTo( aStart );

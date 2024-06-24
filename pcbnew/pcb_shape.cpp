@@ -267,6 +267,7 @@ bool PCB_SHAPE::Deserialize( const google::protobuf::Any &aContainer )
         SetBezierC1( kiapi::common::UnpackVector2( msg.bezier().control1() ) );
         SetBezierC2( kiapi::common::UnpackVector2( msg.bezier().control2() ) );
         SetEnd( kiapi::common::UnpackVector2( msg.bezier().end() ) );
+        RebuildBezierToSegmentsPointsList( ARC_HIGH_DEF );
     }
 
     return true;
@@ -568,7 +569,7 @@ void PCB_SHAPE::Mirror( const VECTOR2I& aCentre, bool aMirrorAroundXAxis )
             std::swap( m_start, m_end );
 
         if( GetShape() == SHAPE_T::BEZIER )
-            RebuildBezierToSegmentsPointsList( GetWidth() );
+            RebuildBezierToSegmentsPointsList( ARC_HIGH_DEF );
 
         break;
 
@@ -699,14 +700,47 @@ void PCB_SHAPE::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_I
 
 wxString PCB_SHAPE::GetItemDescription( UNITS_PROVIDER* aUnitsProvider ) const
 {
-    if( GetNetCode() > 0 )
+    FOOTPRINT* parentFP = nullptr;
+
+    if( EDA_DRAW_FRAME* frame = dynamic_cast<EDA_DRAW_FRAME*>( aUnitsProvider ) )
     {
-        return wxString::Format( _( "%s %s on %s" ), GetFriendlyName(), GetNetnameMsg(),
-                                 GetLayerName() );
+        if( frame->GetName() == PCB_EDIT_FRAME_NAME )
+            parentFP = GetParentFootprint();
+    }
+
+    if( IsOnCopperLayer() )
+    {
+        if( parentFP )
+        {
+            return wxString::Format( _( "%s %s of %s on %s" ),
+                                     GetFriendlyName(),
+                                     GetNetnameMsg(),
+                                     parentFP->GetReference(),
+                                     GetLayerName() );
+        }
+        else
+        {
+            return wxString::Format( _( "%s %s on %s" ),
+                                     GetFriendlyName(),
+                                     GetNetnameMsg(),
+                                     GetLayerName() );
+        }
     }
     else
     {
-        return wxString::Format( _( "%s on %s" ), GetFriendlyName(), GetLayerName() );
+        if( parentFP )
+        {
+            return wxString::Format( _( "%s of %s on %s" ),
+                                     GetFriendlyName(),
+                                     parentFP->GetReference(),
+                                     GetLayerName() );
+        }
+        else
+        {
+            return wxString::Format( _( "%s on %s" ),
+                                     GetFriendlyName(),
+                                     GetLayerName() );
+        }
     }
 }
 
@@ -792,6 +826,17 @@ void PCB_SHAPE::TransformShapeToPolygon( SHAPE_POLY_SET& aBuffer, PCB_LAYER_ID a
 
 
 bool PCB_SHAPE::operator==( const BOARD_ITEM& aOther ) const
+{
+    if( aOther.Type() != Type() )
+        return false;
+
+    const PCB_SHAPE& other = static_cast<const PCB_SHAPE&>( aOther );
+
+    return *this == other;
+}
+
+
+bool PCB_SHAPE::operator==( const PCB_SHAPE& aOther ) const
 {
     if( aOther.Type() != Type() )
         return false;

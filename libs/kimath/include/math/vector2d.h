@@ -87,13 +87,26 @@ public:
     template <typename CastingType>
     VECTOR2( const VECTOR2<CastingType>& aVec )
     {
-        if( std::is_same<T, int>::value )
+        if( std::is_floating_point<T>() )
         {
-            CastingType minI = static_cast<CastingType>( std::numeric_limits<int>::min() );
-            CastingType maxI = static_cast<CastingType>( std::numeric_limits<int>::max() );
+            x = static_cast<T>( aVec.x );
+            y = static_cast<T>( aVec.y );
+        }
+        else if( std::is_floating_point<CastingType>() )
+        {
+            CastingType minI = static_cast<CastingType>( std::numeric_limits<T>::min() );
+            CastingType maxI = static_cast<CastingType>( std::numeric_limits<T>::max() );
 
-            x = static_cast<int>( Clamp( minI, aVec.x, maxI ) );
-            y = static_cast<int>( Clamp( minI, aVec.y, maxI ) );
+            x = static_cast<T>( Clamp( minI, aVec.x, maxI ) );
+            y = static_cast<T>( Clamp( minI, aVec.y, maxI ) );
+        }
+        else if( std::is_integral<T>() && std::is_integral<CastingType>() )
+        {
+            int64_t minI = static_cast<int64_t>( std::numeric_limits<T>::min() );
+            int64_t maxI = static_cast<int64_t>( std::numeric_limits<T>::max() );
+
+            x = static_cast<T>( Clamp( minI, static_cast<int64_t>( aVec.x ), maxI ) );
+            y = static_cast<T>( Clamp( minI, static_cast<int64_t>(aVec.y), maxI ) );
         }
         else
         {
@@ -110,20 +123,32 @@ public:
     }
 
     /// Cast a vector to another specialized subclass. Beware of rounding issues.
-    template <typename CastedType>
-    VECTOR2<CastedType> operator()() const
+    template <typename U>
+    VECTOR2<U> operator()() const
     {
-        if( std::is_same<CastedType, int>::value )
+        if( std::is_floating_point<U>::value )
         {
-            T minI = static_cast<T>( std::numeric_limits<int>::min() );
-            T maxI = static_cast<T>( std::numeric_limits<int>::max() );
+            return VECTOR2<U>( static_cast<U>( x ), static_cast<U>( y ) );
+        }
+        else if( std::is_floating_point<T>() )
+        {
+            T minI = static_cast<T>( std::numeric_limits<U>::min() );
+            T maxI = static_cast<T>( std::numeric_limits<U>::max() );
+            return VECTOR2<U>( static_cast<U>( Clamp( minI, x, maxI ) ),
+                               static_cast<U>( Clamp( minI, y, maxI ) ) );
+        }
+        else if( std::is_integral<T>() && std::is_integral<U>() )
+        {
+            int64_t minI = static_cast<int64_t>( std::numeric_limits<U>::min() );
+            int64_t maxI = static_cast<int64_t>( std::numeric_limits<U>::max() );
 
-            return VECTOR2<int>( static_cast<int>( Clamp( minI, x, maxI ) ),
-                                 static_cast<int>( Clamp( minI, y, maxI ) ) );
+            return VECTOR2<U>(
+                    static_cast<U>( Clamp( minI, static_cast<int64_t>( x ), maxI ) ),
+                    static_cast<U>( Clamp( minI, static_cast<int64_t>( y ), maxI ) ) );
         }
         else
         {
-            return VECTOR2<CastedType>( static_cast<CastedType>( x ), static_cast<CastedType>( y ) );
+            return VECTOR2<U>( static_cast<U>( x ), static_cast<U>( y ) );
         }
     }
 
@@ -400,6 +425,13 @@ const std::string VECTOR2<T>::Format() const
 }
 
 
+template <class T>
+concept FloatingPoint = std::is_floating_point<T>::value;
+
+template <class T>
+concept Integral = std::is_integral<T>::value;
+
+
 template <class T, class U>
 VECTOR2<std::common_type_t<T, U>> operator+( const VECTOR2<T>& aLHS, const VECTOR2<U>& aRHS )
 {
@@ -407,10 +439,24 @@ VECTOR2<std::common_type_t<T, U>> operator+( const VECTOR2<T>& aLHS, const VECTO
 }
 
 
-template <class T, class U>
-VECTOR2<std::common_type_t<T, U>> operator+( const VECTOR2<T>& aLHS, const U& aScalar )
+template <FloatingPoint T, class U>
+VECTOR2<T> operator+( const VECTOR2<T>& aLHS, const U& aScalar )
 {
-    return VECTOR2<std::common_type_t<T, U>>( aLHS.x + aScalar, aLHS.y + aScalar );
+    return VECTOR2<T>( aLHS.x + aScalar, aLHS.y + aScalar );
+}
+
+
+template <Integral T, Integral U>
+VECTOR2<T> operator+( const VECTOR2<T>& aLHS, const U& aScalar )
+{
+    return VECTOR2<T>( aLHS.x + aScalar, aLHS.y + aScalar );
+}
+
+
+template <Integral T, FloatingPoint U>
+VECTOR2<T> operator+( const VECTOR2<T>& aLHS, const U& aScalar )
+{
+    return VECTOR2<T>( KiROUND( aLHS.x + aScalar ), KiROUND( aLHS.y + aScalar ) );
 }
 
 
@@ -421,10 +467,24 @@ VECTOR2<std::common_type_t<T, U>> operator-( const VECTOR2<T>& aLHS, const VECTO
 }
 
 
-template <class T, class U>
-VECTOR2<std::common_type_t<T, U>> operator-( const VECTOR2<T>& aLHS, const U& aScalar )
+template <FloatingPoint T, class U>
+VECTOR2<T> operator-( const VECTOR2<T>& aLHS, U aScalar )
 {
-    return VECTOR2<std::common_type_t<T, U>>( aLHS.x - aScalar, aLHS.y - aScalar );
+    return VECTOR2<T>( aLHS.x - aScalar, aLHS.y - aScalar );
+}
+
+
+template <Integral T, Integral U>
+VECTOR2<T> operator-( const VECTOR2<T>& aLHS, U aScalar )
+{
+    return VECTOR2<T>( aLHS.x - aScalar, aLHS.y - aScalar );
+}
+
+
+template <Integral T, FloatingPoint U>
+VECTOR2<T> operator-( const VECTOR2<T>& aLHS, const U& aScalar )
+{
+    return VECTOR2<T>( KiROUND( aLHS.x - aScalar ), KiROUND( aLHS.y - aScalar ) );
 }
 
 

@@ -106,6 +106,7 @@
 #include <widgets/wx_aui_utils.h>
 #include <kiplatform/app.h>
 #include <core/profile.h>
+#include <math/box2_minmax.h>
 #include <view/wx_view_controls.h>
 #include <footprint_viewer_frame.h>
 #include <footprint_chooser_frame.h>
@@ -398,19 +399,15 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     // to calculate the wrong zoom size.  See PCB_EDIT_FRAME::onSize().
     Bind( wxEVT_SIZE, &PCB_EDIT_FRAME::onSize, this );
 
-    // Redraw netnames (so that they fall within the current viewport) after the viewport
-    // has stopped changing.  Redrawing them without the timer moves them smoothly with scrolling,
-    // making it look like the tracks are being dragged -- which we don't want.
-    m_redrawNetnamesTimer.SetOwner( this );
-    Connect( wxEVT_TIMER, wxTimerEventHandler( PCB_EDIT_FRAME::redrawNetnames ), nullptr, this );
-
     Bind( wxEVT_IDLE,
             [this]( wxIdleEvent& aEvent )
             {
-                if( GetCanvas()->GetView()->GetViewport() != m_lastViewport )
+                BOX2D viewport = GetCanvas()->GetView()->GetViewport();
+
+                if( viewport != m_lastNetnamesViewport )
                 {
-                    m_lastViewport = GetCanvas()->GetView()->GetViewport();
-                    m_redrawNetnamesTimer.StartOnce( 500 );
+                    redrawNetnames();
+                    m_lastNetnamesViewport = viewport;
                 }
 
                 // Do not forget to pass the Idle event to other clients:
@@ -585,43 +582,41 @@ BOARD_ITEM_CONTAINER* PCB_EDIT_FRAME::GetModel() const
 }
 
 
-void PCB_EDIT_FRAME::redrawNetnames( wxTimerEvent& aEvent )
+void PCB_EDIT_FRAME::redrawNetnames()
 {
-    bool needs_refresh = false;
-
-    // Don't stomp on the auto-save timer event.
-    if( aEvent.GetId() == ID_AUTO_SAVE_TIMER )
-    {
-        aEvent.Skip();
-        return;
-    }
-
+    /*
+     * While new items being scrolled into the view will get painted, they will only get
+     * annotated with netname instances currently within the view.  Subsequent panning will not
+     * draw newly-visible netname instances because the item has already been drawn.
+     *
+     * This routine, fired on idle if the viewport has changed, looks for visible items that
+     * might have multiple netname instances and redraws them.  (It does not need to handle pads
+     * and vias because they only ever have a single netname instance drawn on them.)
+     */
     PCBNEW_SETTINGS* cfg = dynamic_cast<PCBNEW_SETTINGS*>( Kiface().KifaceSettings() );
 
     if( !cfg || cfg->m_Display.m_NetNames < 2 )
         return;
 
     KIGFX::VIEW* view = GetCanvas()->GetView();
-    double scale = view->GetScale();
+    BOX2D        viewport = view->GetViewport();
+
+    // Inflate to catch most of the track width
+    BOX2I_MINMAX clipbox( BOX2ISafe( viewport.Inflate( pcbIUScale.mmToIU( 2.0 ) ) ) );
 
     for( PCB_TRACK* track : GetBoard()->Tracks() )
     {
-        double lod = track->ViewGetLOD( GetNetnameLayer( track->GetLayer() ), view );
-
-        if( lod < scale )
+        // Don't need to update vias
+        if( track->Type() == PCB_VIA_T )
             continue;
 
-        if( lod != track->GetCachedLOD() || scale != track->GetCachedScale() )
-        {
-            view->Update( track, KIGFX::REPAINT );
-            needs_refresh = true;
-            track->SetCachedLOD( lod );
-            track->SetCachedScale( scale );
-        }
-    }
+        // Don't update invisible tracks
+        if( !clipbox.Intersects( BOX2I_MINMAX( track->GetStart(), track->GetEnd() ) ) )
+            continue;
 
-    if( needs_refresh )
-        GetCanvas()->Refresh();
+        if( track->ViewGetLOD( GetNetnameLayer( track->GetLayer() ), view ) < view->GetScale() )
+            view->Update( track, KIGFX::REPAINT );
+    }
 }
 
 
@@ -749,41 +744,41 @@ void PCB_EDIT_FRAME::setupUIConditions()
 
 #define ENABLE( x ) ACTION_CONDITIONS().Enable( x )
 #define CHECK( x )  ACTION_CONDITIONS().Check( x )
+// clang-format off
 
-    mgr->SetConditions( ACTIONS::save, ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
-    mgr->SetConditions( ACTIONS::undo, ENABLE( undoCond ) );
-    mgr->SetConditions( ACTIONS::redo, ENABLE( cond.RedoAvailable() ) );
+    mgr->SetConditions( ACTIONS::save,         ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
+    mgr->SetConditions( ACTIONS::undo,         ENABLE( undoCond ) );
+    mgr->SetConditions( ACTIONS::redo,         ENABLE( cond.RedoAvailable() ) );
 
-    mgr->SetConditions( ACTIONS::toggleGrid, CHECK( cond.GridVisible() ) );
+    mgr->SetConditions( ACTIONS::toggleGrid,          CHECK( cond.GridVisible() ) );
     mgr->SetConditions( ACTIONS::toggleGridOverrides, CHECK( cond.GridOverrides() ) );
-    mgr->SetConditions( ACTIONS::toggleCursorStyle, CHECK( cond.FullscreenCursor() ) );
-    mgr->SetConditions( ACTIONS::togglePolarCoords, CHECK( cond.PolarCoordinates() ) );
-    mgr->SetConditions( ACTIONS::millimetersUnits, CHECK( cond.Units( EDA_UNITS::MILLIMETRES ) ) );
-    mgr->SetConditions( ACTIONS::inchesUnits, CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
-    mgr->SetConditions( ACTIONS::milsUnits, CHECK( cond.Units( EDA_UNITS::MILS ) ) );
+    mgr->SetConditions( ACTIONS::toggleCursorStyle,   CHECK( cond.FullscreenCursor() ) );
+    mgr->SetConditions( ACTIONS::togglePolarCoords,   CHECK( cond.PolarCoordinates() ) );
+    mgr->SetConditions( ACTIONS::millimetersUnits,    CHECK( cond.Units( EDA_UNITS::MILLIMETRES ) ) );
+    mgr->SetConditions( ACTIONS::inchesUnits,         CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
+    mgr->SetConditions( ACTIONS::milsUnits,           CHECK( cond.Units( EDA_UNITS::MILS ) ) );
 
-    mgr->SetConditions( ACTIONS::cut, ENABLE( cond.HasItems() ) );
-    mgr->SetConditions( ACTIONS::copy, ENABLE( cond.HasItems() ) );
-    mgr->SetConditions( ACTIONS::paste,
-                        ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
-    mgr->SetConditions( ACTIONS::pasteSpecial,
-                        ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
-    mgr->SetConditions( ACTIONS::selectAll, ENABLE( cond.HasItems() ) );
-    mgr->SetConditions( ACTIONS::unselectAll, ENABLE( cond.HasItems() ) );
-    mgr->SetConditions( ACTIONS::doDelete, ENABLE( cond.HasItems() ) );
-    mgr->SetConditions( ACTIONS::duplicate, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::cut,          ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::copy,         ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::paste,        ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
+    mgr->SetConditions( ACTIONS::pasteSpecial, ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
+    mgr->SetConditions( ACTIONS::selectAll,    ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::unselectAll,  ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::doDelete,     ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::duplicate,    ENABLE( cond.HasItems() ) );
 
-    mgr->SetConditions( PCB_ACTIONS::group, ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( PCB_ACTIONS::ungroup, ENABLE( SELECTION_CONDITIONS::HasTypes(
-                                                      { PCB_GROUP_T, PCB_GENERATOR_T } ) ) );
-    mgr->SetConditions( PCB_ACTIONS::lock, ENABLE( PCB_SELECTION_CONDITIONS::HasUnlockedItems ) );
-    mgr->SetConditions( PCB_ACTIONS::unlock, ENABLE( PCB_SELECTION_CONDITIONS::HasLockedItems ) );
+    static const std::vector<KICAD_T> groupTypes = { PCB_GROUP_T, PCB_GENERATOR_T };
 
-    mgr->SetConditions( PCB_ACTIONS::padDisplayMode, CHECK( !cond.PadFillDisplay() ) );
-    mgr->SetConditions( PCB_ACTIONS::viaDisplayMode, CHECK( !cond.ViaFillDisplay() ) );
+    mgr->SetConditions( PCB_ACTIONS::group,    ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
+    mgr->SetConditions( PCB_ACTIONS::ungroup,  ENABLE( SELECTION_CONDITIONS::HasTypes( groupTypes ) ) );
+    mgr->SetConditions( PCB_ACTIONS::lock,     ENABLE( PCB_SELECTION_CONDITIONS::HasUnlockedItems ) );
+    mgr->SetConditions( PCB_ACTIONS::unlock,   ENABLE( PCB_SELECTION_CONDITIONS::HasLockedItems ) );
+
+    mgr->SetConditions( PCB_ACTIONS::padDisplayMode,   CHECK( !cond.PadFillDisplay() ) );
+    mgr->SetConditions( PCB_ACTIONS::viaDisplayMode,   CHECK( !cond.ViaFillDisplay() ) );
     mgr->SetConditions( PCB_ACTIONS::trackDisplayMode, CHECK( !cond.TrackFillDisplay() ) );
     mgr->SetConditions( PCB_ACTIONS::graphicsOutlines, CHECK( !cond.GraphicsFillDisplay() ) );
-    mgr->SetConditions( PCB_ACTIONS::textOutlines, CHECK( !cond.TextFillDisplay() ) );
+    mgr->SetConditions( PCB_ACTIONS::textOutlines,     CHECK( !cond.TextFillDisplay() ) );
 
     if( SCRIPTING::IsWxAvailable() )
         mgr->SetConditions( PCB_ACTIONS::showPythonConsole, CHECK( cond.ScriptingConsoleVisible() ) );
@@ -950,23 +945,24 @@ void PCB_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( PCB_ACTIONS::highlightNet,          ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
     mgr->SetConditions( PCB_ACTIONS::highlightNetSelection, ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
 
-    mgr->SetConditions( PCB_ACTIONS::selectNet,
-                        ENABLE( SELECTION_CONDITIONS::OnlyTypes( { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T } ) ) );
-    mgr->SetConditions( PCB_ACTIONS::deselectNet,
-                        ENABLE( SELECTION_CONDITIONS::OnlyTypes( { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T } ) ) );
-    mgr->SetConditions( PCB_ACTIONS::selectUnconnected,
-                        ENABLE( SELECTION_CONDITIONS::OnlyTypes( { PCB_FOOTPRINT_T, PCB_PAD_T, PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T } ) ) );
-    mgr->SetConditions( PCB_ACTIONS::selectSameSheet,
-                        ENABLE( SELECTION_CONDITIONS::OnlyTypes( { PCB_FOOTPRINT_T } ) ) );
-    mgr->SetConditions( PCB_ACTIONS::selectOnSchematic,
-                        ENABLE( SELECTION_CONDITIONS::HasTypes( { PCB_PAD_T, PCB_FOOTPRINT_T, PCB_GROUP_T } ) ) );
+    static const std::vector<KICAD_T> trackTypes =      { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T };
+    static const std::vector<KICAD_T> padOwnerTypes =   { PCB_FOOTPRINT_T, PCB_PAD_T };
+    static const std::vector<KICAD_T> footprintTypes =  { PCB_FOOTPRINT_T };
+    static const std::vector<KICAD_T> crossProbeTypes = { PCB_PAD_T, PCB_FOOTPRINT_T, PCB_GROUP_T };
+    static const std::vector<KICAD_T> zoneTypes =       { PCB_ZONE_T };
+
+    mgr->SetConditions( PCB_ACTIONS::selectNet,         ENABLE( SELECTION_CONDITIONS::OnlyTypes( trackTypes ) ) );
+    mgr->SetConditions( PCB_ACTIONS::deselectNet,       ENABLE( SELECTION_CONDITIONS::OnlyTypes( trackTypes ) ) );
+    mgr->SetConditions( PCB_ACTIONS::selectUnconnected, ENABLE( SELECTION_CONDITIONS::OnlyTypes( padOwnerTypes ) ) );
+    mgr->SetConditions( PCB_ACTIONS::selectSameSheet,   ENABLE( SELECTION_CONDITIONS::OnlyTypes( footprintTypes ) ) );
+    mgr->SetConditions( PCB_ACTIONS::selectOnSchematic, ENABLE( SELECTION_CONDITIONS::HasTypes( crossProbeTypes ) ) );
 
 
     SELECTION_CONDITION singleZoneCond = SELECTION_CONDITIONS::Count( 1 )
-                                    && SELECTION_CONDITIONS::OnlyTypes( { PCB_ZONE_T } );
+                                    && SELECTION_CONDITIONS::OnlyTypes( zoneTypes );
 
     SELECTION_CONDITION zoneMergeCond = SELECTION_CONDITIONS::MoreThan( 1 )
-                                    && SELECTION_CONDITIONS::OnlyTypes( { PCB_ZONE_T } );
+                                    && SELECTION_CONDITIONS::OnlyTypes( zoneTypes );
 
     mgr->SetConditions( PCB_ACTIONS::zoneDuplicate,   ENABLE( singleZoneCond ) );
     mgr->SetConditions( PCB_ACTIONS::drawZoneCutout,  ENABLE( singleZoneCond ) );
@@ -982,7 +978,6 @@ void PCB_EDIT_FRAME::setupUIConditions()
     CURRENT_TOOL( ACTIONS::measureTool );
     CURRENT_TOOL( ACTIONS::selectionTool );
     CURRENT_TOOL( PCB_ACTIONS::localRatsnestTool );
-
 
     auto isDRCIdle =
             [this] ( const SELECTION& )
@@ -1033,6 +1028,7 @@ void PCB_EDIT_FRAME::setupUIConditions()
 #undef CURRENT_EDIT_TOOL
 #undef ENABLE
 #undef CHECK
+// clang-format on
 }
 
 

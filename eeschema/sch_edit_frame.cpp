@@ -442,6 +442,11 @@ SCH_EDIT_FRAME::~SCH_EDIT_FRAME()
     if( m_schematic )
         m_schematic->RemoveAllListeners();
 
+    // Delete all items not in draw list before deleting schematic
+    // to avoid dangling pointers stored in these items
+    ClearUndoRedoList();
+    ClearRepeatItemsList();
+
     delete m_schematic;
     m_schematic = nullptr;
 
@@ -1600,14 +1605,14 @@ void SCH_EDIT_FRAME::RefreshOperatingPointDisplay()
 
                 for( SCH_ITEM* item : subgraph->GetItems() )
                 {
-                    if( item->IsType( { SCH_ITEM_LOCATE_WIRE_T } ) )
+                    if( item->Type() == SCH_LINE_T )
                     {
-                        SCH_LINE* wire = static_cast<SCH_LINE*>( item );
+                        SCH_LINE* line = static_cast<SCH_LINE*>( item );
 
-                        if( wire->GetLength() > length )
+                        if( line->IsWire() && line->GetLength() > length )
                         {
-                            longestWire = wire;
-                            length = wire->GetLength();
+                            longestWire = line;
+                            length = line->GetLength();
                         }
                     }
                 }
@@ -1625,7 +1630,7 @@ void SCH_EDIT_FRAME::RefreshOperatingPointDisplay()
 
 void SCH_EDIT_FRAME::AutoRotateItem( SCH_SCREEN* aScreen, SCH_ITEM* aItem )
 {
-    if( aItem->IsType( { SCH_GLOBAL_LABEL_T, SCH_HIER_LABEL_T } ) )
+    if( aItem->Type() == SCH_GLOBAL_LABEL_T || aItem->Type() == SCH_HIER_LABEL_T )
     {
         SCH_LABEL_BASE* label = static_cast<SCH_LABEL_BASE*>( aItem );
 

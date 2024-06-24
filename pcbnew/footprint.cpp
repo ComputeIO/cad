@@ -1243,10 +1243,7 @@ const BOX2I FOOTPRINT::GetBoundingBox() const
 
 const BOX2I FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisibleText ) const
 {
-    std::vector<PCB_TEXT*> texts;
     const BOARD* board = GetBoard();
-    bool         isFPEdit = board && board->IsFootprintHolder();
-    PCB_LAYER_ID footprintSide = GetSide();
 
     if( board )
     {
@@ -1267,8 +1264,14 @@ const BOX2I FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisible
         }
     }
 
+    std::vector<PCB_TEXT*> texts;
+    bool                   isFPEdit = board && board->IsFootprintHolder();
+
     BOX2I bbox( m_pos );
     bbox.Inflate( pcbIUScale.mmToIU( 0.25 ) );   // Give a min size to the bbox
+
+    // Calculate the footprint side
+    PCB_LAYER_ID footprintSide = GetSide();
 
     for( BOARD_ITEM* item : m_drawings )
     {
@@ -2836,6 +2839,12 @@ const SHAPE_POLY_SET& FOOTPRINT::GetCourtyard( PCB_LAYER_ID aLayer ) const
         const_cast<FOOTPRINT*>( this )->BuildCourtyardCaches();
     }
 
+    return GetCachedCourtyard( aLayer );
+}
+
+
+const SHAPE_POLY_SET& FOOTPRINT::GetCachedCourtyard( PCB_LAYER_ID aLayer ) const
+{
     if( IsBackLayer( aLayer ) )
         return m_courtyard_cache_back;
     else

@@ -1190,26 +1190,27 @@ BOARD* PCB_IO_KICAD_SEXPR_PARSER::parseBOARD_unchecked()
 
 void PCB_IO_KICAD_SEXPR_PARSER::resolveGroups( BOARD_ITEM* aParent )
 {
-    auto getItem = [&]( const KIID& aId )
-    {
-        BOARD_ITEM* aItem = nullptr;
+    auto getItem =
+            [&]( const KIID& aId )
+            {
+                BOARD_ITEM* aItem = nullptr;
 
-        if( BOARD* board = dynamic_cast<BOARD*>( aParent ) )
-        {
-            aItem = board->GetItem( aId );
-        }
-        else if( FOOTPRINT* footprint = dynamic_cast<FOOTPRINT*>( aParent ) )
-        {
-            footprint->RunOnChildren(
-                    [&]( BOARD_ITEM* child )
-                    {
-                        if( child->m_Uuid == aId )
-                            aItem = child;
-                    } );
-        }
+                if( BOARD* board = dynamic_cast<BOARD*>( aParent ) )
+                {
+                    aItem = board->GetItem( aId );
+                }
+                else if( FOOTPRINT* footprint = dynamic_cast<FOOTPRINT*>( aParent ) )
+                {
+                    footprint->RunOnChildren(
+                            [&]( BOARD_ITEM* child )
+                            {
+                                if( child->m_Uuid == aId )
+                                    aItem = child;
+                            } );
+                }
 
-        return aItem;
-    };
+                return aItem;
+            };
 
     // Now that we've parsed the other Uuids in the file we can resolve the uuids referred
     // to in the group declarations we saw.
@@ -2316,6 +2317,22 @@ void PCB_IO_KICAD_SEXPR_PARSER::parseSetup()
             NeedRIGHT();
             break;
 
+        case T_tenting:
+        {
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
+            {
+                if( token == T_front )
+                    bds.m_TentViasFront = true;
+                else if( token == T_back )
+                    bds.m_TentViasBack = true;
+                else if( token == T_none )
+                    bds.m_TentViasFront = bds.m_TentViasBack = false;
+                else
+                    Expecting( "front, back, or none" );
+            }
+            break;
+        }
+
         case T_aux_axis_origin:
         {
             int x = parseBoardUnits( "auxiliary origin X" );
@@ -2378,6 +2395,14 @@ void PCB_IO_KICAD_SEXPR_PARSER::parseSetup()
             SyncLineReaderWith( parser );
 
             m_board->SetPlotOptions( plotParams );
+
+            if( plotParams.GetLegacyPlotViaOnMaskLayer().has_value() )
+            {
+                bool tent = !( *plotParams.GetLegacyPlotViaOnMaskLayer() );
+                m_board->GetDesignSettings().m_TentViasFront = tent;
+                m_board->GetDesignSettings().m_TentViasBack = tent;
+            }
+
             break;
         }
 
@@ -2811,6 +2836,7 @@ PCB_SHAPE* PCB_IO_KICAD_SEXPR_PARSER::parsePCB_SHAPE( BOARD_ITEM* aParent )
         shape->SetBezierC1( parseXY());
         shape->SetBezierC2( parseXY());
         shape->SetEnd( parseXY() );
+        shape->RebuildBezierToSegmentsPointsList( ARC_HIGH_DEF );
         NeedRIGHT();
         break;
 
@@ -3056,7 +3082,7 @@ PCB_SHAPE* PCB_IO_KICAD_SEXPR_PARSER::parsePCB_SHAPE( BOARD_ITEM* aParent )
 
     shape->SetStroke( stroke );
 
-    if( FOOTPRINT* parentFP = dynamic_cast<FOOTPRINT*>( aParent ) )
+    if( FOOTPRINT* parentFP = shape->GetParentFootprint() )
     {
         shape->Rotate( { 0, 0 }, parentFP->GetOrientation() );
         shape->Move( parentFP->GetPosition() );
@@ -3543,7 +3569,7 @@ void PCB_IO_KICAD_SEXPR_PARSER::parseTextBoxContent( PCB_TEXTBOX* aTextBox )
         aTextBox->SetMarginBottom( margin );
     }
 
-    if( FOOTPRINT* parentFP = dynamic_cast<FOOTPRINT*>( aTextBox->GetParent() ) )
+    if( FOOTPRINT* parentFP = aTextBox->GetParentFootprint() )
     {
         aTextBox->Rotate( { 0, 0 }, parentFP->GetOrientation() );
         aTextBox->Move( parentFP->GetPosition() );
@@ -3563,12 +3589,6 @@ PCB_TABLE* PCB_IO_KICAD_SEXPR_PARSER::parsePCB_TABLE( BOARD_ITEM* aParent )
 
     for( token = NextTok(); token != T_RIGHT; token = NextTok() )
     {
-        if( token == T_locked )
-        {
-            table->SetLocked( true );
-            token = NextTok();
-        }
-
         if( token != T_LEFT )
             Expecting( T_LEFT );
 
@@ -3578,6 +3598,16 @@ PCB_TABLE* PCB_IO_KICAD_SEXPR_PARSER::parsePCB_TABLE( BOARD_ITEM* aParent )
         {
         case T_column_count:
             table->SetColCount( parseInt( "column count" ) );
+            NeedRIGHT();
+            break;
+
+        case T_locked:
+            table->SetLocked( parseBool() );
+            NeedRIGHT();
+            break;
+
+        case T_angle:
+            table->SetOrientation( EDA_ANGLE( parseDouble( "table angle" ), DEGREES_T ) );
             NeedRIGHT();
             break;
 
@@ -3707,6 +3737,9 @@ PCB_TABLE* PCB_IO_KICAD_SEXPR_PARSER::parsePCB_TABLE( BOARD_ITEM* aParent )
                        "cells" );
         }
     }
+
+    if( FOOTPRINT* parentFP = table->GetParentFootprint() )
+        table->SetOrientation( table->GetOrientation() + parentFP->GetOrientation() );
 
     return table.release();
 }
@@ -5814,6 +5847,28 @@ PCB_VIA* PCB_IO_KICAD_SEXPR_PARSER::parsePCB_VIA()
         case T_teardrops:
             parseTEARDROP_PARAMETERS( &via->GetTeardropParams() );
             break;
+
+        case T_tenting:
+        {
+            bool front = false;
+            bool back = false;
+
+            // If the via has a tenting token, it means this individual via has a tenting override
+            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            {
+                if( token == T_front )
+                    front = true;
+                else if( token == T_back )
+                    back = true;
+                else if( token != T_none )
+                    Expecting( "front, back, or none" );
+            }
+
+            via->Padstack().FrontOuterLayers().has_solder_mask = front;
+            via->Padstack().BackOuterLayers().has_solder_mask = back;
+
+            break;
+        }
 
         case T_tstamp:
         case T_uuid:

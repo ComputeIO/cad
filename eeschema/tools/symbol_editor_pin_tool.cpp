@@ -103,7 +103,9 @@ bool SYMBOL_EDITOR_PIN_TOOL::Init()
                 return editor->IsSymbolEditable() && !editor->IsSymbolAlias();
             };
 
-    auto singlePinCondition = EE_CONDITIONS::Count( 1 ) && EE_CONDITIONS::OnlyTypes( { SCH_PIN_T } );
+    static const std::vector<KICAD_T> pinTypes = { SCH_PIN_T };
+
+    auto singlePinCondition = EE_CONDITIONS::Count( 1 ) && EE_CONDITIONS::OnlyTypes( pinTypes );
 
     CONDITIONAL_MENU& selToolMenu = m_selectionTool->GetToolMenu().GetMenu();
 
@@ -407,6 +409,11 @@ int SYMBOL_EDITOR_PIN_TOOL::PushPinProperties( const TOOL_EVENT& aEvent )
 // Create a new pin based on the previous pin with an incremented pin number.
 SCH_PIN* SYMBOL_EDITOR_PIN_TOOL::RepeatPin( const SCH_PIN* aSourcePin )
 {
+    SCH_COMMIT  commit( m_frame );
+    LIB_SYMBOL* symbol = m_frame->GetCurSymbol();
+
+    commit.Modify( symbol );
+
     SCH_PIN* pin = static_cast<SCH_PIN*>( aSourcePin->Duplicate() );
     VECTOR2I step;
 
@@ -438,7 +445,10 @@ SCH_PIN* SYMBOL_EDITOR_PIN_TOOL::RepeatPin( const SCH_PIN* aSourcePin )
         pin->SetFlags( IS_LINKED );
 
     if( PlacePin( pin ) )
+    {
+        commit.Push( _( "Repeat Pin" ) );
         return pin;
+    }
 
     return nullptr;
 }

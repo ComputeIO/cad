@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 4.0.0-0-g0efcecf)
+// C++ code generated with wxFormBuilder (version 4.2.1-0-g80c4cb6)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -28,6 +28,7 @@ class PCB_LAYER_BOX_SELECTOR;
 #include <wx/choice.h>
 #include <wx/gbsizer.h>
 #include <wx/bmpcbox.h>
+#include <wx/tglbtn.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
@@ -37,7 +38,6 @@ class PCB_LAYER_BOX_SELECTOR;
 #include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
-
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class DIALOG_TRACK_VIA_PROPERTIES_BASE
@@ -102,6 +102,11 @@ class DIALOG_TRACK_VIA_PROPERTIES_BASE : public DIALOG_SHIM
 		PCB_LAYER_BOX_SELECTOR* m_ViaEndLayer;
 		wxStaticText* m_annularRingsLabel;
 		wxChoice* m_annularRingsCtrl;
+		wxStaticText* m_tentingFrontLabel;
+		wxChoice* m_tentingFrontCtrl;
+		wxBitmapToggleButton* m_btnLinkTenting;
+		wxStaticText* m_tentingBackLabel;
+		wxChoice* m_tentingBackCtrl;
 		wxStaticLine* m_staticline2;
 		wxBoxSizer* m_legacyTeardropsWarning;
 		wxStaticBitmap* m_legacyTeardropsIcon;
@@ -137,6 +142,8 @@ class DIALOG_TRACK_VIA_PROPERTIES_BASE : public DIALOG_SHIM
 		virtual void onWidthEdit( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onViaSelect( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onViaEdit( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onFrontTentingChanged( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onTentingLinkToggle( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onTeardropsUpdateUi( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void onCurvedEdgesUpdateUi( wxUpdateUIEvent& event ) { event.Skip(); }
 

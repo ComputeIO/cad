@@ -87,6 +87,9 @@ BOARD::BOARD() :
     // A too large value do not allow safely connecting 2 shapes like very short segments.
     m_outlinesChainingEpsilon = pcbIUScale.mmToIU( DEFAULT_CHAINING_EPSILON_MM );
 
+    m_DRCMaxClearance = 0;
+    m_DRCMaxPhysicalClearance = 0;
+
     // we have not loaded a board yet, assume latest until then.
     m_fileFormatVersionAtLoad = LEGACY_BOARD_FILE_VERSION;
 
@@ -1575,9 +1578,6 @@ BOX2I BOARD::ComputeBoundingBox( bool aBoardEdgesOnly, bool aIncludeHiddenText )
     // Check footprints
     for( FOOTPRINT* footprint : m_footprints )
     {
-        if( !( footprint->GetLayerSet() & visible ).any() )
-            continue;
-
         if( aBoardEdgesOnly )
         {
             for( const BOARD_ITEM* edge : footprint->GraphicalItems() )
@@ -1586,7 +1586,7 @@ BOX2I BOARD::ComputeBoundingBox( bool aBoardEdgesOnly, bool aIncludeHiddenText )
                     bbox.Merge( edge->GetBoundingBox() );
             }
         }
-        else
+        else if( ( footprint->GetLayerSet() & visible ).any() )
         {
             bbox.Merge( footprint->GetBoundingBox( true, aIncludeHiddenText ) );
         }
@@ -2188,9 +2188,12 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const PCB_TRACK& aTrack )
     BOARD_STACKUP&    stackup      = GetDesignSettings().GetStackupDescriptor();
     bool              useHeight    = GetDesignSettings().m_UseHeightForLengthCalcs;
 
-    for( BOARD_CONNECTED_ITEM* item : connectivity->GetConnectedItems(
-            static_cast<const BOARD_CONNECTED_ITEM*>( &aTrack ),
-            { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T } ) )
+    static const std::vector<KICAD_T> baseConnectedTypes = { PCB_TRACE_T,
+                                                             PCB_ARC_T,
+                                                             PCB_VIA_T,
+                                                             PCB_PAD_T };
+
+    for( BOARD_CONNECTED_ITEM* item : connectivity->GetConnectedItems( &aTrack, baseConnectedTypes ) )
     {
         count++;
 

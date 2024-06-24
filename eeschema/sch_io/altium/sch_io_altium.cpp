@@ -133,18 +133,26 @@ static void SetSchShapeFillAndColor( const ASCH_FILL_INTERFACE& elem, SCH_SHAPE*
         shape->SetFillMode( FILL_T::FILLED_WITH_COLOR );
         shape->SetFillColor( GetColorFromInt( elem.AreaColor ) );
     }
+
+    // Fixup small circles that had their widths set to 0
+    if( shape->GetShape() == SHAPE_T::CIRCLE && shape->GetStroke().GetWidth() == 0
+        && shape->GetRadius() <= schIUScale.MilsToIU( 10 ) )
+    {
+        shape->SetFillMode( FILL_T::FILLED_SHAPE );
+    }
 }
 
 
 static void SetLibShapeLine( const ASCH_BORDER_INTERFACE& elem, SCH_SHAPE* shape,
                              ALTIUM_SCH_RECORD aType )
 {
-    COLOR4D color = GetColorFromInt( elem.Color );
     COLOR4D default_color;
     COLOR4D alt_default_color = COLOR4D( PUREBLUE ); // PUREBLUE is used for many objects, so if
                                                      // it is used, we will assume that it should
                                                      // blend with the others
     STROKE_PARAMS stroke;
+    stroke.SetColor( GetColorFromInt( elem.Color ) );
+    stroke.SetLineStyle( LINE_STYLE::SOLID );
 
     switch( aType )
     {
@@ -160,10 +168,18 @@ static void SetLibShapeLine( const ASCH_BORDER_INTERFACE& elem, SCH_SHAPE* shape
     default:                                 default_color = COLOR4D( PUREBLUE );       break;
     }
 
-    if( color == default_color || color == alt_default_color )
-        color = COLOR4D::UNSPECIFIED;
+    if( stroke.GetColor() == default_color || stroke.GetColor() == alt_default_color )
+        stroke.SetColor( COLOR4D::UNSPECIFIED );
 
-    shape->SetStroke( STROKE_PARAMS( elem.LineWidth, LINE_STYLE::SOLID, color ) );
+    // In Altium libraries, you cannot change the width of the pins.  So, to match pin width,
+    // if the line width of other elements is the default pin width (10 mil), we set the width
+    // to the KiCad default pin width ( represented by 0 )
+    if( elem.LineWidth == 2540 )
+        stroke.SetWidth( 0 );
+    else
+        stroke.SetWidth( elem.LineWidth );
+
+    shape->SetStroke( stroke );
 }
 
 static void SetLibShapeFillAndColor( const ASCH_FILL_INTERFACE& elem, SCH_SHAPE* shape,
@@ -212,6 +228,13 @@ static void SetLibShapeFillAndColor( const ASCH_FILL_INTERFACE& elem, SCH_SHAPE*
         STROKE_PARAMS stroke = shape->GetStroke();
         stroke.SetWidth( -1 );
         shape->SetStroke( stroke );
+    }
+
+    // Fixup small circles that had their widths set to 0
+    if( shape->GetShape() == SHAPE_T::CIRCLE && shape->GetStroke().GetWidth() == 0
+        && shape->GetRadius() <= schIUScale.MilsToIU( 10 ) )
+    {
+        shape->SetFillMode( FILL_T::FILLED_SHAPE );
     }
 }
 
@@ -280,6 +303,47 @@ bool SCH_IO_ALTIUM::CanReadLibrary( const wxString& aFileName ) const
         return false;
 
     return checkFileHeader( aFileName );
+}
+
+
+void SCH_IO_ALTIUM::fixupSymbolPinNameNumbers( SYMBOL* aSymbol )
+{
+    std::vector<SCH_PIN*> pins;
+
+    if( LIB_SYMBOL* lib_sym = dyn_cast<LIB_SYMBOL*>( aSymbol ) )
+        pins = lib_sym->GetAllLibPins();
+
+    if( SCH_SYMBOL* sch_sym = dyn_cast<SCH_SYMBOL*>( aSymbol ) )
+        pins = sch_sym->GetPins();
+
+
+    bool names_visible = false;
+    bool numbers_visible = false;
+
+    for( SCH_PIN* pin : pins )
+    {
+        if( pin->GetNameTextSize() > 0 && !pin->GetName().empty() )
+            names_visible = true;
+
+        if( pin->GetNumberTextSize() > 0 && !pin->GetNumber().empty() )
+            numbers_visible = true;
+    }
+
+    if( !names_visible )
+    {
+        for( SCH_PIN* pin : pins )
+            pin->SetNameTextSize( schIUScale.MilsToIU( DEFAULT_PINNAME_SIZE ) );
+
+        aSymbol->SetShowPinNames( false );
+    }
+
+    if( !numbers_visible )
+    {
+        for( SCH_PIN* pin : pins )
+            pin->SetNumberTextSize( schIUScale.MilsToIU( DEFAULT_PINNUM_SIZE ) );
+
+        aSymbol->SetShowPinNumbers( false );
+    }
 }
 
 
@@ -703,6 +767,9 @@ void SCH_IO_ALTIUM::ParseFileHeader( const ALTIUM_COMPOUND_FILE& aAltiumSchFile 
         if( libSymbolIt == m_libSymbols.end() )
             THROW_IO_ERROR( "every symbol should have a symbol attached" );
 
+        fixupSymbolPinNameNumbers( symbol.second );
+        fixupSymbolPinNameNumbers( libSymbolIt->second );
+
         m_pi->SaveSymbol( getLibFileName().GetFullPath(),
                           new LIB_SYMBOL( *( libSymbolIt->second ) ), m_properties.get() );
 
@@ -809,6 +876,9 @@ void SCH_IO_ALTIUM::ParseASCIISchematic( const wxString& aFileName )
 
         if( libSymbolIt == m_libSymbols.end() )
             THROW_IO_ERROR( "every symbol should have a symbol attached" );
+
+        fixupSymbolPinNameNumbers( symbol.second );
+        fixupSymbolPinNameNumbers( libSymbolIt->second );
 
         m_pi->SaveSymbol( getLibFileName().GetFullPath(),
                           new LIB_SYMBOL( *( libSymbolIt->second ) ), m_properties.get() );
@@ -1877,6 +1947,7 @@ void SCH_IO_ALTIUM::ParseBezier( const std::map<wxString, wxString>& aProperties
                 }
 
                 bezier->SetStroke( STROKE_PARAMS( elem.LineWidth, LINE_STYLE::SOLID ) );
+                bezier->RebuildBezierToSegmentsPointsList( bezier->GetWidth() / 2 );
             }
         }
     }
@@ -2252,6 +2323,13 @@ void SCH_IO_ALTIUM::ParseEllipticalArc( const std::map<wxString, wxString>& aPro
 {
     ASCH_ARC elem( aProperties );
 
+    if( elem.m_Radius == elem.m_SecondaryRadius && elem.m_StartAngle == 0
+        && ( elem.m_EndAngle == 0 || elem.m_EndAngle == 360 ) )
+    {
+        ParseCircle( aProperties, aSymbol );
+        return;
+    }
+
     if( aSymbol.empty() && ShouldPutItemOnSheet( elem.ownerindex ) )
     {
         SCH_SCREEN* currentScreen = getCurrentScreen();
@@ -2273,7 +2351,7 @@ void SCH_IO_ALTIUM::ParseEllipticalArc( const std::map<wxString, wxString>& aPro
             schbezier->SetBezierC2( bezier.C2 );
             schbezier->SetEnd( bezier.End );
             schbezier->SetStroke( STROKE_PARAMS( elem.LineWidth, LINE_STYLE::SOLID ) );
-            schbezier->RebuildBezierToSegmentsPointsList( elem.LineWidth );
+            schbezier->RebuildBezierToSegmentsPointsList( elem.LineWidth / 2 );
 
             currentScreen->Append( schbezier );
         }
@@ -2336,7 +2414,7 @@ void SCH_IO_ALTIUM::ParseEllipticalArc( const std::map<wxString, wxString>& aPro
             }
 
             SetLibShapeLine( elem, schbezier, ALTIUM_SCH_RECORD::ELLIPTICAL_ARC );
-            schbezier->RebuildBezierToSegmentsPointsList( elem.LineWidth );
+            schbezier->RebuildBezierToSegmentsPointsList( elem.LineWidth / 2 );
         }
     }
 }
@@ -3278,8 +3356,8 @@ void SCH_IO_ALTIUM::ParsePowerPort( const std::map<wxString, wxString>& aPropert
     {
         libSymbol = powerSymbolIt->second; // cache hit
     }
-    else if( LIB_SYMBOL* alreadyLoaded = m_pi->LoadSymbol( getLibFileName().GetFullPath(),
-                                                           elem.text, m_properties.get() ) )
+    else if( LIB_SYMBOL* alreadyLoaded = m_pi->LoadSymbol( getLibFileName().GetFullPath(), symName,
+                                                           m_properties.get() ) )
     {
         libSymbol = alreadyLoaded;
     }
@@ -4087,6 +4165,12 @@ void SCH_IO_ALTIUM::ParseLibParameter( const std::map<wxString, wxString>& aProp
             int size = aFontSizes[elem.fontId - 1];
             field->SetTextSize( { size, size } );
         }
+        else
+        {
+            int size = schIUScale.MilsToIU( DEFAULT_TEXT_SIZE );
+            field->SetTextSize( { size, size } );
+        }
+
     }
 }
 
@@ -4198,15 +4282,54 @@ std::map<wxString,LIB_SYMBOL*> SCH_IO_ALTIUM::ParseLibFile( const ALTIUM_COMPOUN
 {
     std::map<wxString,LIB_SYMBOL*> ret;
     std::vector<int> fontSizes;
+    struct SYMBOL_PIN_FRAC
+    {
+        int x_frac;
+        int y_frac;
+        int len_frac;
+    };
 
     ParseLibHeader( aAltiumLibFile, fontSizes );
 
-    std::map<wxString, const CFB::COMPOUND_FILE_ENTRY*> syms = aAltiumLibFile.GetLibSymbols( nullptr );
+    std::map<wxString, ALTIUM_SYMBOL_DATA> syms = aAltiumLibFile.GetLibSymbols( nullptr );
 
     for( auto& [name, entry] : syms )
     {
-        ALTIUM_BINARY_PARSER reader( aAltiumLibFile, entry );
+
+        std::map<int, SYMBOL_PIN_FRAC> pinFracs;
+
+        if( entry.m_pinsFrac )
+        {
+            auto parse_binary_pin_frac =
+                    [&]( const std::string& binaryData ) -> std::map<wxString, wxString>
+            {
+                std::map<wxString, wxString> result;
+                ALTIUM_COMPRESSED_READER     cmpreader( binaryData );
+
+                std::pair<int, std::string*> pinFracData = cmpreader.ReadCompressedString();
+
+                ALTIUM_BINARY_READER binreader( *pinFracData.second );
+                SYMBOL_PIN_FRAC      pinFrac;
+
+                pinFrac.x_frac = binreader.ReadInt32();
+                pinFrac.y_frac = binreader.ReadInt32();
+                pinFrac.len_frac = binreader.ReadInt32();
+                pinFracs.insert( { pinFracData.first, pinFrac } );
+
+                return result;
+            };
+
+            ALTIUM_BINARY_PARSER       reader( aAltiumLibFile, entry.m_pinsFrac );
+
+            while( reader.GetRemainingBytes() > 0 )
+            {
+                reader.ReadProperties( parse_binary_pin_frac );
+            }
+        }
+
+        ALTIUM_BINARY_PARSER reader( aAltiumLibFile, entry.m_symbol );
         std::vector<LIB_SYMBOL*> symbols;
+        int pin_index = 0;
 
         if( reader.GetRemainingBytes() <= 0 )
         {
@@ -4224,10 +4347,9 @@ std::map<wxString,LIB_SYMBOL*> SCH_IO_ALTIUM::ParseLibFile( const ALTIUM_COMPOUN
             symbols = ParseLibComponent( properties );
         }
 
-        auto handleBinaryDataLambda =
-                []( const std::string& binaryData ) -> std::map<wxString, wxString>
+        auto handleBinaryPinLambda =
+                [&]( const std::string& binaryData ) -> std::map<wxString, wxString>
                 {
-
                     std::map<wxString, wxString> result;
 
                     ALTIUM_BINARY_READER binreader( binaryData );
@@ -4245,7 +4367,7 @@ std::map<wxString,LIB_SYMBOL*> SCH_IO_ALTIUM::ParseLibFile( const ALTIUM_COMPOUN
                     result["SYMBOL_OUTEREDGE"] = wxString::Format( "%d",  binreader.ReadByte() );
                     result["SYMBOL_INNER"] = wxString::Format( "%d",  binreader.ReadByte() );
                     result["SYMBOL_OUTER"] = wxString::Format( "%d",  binreader.ReadByte() );
-                    result["TEXT"] = binreader.ReadPascalString();
+                    result["TEXT"] = binreader.ReadShortPascalString();
                     binreader.ReadByte(); // unknown
                     result["ELECTRICAL"] = wxString::Format( "%d",  binreader.ReadByte() );
                     result["PINCONGLOMERATE"] = wxString::Format( "%d",  binreader.ReadByte() );
@@ -4253,12 +4375,19 @@ std::map<wxString,LIB_SYMBOL*> SCH_IO_ALTIUM::ParseLibFile( const ALTIUM_COMPOUN
                     result["LOCATION.X"] = wxString::Format( "%d",  binreader.ReadInt16() );
                     result["LOCATION.Y"] = wxString::Format( "%d",  binreader.ReadInt16() );
                     result["COLOR"] = wxString::Format( "%d",  binreader.ReadInt32() );
-                    result["NAME"] = binreader.ReadPascalString();
-                    result["DESIGNATOR"] = binreader.ReadPascalString();
-                    result["SWAPIDGROUP"] = binreader.ReadPascalString();
+                    result["NAME"] = binreader.ReadShortPascalString();
+                    result["DESIGNATOR"] = binreader.ReadShortPascalString();
+                    result["SWAPIDGROUP"] = binreader.ReadShortPascalString();
 
 
-                    std::string partSeq = binreader.ReadPascalString(); // This is 'part|&|seq'
+                    if( auto it = pinFracs.find( pin_index ); it != pinFracs.end() )
+                    {
+                        result["LOCATION.X_FRAC"] = wxString::Format( "%d", it->second.x_frac );
+                        result["LOCATION.Y_FRAC"] = wxString::Format( "%d", it->second.y_frac );
+                        result["PINLENGTH_FRAC"] = wxString::Format( "%d", it->second.len_frac );
+                    }
+
+                    std::string partSeq = binreader.ReadShortPascalString(); // This is 'part|&|seq'
                     std::vector<std::string> partSeqSplit = split( partSeq, "|" );
 
                     if( partSeqSplit.size() == 3 )
@@ -4272,7 +4401,7 @@ std::map<wxString,LIB_SYMBOL*> SCH_IO_ALTIUM::ParseLibFile( const ALTIUM_COMPOUN
 
         while( reader.GetRemainingBytes() > 0 )
         {
-            std::map<wxString, wxString> properties = reader.ReadProperties( handleBinaryDataLambda );
+            std::map<wxString, wxString> properties = reader.ReadProperties( handleBinaryPinLambda );
 
             if( properties.empty() )
                 continue;
@@ -4282,7 +4411,12 @@ std::map<wxString,LIB_SYMBOL*> SCH_IO_ALTIUM::ParseLibFile( const ALTIUM_COMPOUN
 
             switch( record )
             {
-            case ALTIUM_SCH_RECORD::PIN: ParsePin( properties, symbols ); break;
+            case ALTIUM_SCH_RECORD::PIN:
+            {
+                ParsePin( properties, symbols );
+                pin_index++;
+                break;
+            }
 
             case ALTIUM_SCH_RECORD::LABEL: ParseLabel( properties, symbols, fontSizes ); break;
 
@@ -4347,6 +4481,7 @@ std::map<wxString,LIB_SYMBOL*> SCH_IO_ALTIUM::ParseLibFile( const ALTIUM_COMPOUN
         {
             LIB_SYMBOL* symbol = symbols[ii];
             symbol->FixupDrawItems();
+            fixupSymbolPinNameNumbers( symbol );
 
             SCH_FIELD& valField = symbol->GetValueField();
 
