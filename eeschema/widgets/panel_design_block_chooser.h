@@ -91,6 +91,9 @@ protected:
      */
     void onDesignBlockChosen( wxCommandEvent& aEvent );
 
+    void addDesignBlockToHistory( const LIB_ID& aLibId );
+    void rebuildHistoryNode();
+
 public:
     static std::mutex g_Mutex;
 

@@ -182,6 +182,16 @@ public:
                        const std::vector<LIB_TREE_ITEM*>& aItemList,
                        bool pinned, bool presorted );
 
+    /**
+     * Add the given list of symbols by alias. To be called in the setup
+     * phase.
+     *
+     * @param aNodeName    the parent node the symbols will appear under
+     * @param aDesc        the description field of the parent node
+     * @param aItemList    list of symbols
+     */
+    void DoRemoveLibrary( const wxString& aNodeName );
+
     std::vector<wxString> GetAvailableColumns() const { return m_availableColumns; }
 
     std::vector<wxString> GetShownColumns() const { return m_shownColumns; }

@@ -307,39 +307,12 @@ void PANEL_DESIGN_BLOCK_CHOOSER::RefreshLibs( bool aProgress )
         GDesignBlockList.ReadDesignBlockFiles( fpTable, nullptr, nullptr );
     }
 
-    // Build the history list
-    std::vector<DESIGN_BLOCK>   history_list_storage;
-    std::vector<LIB_TREE_ITEM*> history_list;
-
-    // Lambda to encapsulate the common logic
-    auto processList =
-            [&]( const std::vector<LIB_ID>& inputList,
-                 std::vector<DESIGN_BLOCK>&          storageList,
-                 std::vector<LIB_TREE_ITEM*>&      resultList )
-            {
-                storageList.reserve( inputList.size() );
-
-                for( const LIB_ID& i : inputList )
-                {
-                    DESIGN_BLOCK* design_block = m_frame->GetDesignBlock( i );
-
-                    if( design_block )
-                    {
-                        storageList.emplace_back( *design_block );
-                    }
-                }
-            };
-
-    processList( m_historyList, history_list_storage, history_list );
-
-    adapter->DoAddLibrary( wxT( "-- " ) + _( "Recently Used" ) + wxT( " --" ), wxEmptyString,
-                           history_list, false, true );
+    rebuildHistoryNode();
 
     if( !m_historyList.empty() )
         adapter->SetPreselectNode( m_historyList[0], 0 );
 
     adapter->AddLibraries( m_frame );
-
 
     m_tree->Regenerate( true );
 }
@@ -380,6 +353,7 @@ void PANEL_DESIGN_BLOCK_CHOOSER::onCloseTimer( wxTimerEvent& aEvent )
     else
     {
         m_selectHandler();
+        addDesignBlockToHistory( m_tree->GetSelectedLibId() );
     }
 }
 
@@ -412,4 +386,53 @@ void PANEL_DESIGN_BLOCK_CHOOSER::onDesignBlockChosen( wxCommandEvent& aEvent )
         // See PANEL_DESIGN_BLOCK_CHOOSER::onCloseTimer for the other end of this spaghetti noodle.
         m_dbl_click_timer->StartOnce( PANEL_DESIGN_BLOCK_CHOOSER::DBLCLICK_DELAY );
     }
+}
+
+void PANEL_DESIGN_BLOCK_CHOOSER::addDesignBlockToHistory( const LIB_ID& aLibId )
+{
+    LIB_ID savedId = GetSelectedLibId();
+
+    m_tree->Unselect();
+
+    // Remove duplicates
+    for( int i = (int) m_historyList.size() - 1; i >= 0; --i )
+    {
+        if( m_historyList[i] == aLibId )
+            m_historyList.erase( m_historyList.begin() + i );
+    }
+
+    // Add the new name at the beginning of the history list
+    m_historyList.insert( m_historyList.begin(), aLibId );
+
+    // Remove extra names
+    while( m_historyList.size() >= 8 )
+        m_historyList.pop_back();
+
+    rebuildHistoryNode();
+    m_tree->Regenerate( true );
+
+    SelectLibId( savedId );
+}
+
+
+void PANEL_DESIGN_BLOCK_CHOOSER::rebuildHistoryNode()
+{
+    wxString history = wxT( "-- " ) + _( "Recently Used" ) + wxT( " --" );
+
+    m_adapter->DoRemoveLibrary( history );
+
+    // Build the history list
+    std::vector<LIB_TREE_ITEM*> historyInfos;
+
+    for( const LIB_ID& lib : m_historyList )
+    {
+        LIB_TREE_ITEM* fp_info =
+                GDesignBlockList.GetDesignBlockInfo( lib.GetLibNickname(), lib.GetLibItemName() );
+
+        // this can be null, for example, if the design block has been deleted from a library.
+        if( fp_info != nullptr )
+            historyInfos.push_back( fp_info );
+    }
+
+    m_adapter->DoAddLibrary( history, wxEmptyString, historyInfos, false, true );
 }

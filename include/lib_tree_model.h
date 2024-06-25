@@ -286,6 +286,11 @@ public:
     LIB_TREE_NODE_LIBRARY& AddLib( wxString const& aName, wxString const& aDesc );
 
     /**
+     * Remove a library node, add it to the root, and return it.
+     */
+    void RemoveLib( wxString const& aName );
+
+    /**
      * Clear the tree
      */
     void Clear();

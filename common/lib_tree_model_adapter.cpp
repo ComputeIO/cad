@@ -247,6 +247,12 @@ void LIB_TREE_MODEL_ADAPTER::DoAddLibrary( const wxString& aNodeName, const wxSt
 }
 
 
+void LIB_TREE_MODEL_ADAPTER::DoRemoveLibrary( const wxString& aNodeName )
+{
+    m_tree.RemoveLib( aNodeName );
+}
+
+
 void LIB_TREE_MODEL_ADAPTER::UpdateSearchString( const wxString& aSearch, bool aState )
 {
     {
