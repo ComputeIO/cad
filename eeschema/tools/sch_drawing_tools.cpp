@@ -571,11 +571,6 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
                                                                : KICURSOR::COMPONENT );
             };
 
-    auto cleanup =
-            [&]()
-            {
-            };
-
     auto placeSheetContents =
             [&]()
             {
@@ -758,15 +753,12 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
         if( evt->IsCancelInteractive() || ( designBlock && evt->IsAction( &ACTIONS::undo ) ) )
         {
             m_frame->GetInfoBar()->Dismiss();
-
-            m_frame->PopTool( aEvent );
             break;
         }
         else if( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT ) || isSyntheticClick )
         {
             wxString* tempFileName = new wxString( sheetFileName );
             m_toolMgr->PostAction( EE_ACTIONS::drawSheetCopy, tempFileName );
-            m_frame->PopTool( aEvent );
             break;
         }
         else if( evt->IsClick( BUT_RIGHT ) )
@@ -788,6 +780,7 @@ int SCH_DRAWING_TOOLS::ImportSheet( const TOOL_EVENT& aEvent )
         }
     }
 
+    m_frame->PopTool( aEvent );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
 
     return 0;
@@ -2829,7 +2822,8 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
             {
                 if( !wxFileExists( *filename ) )
                 {
-                    wxMessageBox( _( "File '%s' does not exist." ), *filename );
+                    wxMessageBox( wxString::Format( _( "File '%s' does not exist." ), *filename ) );
+                    m_frame->PopTool( aEvent );
                     break;
                 }
 
@@ -2837,9 +2831,10 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
 
                 if( !m_frame->LoadSheetFromFile( sheet, &m_frame->GetCurrentSheet(), *filename ) )
                 {
-                    wxMessageBox( _( "Could not import sheet from '%s'." ), *filename );
+                    wxMessageBox( wxString::Format( _( "Could not import sheet from '%s'." ), *filename ) );
                     delete sheet;
                     sheet = nullptr;
+                    m_frame->PopTool( aEvent );
                     break;
                 }
 
