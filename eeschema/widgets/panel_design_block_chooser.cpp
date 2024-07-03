@@ -26,6 +26,7 @@
 #include <design_block.h>
 #include <design_block_lib_table.h>
 #include <panel_design_block_chooser.h>
+#include <design_block_preview_widget.h>
 #include <kiface_base.h>
 #include <sch_base_frame.h>
 #include <project_sch.h>
@@ -55,14 +56,12 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
         wxPanel( aParent, wxID_ANY, wxDefaultPosition, wxDefaultSize ),
         m_vsplitter( nullptr ),
         m_tree( nullptr ),
-        m_details( nullptr ),
+        m_preview( nullptr ),
         m_frame( aFrame ),
         m_selectHandler( std::move( aSelectHandler ) ),
         m_historyList( aHistoryList )
 {
-    DESIGN_BLOCK_LIB_TABLE*   libs = m_frame->Prj().DesignBlockLibs();
-    COMMON_SETTINGS::SESSION& session = Pgm().GetCommonSettings()->m_Session;
-    PROJECT_FILE&             project = m_frame->Prj().GetProjectFile();
+    DESIGN_BLOCK_LIB_TABLE* libs = m_frame->Prj().DesignBlockLibs();
 
     // Make sure settings are loaded before we start running multi-threaded design block loaders
     Pgm().GetSettingsManager().GetAppSettings<EESCHEMA_SETTINGS>();
@@ -106,8 +105,9 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
     wxBoxSizer* detailsSizer = new wxBoxSizer( wxVERTICAL );
     detailsPanel->SetSizer( detailsSizer );
 
-    m_details = new HTML_WINDOW( detailsPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize );
-    detailsSizer->Add( m_details, 1, wxEXPAND, 5 );
+    m_preview = new DESIGN_BLOCK_PREVIEW_WIDGET( detailsPanel, false,
+                                                 EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
+    detailsSizer->Add( m_preview, 1, wxEXPAND, 5 );
     detailsPanel->Layout();
     detailsSizer->Fit( detailsPanel );
 
@@ -119,7 +119,7 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
 
 
     m_tree = new LIB_TREE( treePanel, wxT( "design_blocks" ), libs, m_adapter,
-                           LIB_TREE::FLAGS::ALL_WIDGETS, m_details );
+                           LIB_TREE::FLAGS::ALL_WIDGETS, nullptr );
 
     treeSizer->Add( m_tree, 1, wxEXPAND, 5 );
     treePanel->Layout();
@@ -141,16 +141,8 @@ PANEL_DESIGN_BLOCK_CHOOSER::PANEL_DESIGN_BLOCK_CHOOSER( SCH_BASE_FRAME* aFrame, 
           m_dbl_click_timer->GetId() );
     Bind( wxEVT_TIMER, &PANEL_DESIGN_BLOCK_CHOOSER::onOpenLibsTimer, this,
           m_open_libs_timer->GetId() );
-    Bind( EVT_LIBITEM_SELECTED, &PANEL_DESIGN_BLOCK_CHOOSER::onDesignBlockSelected, this );
     Bind( EVT_LIBITEM_CHOSEN, &PANEL_DESIGN_BLOCK_CHOOSER::onDesignBlockChosen, this );
     Bind( wxEVT_CHAR_HOOK, &PANEL_DESIGN_BLOCK_CHOOSER::OnChar, this );
-
-    if( m_details )
-    {
-        m_details->Connect( wxEVT_CHAR_HOOK,
-                            wxKeyEventHandler( PANEL_DESIGN_BLOCK_CHOOSER::OnDetailsCharHook ),
-                            nullptr, this );
-    }
 
     // Open the user's previously opened libraries on timer expiration.
     // This is done on a timer because we need a gross hack to keep GTK from garbling the
@@ -173,14 +165,6 @@ PANEL_DESIGN_BLOCK_CHOOSER::~PANEL_DESIGN_BLOCK_CHOOSER()
     delete m_open_libs_timer;
 
     g_design_blockSearchString = m_tree->GetSearchString();
-
-
-    if( m_details )
-    {
-        m_details->Disconnect( wxEVT_CHAR_HOOK,
-                               wxKeyEventHandler( PANEL_DESIGN_BLOCK_CHOOSER::OnDetailsCharHook ),
-                               nullptr, this );
-    }
 
     if( EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() ) )
     {
@@ -254,28 +238,6 @@ void PANEL_DESIGN_BLOCK_CHOOSER::FinishSetup()
             m_vsplitter->SetSashPosition( panelCfg.sash_pos_v );
 
         m_adapter->SetSortMode( (LIB_TREE_MODEL_ADAPTER::SORT_MODE) panelCfg.sort_mode );
-    }
-}
-
-
-void PANEL_DESIGN_BLOCK_CHOOSER::OnDetailsCharHook( wxKeyEvent& e )
-{
-    if( m_details && e.GetKeyCode() == 'C' && e.ControlDown() && !e.AltDown() && !e.ShiftDown()
-        && !e.MetaDown() )
-    {
-        wxString  txt = m_details->SelectionToText();
-        wxLogNull doNotLog; // disable logging of failed clipboard actions
-
-        if( wxTheClipboard->Open() )
-        {
-            wxTheClipboard->SetData( new wxTextDataObject( txt ) );
-            wxTheClipboard->Flush(); // Allow data to be available after closing KiCad
-            wxTheClipboard->Close();
-        }
-    }
-    else
-    {
-        e.Skip();
     }
 }
 
@@ -362,12 +324,17 @@ void PANEL_DESIGN_BLOCK_CHOOSER::onOpenLibsTimer( wxTimerEvent& aEvent )
 {
     if( EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() ) )
         m_adapter->OpenLibs( cfg->m_LibTree.open_libs );
+
+    // Bind this now se we don't spam the event queue with EVT_LIBITEM_SELECTED events during
+    // the initial load.
+    Bind( EVT_LIBITEM_SELECTED, &PANEL_DESIGN_BLOCK_CHOOSER::onDesignBlockSelected, this );
 }
 
 
 void PANEL_DESIGN_BLOCK_CHOOSER::onDesignBlockSelected( wxCommandEvent& aEvent )
 {
-    LIB_TREE_NODE* node = m_tree->GetCurrentTreeNode();
+    if( GetSelectedLibId().IsValid() )
+        m_preview->DisplayDesignBlock( m_frame->GetDesignBlock( GetSelectedLibId() ) );
 }
 
 

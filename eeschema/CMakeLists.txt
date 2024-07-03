@@ -272,6 +272,7 @@ set( EESCHEMA_SIM_SRCS
 
 set( EESCHEMA_WIDGETS
     widgets/design_block_pane.cpp
+    widgets/design_block_preview_widget.cpp
     widgets/hierarchy_pane.cpp
     widgets/panel_design_block_chooser.cpp
     widgets/panel_sch_selection_filter_base.cpp

@@ -33,6 +33,7 @@ class wxTimer;
 class wxSplitterWindow;
 
 class SCH_BASE_FRAME;
+class DESIGN_BLOCK_PREVIEW_WIDGET;
 
 
 class PANEL_DESIGN_BLOCK_CHOOSER : public wxPanel
@@ -108,7 +109,7 @@ protected:
     wxObjectDataPtr<LIB_TREE_MODEL_ADAPTER> m_adapter;
 
     LIB_TREE*    m_tree;
-    HTML_WINDOW* m_details;
+    DESIGN_BLOCK_PREVIEW_WIDGET* m_preview;
 
     SCH_BASE_FRAME*       m_frame;
     std::function<void()> m_selectHandler;

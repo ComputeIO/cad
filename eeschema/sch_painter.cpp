@@ -2140,6 +2140,9 @@ wxString SCH_PAINTER::expandLibItemTextVars( const wxString& aSourceText,
     std::function<bool( wxString* )> symbolResolver =
             [&]( wxString* token ) -> bool
             {
+                if( !m_schematic )
+                    return false;
+
                 return aSymbolContext->ResolveTextVar( &m_schematic->CurrentSheet(), token );
             };
 
@@ -2172,7 +2175,7 @@ void SCH_PAINTER::draw( const SCH_SYMBOL* aSymbol, int aLayer )
         // return;
     }
 
-    int unit = aSymbol->GetUnitSelection( &m_schematic->CurrentSheet() );
+    int unit = m_schematic ? aSymbol->GetUnitSelection( &m_schematic->CurrentSheet() ) : 1;
     int bodyStyle = aSymbol->GetBodyStyle();
 
     // Use dummy symbol if the actual couldn't be found (or couldn't be locked).
@@ -2675,7 +2678,7 @@ void SCH_PAINTER::draw( const SCH_SHEET* aSheet, int aLayer )
 {
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
     bool DNP = aSheet->GetDNP();
-    bool markExclusion = eeconfig()->m_Appearance.mark_sim_exclusions 
+    bool markExclusion = eeconfig()->m_Appearance.mark_sim_exclusions
                                 && aSheet->GetExcludedFromSim();
 
     if( m_schSettings.IsPrinting() && drawingShadows )
