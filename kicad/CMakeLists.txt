@@ -62,6 +62,8 @@ set( KICAD_CLI_SRCS
     cli/command_sym_export_svg.cpp
     cli/command_sym_upgrade.cpp
     cli/command_version.cpp
+    cli/command_pcb_convert.cpp
+    cli/command_sch_convert.cpp
     )
 
 if( WIN32 )

@@ -48,6 +48,7 @@ public:
     int JobExportFpSvg( JOB* aJob );
     int JobExportDrc( JOB* aJob );
     int JobExportIpc2581( JOB* aJob );
+    int JobExportConvert( JOB* aJob );
 
 private:
     void populateGerberPlotOptionsFromJob( PCB_PLOT_PARAMS&       aPlotOpts,
