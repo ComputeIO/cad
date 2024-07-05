@@ -81,7 +81,7 @@ Database parseDatabase(const wxString& aLibraryPath)
 }
 
 
-void dummy_create_in_schematic(SCHEMATIC* aSchematic, SCH_SHEET* aRootSheet)
+void dummyCreateInSchematic( SCHEMATIC* aSchematic, SCH_SHEET* aRootSheet )
 {
     std::unique_ptr<LIB_SYMBOL> ksymbol = std::make_unique<LIB_SYMBOL>( wxEmptyString );
 
@@ -112,11 +112,7 @@ void dummy_create_in_schematic(SCHEMATIC* aSchematic, SCH_SHEET* aRootSheet)
 
     ksymbol->AddDrawItem( pin.release() );
 
-
-
     LIB_SYMBOL* pwrLibSym = ksymbol.release();
-
-
 
     std::unique_ptr<SCH_SYMBOL> schSym = std::make_unique<SCH_SYMBOL>(
             *pwrLibSym, libId, &aSchematic->CurrentSheet(), 0 );
@@ -158,12 +154,13 @@ void SCH_IO_ORCAD::EnumerateSymbolLib( wxArrayString&         aSymbolNameList,
         m_db = parseDatabase( aLibraryPath );
     }
 
-    const auto dir = getDirectoryStreamFromDb<StreamPackagesDirectory>(
-            m_db.value(), DirectoryType::PackagesDirectory );
+    const std::shared_ptr<StreamPackagesDirectory> dir =
+            getDirectoryStreamFromDb<StreamPackagesDirectory>( m_db.value(),
+                                                               DirectoryType::PackagesDirectory );
 
     if( dir )
     {
-        for( const auto& item : dir->items )
+        for( const DirItemType& item : dir->items )
         {
             std::cout << "Enumerate package " << item.name << std::endl;
             aSymbolNameList.Add( wxString{item.name.c_str(), wxConvUTF8} );
@@ -181,10 +178,10 @@ void SCH_IO_ORCAD::EnumerateSymbolLib( std::vector<LIB_SYMBOL*>& aSymbolList,
     wxArrayString aSymbolNameList{};
     EnumerateSymbolLib( aSymbolNameList, aLibraryPath, aProperties );
 
-    for(const auto& name : aSymbolNameList )
+    for( const wxString& name : aSymbolNameList )
     {
         std::cout << "Loading package " << name << std::endl;
-        const auto symbol = LoadSymbol( aLibraryPath, name, aProperties );
+        LIB_SYMBOL* symbol = LoadSymbol( aLibraryPath, name, aProperties );
         aSymbolList.push_back( symbol );
     }
 
@@ -205,7 +202,7 @@ LIB_SYMBOL* SCH_IO_ORCAD::LoadSymbol( const wxString&        aLibraryPath,
 
     std::shared_ptr<StreamPackage> package{};
 
-    for( auto& stream : m_db.value().mStreams )
+    for( std::shared_ptr<Stream>& stream : m_db.value().mStreams )
     {
         if( stream->mCtx.mCfbfStreamLocation.matches_pattern({{"Packages"}, {std::string{aAliasName.mb_str()}}}) )
         {
@@ -213,7 +210,6 @@ LIB_SYMBOL* SCH_IO_ORCAD::LoadSymbol( const wxString&        aLibraryPath,
             break;
         }
     }
-
 
     LIB_SYMBOL* ksymbol = new LIB_SYMBOL( wxEmptyString );
 
@@ -230,30 +226,31 @@ LIB_SYMBOL* SCH_IO_ORCAD::LoadSymbol( const wxString&        aLibraryPath,
             pcbFootprint = wxString{package->package->pcbFootprint.c_str(), wxConvUTF8};
         }
 
-        for( const auto& libraryPart : package->libraryParts )
+        for( const std::unique_ptr<StructLibraryPart>& libraryPart : package->libraryParts )
         {
             if( !libraryPart )
             {
                 continue;
             }
 
-            for( const auto& primitive : libraryPart->primitives )
+            for( const std::unique_ptr<PrimBase>& primitive : libraryPart->primitives )
             {
                 switch( primitive->getObjectType() )
                 {
                     case Primitive::Arc:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimArc*>( primitive.get() );
-                        auto kicadObj = convPrimArc2ARC( orcadObj );
+                        const PrimArc* orcadObj = dynamic_cast<const PrimArc*>( primitive.get() );
+                        SCH_SHAPE*     kicadObj = convPrimArc2ARC( orcadObj );
                         ksymbol->AddDrawItem( kicadObj );
                         break;
                     }
                     case Primitive::Bezier:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimBezier*>( primitive.get() );
-                        auto segments = convPrimBezier2BEZIER( orcadObj );
+                        const PrimBezier* orcadObj =
+                                dynamic_cast<const PrimBezier*>( primitive.get() );
+                        std::vector<SCH_SHAPE*> segments = convPrimBezier2BEZIER( orcadObj );
 
-                        for( auto& segment : segments )
+                        for( SCH_SHAPE* segment : segments )
                         {
                             ksymbol->AddDrawItem( segment );
                         }
@@ -262,43 +259,47 @@ LIB_SYMBOL* SCH_IO_ORCAD::LoadSymbol( const wxString&        aLibraryPath,
                     }
                     case Primitive::CommentText:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimCommentText*>( primitive.get() );
-                        auto kicadObj = convPrimCommentText2SCH_TEXT( orcadObj );
+                        const PrimCommentText* orcadObj =
+                                dynamic_cast<const PrimCommentText*>( primitive.get() );
+                        SCH_TEXT* kicadObj = convPrimCommentText2SCH_TEXT( orcadObj );
                         ksymbol->AddDrawItem( kicadObj );
                         break;
                     }
                     case Primitive::Ellipse:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimEllipse*>( primitive.get() );
-                        auto kicadObj = convPrimEllipse2POLY( orcadObj );
+                        const PrimEllipse* orcadObj =
+                                dynamic_cast<const PrimEllipse*>( primitive.get() );
+                        SCH_SHAPE* kicadObj = convPrimEllipse2POLY( orcadObj );
                         ksymbol->AddDrawItem( kicadObj );
                         break;
                     }
                     case Primitive::Line:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimLine*>( primitive.get() );
-                        auto kicadObj = convPrimLine2POLY( orcadObj );
+                        const PrimLine* orcadObj = dynamic_cast<const PrimLine*>( primitive.get() );
+                        SCH_SHAPE*      kicadObj = convPrimLine2POLY( orcadObj );
                         ksymbol->AddDrawItem( kicadObj );
                         break;
                     }
                     case Primitive::Polygon:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimPolygon*>( primitive.get() );
-                        auto kicadObj = convPrimPolygon2POLY( orcadObj );
+                        const PrimPolygon* orcadObj =
+                                dynamic_cast<const PrimPolygon*>( primitive.get() );
+                        SCH_SHAPE* kicadObj = convPrimPolygon2POLY( orcadObj );
                         ksymbol->AddDrawItem( kicadObj );
                         break;
                     }
                     case Primitive::Polyline:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimPolyline*>( primitive.get() );
-                        auto kicadObj = convPrimPolyline2POLY( orcadObj );
+                        const PrimPolyline* orcadObj =
+                                dynamic_cast<const PrimPolyline*>( primitive.get() );
+                        SCH_SHAPE* kicadObj = convPrimPolyline2POLY( orcadObj );
                         ksymbol->AddDrawItem( kicadObj );
                         break;
                     }
                     case Primitive::Rect:
                     {
-                        const auto orcadObj = dynamic_cast<const PrimRect*>( primitive.get() );
-                        auto kicadObj = convPrimRect2RECTANGLE( orcadObj );
+                        const PrimRect* orcadObj = dynamic_cast<const PrimRect*>( primitive.get() );
+                        SCH_SHAPE*      kicadObj = convPrimRect2RECTANGLE( orcadObj );
                         ksymbol->AddDrawItem( kicadObj );
                         break;
                     }
@@ -310,7 +311,7 @@ LIB_SYMBOL* SCH_IO_ORCAD::LoadSymbol( const wxString&        aLibraryPath,
 
             for( size_t i = 0U; i < libraryPart->symbolPins.size(); ++i )
             {
-                auto pin = StreamPackage2SCH_PIN( package.get(), ksymbol, i );
+                SCH_PIN* pin = StreamPackage2SCH_PIN( package.get(), ksymbol, i );
 
                 if( pin )
                 {
@@ -338,7 +339,8 @@ LIB_SYMBOL* SCH_IO_ORCAD::LoadSymbol( const wxString&        aLibraryPath,
 
         if( package && !package->libraryParts.empty() )
         {
-            const auto& generalProperties = package->libraryParts.at(0)->generalProperties;
+            const StructGeneralProperties& generalProperties =
+                    package->libraryParts.at( 0 )->generalProperties;
 
             pinNameVisible = generalProperties.pinNameVisible;
             pinNumberVisible = generalProperties.pinNumberVisible;
@@ -390,7 +392,7 @@ SCH_SHEET* SCH_IO_ORCAD::LoadSchematicFile( const wxString& aFileName, SCHEMATIC
 
     // @todo
     // LoadSchematic( aSchematic, rootSheet, aFileName );
-    dummy_create_in_schematic(aSchematic, rootSheet);
+    dummyCreateInSchematic( aSchematic, rootSheet );
 
     aSchematic->CurrentSheet().UpdateAllScreenReferences();
 

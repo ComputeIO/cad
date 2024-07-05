@@ -56,8 +56,10 @@ SCH_SHAPE* convPrimRect2RECTANGLE(const PrimRect* aOrcadObj);
 int32_t convDimIU(int32_t aOrcadIU);
 PIN_ORIENTATION getPinOrientation(int32_t aStartX, int32_t aStartY, int32_t aHotptX, int32_t aHotptY);
 bool isCircle(const VECTOR2I& aP1, const VECTOR2I& aP2);
-SCH_SHAPE* createEllipsoide(const VECTOR2I& aP1, const VECTOR2I& aP2, FILL_T aFill = FILL_T::NO_FILL);
-SCH_SHAPE* createEllipsoide(const VECTOR2I& aP1, const VECTOR2I& aP2, const VECTOR2I& aStart, const VECTOR2I& aEnd );
+SCH_SHAPE*      createEllipse( const VECTOR2I& aP1, const VECTOR2I& aP2,
+                               FILL_T aFill = FILL_T::NO_FILL );
+SCH_SHAPE*      createEllipse( const VECTOR2I& aP1, const VECTOR2I& aP2, const VECTOR2I& aStart,
+                               const VECTOR2I& aEnd );
 SCH_PIN* StreamPackage2SCH_PIN( const StreamPackage* aOrcadStream, LIB_SYMBOL* aSymbol, uint32_t aIdx );
 
 

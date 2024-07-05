@@ -53,10 +53,11 @@ SCH_SHAPE* convPrimArc2ARC(const PrimArc* aOrcadObj)
     // it by straight lines, however arcs are actually not yet
     // supported!
 
-    const auto p1    = VECTOR2I( convDimIU( aOrcadObj->x1 ), convDimIU( aOrcadObj->y1 ) );
-    const auto p2    = VECTOR2I( convDimIU( aOrcadObj->x2 ), convDimIU( aOrcadObj->y2 ) );
-    const auto start = VECTOR2I( convDimIU( aOrcadObj->startX ), convDimIU( aOrcadObj->startY ) );
-    const auto end   = VECTOR2I( convDimIU( aOrcadObj->endX ), convDimIU( aOrcadObj->endY ) );
+    const VECTOR2I p1 = VECTOR2I( convDimIU( aOrcadObj->x1 ), convDimIU( aOrcadObj->y1 ) );
+    const VECTOR2I p2 = VECTOR2I( convDimIU( aOrcadObj->x2 ), convDimIU( aOrcadObj->y2 ) );
+    const VECTOR2I start =
+            VECTOR2I( convDimIU( aOrcadObj->startX ), convDimIU( aOrcadObj->startY ) );
+    const VECTOR2I end = VECTOR2I( convDimIU( aOrcadObj->endX ), convDimIU( aOrcadObj->endY ) );
 
     // if( isCircle( p1, p2 ) )
     // {
@@ -84,14 +85,14 @@ SCH_SHAPE* convPrimArc2ARC(const PrimArc* aOrcadObj)
     //     ksymbol->AddDrawItem( kicadObj.release() );
     // }
 
-    auto segment = createEllipsoide( p1, p2, start, end );
+    SCH_SHAPE* segment = createEllipse( p1, p2, start, end );
 
-    auto stroke = STROKE_PARAMS{};
+    STROKE_PARAMS stroke = STROKE_PARAMS{};
     stroke.SetLineStyle( LineStyle2LINE_STYLE.at( aOrcadObj->getLineStyle() ) );
     stroke.SetWidth( LineWidth2Width.at( aOrcadObj->getLineWidth() ) );
     // stroke.SetColor( KIGFX::COLOR4D{0.0, 0.0, 0.0, 1.0} );
 
-    // for( auto& segment : segments )
+    // for( SCH_SHAPE* segment : segments )
     {
         segment->SetStroke( stroke );
     }
@@ -104,7 +105,7 @@ std::vector<SCH_SHAPE*> convPrimBezier2BEZIER(const PrimBezier* aOrcadObj)
 {
     const int segments = static_cast<int>( ( aOrcadObj->points.size() - 1 ) / 3 );
 
-    auto stroke = STROKE_PARAMS{};
+    STROKE_PARAMS stroke = STROKE_PARAMS{};
     stroke.SetLineStyle( LineStyle2LINE_STYLE.at( aOrcadObj->getLineStyle() ) );
     stroke.SetWidth( LineWidth2Width.at( aOrcadObj->getLineWidth() ) );
     // stroke.SetColor( KIGFX::COLOR4D{0.0, 0.0, 0.0, 1.0} );
@@ -113,10 +114,14 @@ std::vector<SCH_SHAPE*> convPrimBezier2BEZIER(const PrimBezier* aOrcadObj)
 
     for( int i = 0; i < segments; ++i )
     {
-        const auto start = VECTOR2I( convDimIU( aOrcadObj->points.at(i + 0).x ), convDimIU( aOrcadObj->points.at(i + 0).y ) );
-        const auto c1    = VECTOR2I( convDimIU( aOrcadObj->points.at(i + 1).x ), convDimIU( aOrcadObj->points.at(i + 1).y ) );
-        const auto c2    = VECTOR2I( convDimIU( aOrcadObj->points.at(i + 2).x ), convDimIU( aOrcadObj->points.at(i + 2).y ) );
-        const auto end   = VECTOR2I( convDimIU( aOrcadObj->points.at(i + 3).x ), convDimIU( aOrcadObj->points.at(i + 3).y ) );
+        const VECTOR2I start = VECTOR2I( convDimIU( aOrcadObj->points.at( i + 0 ).x ),
+                                         convDimIU( aOrcadObj->points.at( i + 0 ).y ) );
+        const VECTOR2I c1 = VECTOR2I( convDimIU( aOrcadObj->points.at( i + 1 ).x ),
+                                      convDimIU( aOrcadObj->points.at( i + 1 ).y ) );
+        const VECTOR2I c2 = VECTOR2I( convDimIU( aOrcadObj->points.at( i + 2 ).x ),
+                                      convDimIU( aOrcadObj->points.at( i + 2 ).y ) );
+        const VECTOR2I end = VECTOR2I( convDimIU( aOrcadObj->points.at( i + 3 ).x ),
+                                       convDimIU( aOrcadObj->points.at( i + 3 ).y ) );
 
         SCH_SHAPE* kicadObj = new SCH_SHAPE( SHAPE_T::BEZIER, LAYER_DEVICE );
 
@@ -166,12 +171,12 @@ SCH_SHAPE* convPrimEllipse2POLY(const PrimEllipse* aOrcadObj)
             break;
     }
 
-    const auto p1 = VECTOR2I( convDimIU( aOrcadObj->x1 ), convDimIU( aOrcadObj->y1 ) );
-    const auto p2 = VECTOR2I( convDimIU( aOrcadObj->x2 ), convDimIU( aOrcadObj->y2 ) );
+    const VECTOR2I p1 = VECTOR2I( convDimIU( aOrcadObj->x1 ), convDimIU( aOrcadObj->y1 ) );
+    const VECTOR2I p2 = VECTOR2I( convDimIU( aOrcadObj->x2 ), convDimIU( aOrcadObj->y2 ) );
 
-    auto kicadObj = createEllipsoide( p1, p2, fill );
+    SCH_SHAPE* kicadObj = createEllipse( p1, p2, fill );
 
-    auto stroke = STROKE_PARAMS{};
+    STROKE_PARAMS stroke = STROKE_PARAMS{};
     stroke.SetLineStyle( LineStyle2LINE_STYLE.at( aOrcadObj->getLineStyle() ) );
     stroke.SetWidth( LineWidth2Width.at( aOrcadObj->getLineWidth() ) );
     // stroke.SetColor( KIGFX::COLOR4D{0.0, 0.0, 0.0, 1.0} );
@@ -185,7 +190,7 @@ SCH_SHAPE* convPrimLine2POLY(const PrimLine* aOrcadObj)
 {
     SCH_SHAPE* kicadObj = new SCH_SHAPE( SHAPE_T::POLY, LAYER_DEVICE );
 
-    auto stroke = STROKE_PARAMS{};
+    STROKE_PARAMS stroke = STROKE_PARAMS{};
     stroke.SetLineStyle( LineStyle2LINE_STYLE.at( aOrcadObj->getLineStyle() ) );
     stroke.SetWidth( LineWidth2Width.at( aOrcadObj->getLineWidth() ) );
     // stroke.SetColor( KIGFX::COLOR4D{0.0, 0.0, 0.0, 1.0} );
@@ -217,13 +222,13 @@ SCH_SHAPE* convPrimPolygon2POLY(const PrimPolygon* aOrcadObj)
 
     SCH_SHAPE* kicadObj = new SCH_SHAPE( SHAPE_T::POLY, LAYER_DEVICE, 0, fill );
 
-    auto stroke = STROKE_PARAMS{};
+    STROKE_PARAMS stroke = STROKE_PARAMS{};
     stroke.SetLineStyle( LineStyle2LINE_STYLE.at( aOrcadObj->getLineStyle() ) );
     stroke.SetWidth( LineWidth2Width.at( aOrcadObj->getLineWidth() ) );
     // stroke.SetColor( KIGFX::COLOR4D{0.0, 0.0, 0.0, 1.0} );
     kicadObj->SetStroke( stroke );
 
-    for( const auto& point : aOrcadObj->points )
+    for( const Point& point : aOrcadObj->points )
     {
         kicadObj->AddPoint( VECTOR2I( convDimIU( point.x ), convDimIU( point.y ) ) );
     }
@@ -236,13 +241,13 @@ SCH_SHAPE* convPrimPolyline2POLY(const PrimPolyline* aOrcadObj)
 {
     SCH_SHAPE* kicadObj = new SCH_SHAPE( SHAPE_T::POLY, LAYER_DEVICE );
 
-    auto stroke = STROKE_PARAMS{};
+    STROKE_PARAMS stroke = STROKE_PARAMS{};
     stroke.SetLineStyle( LineStyle2LINE_STYLE.at( aOrcadObj->getLineStyle() ) );
     stroke.SetWidth( LineWidth2Width.at( aOrcadObj->getLineWidth() ) );
     // stroke.SetColor( KIGFX::COLOR4D{0.0, 0.0, 0.0, 1.0} );
     kicadObj->SetStroke( stroke );
 
-    for( const auto& point : aOrcadObj->points )
+    for( const Point& point : aOrcadObj->points )
     {
         kicadObj->AddPoint( VECTOR2I( convDimIU( point.x ), convDimIU( point.y ) ) );
     }
@@ -255,7 +260,7 @@ SCH_SHAPE* convPrimRect2RECTANGLE(const PrimRect* aOrcadObj)
 {
     SCH_SHAPE* kicadObj = new SCH_SHAPE( SHAPE_T::RECTANGLE, LAYER_DEVICE );
 
-    auto stroke = STROKE_PARAMS{};
+    STROKE_PARAMS stroke = STROKE_PARAMS{};
     stroke.SetLineStyle( LineStyle2LINE_STYLE.at( aOrcadObj->getLineStyle() ) );
     stroke.SetWidth( LineWidth2Width.at( aOrcadObj->getLineWidth() ) );
     // stroke.SetColor( KIGFX::COLOR4D{0.0, 0.0, 0.0, 1.0} );
@@ -323,9 +328,10 @@ bool isCircle(const VECTOR2I& aP1, const VECTOR2I& aP2)
 }
 
 
-SCH_SHAPE* createEllipsoide(const VECTOR2I& aP1, const VECTOR2I& aP2, FILL_T aFill )
+SCH_SHAPE* createEllipse( const VECTOR2I& aP1, const VECTOR2I& aP2, FILL_T aFill )
 {
-    auto rect = std::make_unique<SCH_SHAPE>( SHAPE_T::RECTANGLE, LAYER_DEVICE );
+    std::unique_ptr<SCH_SHAPE> rect =
+            std::make_unique<SCH_SHAPE>( SHAPE_T::RECTANGLE, LAYER_DEVICE );
     rect->SetPosition( aP1 );
     rect->SetStart( aP1 );
     rect->SetEnd( aP2 );
@@ -349,7 +355,8 @@ SCH_SHAPE* createEllipsoide(const VECTOR2I& aP1, const VECTOR2I& aP2, FILL_T aFi
         const double da = 2.0 * std::numbers::pi / (numberSegments - 1);
         const double x = mid.x + r1 * std::cos(i * da);
         const double y = mid.y + r2 * std::sin(i * da);
-        const auto p = VECTOR2I( static_cast<int32_t>(std::round(x)), static_cast<int32_t>(std::round(y)) );
+        const VECTOR2I p = VECTOR2I( static_cast<int32_t>( std::round( x ) ),
+                                     static_cast<int32_t>( std::round( y ) ) );
 
         s->AddPoint( p );
     }
@@ -358,9 +365,11 @@ SCH_SHAPE* createEllipsoide(const VECTOR2I& aP1, const VECTOR2I& aP2, FILL_T aFi
 }
 
 
-SCH_SHAPE* createEllipsoide(const VECTOR2I& aP1, const VECTOR2I& aP2, const VECTOR2I& aStart, const VECTOR2I& aEnd )
+SCH_SHAPE* createEllipse( const VECTOR2I& aP1, const VECTOR2I& aP2, const VECTOR2I& aStart,
+                          const VECTOR2I& aEnd )
 {
-    auto rect = std::make_unique<SCH_SHAPE>( SHAPE_T::RECTANGLE, LAYER_DEVICE );
+    std::unique_ptr<SCH_SHAPE> rect =
+            std::make_unique<SCH_SHAPE>( SHAPE_T::RECTANGLE, LAYER_DEVICE );
     rect->SetPosition( aP1 );
     rect->SetStart( aP1 );
     rect->SetEnd( aP2 );
@@ -395,7 +404,8 @@ SCH_SHAPE* createEllipsoide(const VECTOR2I& aP1, const VECTOR2I& aP2, const VECT
         const double da = delta_phi / (numberSegments - 1);
         const double x = mid.x + r1 * std::cos(i * da + phi);
         const double y = mid.y + r2 * std::sin(i * da + phi);
-        const auto p = VECTOR2I( static_cast<int32_t>(std::round(x)), static_cast<int32_t>(std::round(y)) );
+        const VECTOR2I p = VECTOR2I( static_cast<int32_t>( std::round( x ) ),
+                                     static_cast<int32_t>( std::round( y ) ) );
 
         s->AddPoint( p );
     }
@@ -420,7 +430,7 @@ wxString convPinName( const std::string& aOrCadPinName )
 
     std::deque<CharProp> charProps;
 
-    for( const auto& c : aOrCadPinName )
+    for( char c : aOrCadPinName )
     {
         if( c == '\\' )
         {
@@ -438,7 +448,7 @@ wxString convPinName( const std::string& aOrCadPinName )
     std::deque<CharProp> strProps;
 
     // Combine multiple successive short overbars to one large
-    for( const auto& charProp : charProps )
+    for( const CharProp& charProp : charProps )
     {
         if( strProps.empty() )
         {
@@ -459,7 +469,7 @@ wxString convPinName( const std::string& aOrCadPinName )
 
     std::string kicadPinName{};
 
-    for( const auto& strProp : strProps )
+    for( const CharProp& strProp : strProps )
     {
         if( strProp.hasOverbar )
         {
@@ -534,7 +544,7 @@ SCH_PIN* StreamPackage2SCH_PIN( const StreamPackage* aOrcadStream, LIB_SYMBOL* a
 
     pin->SetNumber( pinNumber );
 
-    const auto pinOrientation = getPinOrientation( pkgPin );
+    const PIN_ORIENTATION pinOrientation = getPinOrientation( pkgPin );
     pin->SetOrientation( pinOrientation );
     pin->SetType( OrCad2Kicad_PinType.at( pkgPin->portType ) );
     pin->SetLength( convDimIU( pkgPin->getPinLength() ) );
