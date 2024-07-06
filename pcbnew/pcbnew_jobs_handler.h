@@ -47,6 +47,7 @@ public:
     int JobExportFpUpgrade( JOB* aJob );
     int JobExportFpSvg( JOB* aJob );
     int JobExportDrc( JOB* aJob );
+    int JobUpgrade( JOB* aJob );
     int JobExportIpc2581( JOB* aJob );
 
 private:

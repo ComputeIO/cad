@@ -31,6 +31,7 @@
 #include <jobs/job_sch_erc.h>
 #include <jobs/job_sym_export_svg.h>
 #include <jobs/job_sym_upgrade.h>
+#include <jobs/job_sch_upgrade.h>
 #include <schematic.h>
 #include <wx/dir.h>
 #include <wx/file.h>
@@ -51,6 +52,8 @@
 #include <settings/settings_manager.h>
 
 #include <sch_file_versions.h>
+#include <sch_plugins/kicad/sch_sexpr_lib_plugin_cache.h>
+#include <sch_plugins/kicad/sch_sexpr_plugin.h>
 #include <sch_io/kicad_sexpr/sch_io_kicad_sexpr_lib_cache.h>
 
 #include <netlist.h>
@@ -85,6 +88,8 @@ EESCHEMA_JOBS_HANDLER::EESCHEMA_JOBS_HANDLER( KIWAY* aKiway ) :
               std::bind( &EESCHEMA_JOBS_HANDLER::JobSymExportSvg, this, std::placeholders::_1 ) );
     Register( "erc",
               std::bind( &EESCHEMA_JOBS_HANDLER::JobSchErc, this, std::placeholders::_1 ) );
+    Register( "upgrade",
+              std::bind( &EESCHEMA_JOBS_HANDLER::JobUpgrade, this, std::placeholders::_1 ) );
 }
 
 
@@ -1032,6 +1037,51 @@ int EESCHEMA_JOBS_HANDLER::JobSchErc( JOB* aJob )
         if( markersProvider->GetCount() > 0 )
             return CLI::EXIT_CODES::ERR_RC_VIOLATIONS;
     }
+
+    return CLI::EXIT_CODES::SUCCESS;
+}
+
+
+int EESCHEMA_JOBS_HANDLER::JobUpgrade( JOB* aJob )
+{
+    JOB_SCH_UPGRADE* aUpgradeJob = dynamic_cast<JOB_SCH_UPGRADE*>( aJob );
+
+    if( aUpgradeJob == nullptr )
+        return CLI::EXIT_CODES::ERR_UNKNOWN;
+
+    if( aUpgradeJob->IsCli() )
+        m_reporter->Report( _( "Loading schematic\n" ), RPT_SEVERITY_INFO );
+
+    SCHEMATIC* loadedSch = EESCHEMA_HELPERS::LoadSchematic( aUpgradeJob->m_filename );
+    if( loadedSch == nullptr )
+    {
+        m_reporter->Report( _( "Failed to load schematic file\n" ), RPT_SEVERITY_ERROR );
+        return CLI::EXIT_CODES::ERR_INVALID_INPUT_FILE;
+    }
+
+    // SCH_SEXPR_PLUGIN needs an absolute path
+    wxFileName schPath = aUpgradeJob->m_filename;
+    schPath.MakeAbsolute();
+    wxString schFullPath = schPath.GetFullPath();
+
+    SCH_SEXPR_PLUGIN plg;
+    try
+    {
+        SCH_SHEET* loadedSheet = plg.LoadSchematicFile( schFullPath, loadedSch );
+        plg.SaveSchematicFile( schFullPath, loadedSheet, loadedSch );
+    }
+    catch( const IO_ERROR& ioe )
+    {
+        if( aUpgradeJob->IsCli() )
+        {
+            wxString msg = wxString::Format( _( "Error saving SCH file.\n%s" ), ioe.What().GetData() );
+            m_reporter->Report( msg, RPT_SEVERITY_ERROR );
+        }
+        return CLI::EXIT_CODES::ERR_UNKNOWN;
+    }
+
+    if( aUpgradeJob->IsCli() )
+        m_reporter->Report( _( "Successfully saved SCH file using the latest format\n" ), RPT_SEVERITY_INFO );
 
     return CLI::EXIT_CODES::SUCCESS;
 }
