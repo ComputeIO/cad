@@ -17,6 +17,7 @@
     "boost-test",
     "boost-uuid",
     "cairo",
+    "openorcadparser",
     "wxwidgets",
     "glew",
     "curl",
@@ -39,8 +40,6 @@
       "features": [ "fts5", "fts4", "fts3", "rtree", "session" ]
     },
     "icu",
-    "ngspice",
-    "wxpython",
     "libgit2",
     "nng",
     "protobuf"

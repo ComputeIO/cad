@@ -1,3 +1,5 @@
+include(FetchContent)
+
 # Add all the warnings to the files
 if( COMPILER_SUPPORTS_WARNINGS )
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARN_FLAGS_CXX}")
@@ -37,6 +39,9 @@ include_directories(
     ./symbol_editor
     ./tools
     ./widgets
+    ${CMAKE_BINARY_DIR}/_deps/spdlog-src/include
+    ${CMAKE_BINARY_DIR}/_deps/nameof-src/include
+    ${LIBOPENORCADPARSER_INCLUDE_DIRS}
     )
 
 set( EESCHEMA_SCH_IO
@@ -73,6 +78,10 @@ set( EESCHEMA_SCH_IO
     sch_io/cadstar/cadstar_sch_archive_loader.cpp
     sch_io/cadstar/cadstar_sch_archive_parser.cpp
     sch_io/cadstar/sch_io_cadstar_archive.cpp
+
+    # OrCAD IO plugin
+    sch_io/orcad/orcad2kicad.cpp
+    sch_io/orcad/sch_io_orcad.cpp
 
     # LTSpice IO plugin
     sch_io/ltspice/ltspice_schematic.cpp
@@ -549,6 +558,7 @@ set_source_files_properties( ${CMAKE_SOURCE_DIR}/common/single_top.cpp PROPERTIE
 
 target_link_libraries( eeschema
     kicommon
+    ${LIBOPENORCADPARSER_LIBRARY}
     ${wxWidgets_LIBRARIES}
     )
 
@@ -567,7 +577,9 @@ target_include_directories( eeschema_kiface_objects
 
 target_link_libraries( eeschema_kiface_objects
     PUBLIC
-        common )
+        common
+        ${LIBOPENORCADPARSER_LIBRARY}
+    )
 
 # Since we're not using target_link_libraries, we need to explicitly
 # declare the dependency

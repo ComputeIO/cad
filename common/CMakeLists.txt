@@ -469,6 +469,8 @@ set( COMMON_IO_SRCS
     io/cadstar/cadstar_archive_parser.cpp
     io/cadstar/cadstar_parts_lib_parser.cpp
 
+    # OrCAD
+
     # Eagle
     io/eagle/eagle_parser.cpp
 

@@ -34,6 +34,7 @@
 #include <sch_io/easyedapro/sch_io_easyedapro.h>
 #include <sch_io/database/sch_io_database.h>
 #include <sch_io/ltspice/sch_io_ltspice.h>
+#include <sch_io/orcad/sch_io_orcad.h>
 #include <sch_io/http_lib/sch_io_http_lib.h>
 #include <common.h>     // for ExpandEnvVarSubstitutions
 
@@ -74,6 +75,7 @@ SCH_IO* SCH_IO_MGR::FindPlugin( SCH_FILE_T aFileType )
     case SCH_EASYEDA:         return new SCH_IO_EASYEDA();
     case SCH_EASYEDAPRO:      return new SCH_IO_EASYEDAPRO();
     case SCH_LTSPICE:         return new SCH_IO_LTSPICE();
+    case SCH_ORCAD:           return new SCH_IO_ORCAD();
     case SCH_HTTP:            return new SCH_IO_HTTP_LIB();
     default:                  return nullptr;
     }
@@ -97,6 +99,7 @@ const wxString SCH_IO_MGR::ShowType( SCH_FILE_T aType )
     case SCH_EASYEDA:         return wxString( wxT( "EasyEDA (JLCEDA) Std" ) );
     case SCH_EASYEDAPRO:      return wxString( wxT( "EasyEDA (JLCEDA) Pro" ) );
     case SCH_LTSPICE:         return wxString( wxT( "LTspice" ) );
+    case SCH_ORCAD:           return wxString( wxT( "OrCAD" ) );
     case SCH_HTTP:            return wxString( wxT( "HTTP" ) );
     default:                  return wxString::Format( _( "Unknown SCH_FILE_T value: %d" ),
                                                        aType );
@@ -128,6 +131,8 @@ SCH_IO_MGR::SCH_FILE_T SCH_IO_MGR::EnumFromStr( const wxString& aType )
         return SCH_EASYEDAPRO;
     else if( aType == wxT( "LTspice" ) )
         return SCH_LTSPICE;
+    else if( aType == wxT( "OrCAD" ) )
+        return SCH_ORCAD;
     else if( aType == wxT( "HTTP" ) )
         return SCH_HTTP;
 

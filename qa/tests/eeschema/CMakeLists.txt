@@ -109,6 +109,7 @@ PRIVATE
     qa_schematic_utils
     markdown_lib
     ${GDI_PLUS_LIBRARIES}
+    ${LIBOPENORCADPARSER_LIBRARY}
     Boost::headers
     Boost::unit_test_framework
 )
