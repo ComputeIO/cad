@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 4.0.0-0-g0efcecf)
+// C++ code generated with wxFormBuilder (version 4.1.0-0-g733bf3d)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -49,6 +49,11 @@ DIALOG_CLEANUP_TRACKS_AND_VIAS_BASE::DIALOG_CLEANUP_TRACKS_AND_VIAS_BASE( wxWind
 	m_deleteTracksInPadsOpt->SetToolTip( _("Delete tracks that have both start and end positions inside of a pad") );
 
 	bSizerLeft->Add( m_deleteTracksInPadsOpt, 0, wxBOTTOM|wxLEFT|wxRIGHT, 5 );
+
+	m_repour_cleanup = new wxCheckBox( this, wxID_ANY, _("Repour zones after cleanup"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_repour_cleanup->SetToolTip( _("Repours zones after cleanup, this feature is disabled when auto-refill is enabled.") );
+
+	bSizerLeft->Add( m_repour_cleanup, 0, wxBOTTOM|wxLEFT|wxRIGHT, 5 );
 
 
 	bSizerTop->Add( bSizerLeft, 0, wxEXPAND|wxALL, 5 );

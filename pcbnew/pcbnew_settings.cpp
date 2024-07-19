@@ -1,7 +1,7 @@
 /*
 * This program source code file is part of KiCad, a free EDA CAD application.
 *
-* Copyright (C) 2020-2023 KiCad Developers, see AUTHORS.txt for contributors.
+* Copyright (C) 2020-2024 KiCad Developers, see AUTHORS.txt for contributors.
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -302,6 +302,9 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
 
     m_params.emplace_back( new PARAM<bool>( "cleanup.cleanup_tracks_in_pad",
             &m_Cleanup.cleanup_tracks_in_pad, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "cleanup.cleanup_repour_zones",
+            &m_Cleanup.cleanup_repour_zones, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "drc_dialog.refill_zones",
             &m_DrcDialog.refill_zones, true ) );

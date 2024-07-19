@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 4.0.0-0-g0efcecf)
+// C++ code generated with wxFormBuilder (version 4.1.0-0-g733bf3d)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -41,6 +41,7 @@ class DIALOG_CLEANUP_TRACKS_AND_VIAS_BASE : public DIALOG_SHIM
 		wxCheckBox* m_mergeSegmOpt;
 		wxCheckBox* m_deleteUnconnectedOpt;
 		wxCheckBox* m_deleteTracksInPadsOpt;
+		wxCheckBox* m_repour_cleanup;
 		wxTextCtrl* m_tcReport;
 		wxStaticText* staticChangesLabel;
 		wxDataViewCtrl* m_changesDataView;

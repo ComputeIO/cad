@@ -46,6 +46,11 @@ DIALOG_CLEANUP_TRACKS_AND_VIAS::DIALOG_CLEANUP_TRACKS_AND_VIAS( PCB_EDIT_FRAME* 
     m_deleteTracksInPadsOpt->SetValue( cfg->m_Cleanup.cleanup_tracks_in_pad );
     m_deleteDanglingViasOpt->SetValue( cfg->m_Cleanup.delete_dangling_vias );
 
+    if( !cfg->m_AutoRefillZones )
+        m_repour_cleanup->SetValue( cfg->m_Cleanup.cleanup_repour_zones );
+    else
+        m_repour_cleanup->Enable( false );
+
     m_changesTreeModel = new RC_TREE_MODEL( m_parentFrame, m_changesDataView );
     m_changesDataView->AssociateModel( m_changesTreeModel );
 
@@ -78,6 +83,9 @@ DIALOG_CLEANUP_TRACKS_AND_VIAS::~DIALOG_CLEANUP_TRACKS_AND_VIAS()
         cfg->m_Cleanup.cleanup_short_circuits = m_cleanShortCircuitOpt->GetValue();
         cfg->m_Cleanup.cleanup_tracks_in_pad  = m_deleteTracksInPadsOpt->GetValue();
         cfg->m_Cleanup.delete_dangling_vias   = m_deleteDanglingViasOpt->GetValue();
+
+        if( !cfg->m_AutoRefillZones )
+            cfg->m_Cleanup.cleanup_repour_zones   = m_repour_cleanup->GetValue();
     }
 
     m_changesTreeModel->DecRef();
@@ -158,6 +166,14 @@ void DIALOG_CLEANUP_TRACKS_AND_VIAS::doCleanup( bool aDryRun )
                                              m_deleteTracksInPadsOpt->GetValue(),
                                              m_deleteDanglingViasOpt->GetValue(),
                                              m_reporter );
+
+    if( m_repour_cleanup->GetValue() == wxCHK_CHECKED && !aDryRun)
+    {
+        m_reporter->Report( _( "Repour zones..." ) );
+        wxSafeYield(); // Timeslice to update UI
+        m_parentFrame->GetToolManager()->GetTool<ZONE_FILLER_TOOL>()->FillAllZones( this );
+        wxSafeYield(); // Timeslice to close zone progress reporter
+    }
 
     if( aDryRun )
     {
