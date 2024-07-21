@@ -262,7 +262,7 @@ bool ZONE::IsOnCopperLayer() const
 
 void ZONE::SetLayer( PCB_LAYER_ID aLayer )
 {
-    SetLayerSet( LSET( aLayer ) );
+    SetLayerSet( LSET( { aLayer } ) );
 }
 
 

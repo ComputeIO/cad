@@ -40,7 +40,7 @@ bool EXPORT_SVG::Plot( BOARD* aBoard, const PCB_PLOT_SVG_OPTIONS& aSvgPlotOption
     }
 
     // Adding drill marks, for copper layers
-    if( ( LSET( aSvgPlotOptions.m_printMaskLayer ) & LSET::AllCuMask() ).any() )
+    if( ( LSET( { aSvgPlotOptions.m_printMaskLayer } ) & LSET::AllCuMask() ).any() )
     {
         switch( aSvgPlotOptions.m_drillShapeOption )
         {
