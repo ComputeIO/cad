@@ -835,6 +835,10 @@ void PCB_CONTROL::pruneItemLayers( std::vector<BOARD_ITEM*>& aItems )
                 }
                 else
                 {
+                    // Prune fields is not necessary, as removing mandatory fields
+                    // and then pasting and copying again might lead to a crash
+                    if( aItem->Type() == PCB_FIELD_T )
+                        return;
                     aFootprint->Remove( aItem );
                     fpItemDeleted = true;
                 }
