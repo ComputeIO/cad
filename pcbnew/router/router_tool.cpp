@@ -688,7 +688,7 @@ int ROUTER_TOOL::getStartLayer( const PNS::ITEM* aItem )
 
     if( m_startItem )
     {
-        const LAYER_RANGE& ls = m_startItem->Layers();
+        const PNS_LAYER_RANGE& ls = m_startItem->Layers();
 
         if( ls.Overlaps( tl ) )
             return tl;
@@ -702,7 +702,7 @@ int ROUTER_TOOL::getStartLayer( const PNS::ITEM* aItem )
 
 void ROUTER_TOOL::switchLayerOnViaPlacement()
 {
-    int activeLayer = frame()->GetActiveLayer();
+    int activeLayer = m_iface->GetPNSLayerFromBoardLayer( frame()->GetActiveLayer() );
     int currentLayer = m_router->GetCurrentLayer();
 
     if( currentLayer != activeLayer )
@@ -720,7 +720,8 @@ void ROUTER_TOOL::switchLayerOnViaPlacement()
 }
 
 
-void ROUTER_TOOL::updateSizesAfterLayerSwitch( PCB_LAYER_ID targetLayer, const VECTOR2I& aPos )
+// N.B. aTargetLayer is a PNS layer, not a PCB_LAYER_ID
+void ROUTER_TOOL::updateSizesAfterLayerSwitch( int aTargetLayer, const VECTOR2I& aPos )
 {
     std::vector<PNS::NET_HANDLE> nets = m_router->GetCurrentNets();
 
@@ -728,6 +729,7 @@ void ROUTER_TOOL::updateSizesAfterLayerSwitch( PCB_LAYER_ID targetLayer, const V
     BOARD_DESIGN_SETTINGS&       bds       = board()->GetDesignSettings();
     std::shared_ptr<DRC_ENGINE>& drcEngine = bds.m_DRCEngine;
     DRC_CONSTRAINT               constraint;
+    PCB_LAYER_ID                 targetLayer = m_iface->GetPCBLayerIDFromPNSLayer( aTargetLayer );
 
     PCB_TRACK dummyTrack( board() );
     dummyTrack.SetFlags( ROUTER_TRANSIENT );
@@ -861,20 +863,23 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
     BOARD*       brd           = board();
     LSET         enabledLayers = LSET::AllCuMask( brd->GetDesignSettings().GetCopperLayerCount() );
     LSEQ         layers        = enabledLayers.Seq();
-    PCB_LAYER_ID currentLayer  = (PCB_LAYER_ID) m_router->GetCurrentLayer();
-    PCB_LAYER_ID targetLayer   = UNDEFINED_LAYER;
+
+    // These layers are in Board Layer order not PNS layer order
+    PCB_LAYER_ID currentLayer = m_iface->GetPCBLayerIDFromPNSLayer( m_router->GetCurrentLayer() );
+    PCB_LAYER_ID targetLayer  = UNDEFINED_LAYER;
 
     if( aEvent.IsAction( &PCB_ACTIONS::layerNext ) )
     {
         if( m_lastTargetLayer == UNDEFINED_LAYER )
-            m_lastTargetLayer = currentLayer;
+            m_lastTargetLayer = m_iface->GetPNSLayerFromBoardLayer( currentLayer );
 
         size_t idx = 0;
         size_t target_idx = 0;
+        PCB_LAYER_ID lastTargetLayer = m_iface->GetPCBLayerIDFromPNSLayer( m_lastTargetLayer );
 
         for( size_t i = 0; i < layers.size(); i++ )
         {
-            if( layers[i] == m_lastTargetLayer )
+            if( layers[i] == lastTargetLayer )
             {
                 idx = i;
                 break;
@@ -912,10 +917,11 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
 
         size_t idx = 0;
         size_t target_idx = 0;
+        PCB_LAYER_ID lastTargetLayer = m_iface->GetPCBLayerIDFromPNSLayer( m_lastTargetLayer );
 
         for( size_t i = 0; i < layers.size(); i++ )
         {
-            if( layers[i] == m_lastTargetLayer )
+            if( layers[i] == lastTargetLayer )
             {
                 idx = i;
                 break;
@@ -963,7 +969,7 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
 
     if( targetLayer != UNDEFINED_LAYER )
     {
-        m_lastTargetLayer = targetLayer;
+        m_lastTargetLayer = m_iface->GetPNSLayerFromBoardLayer( targetLayer );
 
         if( targetLayer == currentLayer )
             return 0;
@@ -1010,12 +1016,17 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
 
             if( viaType == VIATYPE::MICROVIA )
             {
-                // Allows only the previous or the next layer from the current layer
-                int previous_layer = currentLayer == B_Cu ? layerCount - 2
-                                                          : currentLayer - 1;
+                int layer_idx = 0;
 
-                int next_layer = currentLayer >= layerCount-2 ? B_Cu
-                                                              : currentLayer + 1;
+                for( ; layer_idx < layers.size(); layer_idx++ )
+                {
+                    if( layers[layer_idx] == currentLayer )
+                        break;
+                }
+
+                // Allows only the previous or the next layer from the current layer
+                int previous_layer = ( layer_idx + layers.size() - 1 ) % layers.size();
+                int next_layer = ( layer_idx + 1 ) % layers.size();
 
                 not_allowed_ly = LSET::AllLayersMask();
 
@@ -1084,24 +1095,29 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
             {
                 // front-side microvia
                 currentLayer = F_Cu;
-
-                if( layerCount > 2 )    // Ensure the inner layer In1_Cu exists
-                    targetLayer = In1_Cu;
-                else
-                    targetLayer = B_Cu;
+                targetLayer = layers[1];
             }
             else if( currentLayer == B_Cu || currentLayer == layerCount - 2 )
             {
                 // back-side microvia
-                currentLayer = B_Cu,
-                targetLayer = (PCB_LAYER_ID) ( layerCount - 2 );
+                currentLayer = B_Cu;
+                targetLayer = layers[layers.size() - 2];
             }
             else
             {
                 // This is not optimal: from an internal layer one can want to switch
                 // to the previous or the next internal layer
-                // but at this point we do not know what the user want.
-               targetLayer = PCB_LAYER_ID( currentLayer + 1 );
+                // but at this point we do not know what the user wants.
+
+                int layer_idx = 0;
+
+                for( ; layer_idx < layers.size(); layer_idx++ )
+                {
+                    if( layers[layer_idx] == currentLayer )
+                        break;
+                }
+
+                targetLayer = layers[( layer_idx + 1 ) % layers.size()];
             }
 
             break;
@@ -1173,14 +1189,15 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
     }
 
     sizes.SetViaType( viaType );
-    sizes.AddLayerPair( currentLayer, targetLayer );
+    sizes.AddLayerPair( m_iface->GetPNSLayerFromBoardLayer( currentLayer ),
+                        m_iface->GetPNSLayerFromBoardLayer( targetLayer ) );
 
     m_router->UpdateSizes( sizes );
 
     if( !m_router->IsPlacingVia() )
         m_router->ToggleViaPlacement();
 
-    m_lastTargetLayer = targetLayer;
+    m_lastTargetLayer = m_iface->GetPNSLayerFromBoardLayer( targetLayer );
 
     if( m_router->RoutingInProgress() )
     {
@@ -1218,12 +1235,12 @@ bool ROUTER_TOOL::prepareInteractive()
 
     PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
 
-    m_iface->SetStartLayer( routingLayer );
+    m_iface->SetStartLayerFromPNS( routingLayer );
 
     frame()->GetBoard()->GetDesignSettings().m_TempOverrideTrackWidth = false;
     m_iface->ImportSizes( sizes, m_startItem, nullptr );
-    sizes.AddLayerPair( frame()->GetScreen()->m_Route_Layer_TOP,
-                        frame()->GetScreen()->m_Route_Layer_BOTTOM );
+    sizes.AddLayerPair( m_iface->GetPNSLayerFromBoardLayer( frame()->GetScreen()->m_Route_Layer_TOP ),
+                        m_iface->GetPNSLayerFromBoardLayer( frame()->GetScreen()->m_Route_Layer_BOTTOM ) );
 
     m_router->UpdateSizes( sizes );
 
@@ -1277,7 +1294,7 @@ bool ROUTER_TOOL::finishInteractive()
     m_startItem = nullptr;
     m_endItem   = nullptr;
 
-    frame()->SetActiveLayer( m_originalActiveLayer );
+    frame()->SetActiveLayer( m_iface->GetPCBLayerIDFromPNSLayer( m_originalActiveLayer ) );
     UpdateMessagePanel();
     frame()->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     controls()->SetAutoPan( false );

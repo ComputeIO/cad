@@ -2117,7 +2117,7 @@ PAD* BOARD::GetPad( const PCB_TRACK* aTrace, ENDPOINT_T aEndPoint ) const
 {
     const VECTOR2I& aPosition = aTrace->GetEndPoint( aEndPoint );
 
-    LSET lset( aTrace->GetLayer() );
+    LSET lset( { aTrace->GetLayer() } );
 
     return GetPad( aPosition, lset );
 }
