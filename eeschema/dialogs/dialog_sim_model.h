@@ -79,7 +79,8 @@ private:
 
     void removeOrphanedPinAssignments( SIM_MODEL* aModel );
 
-    bool loadLibrary( const wxString& aLibraryPath, bool aForceReload = false );
+    bool loadLibrary( const wxString& aLibraryPath, REPORTER& aReporter,
+                      bool aForceReload = false );
 
     void addParamPropertyIfRelevant( SIM_MODEL* aModel, int aParamIndex );
     wxPGProperty* newParamProperty( SIM_MODEL* aModel, int aParamIndex ) const;
@@ -94,7 +95,7 @@ private:
     int getModelPinIndex( const wxString& aModelPinString ) const;
 
     void onRadioButton( wxCommandEvent& aEvent ) override;
-    void onLibrarayPathText( wxCommandEvent& aEvent ) override;
+    void onLibraryPathText( wxCommandEvent& aEvent ) override;
     void onLibraryPathTextEnter( wxCommandEvent& aEvent ) override;
     void onLibraryPathTextKillFocus( wxFocusEvent& aEvent ) override;
     void onBrowseButtonClick( wxCommandEvent& aEvent ) override;
@@ -140,8 +141,7 @@ private:
     wxPGProperty*          m_firstCategory;            // Used to add principal parameters to root.
     wxPGProperty*          m_prevParamGridSelection;
 
-    int                    m_lastParamGridWidth;
-    bool                   m_inKillFocus;
+    int                     m_lastParamGridWidth;
 };
 
 #endif /* DIALOG_SIM_MODEL_H */
