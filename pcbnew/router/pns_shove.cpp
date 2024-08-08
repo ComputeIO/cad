@@ -1352,8 +1352,6 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
                                                ni->Parent() ? ni->Parent()->GetItemDescription( &up, false )
                                                             : wxString( wxT( "null" ) ) ) );
 
-    unwindLineStack( ni );
-
     if( !ni->OfKind( ITEM::SOLID_T ) && ni->Rank() >= 0 && ni->Rank() > currentLine.Rank() )
     {
         // Collision with a higher-ranking object (ie: one that we've already shoved)
