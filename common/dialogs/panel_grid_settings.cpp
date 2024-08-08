@@ -87,8 +87,8 @@ PANEL_GRID_SETTINGS::PANEL_GRID_SETTINGS( wxWindow* aParent, UNITS_PROVIDER* aUn
 
     int hk1 = ACTIONS::gridFast1.GetHotKey();
     int hk2 = ACTIONS::gridFast2.GetHotKey();
-    m_grid1HotKey->SetLabel( wxString::Format( wxT( "(%s)" ), KeyNameFromKeyCode( hk1 ) ) );
-    m_grid2HotKey->SetLabel( wxString::Format( wxT( "(%s)" ), KeyNameFromKeyCode( hk2 ) ) );
+    m_grid1HotKey->SetLabel( wxString::Format( wxT( "(%s)" ), KeyNameFromKeyCode( hk1, true ) ) );
+    m_grid2HotKey->SetLabel( wxString::Format( wxT( "(%s)" ), KeyNameFromKeyCode( hk2, true ) ) );
 
     m_addGridButton->SetBitmap( KiBitmapBundle( BITMAPS::small_plus ) );
     m_removeGridButton->SetBitmap( KiBitmapBundle( BITMAPS::small_trash ) );
