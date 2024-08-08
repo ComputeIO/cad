@@ -62,7 +62,7 @@ CACHED_CONTAINER_GPU::CACHED_CONTAINER_GPU( unsigned int aSize ) :
     // disable glCopyBuffer, causes crashes/freezes on certain driver versions
     // Note, Intel's GL_VENDOR string varies depending on GPU/driver generation
     // But generally always starts with Intel at least
-    if( vendor.StartsWith( "Intel" ) || vendor.Contains( "etnaviv" ) )
+    if( /* vendor.StartsWith( "Intel" ) || */ vendor.Contains( "etnaviv" ) )
     {
         m_useCopyBuffer = false;
     }
@@ -164,19 +164,71 @@ bool CACHED_CONTAINER_GPU::defragmentResize( unsigned int aNewSize )
     glBufferData( GL_ELEMENT_ARRAY_BUFFER, aNewSize * VERTEX_SIZE, nullptr, GL_DYNAMIC_DRAW );
     checkGlError( "creating buffer during defragmentation", __FILE__, __LINE__ );
 
+#define DO_SORT
+
+#ifdef DO_SORT
+    std::vector<VERTEX_ITEM*>::iterator it, it_end;
+#else
     ITEMS::iterator it, it_end;
-    int             newOffset = 0;
+#endif
+    int                                 newOffset = 0;
+
+    PROF_TIMER      copyTime( "glCopyBuffer" );
+#ifdef DO_SORT
+    PROF_TIMER                sortTime( "glCopyBuffer pre-sort" );
+    std::vector<VERTEX_ITEM*> sorted;
+
+    sorted.reserve( m_items.size() );
+    sorted.insert( sorted.end(), m_items.begin(), m_items.end() );
+
+    std::sort( sorted.begin(), sorted.end(),
+               []( const VERTEX_ITEM* a, const VERTEX_ITEM* b )
+               {
+                   return a->GetOffset() < b->GetOffset();
+               } );
+
+    sortTime.Show();
+#endif
+
+    int             blockSource = 0;
+    int             blockTarget = 0;
+    int             expectedStart = 0;
+    int             blockLen = 0;
+    int             ncalls = 0;
+    int             merged = 0;
 
     // Defragmentation
+#ifdef DO_SORT
+    for( it = sorted.begin(), it_end = sorted.end(); it != it_end; ++it )
+#else
     for( it = m_items.begin(), it_end = m_items.end(); it != it_end; ++it )
-    {
+#endif
+        {
         VERTEX_ITEM* item = *it;
         int          itemOffset = item->GetOffset();
         int          itemSize = item->GetSize();
 
-        // Move an item to the new container
-        glCopyBufferSubData( GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, itemOffset * VERTEX_SIZE,
-                             newOffset * VERTEX_SIZE, itemSize * VERTEX_SIZE );
+#ifdef DO_SORT
+        if( expectedStart == itemOffset )
+        {
+            // contiguous, coalesce
+            expectedStart += itemSize;
+            blockLen += itemSize;
+            merged++;
+        }
+        else
+#endif
+        {
+            // hole, copy the previous contiguous block to the new container
+            glCopyBufferSubData( GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, blockSource * VERTEX_SIZE,
+                                 blockTarget * VERTEX_SIZE, blockLen * VERTEX_SIZE );
+
+            blockSource = itemOffset;
+            blockTarget = newOffset;
+            blockLen = itemSize;
+            expectedStart = itemOffset + itemSize;
+            ncalls++;
+        }
 
         // Update new offset
         item->setOffset( newOffset );
@@ -184,6 +236,15 @@ bool CACHED_CONTAINER_GPU::defragmentResize( unsigned int aNewSize )
         // Move to the next free space
         newOffset += itemSize;
     }
+
+#ifdef DO_SORT
+    if ( blockLen )
+    {
+        glCopyBufferSubData( GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, blockSource * VERTEX_SIZE,
+                             blockTarget * VERTEX_SIZE, blockLen * VERTEX_SIZE );
+        ncalls++;
+    }
+#endif
 
     // Move the current item and place it at the end
     if( m_item->GetSize() > 0 )
@@ -205,10 +266,16 @@ bool CACHED_CONTAINER_GPU::defragmentResize( unsigned int aNewSize )
     m_isMapped = false;
     glDeleteBuffers( 1, &m_glBufferHandle );
 
+    std::cerr << "Time to copy " << m_currentSize << " bytes and " << m_items.size()
+        << " items, # calls " << ncalls << " #merges " << merged <<" : ";
+    copyTime.Show();
+
     // Switch to the new vertex buffer
     m_glBufferHandle = newBuffer;
+    PROF_TIMER mapTime( "glCopyBuffer post Map" );
     Map();
     checkGlError( "switching buffers during defragmentation", __FILE__, __LINE__ );
+    mapTime.Show();
 
 #ifdef KICAD_GAL_PROFILE
     totalTime.Stop();
@@ -264,7 +331,9 @@ bool CACHED_CONTAINER_GPU::defragmentResizeMemcpy( unsigned int aNewSize )
     newBufferMem = static_cast<VERTEX*>( glMapBuffer( GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY ) );
     checkGlError( "creating buffer during defragmentation", __FILE__, __LINE__ );
 
+    PROF_TIMER defragTime( "memcpy defrag time" );
     defragment( newBufferMem );
+    defragTime.Show();
 
     // Cleanup
     glUnmapBuffer( GL_ELEMENT_ARRAY_BUFFER );
@@ -274,8 +343,10 @@ bool CACHED_CONTAINER_GPU::defragmentResizeMemcpy( unsigned int aNewSize )
 
     // Switch to the new vertex buffer
     m_glBufferHandle = newBuffer;
+    PROF_TIMER mapTime( "memcpy post Map" );
     Map();
     checkGlError( "switching buffers during defragmentation", __FILE__, __LINE__ );
+    mapTime.Show();
 
 #ifdef KICAD_GAL_PROFILE
     totalTime.Stop();

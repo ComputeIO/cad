@@ -49,6 +49,8 @@
 #include <core/profile.h>
 #endif /* KICAD_GAL_PROFILE */
 
+#include <core/profile.h>
+
 using namespace KIGFX;
 
 CACHED_CONTAINER::CACHED_CONTAINER( unsigned int aSize ) :
@@ -223,6 +225,9 @@ bool CACHED_CONTAINER::reallocate( unsigned int aSize )
     if( newChunk == m_freeChunks.end() )
     {
         bool result;
+        static double cum_time = 0.0;
+
+        PROF_TIMER defragResize( "CACHED_CONTAINER::reallocate" );
 
         // Would it be enough to double the current space?
         if( aSize < m_freeSpace + m_currentSize )
@@ -235,6 +240,13 @@ bool CACHED_CONTAINER::reallocate( unsigned int aSize )
             // No: grow to the nearest greater power of 2
             result = defragmentResize( pow( 2, ceil( log2( m_currentSize * 2 + aSize ) ) ) );
         }
+
+        defragResize.Stop();
+        cum_time += defragResize.msecs();
+        std::cerr << "Time to defrag  " << m_currentSize << " vertices, ( cumulative " << cum_time <<" ) : ";
+        defragResize.Show();
+        std::cerr << std::endl;
+
 
         if( !result )
             return false;
