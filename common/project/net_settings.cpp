@@ -1143,7 +1143,23 @@ bool NET_SETTINGS::ParseBusVector( const wxString& aBus, wxString* aName,
         if( aBus[i] == '}' )
         {
             braceNesting--;
+        }
+        else if( aBus[i] == '+' || aBus[i] == '-' )
+        {
             suffix += aBus[i];
+        }
+        else if( aBus[i] == '_' && busLen > i + 1 )
+        {
+            ++i;
+            if( aBus[i] == 'P' || aBus[i] == 'N' )
+            {
+                suffix += '_';
+                suffix += aBus[i];
+            }
+            else
+            {
+                return false;
+            }
         }
         else
         {
