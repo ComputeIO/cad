@@ -22,6 +22,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <lib_symbol_library_manager.h>
+#include <symbol_edit_frame.h>
 #include <default_values.h>
 #include <dialog_lib_new_symbol.h>
 #include <eda_draw_frame.h>
@@ -30,16 +32,21 @@
 
 DIALOG_LIB_NEW_SYMBOL::DIALOG_LIB_NEW_SYMBOL( EDA_DRAW_FRAME* aParent, const wxString& aMessage,
                                               const wxArrayString* aRootSymbolNames,
-                                              const wxString& aInheritFromSymbolName,
+                                              const wxString&      aInheritFromSymbolName,
                                               std::function<bool( wxString newName )> aValidator ) :
         DIALOG_LIB_NEW_SYMBOL_BASE( dynamic_cast<wxWindow*>( aParent ) ),
         m_pinTextPosition( aParent, m_staticPinTextPositionLabel, m_textPinTextPosition,
                            m_staticPinTextPositionUnits, true ),
         m_validator( std::move( aValidator ) )
 {
+    m_message = aMessage;
+
     if( aRootSymbolNames && aRootSymbolNames->GetCount() )
     {
         wxArrayString escapedNames;
+
+        // Empty first entry to allow root definition without having to close the dialog
+        escapedNames.Add( wxEmptyString );
 
         for( const wxString& name : *aRootSymbolNames )
             escapedNames.Add( UnescapeString( name ) );
@@ -48,15 +55,17 @@ DIALOG_LIB_NEW_SYMBOL::DIALOG_LIB_NEW_SYMBOL( EDA_DRAW_FRAME* aParent, const wxS
 
         if( !aInheritFromSymbolName.IsEmpty() )
         {
+            m_inheritSymbolName = aInheritFromSymbolName;
+
             m_comboInheritanceSelect->SetStringSelection( aInheritFromSymbolName );
             syncControls( !m_comboInheritanceSelect->GetValue().IsEmpty() );
         }
     }
 
-    if( !aMessage.IsEmpty() )
+    if( !m_message.IsEmpty() )
     {
         m_infoBar->RemoveAllButtons();
-        m_infoBar->ShowMessage( aMessage );
+        m_infoBar->ShowMessage( m_message );
     }
 
     m_textName->SetValidator( FIELD_VALIDATOR( VALUE_FIELD ) );
@@ -88,6 +97,54 @@ void DIALOG_LIB_NEW_SYMBOL::OnParentSymbolSelect( wxCommandEvent& aEvent )
 
 void DIALOG_LIB_NEW_SYMBOL::syncControls( bool aIsDerivedPart )
 {
+    wxString tempSelectedSymbolName = m_comboInheritanceSelect->GetValue();
+
+    LIB_SYMBOL* libSymbol = nullptr;
+
+    if( !tempSelectedSymbolName.IsEmpty() )
+    {
+        SYMBOL_EDIT_FRAME*          editFrame = static_cast<SYMBOL_EDIT_FRAME*>( m_parent );
+        LIB_SYMBOL_LIBRARY_MANAGER& libMgr = editFrame->GetLibManager();
+
+        LIB_ID          libId = editFrame->GetTargetLibId();
+        const wxString& libName = libId.GetLibNickname();
+
+        // Update from the buffered copy
+        libSymbol = libMgr.GetBufferedSymbol( tempSelectedSymbolName, libName );
+
+        SetReference( libSymbol->GetFieldById( REFERENCE_FIELD )->GetText() );
+    }
+    if( !m_message.IsEmpty() && m_inheritSymbolName == tempSelectedSymbolName )
+    {
+        wxString message;
+
+        if( libSymbol && libSymbol->IsRoot() )
+        {
+            message = wxString::Format( _( "Deriving from symbol '%s'." ),
+                                             tempSelectedSymbolName );
+        }
+        else
+        {
+            message = wxString::Format( _( "Deriving from '%s', with '%s' as the defined root symbol." ),
+                                             tempSelectedSymbolName, libSymbol->GetRootSymbol()->GetName() );
+        }
+
+        m_infoBar->ShowMessage( message );
+    }
+    else if( !m_message.IsEmpty() && m_inheritSymbolName != tempSelectedSymbolName
+             && !tempSelectedSymbolName.IsEmpty() )
+    {
+        wxString message =
+                wxString::Format( _( "Deriving from '%s', previously selected '%s' changed." ),
+                                  tempSelectedSymbolName, m_inheritSymbolName );
+        m_infoBar->ShowMessage( message );
+    }
+    else if( !m_message.IsEmpty() && tempSelectedSymbolName.IsEmpty() )
+    {
+        wxString message = _( "New root symbol definition." );
+        m_infoBar->ShowMessage( message );
+    }
+
     m_staticTextDes->Enable( !aIsDerivedPart );
     m_textReference->Enable( !aIsDerivedPart );
     m_staticTextUnits->Enable( !aIsDerivedPart );

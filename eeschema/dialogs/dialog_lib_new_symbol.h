@@ -37,7 +37,7 @@ class DIALOG_LIB_NEW_SYMBOL : public DIALOG_LIB_NEW_SYMBOL_BASE
 public:
     DIALOG_LIB_NEW_SYMBOL( EDA_DRAW_FRAME* aParent, const wxString& aMessage,
                            const wxArrayString* aRootSymbolNames,
-                           const wxString&  aInheritFromSymbolName,
+                           const wxString&      aInheritFromSymbolName,
                            std::function<bool( wxString newName )> aValidator );
 
     void SetName( const wxString& name ) override
@@ -105,6 +105,10 @@ private:
 private:
     UNIT_BINDER                             m_pinTextPosition;
     std::function<bool( wxString newName )> m_validator;
+
+    wxString m_parentSymbolName;
+    wxString m_inheritSymbolName;
+    wxString m_message;
 };
 
 #endif // __dialog_lib_new_symbol__

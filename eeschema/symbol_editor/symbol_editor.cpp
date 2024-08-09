@@ -356,10 +356,11 @@ void SYMBOL_EDIT_FRAME::CreateNewSymbol( const wxString& aInheritFrom )
 
     m_libMgr->GetSymbolNames( lib, symbolNames );
 
-    symbolNames.Sort();
+    //symbolNames.Sort();
 
     wxString _inheritSymbolName;
     wxString _infoMessage;
+    wxString _selectedByUser;
     wxString msg;
 
     // if the symbol being inherited from isn't a root symbol, find its root symbol
@@ -370,9 +371,19 @@ void SYMBOL_EDIT_FRAME::CreateNewSymbol( const wxString& aInheritFrom )
 
         if( inheritFromSymbol )
         {
-            _inheritSymbolName = aInheritFrom;
-            _infoMessage = wxString::Format( _( "Deriving from symbol '%s'." ),
-                                             _inheritSymbolName );
+            _inheritSymbolName = inheritFromSymbol->GetName();
+            _selectedByUser = aInheritFrom;
+
+            if( inheritFromSymbol->IsRoot() )
+            {
+                _infoMessage = wxString::Format( _( "Deriving from symbol '%s'." ),
+                                                _inheritSymbolName );
+            }
+            else
+            {
+                _infoMessage = wxString::Format( _( "Deriving from '%s', with '%s' as the defined root symbol." ),
+                                                _inheritSymbolName, inheritFromSymbol->GetRootSymbol()->GetName() );
+            }
         }
         else
         {
