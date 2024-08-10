@@ -469,7 +469,7 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const wxString&          aSymbo
         }
         else
         {
-            // Check if field exists, if so replace Text and adjust visiblity.
+            // Check if field exists, if so replace Text and adjust visibility.
             //
             // This proves useful in situations where, for instance, an individual requires a particular value, such as
             // the material type showcased at a specific position for a capacitor. Subsequently, this value could be defined
@@ -487,6 +487,8 @@ LIB_SYMBOL* SCH_IO_HTTP_LIB::loadSymbolFromPart( const wxString&          aSymbo
                 // Generic fields
                 field = new SCH_FIELD( nullptr, symbol->GetNextAvailableFieldId() );
                 field->SetName( fieldName );
+
+                field->SetShowInChooser();
 
                 field->SetText( std::get<0>( fieldProperties ) );
                 field->SetVisible( std::get<1>( fieldProperties ) );
