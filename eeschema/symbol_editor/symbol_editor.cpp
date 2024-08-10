@@ -414,6 +414,7 @@ void SYMBOL_EDIT_FRAME::CreateNewSymbol( const wxString& aInheritFrom )
 
     LIB_SYMBOL new_symbol( name );  // do not create symbol on the heap, it will be buffered soon
 
+    // This line seems superfluous as _InheritSymbolName appears to be this value.
     wxString parentSymbolName = dlg.GetParentSymbolName();
 
     if( parentSymbolName.IsEmpty() )
@@ -454,6 +455,11 @@ void SYMBOL_EDIT_FRAME::CreateNewSymbol( const wxString& aInheritFrom )
         wxCHECK( parent, /* void */ );
         new_symbol.SetParent( parent );
 
+        // If the value field of the parent symbol is the same as the
+        // name of the parent symbol then set the value field of the
+        // derived symbol to the name of the derived symbol.
+        bool valueFollowsName = parent->GetValueField().GetText() == parentSymbolName;
+
         // Inherit the parent mandatory field attributes.
         for( int id = 0; id < MANDATORY_FIELDS; ++id )
         {
@@ -475,11 +481,12 @@ void SYMBOL_EDIT_FRAME::CreateNewSymbol( const wxString& aInheritFrom )
                 break;
 
             case VALUE_FIELD:
-                if( parent->IsPower() )
+                if( parent->IsPower() || valueFollowsName )
                     field->SetText( name );
                 break;
 
-            case FOOTPRINT_FIELD:
+            // FOOTPRINT_FIELD is copied from parent as the derived and parent symbols
+            // cannot differ in pinout. Thus they likely share footprints.
             case DATASHEET_FIELD:
                 // - footprint might be the same as parent, but might not
                 // - datasheet is most likely different
